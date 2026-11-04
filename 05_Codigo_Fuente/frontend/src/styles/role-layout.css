@@ -1,0 +1,65 @@
+/* Ventanas VIE, CIE y Dirección dentro del mismo layout institucional de ADMIN. */
+.role-layout .main-content { min-width: 0; }
+.role-layout .tec-header { flex-shrink: 0; }
+.role-sidebar-section { display: flex; flex-direction: column; }
+.role-content {
+  --gv-azul: var(--tec-boton-primario);
+  --gv-gris: var(--tec-texto-muted);
+  --gv-texto: var(--tec-texto-cuerpo);
+  --gv-fondo: var(--tec-bg-pagina);
+  min-width: 0;
+  padding: 24px 32px;
+  overflow-x: auto;
+  background: var(--tec-bg-pagina);
+}
+.role-content .gv-titulo { color: var(--tec-texto-oscuro); font-size: 28px; }
+.role-content .gv-card { border-radius: 8px; }
+.role-content .gv-campo-select select { appearance: none; background-image: none; }
+.role-content .gv-btn-primario { background: var(--tec-boton-primario); }
+.role-content .gv-btn-primario:hover:not(:disabled) { background: var(--tec-boton-hover); }
+.role-expediente-selector { display: flex; flex-direction: column; gap: 10px; padding: 22px; }
+.role-expediente-selector select { width: 100%; padding: 12px; border: 1px solid var(--tec-borde); border-radius: 8px; background: white; color: var(--tec-texto-cuerpo); }
+@media (max-width: 900px) {
+  .role-content { padding: 20px; }
+  .role-layout .tec-header { height: auto; min-height: 72px; flex-wrap: wrap; gap: 12px; padding: 16px 20px; }
+  .role-layout .tec-search-box { width: 190px !important; }
+  .role-layout .tec-search-box:focus-within { width: 190px !important; }
+}
+@media (max-width: 640px) {
+  .role-layout { flex-direction: column; }
+  .role-layout .tec-sidebar { width: 100%; }
+  .role-layout .tec-sidebar-nav { padding: 4px 0 12px; }
+  .role-content { padding: 16px; }
+  .role-content .gv-titulo { font-size: 24px; }
+  .role-layout .tec-header-actions { flex-wrap: wrap; }
+  .role-layout .tec-search-box { display: none !important; }
+}
+
+
+/* Preferencia de densidad persistida por usuario para las tablas de Gestora VIE. */
+.role-layout-gestora.gestora-densidad-compacta .institucional-data-table th,
+.role-layout-gestora.gestora-densidad-compacta .institucional-data-table td,
+.role-layout-gestora.gestora-densidad-compacta .compromiso-grid-table th,
+.role-layout-gestora.gestora-densidad-compacta .compromiso-grid-table td { padding-top: 6px; padding-bottom: 6px; }
+.role-layout-gestora.gestora-densidad-normal .institucional-data-table th,
+.role-layout-gestora.gestora-densidad-normal .institucional-data-table td,
+.role-layout-gestora.gestora-densidad-normal .compromiso-grid-table th,
+.role-layout-gestora.gestora-densidad-normal .compromiso-grid-table td { padding-top: 12px; padding-bottom: 12px; }
+.role-layout-gestora.gestora-densidad-amplia .institucional-data-table th,
+.role-layout-gestora.gestora-densidad-amplia .institucional-data-table td,
+.role-layout-gestora.gestora-densidad-amplia .compromiso-grid-table th,
+.role-layout-gestora.gestora-densidad-amplia .compromiso-grid-table td { padding-top: 18px; padding-bottom: 18px; }
+
+.role-layout-gestora.gestora-densidad-compacta .gv-tabla th,
+.role-layout-gestora.gestora-densidad-compacta .gv-tabla td { padding-top: 6px; padding-bottom: 6px; }
+.role-layout-gestora.gestora-densidad-normal .gv-tabla th,
+.role-layout-gestora.gestora-densidad-normal .gv-tabla td { padding-top: 12px; padding-bottom: 12px; }
+.role-layout-gestora.gestora-densidad-amplia .gv-tabla th,
+.role-layout-gestora.gestora-densidad-amplia .gv-tabla td { padding-top: 18px; padding-bottom: 18px; }
+
+:root[data-gestora-densidad="compacta"] .role-layout-gestora .gv-tabla th,
+:root[data-gestora-densidad="compacta"] .role-layout-gestora .gv-tabla td { padding-top: 6px; padding-bottom: 6px; }
+:root[data-gestora-densidad="normal"] .role-layout-gestora .gv-tabla th,
+:root[data-gestora-densidad="normal"] .role-layout-gestora .gv-tabla td { padding-top: 12px; padding-bottom: 12px; }
+:root[data-gestora-densidad="amplia"] .role-layout-gestora .gv-tabla th,
+:root[data-gestora-densidad="amplia"] .role-layout-gestora .gv-tabla td { padding-top: 18px; padding-bottom: 18px; }

@@ -1,0 +1,377 @@
+/* src/styles/login.css */
+
+/* Contenedor principal */
+.login-container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background-color: #f5f7fa; /* Gris azulado muy claro */
+}
+
+/* Tarjeta blanca central */
+.login-card {
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  padding: 36px 56px 40px 56px; /* ✅ Punto medio: ni muy grande ni muy pequeño */
+  width: 100%;
+  max-width: 440px;
+  text-align: center;
+}
+
+/* Logo del TEC */
+.logo-container {
+  margin-bottom: 20px; /* ✅ Espacio equilibrado entre logo y título */
+  display: flex;
+  justify-content: center;
+}
+
+.logo-img {
+  max-width: 200px;
+  height: auto;
+  display: block;
+}
+
+/* Título "Fondos VIE" */
+.login-title {
+  color: #002855;
+  font-family: 'Roboto', sans-serif;
+  font-size: 34px;
+  font-weight: 900; /* Black - muy bold como en el Figma */
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+/* Subtítulo */
+.login-subtitle {
+  color: #4a5568;
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  margin: 0 0 32px 0;
+}
+
+/* Grupos de formulario */
+.form-group {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  font-weight: 500; /* Medium */
+  color: #1a202c;
+  margin-bottom: 8px;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  color: #a0aec0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.input-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.5;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 14px 12px 44px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #1a202c;
+  transition: all 0.2s;
+  outline: none;
+  background: #ffffff;
+  height: 46px;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  border-color: #002855;
+  box-shadow: 0 0 0 2px rgba(0, 40, 85, 0.1);
+}
+
+.form-input::placeholder {
+  color: #a0aec0;
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Botón Ingresar */
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  background-color: #002855;
+  background-color: #0369A1;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 15px;
+  font-weight: 600; /* Semi-bold */
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 8px;
+  height: 48px;
+}
+
+.btn-primary:hover {
+  background-color: #001d3d;
+}
+
+.btn-primary:active {
+  background-color: #001529;
+  background-color: #025380;
+}
+
+.btn-primary:active {
+  background-color: #023f63;
+}
+
+.btn-primary:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
+
+/* Link de recuperación */
+.forgot-link {
+  display: block;
+  margin-top: 16px;
+  color: #002855;
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+  text-align: center;
+}
+
+.forgot-link:hover {
+  color: #001d3d;
+}
+
+/* Texto de soporte */
+.support-text {
+  margin-top: 12px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: #a0aec0;
+  text-align: center;
+}
+
+/* Mensajes de error/éxito */
+.alert {
+  padding: 12px 14px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  text-align: left;
+}
+
+.alert-error {
+  background-color: #fef2f2;
+  color: #dc2626;
+  color: #EF3340;
+  border: 1px solid #fecaca;
+}
+
+.alert-success {
+  background-color: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.alert-info {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+/* Spinner de carga */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Link de volver */
+.back-link {
+  display: inline-block;
+  margin-top: 16px;
+  color: #002855;
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+/* Requisitos de contraseña */
+.password-requirements {
+  text-align: left;
+  margin-top: 12px;
+  padding: 12px 14px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: #4a5568;
+}
+
+.password-requirements strong {
+  font-weight: 500;
+  color: #1a202c;
+}
+
+.password-requirements ul {
+  margin-top: 6px;
+  padding-left: 20px;
+}
+
+.password-requirements li {
+  margin-bottom: 4px;
+}
+
+/* Input con error */
+.form-input.input-error {
+  border-color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.form-input.input-error:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
+}
+
+/* Mensaje de error inline */
+.input-error-message {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: #dc2626;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Indicador de fortaleza de contraseña */
+.indicador-fortaleza {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideDown 0.2s ease-out;
+}
+
+.indicador-barras {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.indicador-barra {
+  height: 4px;
+  flex: 1;
+  border-radius: 2px;
+  transition: background-color 0.3s ease;
+}
+
+.indicador-texto {
+  font-family: 'Roboto', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 60px;
+  text-align: right;
+}
+
+/* Requisitos de contraseña */
+.requisitos-contrasena {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 12px;
+}
+
+.requisito-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: #6b7280;
+  transition: color 0.2s;
+}
+
+.requisito-item:last-child {
+  margin-bottom: 0;
+}
+
+.requisito-item.cumplido {
+  color: #10b981;
+}
+
+.requisito-icono {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

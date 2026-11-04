@@ -1,0 +1,324 @@
+﻿// src/App.jsx
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import { ModalProvider } from './context/ModalContext';
+
+// 1. AUTENTICACIÓN
+import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+
+// 2. DASHBOARD GENERAL Y LAYOUTS
+import DashboardHome from './pages/Dashboard';
+import DashboardLayout from './components/DashboardLayout';
+
+// 3. ADMINISTRACIÓN
+import AdminPanel from './pages/admin/AdminPanel';
+import Catalogos from './pages/admin/Catalogos';
+import Usuarios from './pages/admin/Usuarios';
+import Convocatoria from './pages/admin/Convocatoria';
+import AsignacionGestoras from './pages/admin/AsignacionGestoras';
+
+// 4. COMITÉ TÉCNICO
+import ComiteTecnicoLayout from './components/ComiteTecnicoLayout';
+import BandejaCompletitud from './pages/comiteTecnico/BandejaCompletitud';
+import PropuestasAsignadas from './pages/comiteTecnico/PropuestasAsignadas';
+import BandejaEvaluacion from './pages/comiteTecnico/BandejaEvaluacion';
+import RubricaDigital from './pages/comiteTecnico/RubricaDigital';
+
+// 5. INVESTIGADOR Y FORMULARIOS
+import InvestigadorPropuestas from './pages/InvestigadorPropuestas';
+import InvestigadorConvocatorias from './pages/InvestigadorConvocatorias';
+import InvestigadorEquipos from './pages/InvestigadorEquipos';
+import InvestigadorFormularios from './pages/InvestigadorFormularios';
+import InvestigadorHistorial from './pages/InvestigadorHistorial';
+import InvestigadorBuscar from './pages/InvestigadorBuscar';
+import FormularioProyecto from './pages/FormularioProyecto';
+import FormularioPlanRiesgos from './pages/FormularioPlanRiesgos';
+import FormularioPresupuesto from './pages/FormularioPresupuesto';
+
+// 6. VINCULACIÓN
+import VinculacionDashboard from './pages/VinculacionDashboard';
+import VinculacionDictamenes from './pages/VinculacionDictamenes';
+import VinculacionDetalleDictamen from './pages/VinculacionDetalleDictamen';
+import VinculacionEvaluar from './pages/VinculacionEvaluar';
+
+// 7. PERFIL, CONFIGURACIÓN Y AYUDA
+import Perfil from './pages/Perfil';
+import Configuracion from './pages/Configuracion';
+import Ayuda from './pages/Ayuda';
+
+// 8. COMITÉ DE EVALUACIÓN INTERNA (CIE)
+import LayoutCie from './components/cie/LayoutCie';
+import InicioCie from './pages/miembro_cie/InicioCie';
+import BandejaCie from './pages/miembro_cie/BandejaCie';
+import ExpedienteConsolidado from './pages/miembro_cie/ExpedienteConsolidado';
+import RubricaVie from './pages/miembro_cie/RubricaVie';
+import ResolucionCie from './pages/miembro_cie/ResolucionCie';
+import ResolucionesCie from './pages/miembro_cie/ResolucionesCie';
+
+// 9. GESTORA VIE
+import LayoutGestora from './components/gestora/LayoutGestora';
+import InicioGestora from './pages/gestora_vie/InicioGestora';
+import Expedientes from './pages/gestora_vie/Expedientes';
+import RevisionVIE from './pages/gestora_vie/RevisionVIE';
+import RevisionDocumentos from './pages/gestora_vie/RevisionDocumentos';
+import ValidacionNormativa from './pages/gestora_vie/ValidacionNormativa';
+import Subsanaciones from './pages/gestora_vie/Subsanaciones';
+import ConfiguracionGestora from './pages/gestora_vie/ConfiguracionGestora';
+import AyudaGestora from './pages/gestora_vie/AyudaGestora';
+
+// 10. DIRECCIÓN DE INVESTIGACIÓN
+import LayoutDireccion from './components/direccion/LayoutDireccion';
+import InicioDireccion from './pages/direccion_investigacion/InicioDireccion';
+import DictamenesRecibidos from './pages/direccion_investigacion/DictamenesRecibidos';
+import RevisionDictamen from './pages/direccion_investigacion/RevisionDictamen';
+import DocumentosOficiales from './pages/direccion_investigacion/DocumentosOficiales';
+import NotificacionOficial from './pages/direccion_investigacion/NotificacionOficial';
+import ConfiguracionDireccion from './pages/direccion_investigacion/ConfiguracionDireccion';
+import AyudaDireccion from './pages/direccion_investigacion/AyudaDireccion';
+
+// 11. OTROS
+import PreviewCie from './pages/PreviewCie';
+
+// CONSEJO DE ESCUELA
+import PropuestasConsejo from './pages/consejoEscuela/PropuestasConsejo';
+
+// ESTILOS
+import './styles/global.css';
+import './styles/comite-tecnico.css';
+
+// ============================================================================
+// COMPONENTE: RUTA PROTEGIDA (Manejo robusto de roles)
+// ============================================================================
+const RutaProtegida = ({ children, rolesPermitidos = [] }) => {
+  const { estaAutenticado, cargando, usuario } = useAuth();
+
+  if (cargando) {
+    return (
+      <div style={{ 
+        display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh',
+        backgroundColor: '#002855', color: '#ffffff', fontFamily: 'Roboto, sans-serif'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <img src="/Logo-TEC-Blanco.png" alt="TEC" style={{ height: '48px', marginBottom: '16px' }} />
+          <div>Cargando sistema SGPI...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!estaAutenticado) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (rolesPermitidos.length > 0 && usuario) {
+    // Manejo robusto: soporta tanto ['Rol'] como [{ nombreRol: 'Rol' }]
+    const rolesUsuario = Array.isArray(usuario.roles) 
+      ? usuario.roles.map(r => typeof r === 'string' ? r : r.nombreRol) 
+      : [];
+      
+    const tienePermiso = rolesPermitidos.some(rol => rolesUsuario.includes(rol));
+    
+    if (!tienePermiso) {
+      return <Navigate to="/dashboard" replace />;
+    }
+  }
+
+  return <>{children}</>;
+};
+
+// ============================================================================
+// COMPONENTE: REDIRECCIÓN INTELIGENTE DE DASHBOARD (TODOS LOS ROLES)
+// ============================================================================
+const DashboardRedirect = () => {
+  const { usuario } = useAuth();
+  const roles = Array.isArray(usuario?.roles) 
+    ? usuario.roles.map(r => typeof r === 'string' ? r : r.nombreRol) 
+    : [];
+
+  // 1. Administración (Máxima prioridad)
+  if (roles.includes('SuperAdministrador') || roles.includes('Administrador')) {
+    return <Navigate to="/dashboard/admin" replace />;
+  }
+  
+  // 2. Dirección de Investigación
+  if (roles.includes('DirectorInvestigacion') || roles.includes('SubdirectorInvestigacion')) {
+    return <Navigate to="/direccion/dictamenes" replace />;
+  }
+
+  // 3. Gestora VIE
+  if (roles.includes('GestoraVIE') || roles.includes('CoordinadoraGestora')) {
+    return <Navigate to="/gestora/expedientes" replace />;
+  }
+
+  // 4. Comité de Evaluación Interna (CIE)
+  if (roles.includes('MiembroCIE') || roles.includes('CoordinadorCIE') || roles.includes('PresidenteCIE')) {
+    return <Navigate to="/cie/bandeja" replace />;
+  }
+
+  // 5. Comité Técnico (Evaluadores, Coordinadores y Directores de Escuela)
+  if (roles.includes('MiembroComiteTecnico') || roles.includes('DirectorEscuela') || roles.includes('CoordinadorComiteTecnico')) {
+    return <Navigate to="/comite-tecnico/bandeja-evaluacion" replace />;
+  }
+
+  // 6. Asistente de Comité Técnico
+  if (roles.includes('AsistenteComiteTecnico')) {
+    return <Navigate to="/comite-tecnico/bandeja-completitud" replace />;
+  }
+
+  // 7. Vinculación
+  if (roles.includes('Vinculacion') || roles.includes('CoordinadorVinculacion')) {
+    return <Navigate to="/dashboard/vinculacion" replace />;
+  }
+
+  // 8. Investigador (Coordinador o miembro)
+  if (roles.includes('InvestigadorCoordinador') || roles.includes('Investigador')) {
+    return <Navigate to="/dashboard/propuestas" replace />;
+  }
+  
+  // Fallback por defecto (si tiene un rol no mapeado o genérico)
+  return <Navigate to="/dashboard/propuestas" replace />;
+};
+
+// ============================================================================
+// COMPONENTE: REDIRECCIÓN INTELIGENTE DEL COMITÉ TÉCNICO
+// ============================================================================
+const ComiteTecnicoRedirect = () => {
+  const { usuario } = useAuth();
+  const roles = Array.isArray(usuario?.roles) 
+    ? usuario.roles.map(r => typeof r === 'string' ? r : r.nombreRol) 
+    : [];
+
+  if (roles.includes('AsistenteComiteTecnico')) {
+    return <Navigate to="bandeja-completitud" replace />;
+  }
+  if (roles.includes('MiembroComiteTecnico') || roles.includes('CoordinadorComiteTecnico') || roles.includes('DirectorEscuela')) {
+    return <Navigate to="bandeja-evaluacion" replace />;
+  }
+
+  return <Navigate to="bandeja-completitud" replace />;
+};
+
+// ============================================================================
+// COMPONENTE PRINCIPAL: APP
+// ============================================================================
+const App = () => {
+  return (
+    <ModalProvider>
+          <Routes>
+            {/* RUTAS PÚBLICAS */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/olvide-mi-contrasena" element={<ForgotPassword />} />
+            <Route path="/recuperar-contrasena" element={<ResetPassword />} />
+            <Route path="/preview-cie" element={<PreviewCie />} />
+
+            {/* LAYOUT PRINCIPAL DEL DASHBOARD (Con redirección inteligente en el index) */}
+            <Route path="/dashboard" element={
+              <RutaProtegida>
+                <DashboardLayout />
+              </RutaProtegida>
+            }>
+              {/* ✅ Redirige al entrar a /dashboard sin subruta, evaluando TODOS los roles */}
+              <Route index element={<DashboardRedirect />} />
+              
+              <Route path="perfil" element={<Perfil />} />
+              <Route path="configuracion" element={<Configuracion />} />
+              <Route path="ayuda" element={<Ayuda />} />
+
+              {/* Rutas Módulo Investigador */}
+              <Route path="propuestas" element={<InvestigadorPropuestas />} />
+              <Route path="convocatorias" element={<InvestigadorConvocatorias />} />
+              <Route path="crear-propuesta" element={<InvestigadorPropuestas />} />
+              <Route path="equipos" element={<InvestigadorEquipos />} />
+              <Route path="formularios" element={<InvestigadorFormularios />} />
+              <Route path="historial" element={<InvestigadorHistorial />} />
+              <Route path="buscar" element={<InvestigadorBuscar />} />
+
+              {/* Formularios Oficiales */}
+              <Route path="form4" element={<FormularioProyecto />} />
+              <Route path="form4/:paso" element={<FormularioProyecto />} />
+              <Route path="form5" element={<FormularioPlanRiesgos />} />
+              <Route path="presupuesto" element={<FormularioPresupuesto />} />
+
+              {/* Rutas Módulo Vinculación */}
+              <Route path="vinculacion" element={<VinculacionDashboard />} />
+              <Route path="dictamenes" element={<VinculacionDictamenes />} />
+              <Route path="detalle-dictamen" element={<VinculacionDetalleDictamen />} />
+              <Route path="evaluar-propuesta" element={<VinculacionEvaluar />} />
+              <Route path="evaluaciones" element={<VinculacionDashboard />} />
+              
+              {/* Rutas del Consejo de Escuela */}
+              <Route path="consejo-escuela/propuestas" element={<PropuestasConsejo />} />
+
+              {/* Rutas de Administración */}
+              <Route path="admin" element={<AdminPanel />} />
+              <Route path="admin/catalogos" element={<Catalogos />} />
+              <Route path="admin/usuarios" element={<Usuarios />} />
+              <Route path="admin/convocatoria" element={<Convocatoria />} />
+              <Route path="admin/gestoras" element={<AsignacionGestoras />} />
+            </Route>
+
+            {/* Accesos directos a Formularios oficiales (nivel raíz) */}
+            <Route path="/form5" element={<RutaProtegida><FormularioPlanRiesgos /></RutaProtegida>} />
+            <Route path="/presupuesto" element={<RutaProtegida><FormularioPresupuesto /></RutaProtegida>} />
+            <Route path="/formulariodeproyecto:paso" element={<RutaProtegida><FormularioProyecto /></RutaProtegida>} />
+
+            {/* MÓDULO DE COMITÉ TÉCNICO */}
+            <Route path="/comite-tecnico" element={
+              <RutaProtegida rolesPermitidos={[
+                'AsistenteComiteTecnico', 'CoordinadorComiteTecnico', 'MiembroComiteTecnico', 
+                'DirectorEscuela', 'SuperAdministrador', 'Administrador'
+              ]}>
+                <ComiteTecnicoLayout />
+              </RutaProtegida>
+            }>
+              <Route index element={<ComiteTecnicoRedirect />} />
+              <Route path="bandeja-completitud" element={<BandejaCompletitud />} />
+              <Route path="propuestas-asignadas" element={<PropuestasAsignadas />} />
+              <Route path="bandeja-evaluacion" element={<BandejaEvaluacion />} />
+              <Route path="expediente/:propuestaId" element={<RubricaDigital />} />
+            </Route>
+
+            {/* MÓDULO CIE */}
+            <Route path="/cie" element={<RutaProtegida><LayoutCie /></RutaProtegida>}>
+              <Route index element={<InicioCie />} />
+              <Route path="bandeja" element={<BandejaCie />} />
+              <Route path="expediente/:propuestaId" element={<ExpedienteConsolidado />} />
+              <Route path="rubrica/:propuestaId" element={<RubricaVie />} />
+              <Route path="resolucion/:propuestaId" element={<ResolucionCie />} />
+              <Route path="resoluciones" element={<ResolucionesCie />} />
+            </Route>
+
+            {/* MÓDULO GESTORA VIE */}
+            <Route path="/gestora" element={<RutaProtegida><LayoutGestora /></RutaProtegida>}>
+              <Route index element={<InicioGestora />} />
+              <Route path="expedientes" element={<Expedientes />} />
+              <Route path="revision-vie" element={<RevisionVIE />} />
+              <Route path="revision-documentos" element={<RevisionDocumentos />} />
+              <Route path="validacion-normativa" element={<ValidacionNormativa />} />
+              <Route path="subsanaciones" element={<Subsanaciones />} />
+              <Route path="configuracion" element={<ConfiguracionGestora />} />
+              <Route path="ayuda" element={<AyudaGestora />} />
+            </Route>
+
+            {/* MÓDULO DIRECCIÓN DE INVESTIGACIÓN */}
+            <Route path="/direccion" element={<RutaProtegida><LayoutDireccion /></RutaProtegida>}>
+              <Route index element={<InicioDireccion />} />
+              <Route path="dictamenes" element={<DictamenesRecibidos />} />
+              <Route path="revision-dictamen/:propuestaId" element={<RevisionDictamen />} />
+              <Route path="documentos-oficiales" element={<DocumentosOficiales />} />
+              <Route path="notificacion/:propuestaId" element={<NotificacionOficial />} />
+              <Route path="configuracion" element={<ConfiguracionDireccion />} />
+              <Route path="ayuda" element={<AyudaDireccion />} />
+            </Route>
+
+            {/* RUTA POR DEFECTO (CATCH-ALL) */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </ModalProvider>
+  );
+};
+
+export default App;
+

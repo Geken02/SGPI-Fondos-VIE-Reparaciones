@@ -1,0 +1,96 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
+
+:root {
+  /* Colores oficiales TEC (Pantone 295C y 032C) */
+  --tec-azul: #002855;
+  --tec-azul-oscuro: #001a38;
+  --tec-azul-claro: #003570;
+  --tec-azul-suave: #e6edf5;
+  
+  --tec-rojo: #EF3340;
+  --tec-rojo-oscuro: #c41e2a;
+  --tec-rojo-suave: #fde8ea;
+  
+  /* Estados */
+  --color-exito: #16a34a;
+  --color-exito-bg: #dcfce7;
+  --color-advertencia: #ca8a04;
+  --color-advertencia-bg: #fef9c3;
+  --color-error: var(--tec-rojo);
+  --color-error-bg: var(--tec-rojo-suave);
+  --color-info: var(--tec-azul);
+  --color-info-bg: var(--tec-azul-suave);
+  
+  /* Grises */
+  --gris-50: #fafafa;
+  --gris-100: #f5f5f5;
+  --gris-200: #e5e5e5;
+  --gris-300: #d4d4d4;
+  --gris-400: #a3a3a3;
+  --gris-500: #737373;
+  --gris-600: #525252;
+  --gris-700: #404040;
+  --gris-800: #262626;
+  --gris-900: #171717;
+  
+  /* Texto */
+  --texto-principal: var(--gris-900);
+  --texto-secundario: var(--gris-600);
+  --texto-suave: var(--gris-400);
+  --texto-blanco: #ffffff;
+  
+  /* Fondos */
+  --fondo-app: #f5f7fa;
+  --fondo-card: #ffffff;
+  --fondo-sidebar: var(--tec-azul);
+  
+  /* Bordes */
+  --borde-suave: var(--gris-200);
+  --borde-medio: var(--gris-300);
+  
+  /* Sombras */
+  --sombra-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --sombra-sm: 0 1px 3px rgba(0, 40, 85, 0.06);
+  --sombra-md: 0 4px 6px rgba(0, 40, 85, 0.08);
+  --sombra-lg: 0 10px 15px rgba(0, 40, 85, 0.1);
+  
+  /* Tipografía */
+  --fuente-principal: 'Roboto', system-ui, -apple-system, sans-serif;
+  --fuente-mono: ui-monospace, Consolas, monospace;
+  
+  /* Transiciones */
+  --transicion-rapida: 150ms ease;
+  --transicion-normal: 200ms ease;
+  --transicion-lenta: 300ms ease;
+  
+  /* Bordes redondeados */
+  --radio-sm: 4px;
+  --radio-md: 6px;
+  --radio-lg: 8px;
+  --radio-xl: 12px;
+}
+
+/* Aplicar Roboto solo al body para no romper íconos SVG o emojis */
+body {
+  font-family: var(--fuente-principal);
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gris-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gris-300);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gris-400);
+}

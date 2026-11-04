@@ -1,0 +1,22 @@
+import { useMemo, useState } from 'react';
+import Icono from '../../components/cie/IconoCie';
+import { EncabezadoPagina } from '../../components/cie/CieUi';
+const ARTICULOS = [
+ { categoria: 'Expedientes', pregunta: '¿Qué encuentro en la bandeja de expedientes?', respuesta: 'La bandeja reúne las propuestas asignadas a la Gestora VIE y permite localizar expedientes por sus datos y consultar su estado. Las acciones disponibles dependen del estado de cada propuesta.' },
+ { categoria: 'Validación', pregunta: '¿Qué debo revisar en la validación normativa?', respuesta: 'Debes comprobar los requisitos definidos para la convocatoria, incluidos los aspectos institucionales, éticos, de riesgo y participación estudiantil cuando correspondan, además de revisar la documentación requerida.' },
+ { categoria: 'Subsanaciones', pregunta: '¿Qué ocurre cuando solicito una subsanación?', respuesta: 'Se registran las observaciones y se comunica al investigador coordinador qué debe corregir. Cuando envía la corrección, la Gestora revisa nuevamente los puntos señalados. Solicitar una subsanación no equivale a rechazar la propuesta.' },
+ { categoria: 'Flujo VIE', pregunta: '¿La Gestora VIE emite la resolución definitiva?', respuesta: 'No. La Gestora verifica requisitos y gestiona observaciones. Una vez que el expediente está listo, continúa hacia el CIE, que realiza la evaluación y registra la decisión según el flujo del proyecto.' },
+ { categoria: 'Documentos', pregunta: '¿Qué hago si un documento está incompleto?', respuesta: 'Registra una observación clara, identifica el documento afectado y explica qué información o corrección se necesita. Si corresponde al flujo establecido, solicita la subsanación al investigador.' },
+ { categoria: 'Soporte', pregunta: '¿Qué hago si no puedo acceder a un expediente?', respuesta: 'Comprueba que hayas iniciado sesión con la cuenta correcta y vuelve a cargar la página. Si el problema continúa, informa a la persona administradora del sistema indicando el código del expediente y el mensaje de error, sin compartir contraseñas.' },
+];
+export default function AyudaGestora() {
+ const [busqueda, setBusqueda] = useState(''); const [abierto, setAbierto] = useState(0);
+ const filtrados = useMemo(() => ARTICULOS.filter((a) => `${a.pregunta} ${a.respuesta} ${a.categoria}`.toLowerCase().includes(busqueda.toLowerCase())), [busqueda]);
+ return <div className="gestora-ayuda"><EncabezadoPagina titulo="Centro de ayuda" subtitulo="Guía rápida para las tareas habituales de la Persona Gestora VIE."/>
+   <section className="gestora-ayuda-banner"><div className="gestora-ayuda-banner-icono"><Icono nombre="help" tamano={28}/></div><div><span className="gestora-eyebrow">AYUDA Y ORIENTACIÓN</span><h2>¿En qué podemos ayudarte?</h2><p>Busca una pregunta o consulta las respuestas sobre expedientes, validación y subsanaciones.</p></div></section>
+   <label className="gestora-ayuda-busqueda"><Icono nombre="search" tamano={18}/><input value={busqueda} onChange={(e) => {setBusqueda(e.target.value); setAbierto(-1);}} placeholder="Buscar en la ayuda..." aria-label="Buscar en la ayuda"/></label>
+   <div className="gestora-ayuda-lista">{filtrados.map((a, i) => <article className={`gv-card gestora-faq ${abierto === i ? 'abierta' : ''}`} key={a.pregunta}><button type="button" className="gestora-faq-pregunta" aria-expanded={abierto === i} onClick={() => setAbierto(abierto === i ? -1 : i)}><span><small>{a.categoria}</small><strong>{a.pregunta}</strong></span><Icono nombre={abierto === i ? 'chevronDown' : 'chevronRight'} tamano={18}/></button>{abierto === i && <p className="gestora-faq-respuesta">{a.respuesta}</p>}</article>)}
+   {!filtrados.length && <div className="gv-card gestora-ayuda-vacia"><Icono nombre="search" tamano={22}/><strong>No encontramos resultados</strong><p>Prueba con otra palabra, por ejemplo «documentos» o «subsanación».</p></div>}</div>
+   <section className="gv-card gestora-ayuda-contacto"><span className="gestora-config-icono"><Icono nombre="info" tamano={20}/></span><div><h3>¿Necesitas más ayuda?</h3><p>Si la guía no resuelve tu duda, consulta a la persona administradora del sistema o revisa las disposiciones oficiales de la convocatoria VIE vigente.</p></div></section>
+ </div>;
+}

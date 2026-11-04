@@ -1,0 +1,392 @@
+﻿import consejoEscuelaService from "../../services/consejoEscuelaService";
+import "./votacionesConsejo.css";
+
+export default function VotacionesConsejo() {
+  const [votaciones, setVotaciones] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
+  const [mensaje, setMensaje] = useState("");
+
+  const [propuestaId, setPropuestaId] = useState("");
+  const [observacionesNueva, setObservacionesNueva] = useState("");
+
+  const [votos, setVotos] = useState({});
+  const [resultados, setResultados] = useState({});
+
+  const obtenerLista = (respuesta) => {
+    if (Array.isArray(respuesta)) return respuesta;
+    if (Array.isArray(respuesta?.items)) return respuesta.items;
+    if (Array.isArray(respuesta?.data)) return respuesta.data;
+    return [];
+  };
+
+  const cargarVotaciones = async () => {
+    try {
+      setCargando(true);
+      setError("");
+      const respuesta = await consejoEscuelaService.listarVotaciones();
+      setVotaciones(obtenerLista(respuesta));
+    } catch (err) {
+      setError(
+        err?.response?.data?.detail ||
+          err?.message ||
+          "No fue posible cargar las votaciones."
+      );
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  useEffect(() => {
+    cargarVotaciones();
+  }, []);
+
+  const crear = async (e) => {
+    e.preventDefault();
+    setError("");
+    setMensaje("");
+
+    if (!propuestaId || Number(propuestaId) <= 0) {
+      setError("Ingresá un ID de propuesta válido.");
+      return;
+    }
+
+    try {
+      await consejoEscuelaService.crearVotacion({
+        propuestaId: Number(propuestaId),
+        observaciones: observacionesNueva.trim() || null,
+      });
+
+      setPropuestaId("");
+      setObservacionesNueva("");
+      setMensaje("La votación se creó correctamente.");
+      await cargarVotaciones();
+    } catch (err) {
+      setError(
+        err?.response?.data?.detail ||
+          err?.message ||
+          "No fue posible crear la votación."
+      );
+    }
+  };
+
+  const votar = async (votacionId) => {
+    const formulario = votos[votacionId];
+
+    if (!formulario?.voto) {
+      setError("Seleccioná un voto antes de enviarlo.");
+      return;
+    }
+
+    setError("");
+    setMensaje("");
+
+    try {
+      await consejoEscuelaService.registrarVoto(votacionId, {
+        voto: formulario.voto,
+        observaciones: formulario.observaciones?.trim() || null,
+      });
+
+      setMensaje("El voto se registró correctamente.");
+      setVotos((actual) => ({ ...actual, [votacionId]: {} }));
+      await cargarVotaciones();
+    } catch (err) {
+      setError(
+        err?.response?.data?.detail ||
+          err?.message ||
+          "No fue posible registrar el voto."
+      );
+    }
+  };
+
+  const cerrarVotacion = async (votacionId) => {
+    const formulario = resultados[votacionId];
+
+    if (!formulario?.resultadoConsejo) {
+      setError("Seleccioná el resultado del Consejo.");
+      return;
+    }
+
+    setError("");
+    setMensaje("");
+
+    try {
+      await consejoEscuelaService.registrarResultado(votacionId, {
+        resultadoConsejo: formulario.resultadoConsejo,
+        observaciones: formulario.observaciones?.trim() || null,
+      });
+
+      setMensaje("El resultado se registró y la votación se cerró.");
+      setResultados((actual) => ({ ...actual, [votacionId]: {} }));
+      await cargarVotaciones();
+    } catch (err) {
+      setError(
+        err?.response?.data?.detail ||
+          err?.message ||
+          "No fue posible registrar el resultado."
+      );
+    }
+  };
+
+  const actualizarVoto = (id, campo, valor) => {
+    setVotos((actual) => ({
+      ...actual,
+      [id]: {
+        ...actual[id],
+        [campo]: valor,
+      },
+    }));
+  };
+
+  const actualizarResultado = (id, campo, valor) => {
+    setResultados((actual) => ({
+      ...actual,
+      [id]: {
+        ...actual[id],
+        [campo]: valor,
+      },
+    }));
+  };
+
+  return (
+    <main className="votaciones-consejo">
+      <header className="votaciones-header">
+        <div>
+          <h1>Votaciones del Consejo de Escuela</h1>
+          <p>
+            Administración de votaciones, registro de votos y resultados de
+            propuestas.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="btn-actualizar-votaciones"
+          onClick={cargarVotaciones}
+        >
+          Actualizar
+        </button>
+      </header>
+
+      {error && <div className="alerta-votaciones error">{error}</div>}
+      {mensaje && <div className="alerta-votaciones exito">{mensaje}</div>}
+
+      <section className="crear-votacion-card">
+        <h2>Crear votación</h2>
+
+        <form onSubmit={crear} className="crear-votacion-form">
+          <label>
+            ID de la propuesta
+            <input
+              type="number"
+              min="1"
+              value={propuestaId}
+              onChange={(e) => setPropuestaId(e.target.value)}
+              placeholder="Ej. 12"
+              required
+            />
+          </label>
+
+          <label>
+            Observaciones
+            <textarea
+              value={observacionesNueva}
+              onChange={(e) => setObservacionesNueva(e.target.value)}
+              maxLength="1000"
+              placeholder="Observaciones de la votación (opcional)"
+            />
+          </label>
+
+          <button type="submit" className="btn-crear-votacion">
+            Crear votación
+          </button>
+        </form>
+      </section>
+
+      <section className="lista-votaciones">
+        <h2>Votaciones registradas</h2>
+
+        {cargando ? (
+          <p className="estado-votaciones">Cargando votaciones...</p>
+        ) : votaciones.length === 0 ? (
+          <p className="estado-votaciones">
+            No hay votaciones registradas.
+          </p>
+        ) : (
+          votaciones.map((votacion) => {
+            const id = votacion.votacionId;
+            const abierta = votacion.estadoVotacion === "OPEN";
+            const listaVotos = Array.isArray(votacion.votos)
+              ? votacion.votos
+              : [];
+
+            return (
+              <article className="votacion-card" key={id}>
+                <div className="votacion-card-header">
+                  <div>
+                    <h3>Votación #{id}</h3>
+                    <p>Propuesta #{votacion.propuestaId}</p>
+                  </div>
+
+                  <span
+                    className={`estado-votacion ${
+                      abierta ? "abierta" : "cerrada"
+                    }`}
+                  >
+                    {abierta ? "Abierta" : "Cerrada"}
+                  </span>
+                </div>
+
+                {votacion.observaciones && (
+                  <p className="observaciones-votacion">
+                    {votacion.observaciones}
+                  </p>
+                )}
+
+                <div className="datos-votacion">
+                  <span>
+                    Apertura:{" "}
+                    {votacion.fechaApertura
+                      ? new Date(votacion.fechaApertura).toLocaleString()
+                      : "No disponible"}
+                  </span>
+
+                  {votacion.fechaCierre && (
+                    <span>
+                      Cierre:{" "}
+                      {new Date(votacion.fechaCierre).toLocaleString()}
+                    </span>
+                  )}
+                </div>
+
+                <div className="votos-registrados">
+                  <h4>Votos registrados ({listaVotos.length})</h4>
+
+                  {listaVotos.length === 0 ? (
+                    <p>No se han registrado votos.</p>
+                  ) : (
+                    <ul>
+                      {listaVotos.map((voto) => (
+                        <li key={voto.votoId}>
+                          Usuario #{voto.usuarioId}:{" "}
+                          <strong>{voto.voto}</strong>
+                          {voto.observaciones && (
+                            <span> — {voto.observaciones}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {votacion.resultadoConsejo && (
+                  <p className="resultado-votacion">
+                    Resultado: <strong>{votacion.resultadoConsejo}</strong>
+                  </p>
+                )}
+
+                {abierta && (
+                  <div className="acciones-votacion">
+                    <div className="accion-voto">
+                      <h4>Registrar voto</h4>
+
+                      <label>
+                        Voto
+                        <select
+                          value={votos[id]?.voto || ""}
+                          onChange={(e) =>
+                            actualizarVoto(id, "voto", e.target.value)
+                          }
+                        >
+                          <option value="">Seleccionar voto</option>
+                          <option value="APROBAR">Aprobar</option>
+                          <option value="RECHAZAR">Rechazar</option>
+                          <option value="ABSTENCION">Abstención</option>
+                        </select>
+                      </label>
+
+                      <label>
+                        Observaciones
+                        <textarea
+                          value={votos[id]?.observaciones || ""}
+                          onChange={(e) =>
+                            actualizarVoto(
+                              id,
+                              "observaciones",
+                              e.target.value
+                            )
+                          }
+                          maxLength="1000"
+                          placeholder="Observaciones (opcional)"
+                        />
+                      </label>
+
+                      <button
+                        type="button"
+                        className="btn-registrar-voto"
+                        onClick={() => votar(id)}
+                      >
+                        Registrar voto
+                      </button>
+                    </div>
+
+                    <div className="accion-voto">
+                      <h4>Registrar resultado del Consejo</h4>
+
+                      <label>
+                        Resultado
+                        <select
+                          value={resultados[id]?.resultadoConsejo || ""}
+                          onChange={(e) =>
+                            actualizarResultado(
+                              id,
+                              "resultadoConsejo",
+                              e.target.value
+                            )
+                          }
+                        >
+                          <option value="">Seleccionar resultado</option>
+                          <option value="APROBADA">Aprobada</option>
+                          <option value="RECHAZADA">Rechazada</option>
+                          <option value="DEVUELTA_AJUSTES">
+                            Devuelta para ajustes
+                          </option>
+                        </select>
+                      </label>
+
+                      <label>
+                        Observaciones
+                        <textarea
+                          value={resultados[id]?.observaciones || ""}
+                          onChange={(e) =>
+                            actualizarResultado(
+                              id,
+                              "observaciones",
+                              e.target.value
+                            )
+                          }
+                          maxLength="1000"
+                          placeholder="Observaciones del resultado"
+                        />
+                      </label>
+
+                      <button
+                        type="button"
+                        className="btn-cerrar-votacion"
+                        onClick={() => cerrarVotacion(id)}
+                      >
+                        Registrar resultado y cerrar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </article>
+            );
+          })
+        )}
+      </section>
+    </main>
+  );
+}
+
+
