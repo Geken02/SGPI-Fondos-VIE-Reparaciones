@@ -141,7 +141,10 @@ const DashboardRedirect = () => {
   if (rolActivo === 'MiembroCIE' || rolActivo === 'CoordinadorCIE' || rolActivo === 'PresidenteCIE') {
     return <Navigate to="/cie/bandeja" replace />;
   }
-  if (rolActivo === 'MiembroComiteTecnico' || rolActivo === 'DirectorEscuela' || rolActivo === 'CoordinadorComiteTecnico') {
+  if (
+    rolActivo === 'MiembroComiteTecnico' ||
+    rolActivo === 'CoordinadorComiteTecnico'
+  ) {
     return <Navigate to="/comite-tecnico/propuestas-asignadas" replace />;
   }
   if (rolActivo === 'AsistenteComiteTecnico') {
@@ -151,7 +154,12 @@ const DashboardRedirect = () => {
     return <Navigate to="/dashboard/vinculacion" replace />;
   }
   // Redirección para roles del Consejo de Escuela
-  if (rolActivo === 'AsistenteConsejoEscuela' || rolActivo === 'MiembroConsejoEscuela' || rolActivo === 'ConsejoProfesores') {
+  if (
+    rolActivo === 'AsistenteConsejoEscuela' ||
+    rolActivo === 'MiembroConsejoEscuela' ||
+    rolActivo === 'ConsejoProfesores' ||
+    rolActivo === 'DirectorEscuela'
+  ) {
     return <Navigate to="/dashboard/propuestas-consejo" replace />;
   }
   if (rolActivo === 'InvestigadorCoordinador' || rolActivo === 'Investigador' || rolActivo === 'InvestigadorColaborador' || (typeof rolActivo === 'string' && rolActivo.includes('Investigador'))) {
