@@ -87,12 +87,12 @@ CREATE TABLE IF NOT EXISTS VotosConsejo (
 -- =============================================================================
 -- MIGRACIÓN 2: Roles adicionales del Consejo
 -- =============================================================================
-INSERT INTO RolesSistema (nombreRol, descripcionRol, activo)
-SELECT 'AsistenteConsejoEscuela', 'Gestiona expedientes y su envío al Consejo de Profesores', TRUE
+INSERT INTO RolesSistema (rolId, nombreRol, descripcionRol, activo)
+SELECT 12, 'AsistenteConsejoEscuela', 'Gestiona expedientes y su envío al Consejo de Profesores', TRUE
 WHERE NOT EXISTS (SELECT 1 FROM RolesSistema WHERE nombreRol = 'AsistenteConsejoEscuela');
 
-INSERT INTO RolesSistema (nombreRol, descripcionRol, activo)
-SELECT 'ConsejoProfesores', 'Participa en las votaciones y decisiones del Consejo de Profesores', TRUE
+INSERT INTO RolesSistema (rolId, nombreRol, descripcionRol, activo)
+SELECT 13, 'ConsejoProfesores', 'Participa en las votaciones y decisiones del Consejo de Profesores', TRUE
 WHERE NOT EXISTS (SELECT 1 FROM RolesSistema WHERE nombreRol = 'ConsejoProfesores');
 
 -- =============================================================================
@@ -112,12 +112,12 @@ ON Dictamenes(tipoDictamenId);
 -- =============================================================================
 -- MIGRACIÓN 4: Dirección de Investigación
 -- =============================================================================
-INSERT INTO RolesSistema (nombreRol, descripcionRol, activo)
-SELECT 'DireccionInvestigacion', 'Gestiona dictámenes, documentos oficiales y notificaciones de Dirección de Investigación', TRUE
+INSERT INTO RolesSistema (rolId, nombreRol, descripcionRol, activo)
+SELECT 15, 'DireccionInvestigacion', 'Gestiona dictámenes, documentos oficiales y notificaciones de Dirección de Investigación', TRUE
 WHERE NOT EXISTS (SELECT 1 FROM RolesSistema WHERE nombreRol = 'DireccionInvestigacion');
 
-INSERT INTO ModulosSistema (nombreModulo, descripcion)
-SELECT 'DireccionInvestigacion', 'Gestión de dictámenes, documentos y notificaciones de Dirección de Investigación'
+INSERT INTO ModulosSistema (moduloId, nombreModulo, descripcion)
+SELECT 9, 'DireccionInvestigacion', 'Gestión de dictámenes, documentos y notificaciones de Dirección de Investigación'
 WHERE NOT EXISTS (SELECT 1 FROM ModulosSistema WHERE nombreModulo = 'DireccionInvestigacion');
 
 INSERT INTO TiposDocumento (nombreTipoDocumento, descripcion, activo)
