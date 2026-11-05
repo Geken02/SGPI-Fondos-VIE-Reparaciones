@@ -1,4 +1,4 @@
-﻿// src/App.jsx
+﻿/// src/App.jsx
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ModalProvider } from './context/ModalContext';
@@ -273,35 +273,56 @@ const App = () => {
             <Route path="rubrica/:propuestaId" element={<RubricaDigital />} />
           </Route>
 
-          {/* MÓDULO CIE */}
-          <Route path="/cie" element={<RutaProtegida><LayoutCie /></RutaProtegida>}>
+          {/* MÓDULO CIE (Con rolesPermitidos y rutas parametrizadas completas) */}
+          <Route path="/cie" element={
+            <RutaProtegida rolesPermitidos={['MiembroCIE', 'CoordinadorCIE', 'PresidenteCIE', 'SuperAdministrador', 'Administrador']}>
+              <LayoutCie />
+            </RutaProtegida>
+          }>
             <Route index element={<InicioCie />} />
             <Route path="bandeja" element={<BandejaCie />} />
-            <Route path="expediente/:propuestaId" element={<ExpedienteConsolidado />} />
-            <Route path="rubrica/:propuestaId" element={<RubricaVie />} />
-            <Route path="resolucion/:propuestaId" element={<ResolucionCie />} />
+            <Route path="expedientes" element={<BandejaCie />} />
+            <Route path="expedientes/:codigo" element={<ExpedienteConsolidado />} />
+            <Route path="expedientes/:codigo/rubrica" element={<RubricaVie />} />
+            <Route path="expedientes/:codigo/resolucion" element={<ResolucionCie />} />
             <Route path="resoluciones" element={<ResolucionesCie />} />
           </Route>
 
-          {/* MÓDULO GESTORA VIE */}
-          <Route path="/gestora" element={<RutaProtegida><LayoutGestora /></RutaProtegida>}>
+          {/* MÓDULO GESTORA VIE (Con rolesPermitidos y rutas parametrizadas completas) */}
+          <Route path="/gestora" element={
+            <RutaProtegida rolesPermitidos={['GestoraVIE', 'CoordinadoraGestora', 'SuperAdministrador', 'Administrador']}>
+              <LayoutGestora />
+            </RutaProtegida>
+          }>
             <Route index element={<InicioGestora />} />
             <Route path="expedientes" element={<Expedientes />} />
             <Route path="revision-vie" element={<RevisionVIE />} />
+            <Route path="revision-vie/:expedienteId" element={<RevisionVIE />} />
             <Route path="revision-documentos" element={<RevisionDocumentos />} />
+            <Route path="revision-documentos/:expedienteId" element={<RevisionDocumentos />} />
+            <Route path="expedientes/:expedienteId/revision" element={<RevisionVIE />} />
+            <Route path="expedientes/:expedienteId/documentos" element={<RevisionDocumentos />} />
             <Route path="validacion-normativa" element={<ValidacionNormativa />} />
+            <Route path="validacion-normativa/:expedienteId" element={<ValidacionNormativa />} />
             <Route path="subsanaciones" element={<Subsanaciones />} />
             <Route path="configuracion" element={<ConfiguracionGestora />} />
             <Route path="ayuda" element={<AyudaGestora />} />
           </Route>
 
-          {/* MÓDULO DIRECCIÓN DE INVESTIGACIÓN */}
-          <Route path="/direccion" element={<RutaProtegida><LayoutDireccion /></RutaProtegida>}>
+          {/* MÓDULO DIRECCIÓN DE INVESTIGACIÓN (Con rolesPermitidos y rutas parametrizadas completas) */}
+          <Route path="/direccion" element={
+            <RutaProtegida rolesPermitidos={['DireccionInvestigacion', 'SubdirectorInvestigacion', 'SuperAdministrador', 'Administrador']}>
+              <LayoutDireccion />
+            </RutaProtegida>
+          }>
             <Route index element={<InicioDireccion />} />
             <Route path="dictamenes" element={<DictamenesRecibidos />} />
-            <Route path="revision-dictamen/:propuestaId" element={<RevisionDictamen />} />
+            <Route path="dictamenes/:codigo" element={<RevisionDictamen />} />
+            <Route path="revision-dictamen/:codigo" element={<RevisionDictamen />} />
             <Route path="documentos-oficiales" element={<DocumentosOficiales />} />
-            <Route path="notificacion/:propuestaId" element={<NotificacionOficial />} />
+            <Route path="documentos-oficiales/:codigo" element={<DocumentosOficiales />} />
+            <Route path="notificacion" element={<NotificacionOficial />} />
+            <Route path="notificacion/:codigo" element={<NotificacionOficial />} />
             <Route path="configuracion" element={<ConfiguracionDireccion />} />
             <Route path="ayuda" element={<AyudaDireccion />} />
           </Route>

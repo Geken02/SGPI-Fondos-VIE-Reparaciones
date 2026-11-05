@@ -216,6 +216,21 @@ BEGIN
     END LOOP;
 END $$;
 
+-- Agrega las columnas faltantes a la tabla propuestadeclaraciones
+ALTER TABLE propuestadeclaraciones 
+ADD COLUMN IF NOT EXISTS tienefinancimientoprevio BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS tienecontinuidadproyecto BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS requiereinstrumentojuridico BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS tienebaseposgrado BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS tieneinformacionconfidencial BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS tienepotencialpi BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS poseeinnovacion BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS tipoinnovacionid INTEGER,
+ADD COLUMN IF NOT EXISTS aceptaresguardorepositorio BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS aceptadeclaracionjurada BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS fechafirmadeclaracion TIMESTAMP WITHOUT TIME ZONE;
+
+
 COMMIT;
 
 DO $$
@@ -224,3 +239,4 @@ BEGIN
     RAISE NOTICE 'MIGRACIONES COMPLETADAS EXITOSAMENTE';
     RAISE NOTICE '============================================';
 END $$;
+

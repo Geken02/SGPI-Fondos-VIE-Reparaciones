@@ -12,7 +12,7 @@ router = APIRouter(
     tags=["VIE - Subsanaciones"],
 )
 
-ROLES_GESTORA = ["GestoraVIE", "SuperAdministrador"]
+ROLES_GESTORA = ["GestoraVIE", "CoordinadoraGestora", "SuperAdministrador", "Administrador"]
 
 
 # Ruta "" (sin "/" final) para evitar redirecciones 307 con CORS + Authorization.
