@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import consejoEscuelaService from "../../services/consejoEscuelaService";
 import "./acuerdosConsejo.css";
 
@@ -15,6 +16,8 @@ const estadoInicial = {
 };
 
 export default function AcuerdosConsejo() {
+  const { rolesUsuario = [] } = useAuth();
+  const esDirectorEscuela = rolesUsuario.includes("DirectorEscuela");
   const [acuerdos, setAcuerdos] = useState([]);
   const [formulario, setFormulario] = useState(estadoInicial);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -161,7 +164,8 @@ export default function AcuerdosConsejo() {
           </p>
         </div>
 
-        <button
+        {esDirectorEscuela && (
+<button
           type="button"
           className="acuerdos-boton-principal"
           onClick={() => {
@@ -172,6 +176,7 @@ export default function AcuerdosConsejo() {
         >
           {mostrarFormulario ? "Cancelar" : "＋ Nuevo acuerdo"}
         </button>
+        )}
       </header>
 
       {mensaje && (
@@ -186,7 +191,7 @@ export default function AcuerdosConsejo() {
         </div>
       )}
 
-      {mostrarFormulario && (
+      {esDirectorEscuela && mostrarFormulario && (
         <section className="acuerdos-panel">
           <h2>Registrar acuerdo</h2>
 
@@ -386,3 +391,4 @@ export default function AcuerdosConsejo() {
     </main>
   );
 }
+
