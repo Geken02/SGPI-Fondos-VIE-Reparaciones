@@ -134,6 +134,7 @@ def explorar_propuestas(
 ):
     from src.models.escuelas import Escuela
     from src.models.convocatorias import EstadosPropuesta
+    from src.models.propuestas import Propuesta
     propuestas = db.query(Propuesta).order_by(Propuesta.fechaCreacion.desc()).all()
     
     resultado = []
