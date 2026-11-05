@@ -138,8 +138,8 @@ const Sidebar = () => {
       );
     }
 
-    // 4. COMITÉ TÉCNICO - MIEMBRO / DIRECTOR ESCUELA (Evaluadores)
-    if (esMiembroComite || esDirectorEscuela) {
+    // 4. COMITÉ TÉCNICO - MIEMBRO (Evaluadores)
+    if (esMiembroComite) {
       return (
         <>
           <div className="sidebar-group-title">Comité Técnico</div>
