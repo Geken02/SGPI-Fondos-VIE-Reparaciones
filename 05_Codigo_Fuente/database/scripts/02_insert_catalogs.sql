@@ -321,7 +321,7 @@ INSERT INTO ModulosSistema (moduloId, nombreModulo, descripcion) VALUES
 (2, 'Evaluacion', 'Módulo de asignación y llenado de rúbricas'),
 (3, 'Seguimiento', 'Módulo de informes de avance y cierre'),
 (4, 'Administracion', 'Gestión de usuarios, roles y catálogos'),
-(5, 'Reportes', 'Consultas y exportación de datos institucionales')
+(5, 'Reportes', 'Consultas y exportación de datos institucionales'),
 (6, 'AprobacionInstitucional', 'Gestión de votaciones y avales del Consejo de Escuela'),
 (7, 'ValidacionVIE', 'Validación normativa, subsanaciones y resolución del CIE'),
 (8, 'ConsultasHistoricas', 'Dashboard histórico y trazabilidad de propuestas')
