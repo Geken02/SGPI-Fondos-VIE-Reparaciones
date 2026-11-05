@@ -35,6 +35,7 @@ from src.models.catalogos import (
 )
 
 from src.models.recuperacion import TokenRecuperacion
+from src.models.asignaciones_consejo import AsignacionesConsejo
 
 
 __all__ = [
@@ -62,5 +63,7 @@ __all__ = [
     "LineasInvestigacion", "TiposHora", "NivelesTrl", "Modalidades",
     "TiposInnovacion", "ModulosSistema", "TamaniosFuente", "FiltrosDaltonismo",
     "ConfiguracionesSistema", "AsignacionesGestora", "PreferenciasAccesibilidad",
-    "HistorialEstadosPropuesta", "TokenRecuperacion" 
+    "HistorialEstadosPropuesta",
+    "TokenRecuperacion",
+    "AsignacionesConsejo",
 ]

@@ -9,6 +9,7 @@ from src.models.votaciones_consejo import (
     VotacionesConsejo,
     VotosConsejo,
 )
+from src.models.asignaciones_consejo import AsignacionesConsejo
 from src.services.consejo_escuela.votaciones import (
     VotacionCrear,
     VotoCrear,
@@ -86,6 +87,24 @@ def registrar_voto(
     if votacion.estadoVotacion != "ABIERTA":
         raise ValueError("No se puede votar en una votación cerrada.")
 
+    # Verificar que el usuario esté asignado a la propuesta
+    asignacion = (
+        db.query(AsignacionesConsejo)
+        .filter(
+            AsignacionesConsejo.propuestaId == votacion.propuestaId,
+            AsignacionesConsejo.usuarioId == usuario_id,
+            AsignacionesConsejo.activo.is_(True),
+        )
+        .first()
+    )
+
+    if asignacion is None:
+        raise ValueError(
+            "El usuario no está asignado a esta propuesta "
+            "y no puede participar en la votación."
+        )
+
+    # Verificar que el usuario no haya votado anteriormente
     voto_existente = (
         db.query(VotosConsejo)
         .filter(
@@ -96,7 +115,9 @@ def registrar_voto(
     )
 
     if voto_existente is not None:
-        raise ValueError("El usuario ya registró un voto en esta votación.")
+        raise ValueError(
+            "El usuario ya registró un voto en esta votación."
+        )
 
     voto = VotosConsejo(
         votacionId=votacion_id,
@@ -158,3 +179,4 @@ def registrar_resultado(
         ) from error
 
     return votacion
+
