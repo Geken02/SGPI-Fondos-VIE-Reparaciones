@@ -21,6 +21,7 @@ from src.api.routers.consejo_escuela import acuerdos, votaciones, propuestas
 from src.api.routers.vie import miembro_cie
 from src.api.routers import direccion_investigacion
 from src.api.routers.vie import expedientes, subsanaciones, preferencias
+from src.api.routers import archivos
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware 
@@ -53,6 +54,7 @@ app.include_router(direccion_investigacion.router)
 app.include_router(expedientes.router)
 app.include_router(subsanaciones.router)
 app.include_router(preferencias.router)
+app.include_router(archivos.router)
 
 
 @app.get("/")

@@ -224,7 +224,7 @@ const App = () => {
             <Route path="propuestas" element={<InvestigadorPropuestas />} />
             <Route path="convocatorias" element={<InvestigadorConvocatorias />} />
             <Route path="crear-propuesta" element={<InvestigadorPropuestas />} />
-            <Route path="equipos" element={<InvestigadorEquipos />} />
+            <Route path="equipo" element={<InvestigadorEquipos />} />
             <Route path="formularios" element={<InvestigadorFormularios />} />
             <Route path="historial" element={<InvestigadorHistorial />} />
             <Route path="buscar" element={<InvestigadorBuscar />} />
