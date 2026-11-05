@@ -1,9 +1,15 @@
-﻿import { useState, useEffect } from 'react';
-
+﻿
+import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
 import consejoEscuelaService from "../../services/consejoEscuelaService";
 import "./votacionesConsejo.css";
 
 export default function VotacionesConsejo() {
+  const { rolesUsuario = [] } = useAuth();
+
+  const esAsistenteConsejo = rolesUsuario.includes("AsistenteConsejoEscuela");
+  const esConsejoProfesores = rolesUsuario.includes("ConsejoProfesores");
+
   const [votaciones, setVotaciones] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -26,6 +32,7 @@ export default function VotacionesConsejo() {
     try {
       setCargando(true);
       setError("");
+
       const respuesta = await consejoEscuelaService.listarVotaciones();
       setVotaciones(obtenerLista(respuesta));
     } catch (err) {
@@ -62,6 +69,7 @@ export default function VotacionesConsejo() {
       setPropuestaId("");
       setObservacionesNueva("");
       setMensaje("La votación se creó correctamente.");
+
       await cargarVotaciones();
     } catch (err) {
       setError(
@@ -90,7 +98,12 @@ export default function VotacionesConsejo() {
       });
 
       setMensaje("El voto se registró correctamente.");
-      setVotos((actual) => ({ ...actual, [votacionId]: {} }));
+
+      setVotos((actual) => ({
+        ...actual,
+        [votacionId]: {},
+      }));
+
       await cargarVotaciones();
     } catch (err) {
       setError(
@@ -119,7 +132,12 @@ export default function VotacionesConsejo() {
       });
 
       setMensaje("El resultado se registró y la votación se cerró.");
-      setResultados((actual) => ({ ...actual, [votacionId]: {} }));
+
+      setResultados((actual) => ({
+        ...actual,
+        [votacionId]: {},
+      }));
+
       await cargarVotaciones();
     } catch (err) {
       setError(
@@ -173,37 +191,39 @@ export default function VotacionesConsejo() {
       {error && <div className="alerta-votaciones error">{error}</div>}
       {mensaje && <div className="alerta-votaciones exito">{mensaje}</div>}
 
-      <section className="crear-votacion-card">
-        <h2>Crear votación</h2>
+      {esAsistenteConsejo && (
+        <section className="crear-votacion-card">
+          <h2>Crear votación</h2>
 
-        <form onSubmit={crear} className="crear-votacion-form">
-          <label>
-            ID de la propuesta
-            <input
-              type="number"
-              min="1"
-              value={propuestaId}
-              onChange={(e) => setPropuestaId(e.target.value)}
-              placeholder="Ej. 12"
-              required
-            />
-          </label>
+          <form onSubmit={crear} className="crear-votacion-form">
+            <label>
+              ID de la propuesta
+              <input
+                type="number"
+                min="1"
+                value={propuestaId}
+                onChange={(e) => setPropuestaId(e.target.value)}
+                placeholder="Ej. 12"
+                required
+              />
+            </label>
 
-          <label>
-            Observaciones
-            <textarea
-              value={observacionesNueva}
-              onChange={(e) => setObservacionesNueva(e.target.value)}
-              maxLength="1000"
-              placeholder="Observaciones de la votación (opcional)"
-            />
-          </label>
+            <label>
+              Observaciones
+              <textarea
+                value={observacionesNueva}
+                onChange={(e) => setObservacionesNueva(e.target.value)}
+                maxLength="1000"
+                placeholder="Observaciones de la votación (opcional)"
+              />
+            </label>
 
-          <button type="submit" className="btn-crear-votacion">
-            Crear votación
-          </button>
-        </form>
-      </section>
+            <button type="submit" className="btn-crear-votacion">
+              Crear votación
+            </button>
+          </form>
+        </section>
+      )}
 
       <section className="lista-votaciones">
         <h2>Votaciones registradas</h2>
@@ -218,6 +238,7 @@ export default function VotacionesConsejo() {
           votaciones.map((votacion) => {
             const id = votacion.votacionId;
             const abierta = votacion.estadoVotacion === "ABIERTA";
+
             const listaVotos = Array.isArray(votacion.votos)
               ? votacion.votos
               : [];
@@ -283,11 +304,12 @@ export default function VotacionesConsejo() {
 
                 {votacion.resultadoConsejo && (
                   <p className="resultado-votacion">
-                    Resultado: <strong>{votacion.resultadoConsejo}</strong>
+                    Resultado:{" "}
+                    <strong>{votacion.resultadoConsejo}</strong>
                   </p>
                 )}
 
-                {abierta && (
+                {abierta && esConsejoProfesores && (
                   <div className="acciones-votacion">
                     <div className="accion-voto">
                       <h4>Registrar voto</h4>
@@ -390,6 +412,3 @@ export default function VotacionesConsejo() {
     </main>
   );
 }
-
-
-

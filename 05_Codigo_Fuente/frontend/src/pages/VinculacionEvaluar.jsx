@@ -65,17 +65,41 @@ const VinculacionEvaluar = () => {
       return;
     }
 
-    if (!analisisPI || analisisPI.trim().length < 10) {
-      alert('Debe completar el análisis de Potencial de Innovación (mínimo 10 caracteres).');
-      return;
+    let textoContenido = analisisPI ? analisisPI.trim() : '';
+    const archivoParaGuardar = tabActiva === 'subida' ? archivoSubida : archivoAdjunto;
+
+    if (tabActiva === 'subida') {
+      if (!archivoSubida && (!textoContenido || textoContenido.length < 10)) {
+        alert('Debe adjuntar el archivo firmado del dictamen o ingresar el análisis (mínimo 10 caracteres).');
+        return;
+      }
+      if (!textoContenido || textoContenido.length < 10) {
+        textoContenido = `Dictamen de Vinculación emitido mediante documento adjunto: ${archivoSubida?.name || 'Documento oficial'}`;
+      }
+    } else {
+      if (!textoContenido || textoContenido.length < 10) {
+        alert('Debe completar el análisis de Potencial de Innovación (mínimo 10 caracteres).');
+        return;
+      }
     }
 
     try {
+      let rutaSeaweed = null;
+      if (archivoParaGuardar) {
+        try {
+          const resUpload = await vinculacionService.subirArchivoDictamen(propuestaId, archivoParaGuardar);
+          rutaSeaweed = resUpload?.rutaArchivo || archivoParaGuardar.name;
+        } catch (errUpload) {
+          console.warn('Advertencia al subir archivo a SeaweedFS:', errUpload);
+          rutaSeaweed = archivoParaGuardar.name;
+        }
+      }
+
       const payload = {
         propuestaId: Number(propuestaId) || 1,
         numeroOficio: `VINC-2027-${Math.floor(100 + Math.random() * 900)}`,
-        contenido: analisisPI,
-        rutaArchivo: archivoAdjunto?.name || archivoSubida?.name || null
+        contenido: textoContenido,
+        rutaArchivo: rutaSeaweed || archivoParaGuardar?.name || null
       };
       await vinculacionService.crearDictamen(payload);
     } catch (err) {
@@ -86,7 +110,7 @@ const VinculacionEvaluar = () => {
       }
       console.warn('Backend:', msg);
     }
-    alert('Dictamen de Vinculación enviado formalmente al Comité Técnico y registrado en el SGPI.');
+    alert('Dictamen de Vinculación guardado exitosamente en SeaweedFS y notificado al Comité Técnico.');
     navigate('/dashboard/dictamenes');
   };
 

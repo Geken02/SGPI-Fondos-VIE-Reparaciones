@@ -33,6 +33,7 @@ import ExpedientePropuesta from './pages/comiteTecnico/ExpedientePropuesta';
 import DictamenFinal from './pages/comiteTecnico/DictamenFinal';
 
 // 5. INVESTIGADOR Y FORMULARIOS
+import InvestigadorDashboard from './pages/InvestigadorDashboard';
 import InvestigadorPropuestas from './pages/InvestigadorPropuestas';
 import InvestigadorConvocatorias from './pages/InvestigadorConvocatorias';
 import InvestigadorEquipos from './pages/InvestigadorEquipos';
@@ -140,7 +141,10 @@ const DashboardRedirect = () => {
   if (rolActivo === 'MiembroCIE' || rolActivo === 'CoordinadorCIE' || rolActivo === 'PresidenteCIE') {
     return <Navigate to="/cie/bandeja" replace />;
   }
-  if (rolActivo === 'MiembroComiteTecnico' || rolActivo === 'DirectorEscuela' || rolActivo === 'CoordinadorComiteTecnico') {
+  if (
+    rolActivo === 'MiembroComiteTecnico' ||
+    rolActivo === 'CoordinadorComiteTecnico'
+  ) {
     return <Navigate to="/comite-tecnico/propuestas-asignadas" replace />;
   }
   if (rolActivo === 'AsistenteComiteTecnico') {
@@ -150,14 +154,19 @@ const DashboardRedirect = () => {
     return <Navigate to="/dashboard/vinculacion" replace />;
   }
   // Redirección para roles del Consejo de Escuela
-  if (rolActivo === 'AsistenteConsejoEscuela' || rolActivo === 'MiembroConsejoEscuela' || rolActivo === 'ConsejoProfesores') {
+  if (
+    rolActivo === 'AsistenteConsejoEscuela' ||
+    rolActivo === 'MiembroConsejoEscuela' ||
+    rolActivo === 'ConsejoProfesores' ||
+    rolActivo === 'DirectorEscuela'
+  ) {
     return <Navigate to="/dashboard/propuestas-consejo" replace />;
   }
-  if (rolActivo === 'InvestigadorCoordinador' || rolActivo === 'Investigador' || rolActivo === 'InvestigadorColaborador') {
-    return <Navigate to="/dashboard/propuestas" replace />;
+  if (rolActivo === 'InvestigadorCoordinador' || rolActivo === 'Investigador' || rolActivo === 'InvestigadorColaborador' || (typeof rolActivo === 'string' && rolActivo.includes('Investigador'))) {
+    return <InvestigadorDashboard />;
   }
   
-  return <Navigate to="/dashboard" replace />;
+  return <InvestigadorDashboard />;
 };
 
 // ============================================================================
@@ -221,10 +230,13 @@ const App = () => {
             <Route path="acuerdos-consejo" element={<AcuerdosConsejo />} />
 
             {/* Rutas Módulo Investigador */}
+            <Route path="inicio" element={<InvestigadorDashboard />} />
+            <Route path="investigador" element={<InvestigadorDashboard />} />
+            <Route path="InvestigadorDashboard" element={<InvestigadorDashboard />} />
             <Route path="propuestas" element={<InvestigadorPropuestas />} />
             <Route path="convocatorias" element={<InvestigadorConvocatorias />} />
             <Route path="crear-propuesta" element={<InvestigadorPropuestas />} />
-            <Route path="equipos" element={<InvestigadorEquipos />} />
+            <Route path="equipo" element={<InvestigadorEquipos />} />
             <Route path="formularios" element={<InvestigadorFormularios />} />
             <Route path="historial" element={<InvestigadorHistorial />} />
             <Route path="buscar" element={<InvestigadorBuscar />} />
@@ -333,6 +345,7 @@ const App = () => {
           <Route path="/direccion-investigacion/*" element={<RedireccionRutaAnterior origen="/direccion-investigacion" destino="/direccion" />} />
 
           {/* RUTA POR DEFECTO (CATCH-ALL) */}
+          <Route path="/InvestigadorDashboard" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </ModalProvider>

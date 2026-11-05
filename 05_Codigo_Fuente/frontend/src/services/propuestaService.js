@@ -84,5 +84,17 @@ export const propuestaService = {
       comentarioGestora
     });
     return response.data;
+    },
+
+  subirDocumentoFormulario: async (propuestaId, tipoDocumentoId, archivo) => {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    formData.append('tipo_documento_id', tipoDocumentoId);
+    const response = await api.post(`/api/propuestas/${propuestaId}/archivos`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
   }
 };

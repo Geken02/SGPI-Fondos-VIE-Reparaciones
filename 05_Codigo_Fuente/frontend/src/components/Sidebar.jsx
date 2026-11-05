@@ -137,7 +137,7 @@ const Sidebar = () => {
       );
     }
 
-    // 4. COMITÉ TÉCNICO - MIEMBRO / DIRECTOR ESCUELA (Evaluadores)
+    // 4. COMITÉ TÉCNICO - MIEMBRO (Evaluadores)
     if (esMiembroComite) {
       return (
         <>
