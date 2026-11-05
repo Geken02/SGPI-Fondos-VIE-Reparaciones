@@ -16,14 +16,14 @@ const Sidebar = () => {
   const esAsistenteComite = rolActivo === 'AsistenteComiteTecnico';
   const esCoordinadorComite = rolActivo === 'CoordinadorComiteTecnico';
   const esMiembroComite = rolActivo === 'MiembroComiteTecnico';
-  const esDirectorEscuela = rolActivo === 'DirectorEscuela';
+
   
   // Agrupación de Consejo de Escuela (según la lógica de Deryan)
   const esConsejoEscuela = [
     'AsistenteConsejoEscuela',
     'MiembroConsejoEscuela',
     'ConsejoProfesores',
-    'DirectorEscuela' // Nota: DirectorEscuela también tiene acceso a Comité Técnico
+    'DirectorEscuela'
   ].includes(rolActivo);
   
   const esVinculacion = rolActivo === 'EvaluadorVinculacion' || rolActivo === 'Vinculacion' || rolActivo === 'CoordinadorVinculacion';
@@ -44,7 +44,7 @@ const Sidebar = () => {
   const esInvestigador = rolActivo === 'InvestigadorCoordinador' || rolActivo === 'Investigador' || rolActivo === 'InvestigadorColaborador';
 
   console.log("🔍 ROL ACTIVO DETECTADO:", rolActivo);
-  console.log("🔍 ¿ES DIRECCIÓN?:", esDireccion);
+
 
   const isItemActive = (path, isRouterActive) => {
     if (isRouterActive) return true;
