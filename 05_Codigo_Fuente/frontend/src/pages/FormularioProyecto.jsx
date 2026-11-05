@@ -19,6 +19,7 @@ const FormularioProyecto = () => {
   const [guardando, setGuardando] = useState(false);
   const [mensajeGuardado, setMensajeGuardado] = useState('Borrador listo para formulación');
   const [envioExitoso, setEnvioExitoso] = useState(false);
+  const [esPropietario, setEsPropietario] = useState(true);
 
   // Estados del Formulario Form-04 (en blanco para llenado por el investigador)
   // Paso 1: Identificación y Modalidad
@@ -200,24 +201,24 @@ const FormularioProyecto = () => {
   // Cargar datos de la propuesta desde la base de datos o almacenamiento local
   useEffect(() => {
     const cargarPropuestaBD = async () => {
-      let id = propuestaIdUrl;
+      let id = propuestaIdUrl && propuestaIdUrl !== 'undefined' ? propuestaIdUrl : null;
       if (!id) {
         id = localStorage.getItem('propuesta_activa_id');
-        if (!id) {
+        if (!id || id === 'undefined') {
           try {
-            const misProps = await propuestaService.obtenerMisPropuestas();
+            const misProps = await propuestaService.listarMisPropuestas();
             if (misProps && misProps.length > 0) {
               id = String(misProps[0].propuestaId);
               localStorage.setItem('propuesta_activa_id', id);
             }
           } catch (_e) {}
         }
-        if (id) {
+        if (id && id !== 'undefined') {
           navigate(`/dashboard/form4?propuestaId=${id}`, { replace: true });
         }
       }
 
-      if (!id) return;
+      if (!id || id === 'undefined') return;
       localStorage.setItem('propuesta_activa_id', String(id));
 
       // 1. Cargar primero de localStorage si existe borrador local previo
@@ -280,6 +281,7 @@ const FormularioProyecto = () => {
       try {
         const prop = await propuestaService.obtenerPropuesta(id);
         if (prop) {
+          if (prop.esPropietario !== undefined) setEsPropietario(Boolean(prop.esPropietario));
           if (prop.titulo) setNombreProyecto(prop.titulo);
           if (prop.fechaInicio) setFechaInicio(prop.fechaInicio);
           if (prop.fechaFinalizacion) setFechaFin(prop.fechaFinalizacion);
@@ -366,21 +368,30 @@ const FormularioProyecto = () => {
   }, [pasoParam]);
 
   const handleDescargarPDF = () => {
-    const idProp = propuestaIdUrl || localStorage.getItem('propuesta_activa_id') || '';
-    const cod = idProp ? `Propuesta-${idProp}` : 'Form04';
-    const datos = {
-      nombreProyecto, modalidad, fechaInicio, fechaFin, trlSeleccionado,
-      resumen, palabrasClave, abstract, keywords, problemaInvestigacion,
-      objetivoGeneral, objetivosEspecificos, estadoArte, metodologia,
-      divulgacion, aspectosEticos, hojaRuta, otrasFuentes, vinculacionTecnica,
-      problemasNacionales, requiereInstrumento, convenioMarco, basePosgrado,
-      infoConfidencial, potencialPI, poseeInnovacion, resguardoCompromiso,
-      resguardoSoftware, referenciasBibliograficas, presupuestoAnual,
-      fuentesAdicionales, investigadoresTEC, colaboradoresExternos,
-      actividadesCronograma, riesgosMitigacion, rangoHorasCompromiso,
-      firmaCoordinador, productos14a, productos14b
-    };
-    exportarForm04PDF(datos, cod);
+    try {
+      const idProp = propuestaIdUrl || localStorage.getItem('propuesta_activa_id') || '';
+      const cod = idProp ? `Propuesta-${idProp}` : 'Form04';
+      const datos = {
+        nombreProyecto, modalidad, fechaInicio, fechaFin, trlSeleccionado,
+        resumen, palabrasClave, abstract, keywords, problemaInvestigacion,
+        objetivoGeneral, objetivosEspecificos, estadoArte, metodologia,
+        divulgacion, aspectosEticos, hojaRuta, otrasFuentes, vinculacionTecnica,
+        problemasNacionales, requiereInstrumento, convenioMarco, basePosgrado,
+        infoConfidencial, potencialPI, poseeInnovacion, resguardoCompromiso,
+        resguardoSoftware, referenciasBibliograficas, presupuestoAnual,
+        fuentesAdicionales, investigadoresTEC, colaboradoresExternos,
+        actividadesCronograma, riesgosMitigacion, rangoHorasCompromiso,
+        firmaCoordinador, productos14a, productos14b
+      };
+      if (idProp) {
+        localStorage.setItem(`borrador_form04_${idProp}`, JSON.stringify(datos));
+      }
+      localStorage.setItem('borrador_form04_ultimo', JSON.stringify(datos));
+      exportarForm04PDF(datos, cod);
+    } catch (err) {
+      console.error('Error al generar PDF:', err);
+      alert('Error al generar el PDF: ' + (err.message || 'Error inesperado'));
+    }
   };
 
     const guardarBorradorActual = async () => {
@@ -531,6 +542,11 @@ const FormularioProyecto = () => {
   };
 
   const handleEnvioDefinitivo = async () => {
+    if (!esPropietario) {
+      alert('Solo la persona coordinadora (propietaria de la propuesta) puede realizar el envío definitivo a la Unidad de Vinculación.');
+      return;
+    }
+
     if (!resguardoCompromiso) {
       alert('Debe aceptar el compromiso de resguardo y depósito de productos para realizar el envío.');
       return;
@@ -538,19 +554,16 @@ const FormularioProyecto = () => {
 
     setGuardando(true);
     try {
-      try {
-        await propuestaService.enviarRevision(propuestaIdUrl);
-      } catch (_err) {
-        // En caso de que sea borrador local
-      }
       if (propuestaIdUrl) {
+        await propuestaService.enviarRevision(propuestaIdUrl);
         localStorage.setItem(`propuesta_${propuestaIdUrl}_form04_enviado`, 'true');
       }
       setEnvioExitoso(true);
       window.dispatchEvent(new Event('propuestaCreada'));
     } catch (err) {
       console.error(err);
-      alert('Ocurrió un error al enviar la propuesta.');
+      const detalle = err.response?.data?.detail || err.message || 'Ocurrió un error al enviar la propuesta.';
+      alert(`No se pudo enviar la propuesta: ${detalle}`);
     } finally {
       setGuardando(false);
     }
@@ -2817,14 +2830,29 @@ const FormularioProyecto = () => {
                     Siguiente →
                   </button>
                 ) : (
-                  <button 
-                    type="button" 
-                    className="btn-envio-definitivo"
-                    onClick={handleEnvioDefinitivo}
-                    disabled={guardando}
-                  >
-                    {guardando ? 'Enviando a Unidad de Vinculación...' : 'ENVÍO DEFINITIVO DE PROPUESTA'}
-                  </button>
+                  esPropietario ? (
+                    <button 
+                      type="button" 
+                      className="btn-envio-definitivo"
+                      onClick={handleEnvioDefinitivo}
+                      disabled={guardando}
+                    >
+                      {guardando ? 'Enviando a Unidad de Vinculación...' : 'ENVÍO DEFINITIVO A VINCULACIÓN'}
+                    </button>
+                  ) : (
+                    <div style={{
+                      backgroundColor: '#eff6ff',
+                      border: '1px solid #bfdbfe',
+                      borderRadius: '8px',
+                      padding: '10px 16px',
+                      color: '#1e40af',
+                      fontSize: '13px',
+                      maxWidth: '440px',
+                      textAlign: 'right'
+                    }}>
+                      🔒 <strong>Modo Colaborador:</strong> Como integrante del equipo de investigación puedes editar y guardar cambios, pero el Envío Definitivo a Vinculación debe realizarlo la persona coordinadora.
+                    </div>
+                  )
                 )}
               </div>
             </div>

@@ -232,6 +232,8 @@ class PropuestaResumenResponse(BaseModel):
     nivelTrlEsperado: Optional[int] = None
     fechaCreacion: datetime
     fechaEnvio: Optional[datetime] = None
+    investigadorCoordId: Optional[int] = None
+    esPropietario: bool = True
     form01Completado: Optional[bool] = False
     form02Completado: Optional[bool] = False
     form03Completado: Optional[bool] = False
@@ -291,6 +293,8 @@ class PropuestaDetalleResponse(BaseModel):
     fechaFinalizacion: Optional[date] = None
     fechaCreacion: datetime
     fechaEnvio: Optional[datetime] = None
+    investigadorCoordId: Optional[int] = None
+    esPropietario: bool = True
     
     # Sub-entidades
     resumen: Optional[str] = None

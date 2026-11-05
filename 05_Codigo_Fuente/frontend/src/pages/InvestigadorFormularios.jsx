@@ -72,10 +72,10 @@ const InvestigadorFormularios = () => {
 
   /* ── generar filas dinámicas ───────────────────────────────────── */
   const formularios = propuestas.flatMap((p) => {
-    const propId   = p.id || p.propuesta_id;
+    const propId   = p.propuestaId || p.id || p.propuesta_id;
     const titulo   = p.titulo || p.nombre || 'Sin título';
-    const codigoPr = p.codigo || `P-${propId}`;
-    const fecha    = p.fecha_actualizacion || p.updated_at || p.fecha_creacion || p.created_at || '';
+    const codigoPr = p.codigoPropuesta || p.codigo || (propId ? `FVIE-${propId}` : 'Sin código');
+    const fecha    = p.fechaCreacion || p.fechaEnvio || p.fecha_actualizacion || p.updated_at || p.fecha_creacion || p.created_at || '';
 
     return FORM_TYPES.map((ft) => ({
       key:          `${ft.codigo}-${propId}`,
@@ -260,7 +260,7 @@ const InvestigadorFormularios = () => {
                           if (item.codigo === 'Form 04') {
                             descargarPropuestaPDF(item.propuestaId, propuestaService);
                           } else if (item.codigo === 'Form 05') {
-                            descargarPlanRiesgoExcel(item.propuestaId);
+                            descargarPlanRiesgoExcel(item.propuestaId, propuestaService);
                           } else if (item.codigo === 'Form 06') {
                             descargarPresupuestoDirectoExcel(item.propuestaId, propuestaService, usuario);
                           }
