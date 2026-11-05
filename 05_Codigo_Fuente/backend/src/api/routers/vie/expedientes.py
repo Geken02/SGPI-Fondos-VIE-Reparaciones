@@ -22,7 +22,7 @@ router = APIRouter(
     tags=["VIE - Expedientes"],
 )
 
-ROLES_GESTORA = ["GestoraVIE", "SuperAdministrador"]
+ROLES_GESTORA = ["GestoraVIE", "CoordinadoraGestora", "SuperAdministrador", "Administrador"]
 
 
 def _no_encontrado(codigo: str) -> HTTPException:

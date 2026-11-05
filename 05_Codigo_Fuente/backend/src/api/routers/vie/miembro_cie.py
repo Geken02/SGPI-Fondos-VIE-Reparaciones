@@ -15,7 +15,7 @@ router = APIRouter(
 )
 
 
-ROLES_CIE = ["MiembroCIE", "SuperAdministrador"]
+ROLES_CIE = ["MiembroCIE", "CoordinadorCIE", "PresidenteCIE", "SuperAdministrador", "Administrador"]
 
 
 @router.get(
