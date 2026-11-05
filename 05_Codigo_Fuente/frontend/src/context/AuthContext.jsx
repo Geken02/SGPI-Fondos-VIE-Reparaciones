@@ -185,16 +185,21 @@ export const AuthProvider = ({ children }) => {
   // Determinar roles disponibles para el usuario
   const rolesUsuario = Array.isArray(usuario?.roles) ? usuario.roles : [];
   const rolActivoStr = typeof rolActivo === 'string' ? rolActivo : '';
+  // Roles del Consejo de Escuela
+  const esAsistenteConsejo = rolActivoStr === 'AsistenteConsejoEscuela';
+  const esConsejoProfesores = rolActivoStr === 'ConsejoProfesores';
+  const esDirectorEscuela = rolActivoStr === 'DirectorEscuela';
 
   // GARANTÍA: Verificaciones de rol basadas SIEMPRE en el rolActivo (soporta suplantación)
   const esAdministrador = rolActivoStr === 'SuperAdministrador' || rolActivoStr === 'Administrador';
   const esInvestigador = rolActivoStr.includes('Investigador');
   const esVinculacion = rolActivoStr.includes('Vinculacion');
-  const esComiteTecnico = rolActivoStr.includes('ComiteTecnico') || rolActivoStr === 'DirectorEscuela';
+  const esComiteTecnico = rolActivoStr.includes('ComiteTecnico');
   const esCIE = rolActivoStr.includes('CIE');
   const esGestora = rolActivoStr.includes('Gestora');
   const esDireccion = rolActivoStr.includes('Direccion') || rolActivoStr.includes('Investigacion');
   const estaAutenticado = !!token;
+  
 
   return (
     <AuthContext.Provider
@@ -214,7 +219,11 @@ export const AuthProvider = ({ children }) => {
         esComiteTecnico,    // <-- Agregado para el Sidebar/App
         esCIE,              // <-- Agregado para el Sidebar/App
         esGestora,          // <-- Agregado para el Sidebar/App
-        esDireccion,        // <-- Agregado para el Sidebar/App
+        esDireccion,
+        esAsistenteConsejo,
+        esConsejoProfesores,
+        esDirectorEscuela,
+
         formatearNombreRol,
         cargarPerfil
       }}
