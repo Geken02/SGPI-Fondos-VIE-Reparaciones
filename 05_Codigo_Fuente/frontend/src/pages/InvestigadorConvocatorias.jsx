@@ -4,56 +4,15 @@ import { useModal } from '../context/ModalContext';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from '../components/LimitedInput';
 
-const CONVOCATORIAS_BASE_INFO = {
-  1: {
-    tipoFondo: 'FONDO TRADICIONAL',
-    montoMaximo: '₡12.000.000 max.',
-    dirigidoA: 'Cualquier Escuela',
-    area: 'Ingeniería y Tecnología',
-    puedeAplicar: true,
-    documentos: ['Bases Oficiales VIE-2027.pdf', 'Guía de Formulación Presupuestaria.pdf', 'Plantilla Cronograma Actividades.xlsx']
-  },
-  2: {
-    tipoFondo: 'FONDOS EXTERNOS',
-    montoMaximo: '₡22.517.155 max.',
-    dirigidoA: 'Centros e Investigadores',
-    area: 'Ciencias Naturales y Exactas',
-    puedeAplicar: false,
-    textoAccion: 'Próximamente',
-    documentos: ['Convenio Marco MICITT-TEC.pdf', 'Requisitos de Transferencia Tecnológica.pdf']
-  },
-  3: {
-    tipoFondo: 'FONDO ESPECIAL',
-    montoMaximo: '₡8.000.000 max.',
-    dirigidoA: 'Escuela de Biología',
-    area: 'Ciencias Naturales y Exactas',
-    puedeAplicar: true,
-    documentos: ['Reglamento de Semillero Biotecnológico.pdf', 'Aval de Bioseguridad Institucional.pdf']
-  },
-  4: {
-    tipoFondo: 'FONDOS CONARE',
-    montoMaximo: '₡30.000.000 max.',
-    dirigidoA: 'Cualquier Escuela',
-    area: 'Ingeniería y Tecnología',
-    puedeAplicar: true,
-    documentos: ['Directrices FEES 2027 Interinstitucional.pdf', 'Formulario FEES-01.docx']
-  },
-  5: {
-    tipoFondo: 'FONDO TÉCNICO',
-    montoMaximo: '₡18.000.000 max.',
-    dirigidoA: 'Cualquier Escuela',
-    area: 'Ingeniería y Tecnología',
-    puedeAplicar: true,
-    documentos: ['Reglamento de Adquisición de Equipamiento Científico.pdf', 'Carta de Respaldo de Laboratorio.docx']
-  },
-  6: {
-    tipoFondo: 'INCENTIVO ARTÍCULOS',
-    montoMaximo: '₡5.000.000 max.',
-    dirigidoA: 'Cualquier Escuela',
-    area: 'Ciencias Sociales',
-    puedeAplicar: false,
-    textoAccion: 'Próximamente',
-    documentos: ['Baremos de Publicaciones Indexadas SCOPUS/WoS.pdf']
+// Metadatos institucionales limpios sin datos inventados ni hardcodeados
+const formatearFechaApertura = (fechaStr) => {
+  if (!fechaStr) return 'No especificada';
+  try {
+    const [year, month, day] = fechaStr.split('T')[0].split('-');
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return `${parseInt(day, 10)} ${meses[parseInt(month, 10) - 1]}, ${year}`;
+  } catch (_e) {
+    return fechaStr;
   }
 };
 
@@ -108,26 +67,28 @@ const InvestigadorConvocatorias = () => {
 
         const listaBD = dataCatalogos?.convocatorias || [];
         
-        // Mapear con datos de la BD y metadatos institucionales
+        // Mapear únicamente con datos reales de la base de datos
         const combinadas = listaBD.map((c) => {
-          const infoExtra = CONVOCATORIAS_BASE_INFO[c.convocatoriaId] || {
-            tipoFondo: 'FONDO INSTITUCIONAL',
-            montoMaximo: '₡10.000.000 max.',
-            dirigidoA: 'Investigadores TEC',
-            area: 'Ingeniería y Tecnología',
-            puedeAplicar: true,
-            documentos: ['Guía General de la Convocatoria.pdf']
-          };
-
-          const estadoCalculado = calcularEstadoConvocatoria(c.fechaCierre, c.activo !== false);
+          const estadoCalculado = c.estado || calcularEstadoConvocatoria(c.fechaCierre, c.activo !== false);
+          const estaCerrada = estadoCalculado === 'Cerrada' || Boolean(c.cerrada);
 
           return {
             id: c.convocatoriaId,
             nombre: c.nombreConvocatoria,
+            fechaAperturaBD: c.fechaApertura,
             fechaCierreBD: c.fechaCierre,
+            aperturaTexto: formatearFechaApertura(c.fechaApertura),
             cierreTexto: formatearFechaCierre(c.fechaCierre),
-            estado: estadoCalculado,
-            ...infoExtra
+            estado: estaCerrada ? 'Cerrada' : estadoCalculado,
+            tipoFondo: c.tipoFondo || 'Fondo Concursable VIE',
+            montoMaximo: c.montoMaximo ? `₡ ${Number(c.montoMaximo).toLocaleString('es-CR')}` : 'Según presupuesto (F-03)',
+            dirigidoA: c.dirigidoA || 'Comunidad de Investigadores TEC',
+            area: c.area || 'Institucional',
+            puedeAplicar: !estaCerrada,
+            textoAccion: estaCerrada ? 'Convocatoria Cerrada' : 'Disponible',
+            documentos: Array.isArray(c.documentos) && c.documentos.length > 0 
+              ? c.documentos 
+              : [`Bases de ${c.nombreConvocatoria}.pdf`]
           };
         });
 
@@ -331,15 +292,21 @@ const InvestigadorConvocatorias = () => {
                         >
                           Continuar {propActiva.codigoPropuesta} →
                         </button>
-                        <button 
-                          type="button" 
-                          className="btn-conv-documentos"
-                          onClick={() => abrirModalCrearPropuesta(conv.id)}
-                          title="Crear otra propuesta para esta convocatoria"
-                          style={{ whiteSpace: 'nowrap' }}
-                        >
-                          + Nueva
-                        </button>
+                        {!conv.puedeAplicar ? (
+                          <span style={{ fontSize: '11px', color: '#b91c1c', fontWeight: 600, display: 'inline-flex', alignItems: 'center' }}>
+                            ⛔ Cerrada
+                          </span>
+                        ) : (
+                          <button 
+                            type="button" 
+                            className="btn-conv-documentos"
+                            onClick={() => abrirModalCrearPropuesta(conv.id)}
+                            title="Crear otra propuesta para esta convocatoria"
+                            style={{ whiteSpace: 'nowrap' }}
+                          >
+                            + Nueva
+                          </button>
+                        )}
                       </>
                     ) : conv.puedeAplicar ? (
                       <button 
@@ -354,8 +321,9 @@ const InvestigadorConvocatorias = () => {
                         type="button" 
                         className="btn-conv-proximamente"
                         disabled
+                        style={{ backgroundColor: '#f1f5f9', color: '#94a3b8', border: '1px solid #cbd5e1', cursor: 'not-allowed' }}
                       >
-                        {conv.textoAccion || 'Próximamente'}
+                        ⛔ Convocatoria Cerrada
                       </button>
                     )}
 

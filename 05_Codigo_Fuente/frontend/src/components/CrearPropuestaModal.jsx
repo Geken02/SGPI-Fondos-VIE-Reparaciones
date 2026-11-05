@@ -29,7 +29,8 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
         const data = await propuestaService.obtenerCatalogosFormulario();
         if (data?.convocatorias?.length > 0) {
           setConvocatorias(data.convocatorias);
-          setConvocatoriaId(data.convocatorias[0].convocatoriaId);
+          const primeraAbierta = data.convocatorias.find(c => !c.cerrada) || data.convocatorias[0];
+          setConvocatoriaId(primeraAbierta.convocatoriaId);
         } else {
           // Fallback con nombres institucionales VIE
           setConvocatorias([
@@ -85,6 +86,12 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
     }
     if (titulo.trim().length < 5) {
       setErrorMsg('El título preliminar debe tener al menos 5 caracteres.');
+      return;
+    }
+
+    const convSel = convocatorias.find(c => c.convocatoriaId === Number(convocatoriaId));
+    if (convSel?.cerrada) {
+      setErrorMsg(`La convocatoria '${convSel.nombreConvocatoria}' se encuentra cerrada. No es posible crear propuestas para convocatorias cerradas.`);
       return;
     }
 
@@ -251,8 +258,8 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
                   disabled={guardando}
                 >
                   {convocatorias.map((c) => (
-                    <option key={c.convocatoriaId} value={c.convocatoriaId}>
-                      {c.nombreConvocatoria}
+                    <option key={c.convocatoriaId} value={c.convocatoriaId} disabled={c.cerrada} style={{ color: c.cerrada ? '#94a3b8' : '#0f172a' }}>
+                      {c.nombreConvocatoria} {c.cerrada ? '— ⛔ (Cerrada)' : '— ✅ (Abierta)'}
                     </option>
                   ))}
                 </select>

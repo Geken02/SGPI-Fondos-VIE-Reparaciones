@@ -54,28 +54,10 @@ const Sidebar = () => {
 
   const isItemActive = (path, isRouterActive) => {
     if (isRouterActive) return true;
-
-    if (
-      path === '/comite-tecnico/propuestas-asignadas' &&
-      location.pathname.includes('/expediente/')
-    ) {
-      return true;
-    }
-
-    if (
-      path === '/comite-tecnico/propuestas-asignadas' &&
-      location.pathname.includes('/dictamen/')
-    ) {
-      return true;
-    }
-
-    if (
-      path === '/dashboard/dictamenes' &&
-      location.pathname.includes('/detalle-dictamen')
-    ) {
-      return true;
-    }
-
+    if (path === '/comite-tecnico/propuestas-asignadas' && location.pathname.includes('/expediente/')) return true;
+    if (path === '/comite-tecnico/propuestas-asignadas' && location.pathname.includes('/dictamen/')) return true;
+    if (path === '/dashboard/dictamenes' && location.pathname.includes('/detalle-dictamen')) return true;
+    if (path === '/dashboard/bandeja-evaluacion' && (location.pathname.includes('/evaluar-propuesta') || location.pathname.includes('/vinculacion'))) return true;
     return false;
   };
 

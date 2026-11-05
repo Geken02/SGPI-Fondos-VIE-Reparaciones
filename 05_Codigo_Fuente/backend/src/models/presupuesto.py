@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 class TiposFinanciamiento(Base):
     __tablename__ = "tiposfinanciamiento"
     
-    tipoFinanciamientoId = Column("tipofinancimientoid", Integer, primary_key=True, index=True)
+    tipoFinanciamientoId = Column("tipofinanciamientoid", Integer, primary_key=True, index=True)
     nombreTipoFinanciamiento = Column("nombretipofinanciamiento", String(30), nullable=False)
     descripcion = Column("descripcion", String(300), nullable=True)
     activo = Column("activo", Boolean, default=True)
@@ -152,9 +152,9 @@ class PresupuestoPropuesta(Base):
 class FinanciamientoExterno(Base):
     __tablename__ = "financiamientoexterno"
     
-    financiamientoId = Column("financimientoid", Integer, primary_key=True, index=True)
+    financiamientoId = Column("financiamientoid", Integer, primary_key=True, index=True)
     propuestaId = Column("propuestaid", Integer, ForeignKey("propuestas.propuestaid"), nullable=False)
-    tipoFinanciamientoId = Column("tipofinancimientoid", Integer, ForeignKey("tiposfinanciamiento.tipofinancimientoid"), nullable=False)
+    tipoFinanciamientoId = Column("tipofinanciamientoid", Integer, ForeignKey("tiposfinanciamiento.tipofinanciamientoid"), nullable=False)
     anio = Column("anio", Integer, nullable=False)
     monto = Column("monto", Numeric(12, 2), nullable=False)
     numeroOficio = Column("numerooficio", String(50), nullable=True)

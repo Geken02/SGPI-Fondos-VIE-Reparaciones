@@ -12,6 +12,10 @@ from src.api.schemas.investigador.propuestas import (
     DeclaracionesForm04Update,
     IntegranteEquipoCreate,
     IntegranteEquipoResponse,
+    ColaboradorExternoCreate,
+    ColaboradorExternoResponse,
+    EquipoCompletoUpdate,
+    EquipoCompletoResponse,
     ProductoAcademicoCreate,
     ProductoAcademicoResponse,
     RubroPresupuestoCreate,
@@ -34,6 +38,8 @@ from src.services.investigador.propuesta_service import (
     agregar_producto_academico,
     agregar_rubro_presupuesto,
     guardar_presupuesto_completo,
+    guardar_equipo_completo,
+    obtener_equipo_propuesta,
     enviar_propuesta_revision,
     obtener_subsanaciones_propuesta,
     responder_subsanacion,
@@ -99,25 +105,54 @@ def obtener_catalogos_formulario(
 ):
     from src.models.convocatorias import Convocatorias
     from src.models.escuelas import Escuela
+    from src.models.usuarios import Usuario
+    from src.models.propuesta_equipo import RolesEquipo
+    from datetime import date
 
-    convocatorias = db.query(Convocatorias).filter(Convocatorias.activo == True).all()
+    hoy = date.today()
+    convocatorias = db.query(Convocatorias).order_by(Convocatorias.fechaCierre.desc()).all()
     escuelas = db.query(Escuela).filter(Escuela.activo == True).order_by(Escuela.nombreEscuela).all()
+    investigadores = db.query(Usuario).filter(Usuario.activo == True).order_by(Usuario.nombreUsuario).all()
+    roles_equipo = db.query(RolesEquipo).filter(RolesEquipo.activo == True).all()
+
+    convocatorias_data = []
+    for c in convocatorias:
+        cerrada = not c.activo or (c.fechaCierre is not None and c.fechaCierre < hoy)
+        convocatorias_data.append({
+            "convocatoriaId": c.convocatoriaId,
+            "nombreConvocatoria": c.nombreConvocatoria,
+            "fechaApertura": str(c.fechaApertura) if c.fechaApertura else None,
+            "fechaCierre": str(c.fechaCierre) if c.fechaCierre else None,
+            "activo": bool(c.activo),
+            "cerrada": cerrada,
+            "estado": "Cerrada" if cerrada else "Abierta"
+        })
 
     return {
-        "convocatorias": [
-            {
-                "convocatoriaId": c.convocatoriaId,
-                "nombreConvocatoria": c.nombreConvocatoria,
-                "fechaApertura": str(c.fechaApertura) if c.fechaApertura else None,
-                "fechaCierre": str(c.fechaCierre) if c.fechaCierre else None
-            } for c in convocatorias
-        ],
+        "convocatorias": convocatorias_data,
         "escuelas": [
             {
                 "escuelaId": e.escuelaId,
                 "nombreEscuela": e.nombreEscuela,
                 "codigoEscuela": e.codigoEscuela
             } for e in escuelas
+        ],
+        "investigadores": [
+            {
+                "usuarioId": u.usuarioId,
+                "nombreCompleto": f"{u.nombreUsuario} {u.apellido1Usuario} {u.apellido2Usuario or ''}".strip(),
+                "nombre": u.nombreUsuario,
+                "apellido1": u.apellido1Usuario,
+                "correo": u.correoInstitucional,
+                "escuelaId": u.escuelaId,
+                "escuela": u.escuela.nombreEscuela if u.escuela else "TEC"
+            } for u in investigadores
+        ],
+        "rolesEquipo": [
+            {
+                "rolEquipoId": r.rolEquipoId,
+                "nombreRol": r.nombreRol
+            } for r in roles_equipo
         ]
     }
 
@@ -252,6 +287,42 @@ def guardar_declaraciones(
     )
     return {"message": "Declaraciones guardadas exitosamente"}
 
+
+
+
+@router.get(
+    "/{propuesta_id}/equipo",
+    summary="Consultar equipo e investigadores de la propuesta"
+)
+def obtener_equipo(
+    propuesta_id: int,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_activo)
+):
+    return obtener_equipo_propuesta(
+        db=db,
+        propuesta_id=propuesta_id,
+        usuario_id=usuario_actual.usuarioId
+    )
+
+
+@router.put(
+    "/{propuesta_id}/equipo-completo",
+    summary="Guardar equipo completo de investigadores y colaboradores",
+    description="Sincroniza y valida de forma atómica los integrantes del TEC y los colaboradores externos."
+)
+def actualizar_equipo_completo(
+    propuesta_id: int,
+    datos: EquipoCompletoUpdate,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_activo)
+):
+    return guardar_equipo_completo(
+        db=db,
+        propuesta_id=propuesta_id,
+        usuario_id=usuario_actual.usuarioId,
+        datos=datos
+    )
 
 @router.post(
     "/{propuesta_id}/equipo",
@@ -409,7 +480,7 @@ def enviar_propuesta(
         usuario_id=usuario_actual.usuarioId
     )
     return {
-        "message": "Propuesta enviada exitosamente a revisión institucional",
+        "message": "Propuesta enviada exitosamente a evaluación por la Unidad de Vinculación",
         "codigoPropuesta": propuesta.getCodigoPropuesta(),
         "fechaEnvio": propuesta.getFechaEnvio()
     }

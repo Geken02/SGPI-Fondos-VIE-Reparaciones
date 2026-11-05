@@ -65,14 +65,7 @@ export default function BandejaEvaluacion() {
           <h1>Bandeja de Evaluación</h1>
           <p>Evaluación independiente de propuestas asignadas. Cada evaluador debe completar su rúbrica de forma confidencial.</p>
         </div>
-        <div className="header-alert">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <span>Plazo de evaluación: <strong>31 de agosto - 11 de septiembre de 2027</strong></span>
-        </div>
+        
       </div>
 
       {/* Estadísticas */}
