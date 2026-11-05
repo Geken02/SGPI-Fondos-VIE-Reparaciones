@@ -25,6 +25,7 @@ from src.api.routers import archivos
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware 
+from src.api.routers.consejo_escuela import asignaciones
 
 app = FastAPI(title="SGPI Fondos VIE")
 app.add_middleware(
@@ -55,6 +56,7 @@ app.include_router(expedientes.router)
 app.include_router(subsanaciones.router)
 app.include_router(preferencias.router)
 app.include_router(archivos.router)
+app.include_router(asignaciones.router)
 
 
 @app.get("/")

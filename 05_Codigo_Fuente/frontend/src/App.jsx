@@ -11,10 +11,11 @@ import ResetPassword from './pages/ResetPassword';
 // 2. DASHBOARD GENERAL Y LAYOUTS
 import DashboardLayout from './components/DashboardLayout';
 
-// 2.1 CONSEJO DE ESCUELA (Deryan)
+// 2.1 CONSEJO DE ESCUELA
 import PropuestasConsejo from './pages/consejoEscuela/PropuestasConsejo';
 import VotacionesConsejo from './pages/consejoEscuela/VotacionesConsejo';
 import AcuerdosConsejo from './pages/consejoEscuela/AcuerdosConsejo';
+import AsignacionesConsejo from './pages/consejoEscuela/AsignacionesConsejo';
 
 // 3. ADMINISTRACIÓN
 import AdminPanel from './pages/admin/AdminPanel';
@@ -153,6 +154,7 @@ const DashboardRedirect = () => {
   if (rolActivo === 'EvaluadorVinculacion' || rolActivo === 'Vinculacion' || rolActivo === 'CoordinadorVinculacion' || (typeof rolActivo === 'string' && rolActivo.toLowerCase().includes('vinculacion'))) {
     return <Navigate to="/dashboard/bandeja-evaluacion" replace />;
   }
+
   // Redirección para roles del Consejo de Escuela
   if (
     rolActivo === 'AsistenteConsejoEscuela' ||
@@ -178,7 +180,7 @@ const ComiteTecnicoRedirect = () => {
   if (rolActivo === 'AsistenteComiteTecnico') {
     return <Navigate to="bandeja-completitud" replace />;
   }
-  if (rolActivo === 'MiembroComiteTecnico' || rolActivo === 'CoordinadorComiteTecnico' || rolActivo === 'DirectorEscuela') {
+  if (rolActivo === 'MiembroComiteTecnico' || rolActivo === 'CoordinadorComiteTecnico') {
     return <Navigate to="propuestas-asignadas" replace />;
   }
 
@@ -224,10 +226,12 @@ const App = () => {
             <Route path="configuracion" element={<Configuracion />} />
             <Route path="ayuda" element={<Ayuda />} />
 
-            {/* Rutas Módulo Consejo de Escuela (Deryan) */}
+            {/* Rutas Módulo Consejo de Escuela */}
             <Route path="propuestas-consejo" element={<PropuestasConsejo />} />
+            <Route path="asignaciones-consejo" element={<AsignacionesConsejo />} />
             <Route path="votaciones-consejo" element={<VotacionesConsejo />} />
             <Route path="acuerdos-consejo" element={<AcuerdosConsejo />} />
+            
 
             {/* Rutas Módulo Investigador */}
             <Route path="inicio" element={<InvestigadorDashboard />} />
@@ -272,8 +276,11 @@ const App = () => {
           {/* MÓDULO DE COMITÉ TÉCNICO */}
           <Route path="/comite-tecnico" element={
             <RutaProtegida rolesPermitidos={[
-              'AsistenteComiteTecnico', 'CoordinadorComiteTecnico', 'MiembroComiteTecnico', 
-              'DirectorEscuela', 'SuperAdministrador', 'Administrador'
+              'AsistenteComiteTecnico',
+              'CoordinadorComiteTecnico',
+              'MiembroComiteTecnico',
+              'SuperAdministrador',
+              'Administrador'
             ]}>
               <ComiteTecnicoLayout />
             </RutaProtegida>

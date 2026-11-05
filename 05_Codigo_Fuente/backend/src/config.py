@@ -1,6 +1,6 @@
 class Settings:
     # Base de datos (conectada al contenedor Docker local)
-    DATABASE_URL: str = "postgresql+psycopg://postgres:123456@localhost:5432/sgpi_db"
+    DATABASE_URL: str = "postgresql+psycopg://postgres:123456@localhost:5433/sgpi_db"
     
     # Seguridad JWT (Clave de prueba para el prototipo)
     SECRET_KEY: str = "1234567890"
