@@ -19,7 +19,7 @@ const InvestigadorDashboard = () => {
     try {
       setCargando(true);
       const data = await propuestaService.listarMisPropuestas();
-      setPropuestas(data || []);
+      setPropuestas(Array.isArray(data) ? data : []);
     } catch (_err) {
       // Como el usuario es nuevo, se inicializa la lista vacía (en 0)
       setPropuestas([]);
@@ -44,7 +44,8 @@ const InvestigadorDashboard = () => {
 
 
   // Filtrado de propuestas
-  const propuestasFiltradas = propuestas.filter((p) => {
+  const listaPropuestas = Array.isArray(propuestas) ? propuestas : [];
+  const propuestasFiltradas = listaPropuestas.filter((p) => {
     const texto = (p.titulo || '') + ' ' + (p.codigoPropuesta || '');
     const cumpleTexto = texto.toLowerCase().includes(filtroTexto.toLowerCase());
     const cumpleEscuela = filtroEscuela === 'Todas' || (p.escuela || p.nombreEscuela || '').includes(filtroEscuela);
@@ -53,13 +54,13 @@ const InvestigadorDashboard = () => {
   });
 
   // Métricas reales del usuario (en 0 para usuario nuevo)
-  const totalPropuestas = propuestas.length;
-  const enRevision = propuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('revis') || p.estadoId === 2).length;
-  const aprobadas = propuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('aprob') || p.estadoId === 5).length;
-  const rechazadas = propuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('rechaz')).length;
+  const totalPropuestas = listaPropuestas.length;
+  const enRevision = listaPropuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('revis') || p.estadoId === 2).length;
+  const aprobadas = listaPropuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('aprob') || p.estadoId === 5).length;
+  const rechazadas = listaPropuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('rechaz')).length;
 
-  const fondosAsignados = propuestas.length > 0 
-    ? `₡ ${propuestas.reduce((acc, curr) => acc + (parseFloat(curr.montoTotal) || 0), 0).toLocaleString('es-CR')}` 
+  const fondosAsignados = listaPropuestas.length > 0 
+    ? `₡ ${listaPropuestas.reduce((acc, curr) => acc + (parseFloat(curr.montoTotal) || 0), 0).toLocaleString('es-CR')}` 
     : '₡ 0';
 
   const porcentajeEjecutado = 0;

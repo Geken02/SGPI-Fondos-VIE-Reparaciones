@@ -144,7 +144,8 @@ def listar_propuestas_investigador(
         escuela = db.query(Escuela).filter(Escuela.escuelaId == p.getEscuelaId()).first()
         
         # Validar individualmente si cada formulario está completado
-        f01 = bool(p.getFechaEnvio() is not None)
+        f01 = bool(p.getFechaEnvio() is not None) or \
+              db.query(PropuestaDocumentos).filter(PropuestaDocumentos.propuestaId == p.getPropuestaId(), PropuestaDocumentos.tipoDocumentoId == 1).count() > 0
         f02 = db.query(Actividades).filter(Actividades.propuestaId == p.getPropuestaId()).count() > 0 or               db.query(PropuestaDocumentos).filter(PropuestaDocumentos.propuestaId == p.getPropuestaId(), PropuestaDocumentos.tipoDocumentoId == 2).count() > 0
         f03 = db.query(PresupuestoPropuesta).filter(PresupuestoPropuesta.propuestaId == p.getPropuestaId()).count() > 0 or               db.query(PropuestaDocumentos).filter(PropuestaDocumentos.propuestaId == p.getPropuestaId(), PropuestaDocumentos.tipoDocumentoId == 3).count() > 0
 

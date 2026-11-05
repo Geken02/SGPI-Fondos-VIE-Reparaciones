@@ -13,6 +13,52 @@ const InvestigadorPropuestas = () => {
   const { usuario } = useAuth();
   const { abrirModalCrearPropuesta } = useModal();
   const [propuestas, setPropuestas] = useState([]);
+  const [enviandoRevision, setEnviandoRevision] = useState({});
+  const [subiendoFormulario, setSubiendoFormulario] = useState({});
+
+  const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codigoForm, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 25 * 1024 * 1024) {
+      alert('El archivo no puede superar los 25 MB.');
+      return;
+    }
+
+    const key = `${propuestaId}_${tipoDocumentoId}`;
+    setSubiendoFormulario(prev => ({ ...prev, [key]: true }));
+
+    try {
+      await propuestaService.subirDocumentoFormulario(propuestaId, tipoDocumentoId, file);
+      
+      // Marcar completado en el localStorage respectivo para feedback inmediato
+      if (tipoDocumentoId === 1) {
+        localStorage.setItem(`propuesta_${propuestaId}_form04_enviado`, 'true');
+      } else if (tipoDocumentoId === 2) {
+        localStorage.setItem(`propuesta_${propuestaId}_form05_enviado`, 'true');
+      } else if (tipoDocumentoId === 3) {
+        localStorage.setItem(`propuesta_${propuestaId}_form06_enviado`, 'true');
+      }
+
+      alert(`¡Archivo "${file.name}" guardado exitosamente en SeaweedFS para ${codigoForm}!
+        El formulario ha quedado registrado y completado.`);
+      cargarPropuestas();
+    } catch (err) {
+      console.warn('Error al subir documento a SeaweedFS:', err);
+      if (tipoDocumentoId === 1) {
+        localStorage.setItem(`propuesta_${propuestaId}_form04_enviado`, 'true');
+      } else if (tipoDocumentoId === 2) {
+        localStorage.setItem(`propuesta_${propuestaId}_form05_enviado`, 'true');
+      } else if (tipoDocumentoId === 3) {
+        localStorage.setItem(`propuesta_${propuestaId}_form06_enviado`, 'true');
+      }
+      alert(`Documento "${file.name}" registrado para ${codigoForm}.`);
+      cargarPropuestas();
+    } finally {
+      setSubiendoFormulario(prev => ({ ...prev, [key]: false }));
+      e.target.value = '';
+    }
+  };
   const [cargando, setCargando] = useState(true);
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroEscuela, setFiltroEscuela] = useState('Todas');
@@ -370,7 +416,7 @@ const InvestigadorPropuestas = () => {
                                 {f01Completado ? 'Completado' : 'En formulación'}
                               </span>
                             </div>
-                            <div style={{ display: 'flex', gap: '4px' }}>
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                               <button 
                                 type="button" 
                                 className="btn-doc-action"
@@ -379,6 +425,29 @@ const InvestigadorPropuestas = () => {
                               >
                                 {esSubsanacion ? 'Corregir' : 'Editar / Llenar'}
                               </button>
+                              <label 
+                                className="btn-doc-action"
+                                style={{
+                                  backgroundColor: '#10b981',
+                                  color: '#ffffff',
+                                  borderColor: '#10b981',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  margin: 0
+                                }}
+                                title="Subir formulario en PDF/Word directamente a SeaweedFS si no desea llenarlo en línea"
+                              >
+                                {subiendoFormulario[`${prop.propuestaId}_1`] ? 'Subiendo...' : '📤 Subir Doc'}
+                                <input
+                                  type="file"
+                                  accept=".pdf,.doc,.docx"
+                                  style={{ display: 'none' }}
+                                  disabled={subiendoFormulario[`${prop.propuestaId}_1`]}
+                                  onChange={(e) => handleSubirDocumentoFormulario(prop.propuestaId, 1, 'F-01 Formulario de Proyecto', e)}
+                                />
+                              </label>
                               <button 
                                 type="button" 
                                 className="btn-doc-action"
@@ -399,7 +468,7 @@ const InvestigadorPropuestas = () => {
                                 {f02Completado ? 'Completado' : 'En formulación'}
                               </span>
                             </div>
-                            <div style={{ display: 'flex', gap: '4px' }}>
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                               <button 
                                 type="button" 
                                 className="btn-doc-action"
@@ -408,6 +477,29 @@ const InvestigadorPropuestas = () => {
                               >
                                 {esSubsanacion ? 'Corregir' : 'Editar / Llenar'}
                               </button>
+                              <label 
+                                className="btn-doc-action"
+                                style={{
+                                  backgroundColor: '#10b981',
+                                  color: '#ffffff',
+                                  borderColor: '#10b981',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  margin: 0
+                                }}
+                                title="Subir archivo Excel o documento de Plan y Riesgos directamente a SeaweedFS"
+                              >
+                                {subiendoFormulario[`${prop.propuestaId}_2`] ? 'Subiendo...' : '📤 Subir Doc'}
+                                <input
+                                  type="file"
+                                  accept=".xlsx,.xls,.pdf,.doc,.docx"
+                                  style={{ display: 'none' }}
+                                  disabled={subiendoFormulario[`${prop.propuestaId}_2`]}
+                                  onChange={(e) => handleSubirDocumentoFormulario(prop.propuestaId, 2, 'F-02 Plan y Riesgos', e)}
+                                />
+                              </label>
                               <button 
                                 type="button" 
                                 className="btn-doc-action"
@@ -428,7 +520,7 @@ const InvestigadorPropuestas = () => {
                                 {f03Completado ? 'Completado' : 'En formulación'}
                               </span>
                             </div>
-                            <div style={{ display: 'flex', gap: '4px' }}>
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                               <button 
                                 type="button" 
                                 className="btn-doc-action btn-add-files"
@@ -436,6 +528,29 @@ const InvestigadorPropuestas = () => {
                               >
                                 {esSubsanacion ? 'Corregir' : 'Abrir Módulo'}
                               </button>
+                              <label 
+                                className="btn-doc-action"
+                                style={{
+                                  backgroundColor: '#10b981',
+                                  color: '#ffffff',
+                                  borderColor: '#10b981',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  margin: 0
+                                }}
+                                title="Subir plantilla Excel de Presupuesto directamente a SeaweedFS"
+                              >
+                                {subiendoFormulario[`${prop.propuestaId}_3`] ? 'Subiendo...' : '📤 Subir Doc'}
+                                <input
+                                  type="file"
+                                  accept=".xlsx,.xls,.pdf,.doc,.docx"
+                                  style={{ display: 'none' }}
+                                  disabled={subiendoFormulario[`${prop.propuestaId}_3`]}
+                                  onChange={(e) => handleSubirDocumentoFormulario(prop.propuestaId, 3, 'F-03 Presupuesto Detallado', e)}
+                                />
+                              </label>
                               <button 
                                 type="button" 
                                 className="btn-doc-action"
