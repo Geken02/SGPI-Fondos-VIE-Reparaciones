@@ -116,6 +116,7 @@ export const AuthProvider = ({ children }) => {
           localStorage.removeItem('rolActivo');
         }
       }
+      return perfil; // ✅ MEJORA: Retorna el perfil para que el llamador pueda validarlo
     } catch (error) {
       console.error('Error al cargar perfil:', error);
       authService.logout();
@@ -127,6 +128,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('rolActivo');
       localStorage.removeItem('rol_simulado');
       localStorage.removeItem('token_original');
+      return null; // ✅ MEJORA: Retorna null en caso de error
     } finally {
       setCargando(false);
     }
@@ -144,10 +146,22 @@ export const AuthProvider = ({ children }) => {
   const login = async (correo, contrasena) => {
     const response = await authService.login({ correo, contrasena });
     const tokenRecibido = response.token_acceso || response.access_token || response.token_Acceso;
+
+    // ✅ MEJORA: Validación temprana del token
+    if (!tokenRecibido) {
+      throw new Error('El servidor no devolvió un token de acceso.');
+    }
+
     localStorage.setItem('token', tokenRecibido);
     setToken(tokenRecibido);
-    await cargarPerfil();
-    return usuario;
+
+    // ✅ MEJORA: Captura y valida el perfil retornado, evitando el closure stale de `usuario`
+    const perfil = await cargarPerfil();
+    if (!perfil) {
+      throw new Error('No se pudo cargar el perfil del usuario.');
+    }
+    
+    return perfil;
   };
 
   const logout = () => {
@@ -170,7 +184,6 @@ export const AuthProvider = ({ children }) => {
     const rolesUsuario = Array.isArray(usuario?.roles) ? usuario.roles : [];
     
     // Si estamos en modo simulación, no permitimos cambiar de rol manualmente desde aquí
-    // (El RoleSwitcher se encarga de hacer el fetch al backend y recargar la página)
     if (localStorage.getItem('rol_simulado')) {
       console.warn('No se puede cambiar de rol manualmente mientras se simula otro rol.');
       return;
@@ -213,7 +226,7 @@ export const AuthProvider = ({ children }) => {
         rolActivo: rolActivo || (rolesUsuario.length > 0 ? rolesUsuario[0] : null),
         cambiarRol,
         rolesUsuario,
-        esAdministrador,    // <-- Agregado para el Sidebar/App
+        esAdministrador,
         esInvestigador,
         esVinculacion,
         esComiteTecnico,    // <-- Agregado para el Sidebar/App

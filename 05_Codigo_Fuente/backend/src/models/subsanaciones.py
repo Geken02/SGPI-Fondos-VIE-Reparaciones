@@ -25,6 +25,8 @@ class Subsanaciones(Base):
     fechaRespuestaInvestigador = Column("fecharespuestainvestigador", DateTime, nullable=True)
     respuestaInvestigador = Column("respuestainvestigador", Text, nullable=True)
     estadoSubsanacionId = Column("estadosubsanacionid", Integer, ForeignKey("estadossubsanacion.estadosubsanacionid"), nullable=False, default=1)
+    comentarioResolucion = Column("comentarioresolucion", Text, nullable=True)
+    fechaResolucion = Column("fecharesolucion", DateTime, nullable=True)
     
     propuesta = relationship("Propuesta", back_populates="subsanaciones")
     gestoraVIE = relationship("Usuario", foreign_keys=[gestoraVIEId])

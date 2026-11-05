@@ -49,6 +49,8 @@ const Sidebar = () => {
 
   console.log('ROL ACTIVO DETECTADO:', rolActivo);
   console.log('¿ES DIRECCIÓN DE INVESTIGACIÓN?:', esDireccion);
+  console.log("🔍 ROL ACTIVO DETECTADO:", rolActivo);
+
 
   const isItemActive = (path, isRouterActive) => {
     if (isRouterActive) return true;

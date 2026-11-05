@@ -1,719 +1,152 @@
+from datetime import datetime, timezone
+from decimal import Decimal
 
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from src.models.propuestas import Propuesta
 from src.models.usuarios import Usuario
 from src.models.escuelas import Escuela
 from src.models.convocatorias import EstadosPropuesta, EtapasConvocatoria
-from src.models.evaluaciones import Evaluaciones,TiposEvaluacion,CriteriosEvaluacion,DetalleEvaluacion,EstadosEvaluacion,TiposRecomendacion
-from fastapi import HTTPException
+from src.models.evaluaciones import (
+    Evaluaciones, TiposEvaluacion, CriteriosEvaluacion, DetalleEvaluacion,
+    EstadosEvaluacion, TiposRecomendacion,
+)
 from src.models.dictamenes import Dictamenes, TiposDictamen
-from src.models.subsanaciones import Subsanaciones, EstadosSubsanacion
+from src.models.subsanaciones import Subsanaciones
+from src.models.catalogos import HistorialEstadosPropuesta
+from src.models.propuesta_documentos import PropuestaDocumentos
+from src.models.roles import RolesSistema, UsuarioRol
+from src.models.notificaciones import Notificaciones, TiposNotificacion, CanalesComunicacion
 
 
+def _tipo_evaluacion(db):
+    return db.query(TiposEvaluacion).filter(TiposEvaluacion.nombreTipoEvaluacion == "CIE", TiposEvaluacion.activo.is_(True)).first()
+
+def _nombre_usuario(usuario):
+    if not usuario: return "—"
+    return " ".join(x for x in (usuario.nombreUsuario, usuario.apellido1Usuario, usuario.apellido2Usuario) if x)
+
+def _propuesta(db, codigo, exigir_en_cie=False):
+    q = db.query(Propuesta).filter(Propuesta.codigoPropuesta == codigo)
+    p = q.first()
+    if p is None: raise HTTPException(status_code=404, detail="No se encontró la propuesta solicitada.")
+    estado = db.get(EstadosPropuesta, p.estadoId)
+    if exigir_en_cie and (estado is None or estado.codigoEstadoPropuesta != "EN_CIE"):
+        raise HTTPException(status_code=409, detail="La propuesta ya no está pendiente de resolución del CIE.")
+    return p, estado
 
 def listar_expedientes_cie(db: Session, usuario_id: int) -> list[dict]:
-    propuestas = (
-        db.query(Propuesta, EtapasConvocatoria.fechaFin)
-        .join(
-            EstadosPropuesta,
-            Propuesta.estadoId == EstadosPropuesta.estadoPropuestaId,
-        )
-        .join(
-            Usuario,
-            Propuesta.investigadorCoordId == Usuario.usuarioId,
-        )
-        .join(
-            Escuela,
-            Propuesta.escuelaId == Escuela.escuelaId,
-        )
-        .outerjoin(
-            EtapasConvocatoria,
-            Propuesta.etapaId == EtapasConvocatoria.etapaId,
-        )
-        .filter(
-            EstadosPropuesta.codigoEstadoPropuesta == "EN_CIE",
-            ~db.query(Dictamenes.dictamenId)
-            .join(
-                TiposDictamen,
-                Dictamenes.tipoDictamenId == TiposDictamen.tipoDictamenId,
-            )
-            .filter(
-                Dictamenes.propuestaId == Propuesta.propuestaId,
-                TiposDictamen.nombreTipoDictamen == "CIE",
-            )
-            .exists(),
-        )
-        .order_by(Propuesta.propuestaId)
-        .all()
-    )
-
-    resultado = []
-
-    for propuesta, fecha_fin in propuestas:
-        evaluacion_cie = (
-            db.query(Evaluaciones.evaluacionId)
-            .join(
-                TiposEvaluacion,
-                Evaluaciones.tipoEvaluacionId == TiposEvaluacion.tipoEvaluacionId,
-            )
-            .filter(
-                Evaluaciones.propuestaId == propuesta.propuestaId,
-                Evaluaciones.evaluadorId == usuario_id,
-                TiposEvaluacion.nombreTipoEvaluacion == "CIE",
-            )
-            .first()
-        )
-
-        subsanacion_pendiente = (
-            db.query(Subsanaciones.subsanacionId)
-            .join(
-                EstadosSubsanacion,
-                Subsanaciones.estadoSubsanacionId
-                == EstadosSubsanacion.estadoSubsanacionId,
-            )
-            .filter(
-                Subsanaciones.propuestaId == propuesta.propuestaId,
-                Subsanaciones.respuestaInvestigador.is_(None),
-                EstadosSubsanacion.nombreEstadoSubsanacion == "Pendiente",
-            )
-            .first()
-        )
-
-        if subsanacion_pendiente:
-            estado_trabajo = "con_observaciones"
-        elif evaluacion_cie:
-            estado_trabajo = "en_revision"
-        else:
-            estado_trabajo = "por_evaluar"
-
-        investigador = propuesta.investigador
-        nombre_investigador = " ".join(
-            parte
-            for parte in [
-                investigador.nombreUsuario,
-                investigador.apellido1Usuario,
-                investigador.apellido2Usuario,
-            ]
-            if parte
-        )
-
-        resultado.append(
-            {
-                "propuestaId": propuesta.propuestaId,
-                "codigo": propuesta.codigoPropuesta,
-                "titulo": propuesta.titulo,
-                "investigador": nombre_investigador,
-                "escuela": propuesta.escuela.nombreEscuela,
-                "fechaLimite": fecha_fin.date().isoformat() if fecha_fin else None,
-                "estado": estado_trabajo,
-            }
-        )
-
+    tipo_dictamen = db.query(TiposDictamen).filter(TiposDictamen.nombreTipoDictamen == "CIE").first()
+    q = db.query(Propuesta, EtapasConvocatoria.fechaFin).join(EstadosPropuesta, Propuesta.estadoId == EstadosPropuesta.estadoPropuestaId).outerjoin(EtapasConvocatoria, Propuesta.etapaId == EtapasConvocatoria.etapaId).filter(EstadosPropuesta.codigoEstadoPropuesta == "EN_CIE")
+    propuestas = q.order_by(Propuesta.propuestaId).all()
+    resultado=[]
+    for p, fecha_fin in propuestas:
+        dictamen = db.query(Dictamenes).filter(Dictamenes.propuestaId == p.propuestaId, Dictamenes.tipoDictamenId == (tipo_dictamen.tipoDictamenId if tipo_dictamen else -1)).first()
+        if dictamen: continue
+        evaluacion = db.query(Evaluaciones).join(TiposEvaluacion).filter(Evaluaciones.propuestaId == p.propuestaId, Evaluaciones.evaluadorId == usuario_id, TiposEvaluacion.nombreTipoEvaluacion == "CIE").order_by(Evaluaciones.evaluacionId.desc()).first()
+        resultado.append({"propuestaId":p.propuestaId,"codigo":p.codigoPropuesta,"titulo":p.titulo,"investigador":_nombre_usuario(p.investigador),"escuela":p.escuela.nombreEscuela if p.escuela else "—","fechaLimite":fecha_fin.date().isoformat() if fecha_fin else None,"estado":"en_revision" if evaluacion else "por_evaluar"})
     return resultado
 
-
-def obtener_rubrica_cie(db: Session) -> list[dict]:
-    """
-    Devuelve los criterios activos de la rúbrica de evaluación CIE,
-    ordenados según el campo 'orden'.
-    """
-    criterios = (
-        db.query(CriteriosEvaluacion)
-        .join(
-            TiposEvaluacion,
-            CriteriosEvaluacion.tipoEvaluacionId
-            == TiposEvaluacion.tipoEvaluacionId,
-        )
-        .filter(
-            TiposEvaluacion.nombreTipoEvaluacion == "CIE",
-            TiposEvaluacion.activo.is_(True),
-            CriteriosEvaluacion.activo.is_(True),
-        )
-        .order_by(
-            CriteriosEvaluacion.orden,
-            CriteriosEvaluacion.criterioId,
-        )
-        .all()
-    )
-
-    return [
-        {
-            "criterioId": criterio.criterioId,
-            "seccion": criterio.nombreSeccion,
-            "criterio": criterio.nombreCriterio,
-            "pesoPorcentaje": float(criterio.pesoPorcentaje),
-            "esRequisitoObligatorio": criterio.esRequisitoObligatorio,
-            "orden": criterio.orden,
-        }
-        for criterio in criterios
-    ]
-
+def obtener_rubrica_cie(db: Session) -> dict:
+    tipo = _tipo_evaluacion(db)
+    criterios = [] if tipo is None else db.query(CriteriosEvaluacion).filter(CriteriosEvaluacion.tipoEvaluacionId == tipo.tipoEvaluacionId, CriteriosEvaluacion.activo.is_(True)).order_by(CriteriosEvaluacion.orden, CriteriosEvaluacion.criterioId).all()
+    total = sum((Decimal(str(c.pesoPorcentaje)) for c in criterios), Decimal("0"))
+    configurada = bool(criterios) and total == Decimal("100.00")
+    return {"configurada":configurada,"escala":{"minimo":0,"maximo":10},"criterios":[{"criterioId":c.criterioId,"nombre":c.nombreCriterio,"peso":float(c.pesoPorcentaje),"seccion":c.nombreSeccion,"obligatorio":bool(c.esRequisitoObligatorio)} for c in criterios],"pesoTotal":float(total)}
 
 def obtener_expediente_cie(db: Session, codigo: str) -> dict | None:
-    """
-    Obtiene los datos principales de una propuesta por su código.
-    Devuelve None si no existe.
-    """
-    resultado = (
-        db.query(
-            Propuesta,
-            EstadosPropuesta.codigoEstadoPropuesta,
-            EtapasConvocatoria.fechaFin,
-        )
-        .join(
-            EstadosPropuesta,
-            Propuesta.estadoId == EstadosPropuesta.estadoPropuestaId,
-        )
-        .join(
-            Usuario,
-            Propuesta.investigadorCoordId == Usuario.usuarioId,
-        )
-        .join(
-            Escuela,
-            Propuesta.escuelaId == Escuela.escuelaId,
-        )
-        .outerjoin(
-            EtapasConvocatoria,
-            Propuesta.etapaId == EtapasConvocatoria.etapaId,
-        )
-        .filter(Propuesta.codigoPropuesta == codigo)
-        .first()
-    )
-
-    if resultado is None:
-        return None
-
-    propuesta, estado, fecha_limite = resultado
-
-    investigador = propuesta.investigador
-    nombre_investigador = " ".join(
-        parte
-        for parte in [
-            investigador.nombreUsuario,
-            investigador.apellido1Usuario,
-            investigador.apellido2Usuario,
-        ]
-        if parte
-    )
-
+    p, estado = _propuesta(db,codigo)
+    etapa = db.get(EtapasConvocatoria,p.etapaId) if p.etapaId else None
+    tipo_dictamen = db.query(TiposDictamen).filter(TiposDictamen.nombreTipoDictamen == "CIE").first()
+    dictamenes = db.query(Dictamenes).filter(Dictamenes.propuestaId == p.propuestaId).order_by(Dictamenes.fechaEmision.desc()).all()
+    resuelta = any(d.tipoDictamenId == tipo_dictamen.tipoDictamenId for d in dictamenes) if tipo_dictamen else False
+    historial = db.query(HistorialEstadosPropuesta).filter(HistorialEstadosPropuesta.propuestaId == p.propuestaId).order_by(HistorialEstadosPropuesta.fechaCambio).all()
+    subsanaciones = db.query(Subsanaciones).filter(Subsanaciones.propuestaId == p.propuestaId).order_by(Subsanaciones.fechaSolicitud.desc()).all()
+    documentos = db.query(PropuestaDocumentos).filter(PropuestaDocumentos.propuestaId == p.propuestaId, PropuestaDocumentos.activo.is_(True)).order_by(PropuestaDocumentos.fechaCarga.desc()).all()
     return {
-        "propuestaId": propuesta.propuestaId,
-        "codigo": propuesta.codigoPropuesta,
-        "titulo": propuesta.titulo,
-        "estado": estado,
-        "investigador": nombre_investigador,
-        "escuela": propuesta.escuela.nombreEscuela,
-        "montoTotal": (
-            float(propuesta.montoTotal)
-            if propuesta.montoTotal is not None
-            else None
-        ),
-        "nivelTrlActual": propuesta.nivelTrlActual,
-        "nivelTrlEsperado": propuesta.nivelTrlEsperado,
-        "fechaInicio": (
-            propuesta.fechaInicio.isoformat()
-            if propuesta.fechaInicio
-            else None
-        ),
-        "fechaFinalizacion": (
-            propuesta.fechaFinalizacion.isoformat()
-            if propuesta.fechaFinalizacion
-            else None
-        ),
-        "fechaCreacion": (
-            propuesta.fechaCreacion.isoformat()
-            if propuesta.fechaCreacion
-            else None
-        ),
-        "fechaEnvio": (
-            propuesta.fechaEnvio.isoformat()
-            if propuesta.fechaEnvio
-            else None
-        ),
-        "fechaLimite": (
-            fecha_limite.date().isoformat()
-            if fecha_limite
-            else None
-        ),
+      "propuestaId":p.propuestaId,"codigo":p.codigoPropuesta,"titulo":p.titulo,"estadoCodigo":estado.codigoEstadoPropuesta if estado else "","estadoNombre":estado.nombreEstadoPropuesta if estado else "—","estado":estado.codigoEstadoPropuesta if estado else "",
+      "resuelta":resuelta,"investigador":_nombre_usuario(p.investigador),"escuela":p.escuela.nombreEscuela if p.escuela else "—","modalidad":p.modalidad.nombreModalidad if p.modalidad else None,"montoTotal":float(p.montoTotal or 0),"nivelTrlActual":p.nivelTrlActual,"nivelTrlEsperado":p.nivelTrlEsperado,"fechaInicio":p.fechaInicio.isoformat() if p.fechaInicio else None,"fechaFinalizacion":p.fechaFinalizacion.isoformat() if p.fechaFinalizacion else None,"fechaLimite":etapa.fechaFin.date().isoformat() if etapa and etapa.fechaFin else None,
+      "documentos":[{"documentoId":d.documentoId,"nombreArchivo":d.nombreArchivo,"tipo":d.tipoDocumento.descripcion or d.tipoDocumento.nombreTipoDocumento if d.tipoDocumento else "Documento","fechaCarga":d.fechaCarga.isoformat() if d.fechaCarga else None} for d in documentos],
+      "dictamenes":[{"dictamenId":d.dictamenId,"tipo":d.tipoDictamen.nombreTipoDictamen if d.tipoDictamen else "Dictamen","numeroOficio":d.numeroOficio,"fechaEmision":d.fechaEmision.isoformat() if d.fechaEmision else None,"contenido":d.contenido,"remitente":_nombre_usuario(d.usuarioRemitente)} for d in dictamenes],
+      "subsanaciones":[{"subsanacionId":x.subsanacionId,"fechaSolicitud":x.fechaSolicitud.isoformat() if x.fechaSolicitud else None,"comentarioGestora":x.comentarioGestora,"respuestaInvestigador":x.respuestaInvestigador} for x in subsanaciones],
+      "historial":[{"fecha":h.fechaCambio.isoformat() if h.fechaCambio else None,"estadoAnterior":h.estadoAnterior.nombreEstadoPropuesta if h.estadoAnterior else None,"estadoNuevo":h.estadoNuevo.nombreEstadoPropuesta if h.estadoNuevo else "—","responsable":_nombre_usuario(h.usuarioResponsable),"observaciones":h.observaciones} for h in historial]
     }
 
-def obtener_evaluacion_cie(
-    db: Session,
-    codigo: str,
-    usuario_id: int,
-) -> dict | None:
-    """
-    Consulta la evaluación CIE del usuario para una propuesta.
-    Devuelve None si la propuesta o la evaluación no existen.
-    """
-    propuesta = (
-        db.query(Propuesta)
-        .filter(Propuesta.codigoPropuesta == codigo)
-        .first()
-    )
+def obtener_evaluacion_cie(db: Session, codigo: str, usuario_id: int) -> dict:
+    p, _ = _propuesta(db,codigo)
+    tipo = _tipo_evaluacion(db)
+    if not tipo: return {"existe":False,"puntajes":[],"observaciones":"","decision":"","estado":"Pendiente","calificacion":None}
+    e = db.query(Evaluaciones).filter(Evaluaciones.propuestaId==p.propuestaId,Evaluaciones.evaluadorId==usuario_id,Evaluaciones.tipoEvaluacionId==tipo.tipoEvaluacionId).order_by(Evaluaciones.evaluacionId.desc()).first()
+    if not e: return {"existe":False,"puntajes":[],"observaciones":"","decision":"","estado":"Pendiente","calificacion":None}
+    detalles=db.query(DetalleEvaluacion).filter(DetalleEvaluacion.evaluacionId==e.evaluacionId).all()
+    rec=e.tipoRecomendacion.nombreTipoRecomendacion if e.tipoRecomendacion else ""
+    decision="Aprobar" if rec=="Recomendar_Financiamiento" else "Rechazar" if rec=="No_Recomendar_Financiamiento" else ""
+    return {"existe":True,"evaluacionId":e.evaluacionId,"puntajes":[{"criterioId":d.criterioId,"puntaje":float(d.puntajeObtenido)} for d in detalles],"observaciones":e.observaciones or "","decision":decision,"estado":e.estadoEvaluacion.nombreEstadoEvaluacion if e.estadoEvaluacion else "Borrador","calificacion":float(e.calificacion) if e.calificacion is not None else None}
 
-    if propuesta is None:
-        return None
-
-    evaluacion = (
-        db.query(Evaluaciones)
-        .join(
-            TiposEvaluacion,
-            Evaluaciones.tipoEvaluacionId
-            == TiposEvaluacion.tipoEvaluacionId,
-        )
-        .filter(
-            Evaluaciones.propuestaId == propuesta.propuestaId,
-            Evaluaciones.evaluadorId == usuario_id,
-            TiposEvaluacion.nombreTipoEvaluacion == "CIE",
-        )
-        .order_by(Evaluaciones.evaluacionId.desc())
-        .first()
-    )
-
-    if evaluacion is None:
-        return None
-
-    detalles = (
-        db.query(DetalleEvaluacion, CriteriosEvaluacion)
-        .join(
-            CriteriosEvaluacion,
-            DetalleEvaluacion.criterioId
-            == CriteriosEvaluacion.criterioId,
-        )
-        .filter(
-            DetalleEvaluacion.evaluacionId == evaluacion.evaluacionId
-        )
-        .order_by(
-            CriteriosEvaluacion.orden,
-            CriteriosEvaluacion.criterioId,
-        )
-        .all()
-    )
-
-    return {
-        "evaluacionId": evaluacion.evaluacionId,
-        "propuestaId": propuesta.propuestaId,
-        "codigo": propuesta.codigoPropuesta,
-        "titulo": propuesta.titulo,
-        "evaluadorId": evaluacion.evaluadorId,
-        "fechaEvaluacion": (
-            evaluacion.fechaEvaluacion.isoformat()
-            if evaluacion.fechaEvaluacion
-            else None
-        ),
-        "calificacion": (
-            float(evaluacion.calificacion)
-            if evaluacion.calificacion is not None
-            else None
-        ),
-        "recomendacion": (
-            evaluacion.tipoRecomendacion.nombreTipoRecomendacion
-            if evaluacion.tipoRecomendacion
-            else None
-        ),
-        "estado": (
-            evaluacion.estadoEvaluacion.nombreEstadoEvaluacion
-            if evaluacion.estadoEvaluacion
-            else None
-        ),
-        "observaciones": evaluacion.observaciones,
-        "detalles": [
-            {
-                "detalleEvaluacionId": detalle.detalleEvaluacionId,
-                "criterioId": criterio.criterioId,
-                "seccion": criterio.nombreSeccion,
-                "criterio": criterio.nombreCriterio,
-                "pesoPorcentaje": float(criterio.pesoPorcentaje),
-                "puntajeObtenido": float(detalle.puntajeObtenido),
-                "justificacion": detalle.justificacion,
-                "esRequisitoObligatorio": criterio.esRequisitoObligatorio,
-                "esRequisitoObligatorioCumplido": (
-                    detalle.esRequisitoObligatorioCumplido
-                ),
-            }
-            for detalle, criterio in detalles
-        ],
-    }
-
-
-def guardar_evaluacion_cie(
-    db: Session,
-    codigo: str,
-    usuario_id: int,
-    datos,
-) -> dict:
-    """Crea o actualiza el borrador de evaluación CIE del usuario."""
-
-    propuesta = (
-        db.query(Propuesta)
-        .join(
-            EstadosPropuesta,
-            Propuesta.estadoId == EstadosPropuesta.estadoPropuestaId,
-        )
-        .filter(
-            Propuesta.codigoPropuesta == codigo,
-            EstadosPropuesta.codigoEstadoPropuesta == "EN_CIE",
-        )
-        .first()
-    )
-
-    if propuesta is None:
-        raise HTTPException(
-            status_code=404,
-            detail="No se encontró la propuesta en estado EN_CIE.",
-        )
-
-    tipo_cie = (
-        db.query(TiposEvaluacion)
-        .filter(
-            TiposEvaluacion.nombreTipoEvaluacion == "CIE",
-            TiposEvaluacion.activo.is_(True),
-        )
-        .first()
-    )
-
-    if tipo_cie is None:
-        raise HTTPException(
-            status_code=409,
-            detail="El tipo de evaluación CIE no está activo.",
-        )
-
-    estado_borrador = (
-        db.query(EstadosEvaluacion)
-        .filter(
-            EstadosEvaluacion.nombreEstadoEvaluacion == "Borrador",
-            EstadosEvaluacion.activo.is_(True),
-        )
-        .first()
-    )
-
-    if estado_borrador is None:
-        raise HTTPException(
-            status_code=409,
-            detail="No existe un estado Borrador activo.",
-        )
-
-    criterios_cie = (
-        db.query(CriteriosEvaluacion)
-        .filter(
-            CriteriosEvaluacion.tipoEvaluacionId
-            == tipo_cie.tipoEvaluacionId,
-            CriteriosEvaluacion.activo.is_(True),
-        )
-        .all()
-    )
-
-    if datos.estado != "Borrador":
-        raise HTTPException(
-            status_code=409,
-            detail=(
-                "Solo se permite guardar borradores hasta que "
-                "la rúbrica CIE esté definida y validada."
-            ),
-        )
-
-    if datos.detalles:
-        if not criterios_cie:
-            raise HTTPException(
-                status_code=409,
-                detail="La rúbrica CIE todavía no tiene criterios activos.",
-            )
-
-        ids_validos = {criterio.criterioId for criterio in criterios_cie}
-        ids_recibidos = [detalle.criterioId for detalle in datos.detalles]
-
-        if len(ids_recibidos) != len(set(ids_recibidos)):
-            raise HTTPException(
-                status_code=422,
-                detail="No se puede repetir un criterio en la evaluación.",
-            )
-
-        if not set(ids_recibidos).issubset(ids_validos):
-            raise HTTPException(
-                status_code=422,
-                detail="Hay criterios que no pertenecen a la rúbrica CIE activa.",
-            )
-
-    evaluacion = (
-        db.query(Evaluaciones)
-        .filter(
-            Evaluaciones.propuestaId == propuesta.propuestaId,
-            Evaluaciones.evaluadorId == usuario_id,
-            Evaluaciones.tipoEvaluacionId == tipo_cie.tipoEvaluacionId,
-        )
-        .order_by(Evaluaciones.evaluacionId.desc())
-        .first()
-    )
-
+def guardar_evaluacion_cie(db: Session, codigo: str, usuario_id: int, datos) -> dict:
+    p, _ = _propuesta(db,codigo,exigir_en_cie=True)
+    tipo=_tipo_evaluacion(db)
+    if not tipo: raise HTTPException(status_code=409,detail="No está configurado el tipo de evaluación CIE.")
+    rubrica=obtener_rubrica_cie(db)
+    if not rubrica["configurada"]: raise HTTPException(status_code=409,detail="La rúbrica CIE debe tener criterios activos con pesos que sumen 100 %.")
+    criterios={c.criterioId:c for c in db.query(CriteriosEvaluacion).filter(CriteriosEvaluacion.tipoEvaluacionId==tipo.tipoEvaluacionId,CriteriosEvaluacion.activo.is_(True)).all()}
+    ids=[x.criterioId for x in datos.puntajes]
+    if len(ids)!=len(set(ids)) or set(ids)!=set(criterios): raise HTTPException(status_code=422,detail="Debe registrar un puntaje para cada criterio activo de la rúbrica, sin repetir criterios.")
+    estado=db.query(EstadosEvaluacion).filter(EstadosEvaluacion.nombreEstadoEvaluacion=="Completada",EstadosEvaluacion.activo.is_(True)).first()
+    if not estado: raise HTTPException(status_code=409,detail="No existe el estado Completada en el catálogo de evaluaciones.")
+    recomendacion_nombre="Recomendar_Financiamiento" if datos.decision=="Aprobar" else "No_Recomendar_Financiamiento"
+    recomendacion=db.query(TiposRecomendacion).filter(TiposRecomendacion.nombreTipoRecomendacion==recomendacion_nombre,TiposRecomendacion.activo.is_(True)).first()
+    if not recomendacion: raise HTTPException(status_code=409,detail=f"No existe la recomendación {recomendacion_nombre} en el catálogo.")
+    peso_total=sum((Decimal(str(c.pesoPorcentaje)) for c in criterios.values()),Decimal("0"))
+    calificacion=sum((Decimal(str(x.puntaje))*Decimal(str(criterios[x.criterioId].pesoPorcentaje)) for x in datos.puntajes),Decimal("0"))/peso_total
+    e=db.query(Evaluaciones).filter(Evaluaciones.propuestaId==p.propuestaId,Evaluaciones.evaluadorId==usuario_id,Evaluaciones.tipoEvaluacionId==tipo.tipoEvaluacionId).order_by(Evaluaciones.evaluacionId.desc()).first()
     try:
-        if evaluacion is None:
-            evaluacion = Evaluaciones(
-                propuestaId=propuesta.propuestaId,
-                evaluadorId=usuario_id,
-                tipoEvaluacionId=tipo_cie.tipoEvaluacionId,
-                estadoEvaluacionId=estado_borrador.estadoEvaluacionId,
-                usuarioAuditoriaId=usuario_id,
-            )
-            db.add(evaluacion)
-            db.flush()
-
-        evaluacion.calificacion = datos.calificacion
-        evaluacion.tipoRecomendacionId = datos.tipoRecomendacionId
-        evaluacion.observaciones = datos.observaciones
-        evaluacion.estadoEvaluacionId = estado_borrador.estadoEvaluacionId
-        evaluacion.usuarioAuditoriaId = usuario_id
-
-        if datos.detalles:
-            recomendacion = None
-
-            if datos.tipoRecomendacionId is not None:
-                recomendacion = (
-                    db.query(TiposRecomendacion)
-                    .filter(
-                        TiposRecomendacion.tipoRecomendacionId
-                        == datos.tipoRecomendacionId,
-                        TiposRecomendacion.activo.is_(True),
-                    )
-                    .first()
-                )
-
-                if recomendacion is None:
-                    raise HTTPException(
-                        status_code=422,
-                        detail="El tipo de recomendación no existe o está inactivo.",
-                    )
-
-            existentes = {
-                detalle.criterioId: detalle
-                for detalle in db.query(DetalleEvaluacion)
-                .filter(
-                    DetalleEvaluacion.evaluacionId
-                    == evaluacion.evaluacionId
-                )
-                .all()
-            }
-
-            for entrada in datos.detalles:
-                detalle = existentes.get(entrada.criterioId)
-
-                if detalle is None:
-                    detalle = DetalleEvaluacion(
-                        evaluacionId=evaluacion.evaluacionId,
-                        criterioId=entrada.criterioId,
-                        usuarioAuditoriaId=usuario_id,
-                    )
-                    db.add(detalle)
-
-                detalle.puntajeObtenido = entrada.puntajeObtenido
-                detalle.justificacion = entrada.justificacion
-                detalle.esRequisitoObligatorioCumplido = (
-                    entrada.esRequisitoObligatorioCumplido
-                )
-                detalle.usuarioAuditoriaId = usuario_id
-
-        db.commit()
-        db.refresh(evaluacion)
-
+      if not e:
+        borrador=db.query(EstadosEvaluacion).filter(EstadosEvaluacion.nombreEstadoEvaluacion=="Borrador").first()
+        e=Evaluaciones(propuestaId=p.propuestaId,evaluadorId=usuario_id,tipoEvaluacionId=tipo.tipoEvaluacionId,estadoEvaluacionId=(borrador.estadoEvaluacionId if borrador else estado.estadoEvaluacionId),usuarioAuditoriaId=usuario_id); db.add(e); db.flush()
+      e.calificacion=calificacion.quantize(Decimal("0.01")); e.observaciones=datos.observaciones; e.tipoRecomendacionId=recomendacion.tipoRecomendacionId; e.estadoEvaluacionId=estado.estadoEvaluacionId; e.usuarioAuditoriaId=usuario_id
+      existentes={d.criterioId:d for d in db.query(DetalleEvaluacion).filter(DetalleEvaluacion.evaluacionId==e.evaluacionId).all()}
+      for x in datos.puntajes:
+        d=existentes.get(x.criterioId)
+        if d is None: d=DetalleEvaluacion(evaluacionId=e.evaluacionId,criterioId=x.criterioId,usuarioAuditoriaId=usuario_id); db.add(d)
+        d.puntajeObtenido=x.puntaje; d.justificacion=datos.observaciones; d.usuarioAuditoriaId=usuario_id
+      db.commit(); db.refresh(e)
     except Exception:
-        db.rollback()
-        raise
+      db.rollback(); raise
+    return {"mensaje":"Evaluación CIE completada correctamente.","evaluacionId":e.evaluacionId,"calificacion":float(e.calificacion),"estado":"Completada"}
 
-    return {
-        "mensaje": "Borrador de evaluación CIE guardado correctamente.",
-        "evaluacionId": evaluacion.evaluacionId,
-        "propuestaId": evaluacion.propuestaId,
-        "evaluadorId": evaluacion.evaluadorId,
-        "estado": "Borrador",
-    }
-
-
-
-def registrar_resolucion_cie(
-    db: Session,
-    codigo: str,
-    usuario_id: int,
-    datos,
-) -> dict:
-    """Registra una resolución CIE para una propuesta en estado EN_CIE."""
-
-    propuesta = (
-        db.query(Propuesta)
-        .join(
-            EstadosPropuesta,
-            Propuesta.estadoId == EstadosPropuesta.estadoPropuestaId,
-        )
-        .filter(
-            Propuesta.codigoPropuesta == codigo,
-            EstadosPropuesta.codigoEstadoPropuesta == "EN_CIE",
-            EstadosPropuesta.activo.is_(True),
-        )
-        .first()
-    )
-
-    if propuesta is None:
-        raise HTTPException(
-            status_code=404,
-            detail="No se encontró la propuesta en estado EN_CIE.",
-        )
-
-    tipo_dictamen = (
-        db.query(TiposDictamen)
-        .filter(
-            TiposDictamen.nombreTipoDictamen == "CIE",
-            TiposDictamen.activo.is_(True),
-        )
-        .first()
-    )
-
-    if tipo_dictamen is None:
-        raise HTTPException(
-            status_code=409,
-            detail="El tipo de dictamen CIE no está activo.",
-        )
-
-    existente = (
-        db.query(Dictamenes)
-        .filter(
-            Dictamenes.propuestaId == propuesta.propuestaId,
-            Dictamenes.tipoDictamenId == tipo_dictamen.tipoDictamenId,
-        )
-        .first()
-    )
-
-    if existente is not None:
-        raise HTTPException(
-            status_code=409,
-            detail="La propuesta ya tiene una resolución CIE registrada.",
-        )
-
-    tipo_evaluacion = (
-        db.query(TiposEvaluacion)
-        .filter(
-            TiposEvaluacion.nombreTipoEvaluacion == "CIE",
-            TiposEvaluacion.activo.is_(True),
-        )
-        .first()
-    )
-
-    if tipo_evaluacion is None:
-        raise HTTPException(
-            status_code=409,
-            detail="El tipo de evaluación CIE no está activo.",
-        )
-
-    estado_completada = (
-        db.query(EstadosEvaluacion)
-        .filter(
-            EstadosEvaluacion.nombreEstadoEvaluacion == "Completada",
-            EstadosEvaluacion.activo.is_(True),
-        )
-        .first()
-    )
-
-    if estado_completada is None:
-        raise HTTPException(
-            status_code=409,
-            detail="No existe un estado Completada activo.",
-        )
-
-    evaluacion = (
-        db.query(Evaluaciones)
-        .filter(
-            Evaluaciones.propuestaId == propuesta.propuestaId,
-            Evaluaciones.evaluadorId == usuario_id,
-            Evaluaciones.tipoEvaluacionId == tipo_evaluacion.tipoEvaluacionId,
-            Evaluaciones.estadoEvaluacionId
-            == estado_completada.estadoEvaluacionId,
-        )
-        .first()
-    )
-
-    if evaluacion is None:
-        raise HTTPException(
-            status_code=409,
-            detail=(
-                "Se requiere una evaluación CIE completada por el usuario "
-                "autenticado antes de registrar la resolución."
-            ),
-        )
-
-    resolucion = Dictamenes(
-        propuestaId=propuesta.propuestaId,
-        tipoDictamenId=tipo_dictamen.tipoDictamenId,
-        numeroOficio=datos.numeroOficio,
-        contenido=datos.contenido,
-        rutaArchivo=datos.rutaArchivo,
-        usuarioRemitenteId=usuario_id,
-        usuarioAuditoriaId=usuario_id,
-    )
-
+def registrar_resolucion_cie(db: Session, codigo: str, usuario_id: int, datos) -> dict:
+    p, estado_actual = _propuesta(db,codigo,exigir_en_cie=True)
+    tipo_eval=_tipo_evaluacion(db)
+    tipo_dictamen=db.query(TiposDictamen).filter(TiposDictamen.nombreTipoDictamen=="CIE",TiposDictamen.activo.is_(True)).first()
+    estado_final=db.query(EstadosPropuesta).filter(EstadosPropuesta.codigoEstadoPropuesta==("APROBADA" if datos.decision=="Aprobar" else "RECHAZADA"),EstadosPropuesta.activo.is_(True)).first()
+    completada=db.query(EstadosEvaluacion).filter(EstadosEvaluacion.nombreEstadoEvaluacion=="Completada",EstadosEvaluacion.activo.is_(True)).first()
+    if not all((tipo_eval,tipo_dictamen,estado_final,completada)): raise HTTPException(status_code=409,detail="Faltan catálogos requeridos para emitir la resolución del CIE.")
+    evaluacion=db.query(Evaluaciones).filter(Evaluaciones.propuestaId==p.propuestaId,Evaluaciones.evaluadorId==usuario_id,Evaluaciones.tipoEvaluacionId==tipo_eval.tipoEvaluacionId,Evaluaciones.estadoEvaluacionId==completada.estadoEvaluacionId).first()
+    if not evaluacion: raise HTTPException(status_code=409,detail="Completa primero la rúbrica CIE antes de emitir la resolución.")
+    existente=db.query(Dictamenes).filter(Dictamenes.propuestaId==p.propuestaId,Dictamenes.tipoDictamenId==tipo_dictamen.tipoDictamenId).first()
+    if existente: raise HTTPException(status_code=409,detail="La propuesta ya tiene una resolución CIE registrada.")
+    contenido=f"RESOLUCIÓN DEL CONSEJO DE INVESTIGACIÓN Y EXTENSIÓN\nDecisión: {datos.decision}\nCalificación: {evaluacion.calificacion} / 10\nObservaciones de evaluación: {evaluacion.observaciones or 'Sin observaciones'}\nJustificación de la resolución: {datos.justificacion.strip()}"
     try:
-        db.add(resolucion)
-        db.commit()
-        db.refresh(resolucion)
+      dictamen=Dictamenes(propuestaId=p.propuestaId,tipoDictamenId=tipo_dictamen.tipoDictamenId,contenido=contenido,usuarioRemitenteId=usuario_id,usuarioAuditoriaId=usuario_id); db.add(dictamen)
+      p.estadoId=estado_final.estadoPropuestaId; p.usuarioAuditoriaId=usuario_id; p.ultimaAuditoria=datetime.now(timezone.utc)
+      db.add(HistorialEstadosPropuesta(propuestaId=p.propuestaId,estadoAnteriorId=estado_actual.estadoPropuestaId,estadoNuevoId=estado_final.estadoPropuestaId,usuarioResponsableId=usuario_id,observaciones=datos.justificacion.strip()))
+      nombre_tipo_notificacion = "Aprobacion_Propuesta" if datos.decision == "Aprobar" else "Rechazo_Propuesta"
+      tipo_notificacion = db.query(TiposNotificacion).filter(TiposNotificacion.nombreTipoNotificacion == nombre_tipo_notificacion, TiposNotificacion.activo.is_(True)).first()
+      canal_interno = db.query(CanalesComunicacion).filter(CanalesComunicacion.nombreCanal == "Interno_Sistema", CanalesComunicacion.activo.is_(True)).first()
+      rol_direccion = db.query(RolesSistema).filter(RolesSistema.nombreRol == "DireccionInvestigacion", RolesSistema.activo.is_(True)).first()
+      if tipo_notificacion and canal_interno and rol_direccion:
+        destinatarios = db.query(Usuario).join(UsuarioRol, UsuarioRol.usuarioId == Usuario.usuarioId).filter(UsuarioRol.rolId == rol_direccion.rolId, UsuarioRol.activo.is_(True), Usuario.activo.is_(True)).all()
+        for destinatario in destinatarios:
+          db.add(Notificaciones(usuarioDestinoId=destinatario.usuarioId, propuestaId=p.propuestaId, tipoNotificacionId=tipo_notificacion.tipoNotificacionId, asunto=f"Resolución CIE recibida: {p.codigoPropuesta}", cuerpoMensaje=f"El CIE emitió la decisión {datos.decision} para la propuesta {p.codigoPropuesta}. Dirección de Investigación debe generar el oficio y notificar al investigador.", canalId=canal_interno.canalId, usuarioAuditoriaId=usuario_id))
+      db.commit(); db.refresh(dictamen)
     except Exception:
-        db.rollback()
-        raise
-
-    return {
-        "mensaje": "Resolución CIE registrada correctamente.",
-        "dictamenId": resolucion.dictamenId,
-        "propuestaId": resolucion.propuestaId,
-        "codigo": propuesta.codigoPropuesta,
-        "tipoDictamen": tipo_dictamen.nombreTipoDictamen,
-        "numeroOficio": resolucion.numeroOficio,
-        "fechaEmision": (
-            resolucion.fechaEmision.isoformat()
-            if resolucion.fechaEmision
-            else None
-        ),
-        "contenido": resolucion.contenido,
-        "rutaArchivo": resolucion.rutaArchivo,
-        "usuarioRemitenteId": resolucion.usuarioRemitenteId,
-    }
-
+      db.rollback(); raise
+    return {"mensaje":"Resolución CIE registrada y remitida a Dirección de Investigación.","dictamenId":dictamen.dictamenId,"propuestaId":p.propuestaId,"codigo":p.codigoPropuesta,"decision":datos.decision,"estado":estado_final.codigoEstadoPropuesta,"fechaEmision":dictamen.fechaEmision.isoformat() if dictamen.fechaEmision else None}
 
 def listar_resoluciones_cie(db: Session) -> list[dict]:
-    """Lista las resoluciones CIE registradas."""
-
-    resoluciones = (
-        db.query(Dictamenes, Propuesta, TiposDictamen)
-        .join(
-            Propuesta,
-            Dictamenes.propuestaId == Propuesta.propuestaId,
-        )
-        .join(
-            TiposDictamen,
-            Dictamenes.tipoDictamenId == TiposDictamen.tipoDictamenId,
-        )
-        .filter(
-            TiposDictamen.nombreTipoDictamen == "CIE",
-            TiposDictamen.activo.is_(True),
-        )
-        .order_by(
-            Dictamenes.fechaEmision.desc(),
-            Dictamenes.dictamenId.desc(),
-        )
-        .all()
-    )
-
-    return [
-        {
-            "dictamenId": dictamen.dictamenId,
-            "propuestaId": propuesta.propuestaId,
-            "codigo": propuesta.codigoPropuesta,
-            "titulo": propuesta.titulo,
-            "numeroOficio": dictamen.numeroOficio,
-            "fechaEmision": (
-                dictamen.fechaEmision.isoformat()
-                if dictamen.fechaEmision
-                else None
-            ),
-            "contenido": dictamen.contenido,
-            "rutaArchivo": dictamen.rutaArchivo,
-            "usuarioRemitenteId": dictamen.usuarioRemitenteId,
-        }
-        for dictamen, propuesta, tipo in resoluciones
-    ]
+    tipo=db.query(TiposDictamen).filter(TiposDictamen.nombreTipoDictamen=="CIE",TiposDictamen.activo.is_(True)).first()
+    if not tipo: return []
+    filas=db.query(Dictamenes,Propuesta).join(Propuesta,Dictamenes.propuestaId==Propuesta.propuestaId).filter(Dictamenes.tipoDictamenId==tipo.tipoDictamenId).order_by(Dictamenes.fechaEmision.desc()).all()
+    return [{"dictamenId":d.dictamenId,"propuestaId":p.propuestaId,"codigo":p.codigoPropuesta,"titulo":p.titulo,"numeroOficio":d.numeroOficio,"fechaEmision":d.fechaEmision.isoformat() if d.fechaEmision else None,"contenido":d.contenido,"decision":"Aprobar" if "Decisión: Aprobar" in (d.contenido or "") else "Rechazar"} for d,p in filas]
