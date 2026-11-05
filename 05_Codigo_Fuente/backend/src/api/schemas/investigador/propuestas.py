@@ -98,6 +98,29 @@ class ColaboradorExternoCreate(BaseModel):
     institucionEmpresa: str = Field(..., max_length=150)
 
 
+class ColaboradorExternoResponse(BaseModel):
+    colaboradorId: int
+    propuestaId: int
+    nombreColaborador: str
+    apellido1Colaborador: Optional[str] = None
+    apellido2Colaborador: Optional[str] = None
+    idOrcid: Optional[str] = None
+    institucionEmpresa: str
+
+    class Config:
+        from_attributes = True
+
+
+class EquipoCompletoUpdate(BaseModel):
+    integrantes: List[IntegranteEquipoCreate] = []
+    colaboradoresExternos: List[ColaboradorExternoCreate] = []
+
+
+class EquipoCompletoResponse(BaseModel):
+    integrantes: List[IntegranteEquipoResponse] = []
+    colaboradoresExternos: List[ColaboradorExternoResponse] = []
+
+
 # --- Productos Académicos ---
 
 class ProductoAcademicoCreate(BaseModel):
@@ -281,6 +304,7 @@ class PropuestaDetalleResponse(BaseModel):
     declaraciones: Optional[DeclaracionesForm04Response] = None
     
     integrantes: List[IntegranteEquipoResponse] = []
+    colaboradoresExternos: List[ColaboradorExternoResponse] = []
     productosAcademicos: List[ProductoAcademicoResponse] = []
     presupuesto: List[RubroPresupuestoResponse] = []
     subsanaciones: List[SubsanacionResponse] = []

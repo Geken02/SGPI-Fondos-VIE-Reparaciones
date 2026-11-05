@@ -26,7 +26,7 @@ const Sidebar = () => {
     'DirectorEscuela' // Nota: DirectorEscuela también tiene acceso a Comité Técnico
   ].includes(rolActivo);
   
-  const esVinculacion = rolActivo === 'EvaluadorVinculacion' || rolActivo === 'Vinculacion' || rolActivo === 'CoordinadorVinculacion';
+  const esVinculacion = rolActivo === 'EvaluadorVinculacion' || rolActivo === 'Vinculacion' || rolActivo === 'CoordinadorVinculacion' || (typeof rolActivo === 'string' && rolActivo.toLowerCase().includes('vinculacion'));
   
   const esMiembroCIE = rolActivo === 'MiembroCIE';
   const esCoordinadorCIE = rolActivo === 'CoordinadorCIE';
@@ -51,6 +51,7 @@ const Sidebar = () => {
     if (path === '/comite-tecnico/propuestas-asignadas' && location.pathname.includes('/expediente/')) return true;
     if (path === '/comite-tecnico/propuestas-asignadas' && location.pathname.includes('/dictamen/')) return true;
     if (path === '/dashboard/dictamenes' && location.pathname.includes('/detalle-dictamen')) return true;
+    if (path === '/dashboard/bandeja-evaluacion' && (location.pathname.includes('/evaluar-propuesta') || location.pathname.includes('/vinculacion'))) return true;
     return false;
   };
 
@@ -179,11 +180,6 @@ const Sidebar = () => {
     if (esVinculacion) {
       return (
         <>
-          <div className="sidebar-group-title">General</div>
-          <NavLink to="/dashboard" end className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
-            <span className="sidebar-pill-icon">{IconoInicio}</span>
-            <span className="sidebar-pill-label">Inicio</span>
-          </NavLink>
           <div className="sidebar-group-title">Evaluación</div>
           <NavLink to="/dashboard/bandeja-evaluacion" className={({ isActive }) => `sidebar-pill-btn ${isItemActive('/dashboard/bandeja-evaluacion', isActive) ? 'active' : ''}`}>
             <span className="sidebar-pill-icon">{IconoEvaluacion}</span>

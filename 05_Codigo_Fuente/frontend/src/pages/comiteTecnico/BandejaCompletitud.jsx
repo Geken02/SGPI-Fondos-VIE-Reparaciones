@@ -73,26 +73,7 @@ export default function BandejaDeCompletitud() {
         </p>
       </div>
 
-      {/* Alerta de plazo */}
-      <div style={{
-        backgroundColor: '#fef3c7',
-        border: '1px solid #fcd34d',
-        borderRadius: '8px',
-        padding: '12px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        marginBottom: '32px',
-        color: '#92400e',
-        fontSize: '14px'
-      }}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        <span>Plazo de evaluación: <strong>31 de agosto - 11 de septiembre de 2027</strong></span>
-      </div>
+      
 
       {/* Tarjetas de estadísticas */}
       <div style={{

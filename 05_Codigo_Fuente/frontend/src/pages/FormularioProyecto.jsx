@@ -58,6 +58,8 @@ const FormularioProyecto = () => {
 
   // Paso 7: Equipo de Investigación
   const [investigadoresTEC, setInvestigadoresTEC] = useState([]);
+  const [investigadoresDisponibles, setInvestigadoresDisponibles] = useState([]);
+  const [rolesEquipoDisponibles, setRolesEquipoDisponibles] = useState([]);
   const [colaboradoresExternos, setColaboradoresExternos] = useState([]);
 
   // Paso 8: Problema de Investigación
@@ -157,6 +159,24 @@ const FormularioProyecto = () => {
   }, [investigadoresTEC]);
 
   // Inicializar coordinador cuando carga el usuario
+  
+  useEffect(() => {
+    const cargarCatInvestigadores = async () => {
+      try {
+        const cat = await propuestaService.obtenerCatalogosFormulario();
+        if (cat?.investigadores) {
+          setInvestigadoresDisponibles(cat.investigadores);
+        }
+        if (cat?.rolesEquipo) {
+          setRolesEquipoDisponibles(cat.rolesEquipo);
+        }
+      } catch (_e) {
+        console.warn('Error cargando catálogo de investigadores:', _e);
+      }
+    };
+    cargarCatInvestigadores();
+  }, []);
+
   useEffect(() => {
     if (usuario?.nombre && investigadoresTEC.length === 0) {
       setInvestigadoresTEC([
@@ -299,6 +319,32 @@ const FormularioProyecto = () => {
             setPoseeInnovacion(prev => ({ ...prev, aplica: !!prop.declaraciones.poseeInnovacion }));
             setResguardoCompromiso(!!prop.declaraciones.aceptaResguardoRepositorio);
           }
+
+          if (prop.integrantes && Array.isArray(prop.integrantes) && prop.integrantes.length > 0) {
+            setInvestigadoresTEC(prop.integrantes.map(inte => ({
+              id: inte.integranteEquipoId || inte.usuarioId,
+              usuarioId: inte.usuarioId,
+              nombre: inte.nombreCompleto || '',
+              correo: inte.correoInstitucional || '',
+              orcid: inte.orcid || '',
+              instancia: inte.instancia || usuario?.escuela || 'TEC',
+              rol: inte.rolEquipoId === 1 ? 'Coordinador(a)' : 'Co-Investigador(a)',
+              rolEquipoId: inte.rolEquipoId || 2,
+              horas: `${inte.horasSemanales || 10} h (VIE)`,
+              nombramiento: String(new Date().getFullYear())
+            })));
+          }
+
+          if (prop.colaboradoresExternos && Array.isArray(prop.colaboradoresExternos) && prop.colaboradoresExternos.length > 0) {
+            setColaboradoresExternos(prop.colaboradoresExternos.map(col => ({
+              id: col.colaboradorId,
+              nombre: col.nombreColaborador || '',
+              apellido1: col.apellido1Colaborador || '',
+              apellido2: col.apellido2Colaborador || '',
+              orcid: col.idOrcid || '',
+              institucion: col.institucionEmpresa || ''
+            })));
+          }
           setMensajeGuardado('Sincronizado con BD');
         }
       } catch (_e) {
@@ -408,6 +454,52 @@ const FormularioProyecto = () => {
         };
         await propuestaService.guardarDeclaraciones(idParaGuardar, payloadDeclaraciones);
 
+        // Sincronizar Equipo de Investigación y Colaboradores Externos en la BD
+        try {
+          const payloadEquipo = {
+            integrantes: investigadoresTEC.map(inv => ({
+              usuarioId: Number(inv.usuarioId || inv.id) || usuario?.id || 1,
+              tipoHoraId: 1,
+              horasSemanales: parseFloat(String(inv.horas || '10').replace(/[^\d.]/g, '')) || 10.0,
+              rolEquipoId: (inv.rol && inv.rol.includes('Coord')) ? 1 : (Number(inv.rolEquipoId) || 2),
+              orcid: inv.orcid || null
+            })),
+            colaboradoresExternos: colaboradoresExternos.filter(c => c.nombre && c.nombre.trim()).map(col => ({
+              nombreColaborador: col.nombre.trim(),
+              apellido1Colaborador: col.apellido1 || null,
+              apellido2Colaborador: col.apellido2 || null,
+              idOrcid: col.orcid || null,
+              institucionEmpresa: col.institucion || 'Institución Externa'
+            }))
+          };
+          await propuestaService.guardarEquipoCompleto(idParaGuardar, payloadEquipo);
+        } catch (_eqErr) {
+          console.warn('Error al persistir equipo en BD:', _eqErr);
+        }
+
+        // Sincronizar Equipo de Investigación y Colaboradores Externos en la BD
+        try {
+          const payloadEquipo = {
+            integrantes: investigadoresTEC.map(inv => ({
+              usuarioId: Number(inv.usuarioId || inv.id) || usuario?.id || 1,
+              tipoHoraId: 1,
+              horasSemanales: parseFloat(String(inv.horas || '10').replace(/[^\d.]/g, '')) || 10.0,
+              rolEquipoId: (inv.rol && inv.rol.includes('Coord')) ? 1 : (Number(inv.rolEquipoId) || 2),
+              orcid: inv.orcid || null
+            })),
+            colaboradoresExternos: colaboradoresExternos.filter(c => c.nombre && c.nombre.trim()).map(col => ({
+              nombreColaborador: col.nombre.trim(),
+              apellido1Colaborador: col.apellido1 || null,
+              apellido2Colaborador: col.apellido2 || null,
+              idOrcid: col.orcid || null,
+              institucionEmpresa: col.institucion || 'Institución Externa'
+            }))
+          };
+          await propuestaService.guardarEquipoCompleto(idParaGuardar, payloadEquipo);
+        } catch (_eqErr) {
+          console.warn('Error al persistir equipo en BD:', _eqErr);
+        }
+
         setMensajeGuardado(`Guardado ${ahora}`);
       } catch (_err) {
         console.warn('Error al persistir en backend, respaldado localmente:', _err);
@@ -492,7 +584,7 @@ const FormularioProyecto = () => {
             <div className="success-icon-badge">✓</div>
             <h1 className="success-modal-title">¡Propuesta Enviada a Revisión Institucional!</h1>
             <p className="success-modal-subtitle">
-              El Formulario Form-04 ha sido firmado digitalmente y enviado con éxito a la Vicerrectoría de Investigación y Extensión (VIE) para su proceso de dictamen y evaluación.
+              El Formulario Form-04 ha sido firmado digitalmente y enviado con éxito a la Unidad de Vinculación para su proceso de evaluación y dictamen.
             </p>
             <div className="success-propuesta-code-box">
               <span className="code-label">PROYECTO REGISTRADO</span>
@@ -1086,9 +1178,19 @@ const FormularioProyecto = () => {
                   Indique los investigadores que son funcionarios del TEC y los colaboradores externos que estarán participando en la propuesta.
                 </p>
 
-                <h3 style={{ fontSize: '15px', color: '#002855', marginTop: '16px', marginBottom: '8px', fontWeight: 700 }}>
-                  Cuadro 2. Investigadores que son funcionarios del TEC
-                </h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', marginBottom: '8px' }}>
+                  <h3 style={{ fontSize: '15px', color: '#002855', margin: 0, fontWeight: 700 }}>
+                    Cuadro 2. Investigadores que son funcionarios del TEC
+                  </h3>
+                  <button 
+                    type="button" 
+                    className="btn-link-action"
+                    style={{ fontSize: '12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    onClick={() => setInvestigadoresTEC([...investigadoresTEC, { id: Date.now(), usuarioId: null, nombre: '', orcid: '', instancia: 'TEC', rol: 'Co-Investigador(a)', rolEquipoId: 2, horas: '10 h (VIE)', nombramiento: String(new Date().getFullYear()) }])}
+                  >
+                    + Añadir miembro al equipo
+                  </button>
+                </div>
                 <div className="table-responsive-container">
                   <table className="institucional-data-table">
                     <thead>
@@ -1106,18 +1208,45 @@ const FormularioProyecto = () => {
                       {investigadoresTEC.map((inv, idx) => (
                         <tr key={inv.id || idx}>
                           <td>
-                            <LimitedInput 
-                              type="text" 
-                              className="form-table-input"
-                              value={inv.nombre}
-                              maxLength={100}
-                              showCounter={false}
-                              onChange={(e) => {
-                                const copia = [...investigadoresTEC];
-                                copia[idx].nombre = e.target.value;
-                                setInvestigadoresTEC(copia);
-                              }}
-                            />
+                            {idx === 0 ? (
+                              <input 
+                                type="text"
+                                className="form-table-input"
+                                value={inv.nombre}
+                                readOnly
+                                title="Investigador Coordinador responsable de la propuesta"
+                                style={{ backgroundColor: '#f8fafc', fontWeight: 600, color: '#002855' }}
+                              />
+                            ) : (
+                              <select
+                                className="form-table-input"
+                                value={inv.usuarioId || ''}
+                                style={{ background: '#ffffff', cursor: 'pointer' }}
+                                onChange={(e) => {
+                                  const uId = Number(e.target.value);
+                                  const selUsu = investigadoresDisponibles.find(u => u.usuarioId === uId);
+                                  const copia = [...investigadoresTEC];
+                                  if (selUsu) {
+                                    copia[idx].usuarioId = selUsu.usuarioId;
+                                    copia[idx].nombre = selUsu.nombreCompleto;
+                                    copia[idx].correo = selUsu.correo;
+                                    copia[idx].instancia = selUsu.escuela || 'TEC';
+                                  } else {
+                                    copia[idx].usuarioId = null;
+                                    copia[idx].nombre = '';
+                                    copia[idx].instancia = 'TEC';
+                                  }
+                                  setInvestigadoresTEC(copia);
+                                }}
+                              >
+                                <option value="">-- Seleccionar Investigador TEC de la BD --</option>
+                                {investigadoresDisponibles.map(u => (
+                                  <option key={u.usuarioId} value={u.usuarioId}>
+                                    {u.nombreCompleto} ({u.escuela || 'TEC'})
+                                  </option>
+                                ))}
+                              </select>
+                            )}
                           </td>
                           <td>
                             <LimitedInput 
@@ -1215,7 +1344,7 @@ const FormularioProyecto = () => {
                 <button 
                   type="button" 
                   className="btn-add-table-row"
-                  onClick={() => setInvestigadoresTEC([...investigadoresTEC, { id: Date.now(), nombre: '', orcid: '', instancia: usuario?.escuela || 'TEC', rol: 'Co-Investigador(a)', horas: '5 h (VIE)', nombramiento: String(new Date().getFullYear()) }])}
+                  onClick={() => setInvestigadoresTEC([...investigadoresTEC, { id: Date.now(), usuarioId: null, nombre: '', orcid: '', instancia: 'TEC', rol: 'Co-Investigador(a)', rolEquipoId: 2, horas: '5 h (VIE)', nombramiento: String(new Date().getFullYear()) }])}
                 >
                   + Insertar fila en Investigadores TEC
                 </button>
@@ -1453,19 +1582,20 @@ const FormularioProyecto = () => {
                   <table className="institucional-data-table">
                     <thead>
                       <tr>
-                        <th style={{ width: '12%' }}>Obj. Esp.</th>
+                        <th style={{ width: '10%' }}>Obj. Esp.</th>
                         <th>Actividad principal</th>
                         <th>Meta / Entregable</th>
-                        <th style={{ width: '8%', textAlign: 'center' }}>Año 1</th>
-                        <th style={{ width: '8%', textAlign: 'center' }}>Año 2</th>
-                        <th style={{ width: '8%', textAlign: 'center' }}>Año 3</th>
-                        <th style={{ width: '48px', textAlign: 'center' }}>Acción</th>
+                        <th style={{ width: '18%' }}>Responsable (Equipo)</th>
+                        <th style={{ width: '6%', textAlign: 'center' }}>Año 1</th>
+                        <th style={{ width: '6%', textAlign: 'center' }}>Año 2</th>
+                        <th style={{ width: '6%', textAlign: 'center' }}>Año 3</th>
+                        <th style={{ width: '40px', textAlign: 'center' }}>Acción</th>
                       </tr>
                     </thead>
                     <tbody>
                       {actividadesCronograma.length === 0 ? (
                         <tr>
-                          <td colSpan="7" style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>
+                          <td colSpan="8" style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>
                             No hay actividades registradas en el cronograma. Haga clic en <strong>+ Agregar Actividad al Cronograma</strong> para comenzar.
                           </td>
                         </tr>
@@ -1516,6 +1646,30 @@ const FormularioProyecto = () => {
                                   setActividadesCronograma(copia);
                                 }}
                               />
+                            </td>
+                            <td>
+                              <select 
+                                className="form-table-input"
+                                value={act.responsable || ''}
+                                style={{ background: '#ffffff', cursor: 'pointer' }}
+                                onChange={(e) => {
+                                  const copia = [...actividadesCronograma];
+                                  copia[i].responsable = e.target.value;
+                                  setActividadesCronograma(copia);
+                                }}
+                              >
+                                <option value="">— Seleccionar —</option>
+                                {investigadoresTEC.filter(inv => inv.nombre).map((inv, idx) => (
+                                  <option key={inv.id || idx} value={inv.nombre}>
+                                    {inv.nombre} ({inv.rol || 'TEC'})
+                                  </option>
+                                ))}
+                                {colaboradoresExternos.filter(col => col.nombre).map((col, idx) => (
+                                  <option key={col.id || idx} value={col.nombre}>
+                                    {col.nombre} (Externo)
+                                  </option>
+                                ))}
+                              </select>
                             </td>
                             <td style={{ textAlign: 'center' }}>
                               <input 
@@ -1577,9 +1731,20 @@ const FormularioProyecto = () => {
                   + Agregar Actividad al Cronograma
                 </button>
 
-                <h3 style={{ fontSize: '15px', color: '#002855', marginTop: '24px', marginBottom: '8px', fontWeight: 700 }}>
-                  2. Identificación y Mitigación de Riesgos
-                </h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', marginBottom: '8px' }}>
+                  <h3 style={{ fontSize: '15px', color: '#002855', margin: 0, fontWeight: 700 }}>
+                    2. Identificación y Mitigación de Riesgos
+                  </h3>
+                  <button 
+                    type="button" 
+                    className="btn-link-action"
+                    style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    onClick={() => setPasoActual(7)}
+                    title="Ir al Paso 7 para incorporar nuevos investigadores o colaboradores"
+                  >
+                    + Añadir / Gestionar miembros del equipo
+                  </button>
+                </div>
                 <div className="table-responsive-container">
                   <table className="institucional-data-table">
                     <thead>
@@ -1592,7 +1757,7 @@ const FormularioProyecto = () => {
                     <tbody>
                       {riesgosMitigacion.length === 0 ? (
                         <tr>
-                          <td colSpan="3" style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>
+                          <td colSpan="4" style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>
                             No hay riesgos registrados. Haga clic en <strong>+ Agregar Riesgo y Estrategia</strong> para comenzar.
                           </td>
                         </tr>
@@ -1628,6 +1793,30 @@ const FormularioProyecto = () => {
                                   setRiesgosMitigacion(copia);
                                 }}
                               />
+                            </td>
+                            <td>
+                              <select 
+                                className="form-table-input"
+                                value={r.responsable || ''}
+                                style={{ background: '#ffffff', cursor: 'pointer' }}
+                                onChange={(e) => {
+                                  const copia = [...riesgosMitigacion];
+                                  copia[i].responsable = e.target.value;
+                                  setRiesgosMitigacion(copia);
+                                }}
+                              >
+                                <option value="">— Seleccionar —</option>
+                                {investigadoresTEC.filter(inv => inv.nombre).map((inv, idx) => (
+                                  <option key={inv.id || idx} value={inv.nombre}>
+                                    {inv.nombre} ({inv.rol || 'TEC'})
+                                  </option>
+                                ))}
+                                {colaboradoresExternos.filter(col => col.nombre).map((col, idx) => (
+                                  <option key={col.id || idx} value={col.nombre}>
+                                    {col.nombre} (Externo)
+                                  </option>
+                                ))}
+                              </select>
                             </td>
                             <td style={{ textAlign: 'center' }}>
                               <button 
@@ -1946,11 +2135,7 @@ const FormularioProyecto = () => {
                   De acuerdo con la normativa institucional de la VIE, la cantidad de productos académicos comprometidos se define en función del total de horas semanales asignadas a la propuesta y es requisito indispensable para la liquidación técnica y el cierre del proyecto en el repositorio institucional.
                 </p>
 
-                {/* Resumen de horas del proyecto */}
-                <div className="compromiso-horas-bar">
-                  <span>Total de horas semanales propuestas en el proyecto:</span>
-                  <span className="compromiso-horas-pill">{totalHorasSemanales} horas</span>
-                </div>
+                
 
                 {/* Sección a: Compromiso según carga horaria (Sólo 3 rangos según normativa) */}
                 <h3 className="compromiso-section-header">
@@ -2176,13 +2361,7 @@ const FormularioProyecto = () => {
                   </div>
                 </div>
 
-                {/* Recordatorio Técnico */}
-                <div className="compromiso-callout-card">
-                  <span style={{ fontSize: '18px' }}>ℹ️</span>
-                  <div>
-                    <strong>Recordatorio Técnico:</strong> En cumplimiento del artículo 44 del Reglamento de Investigación y Extensión del ITCR, los compromisos adquiridos en esta sección son vinculantes para la liquidación final del proyecto y la emisión de la certificación de cierre institucional por parte de la Vicerrectoría de Investigación y Extensión (VIE).
-                  </div>
-                </div>
+                
               </div>
             )}
 
@@ -2200,11 +2379,7 @@ const FormularioProyecto = () => {
                   De acuerdo con la normativa institucional de la VIE y el Centro de Vinculación, los proyectos de Desarrollo Tecnológico deben seleccionar obligatoriamente al menos un activo de propiedad industrial amparado en dictamen oficial (Requisito 5.5.a) y productos académicos complementarios (Requisito 5.5.b).
                 </p>
 
-                {/* Resumen de horas del proyecto */}
-                <div className="compromiso-horas-bar">
-                  <span>Total de horas semanales propuestas en el proyecto:</span>
-                  <span className="compromiso-horas-pill">{totalHorasSemanales} horas</span>
-                </div>
+                
 
                 {/* Sección a: Compromiso según carga horaria para desarrollo tecnológico (3 rangos oficiales) */}
                 <h3 className="compromiso-section-header">
@@ -2410,13 +2585,7 @@ const FormularioProyecto = () => {
                   </table>
                 </div>
 
-                {/* Recordatorio Técnico */}
-                <div className="compromiso-callout-card">
-                  <span style={{ fontSize: '18px' }}>ℹ️</span>
-                  <div>
-                    <strong>Requisito Institucional de Cierre:</strong> Los activos de propiedad industrial comprometidos requieren el acompañamiento y dictamen favorable del Centro de Vinculación TEC conforme al Reglamento Institucional de Propiedad Intelectual para el trámite de finiquito.
-                  </div>
-                </div>
+                
               </div>
             )}
 
@@ -2654,7 +2823,7 @@ const FormularioProyecto = () => {
                     onClick={handleEnvioDefinitivo}
                     disabled={guardando}
                   >
-                    {guardando ? 'Enviando a VIE...' : 'ENVÍO DEFINITIVO DE PROPUESTA'}
+                    {guardando ? 'Enviando a Unidad de Vinculación...' : 'ENVÍO DEFINITIVO DE PROPUESTA'}
                   </button>
                 )}
               </div>

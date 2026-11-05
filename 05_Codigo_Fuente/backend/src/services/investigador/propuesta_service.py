@@ -6,7 +6,8 @@ from fastapi import HTTPException, status
 
 from src.models.propuestas import Propuesta
 from src.models.propuesta_contenido import PropuestaContenido, PropuestaDeclaraciones
-from src.models.propuesta_equipo import IntegrantesEquipoPropuesta, RolesEquipo
+from src.models.propuesta_equipo import IntegrantesEquipoPropuesta, RolesEquipo, ColaboradoresExternos
+from datetime import date
 from src.models.presupuesto import PresupuestoPropuesta
 from src.models.propuesta_plan import Actividades
 from src.models.propuesta_documentos import PropuestaDocumentos
@@ -25,6 +26,9 @@ from src.api.schemas.investigador.propuestas import (
     DeclaracionesForm04Update,
     DeclaracionesForm04Response,
     IntegranteEquipoCreate,
+    ColaboradorExternoCreate,
+    ColaboradorExternoResponse,
+    EquipoCompletoUpdate,
     ProductoAcademicoCreate,
     RubroPresupuestoCreate,
     SubsanacionResponse,
@@ -50,9 +54,18 @@ def crear_propuesta(
 
     # Validar que convocatoria y escuela existan en la BD
     conv_id = datos.convocatoriaId
-    if not db.query(Convocatorias).filter(Convocatorias.convocatoriaId == conv_id).first():
+    convocatoria = db.query(Convocatorias).filter(Convocatorias.convocatoriaId == conv_id).first()
+    if not convocatoria:
         primera_conv = db.query(Convocatorias).filter(Convocatorias.activo == True).first()
+        convocatoria = primera_conv
         conv_id = primera_conv.convocatoriaId if primera_conv else 1
+
+    hoy = date.today()
+    if convocatoria and (not convocatoria.activo or (convocatoria.fechaCierre and convocatoria.fechaCierre < hoy)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"La convocatoria '{convocatoria.nombreConvocatoria}' se encuentra cerrada (Fecha de cierre: {convocatoria.fechaCierre}). No se pueden formular nuevas propuestas para esta convocatoria."
+        )
 
     esc_id = datos.escuelaId or usuario.escuelaId() or 1
     if not db.query(Escuela).filter(Escuela.escuelaId == esc_id).first():
@@ -222,6 +235,21 @@ def obtener_propuesta_detalle(
     declaraciones = db.query(PropuestaDeclaraciones).filter(PropuestaDeclaraciones.propuestaId == propuesta_id).first()
 
     # Integrantes
+    colaboradores_orm = db.query(ColaboradoresExternos).filter(
+        ColaboradoresExternos.propuestaId == propuesta_id
+    ).all()
+    colaboradores_resp = [
+        ColaboradorExternoResponse(
+            colaboradorId=c.getColaboradorId(),
+            propuestaId=c.getPropuestaId(),
+            nombreColaborador=c.getNombreColaborador(),
+            apellido1Colaborador=c.getApellido1Colaborador(),
+            apellido2Colaborador=c.getApellido2Colaborador(),
+            idOrcid=c.getIdOrcid(),
+            institucionEmpresa=c.getInstitucionEmpresa()
+        ) for c in colaboradores_orm
+    ]
+
     integrantes_orm = db.query(IntegrantesEquipoPropuesta).filter(
         IntegrantesEquipoPropuesta.propuestaId == propuesta_id
     ).all()
@@ -356,6 +384,7 @@ def obtener_propuesta_detalle(
         contenido=contenido_resp,
         declaraciones=declaraciones_resp,
         integrantes=integrantes_resp,
+        colaboradoresExternos=colaboradores_resp,
         productosAcademicos=productos_resp,
         presupuesto=presupuesto_resp,
         subsanaciones=subsanaciones_resp
@@ -728,7 +757,7 @@ def enviar_propuesta_revision(
         propuestaId=propuesta.getPropuestaId(),
         tipoNotificacionId=4,
         asunto=f"Propuesta enviada: {propuesta.getCodigoPropuesta()}",
-        cuerpoMensaje=f"Tu propuesta '{propuesta.getTitulo()}' ha sido enviada formalmente a revisión en la VIE.",
+        cuerpoMensaje=f"Tu propuesta '{propuesta.getTitulo()}' ha sido enviada formalmente a evaluación por la Unidad de Vinculación.",
         canalId=1,
         leida=False,
         creadoEn=datetime.now(timezone.utc),
@@ -920,3 +949,138 @@ def solicitar_subsanacion(
         estadoSubsanacionId=nueva_sub.getEstadoSubsanacionId(),
         nombreEstadoSubsanacion=est_sub.nombreEstadoSubsanacion if est_sub else "Pendiente"
     )
+
+
+def guardar_equipo_completo(
+    db: Session,
+    propuesta_id: int,
+    usuario_id: int,
+    datos: EquipoCompletoUpdate
+) -> dict:
+    """
+    Sincroniza y valida de manera atómica todos los integrantes del TEC y colaboradores externos.
+    Verifica estrictamente que los miembros del TEC existan en la tabla usuarios.
+    """
+    propuesta = db.query(Propuesta).filter(
+        Propuesta.propuestaId == propuesta_id,
+        Propuesta.investigadorCoordId == usuario_id
+    ).first()
+
+    if not propuesta:
+        raise HTTPException(status_code=404, detail="Propuesta no encontrada o no pertenece al usuario autenticado")
+
+    # 1. Integrantes TEC
+    db.query(IntegrantesEquipoPropuesta).filter(
+        IntegrantesEquipoPropuesta.propuestaId == propuesta_id
+    ).delete(synchronize_session=False)
+
+    coordinador_incluido = False
+    for inte in datos.integrantes:
+        usu = db.query(Usuario).filter(Usuario.usuarioId == inte.usuarioId, Usuario.activo == True).first()
+        if not usu:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El miembro con ID {inte.usuarioId} no existe en la base de datos de usuarios del TEC."
+            )
+        if inte.usuarioId == usuario_id:
+            coordinador_incluido = True
+
+        nuevo_inte = IntegrantesEquipoPropuesta()
+        nuevo_inte.setPropuestaId(propuesta_id)
+        nuevo_inte.setUsuarioId(inte.usuarioId)
+        nuevo_inte.setTipoHoraId(inte.tipoHoraId or 1)
+        nuevo_inte.setHorasSemanales(inte.horasSemanales or Decimal("10.0"))
+        nuevo_inte.setRolEquipoId(inte.rolEquipoId or (1 if inte.usuarioId == usuario_id else 2))
+        nuevo_inte.setOrcid(inte.orcid)
+        nuevo_inte.setUsuarioAuditoriaId(usuario_id)
+        db.add(nuevo_inte)
+
+    if not coordinador_incluido:
+        coord = IntegrantesEquipoPropuesta()
+        coord.setPropuestaId(propuesta_id)
+        coord.setUsuarioId(usuario_id)
+        coord.setTipoHoraId(1)
+        coord.setHorasSemanales(Decimal("10.0"))
+        coord.setRolEquipoId(1)
+        coord.setUsuarioAuditoriaId(usuario_id)
+        db.add(coord)
+
+    # 2. Colaboradores Externos
+    db.query(ColaboradoresExternos).filter(
+        ColaboradoresExternos.propuestaId == propuesta_id
+    ).delete(synchronize_session=False)
+
+    for col in datos.colaboradoresExternos:
+        if not col.nombreColaborador or not col.nombreColaborador.strip():
+            continue
+        nuevo_col = ColaboradoresExternos()
+        nuevo_col.setPropuestaId(propuesta_id)
+        nuevo_col.setNombreColaborador(col.nombreColaborador.strip())
+        nuevo_col.setApellido1Colaborador(col.apellido1Colaborador)
+        nuevo_col.setApellido2Colaborador(col.apellido2Colaborador)
+        nuevo_col.setIdOrcid(col.idOrcid)
+        nuevo_col.setInstitucionEmpresa(col.institucionEmpresa.strip() if col.institucionEmpresa else "Institución Externa")
+        nuevo_col.setUsuarioAuditoriaId(usuario_id)
+        db.add(nuevo_col)
+
+    db.commit()
+    return {"message": "Equipo de investigación y colaboradores externos guardados exitosamente"}
+
+
+def obtener_equipo_propuesta(
+    db: Session,
+    propuesta_id: int,
+    usuario_id: int
+) -> dict:
+    """
+    Retorna la lista de integrantes del TEC y colaboradores externos de una propuesta.
+    """
+    propuesta = db.query(Propuesta).filter(
+        Propuesta.propuestaId == propuesta_id,
+        Propuesta.investigadorCoordId == usuario_id
+    ).first()
+
+    if not propuesta:
+        raise HTTPException(status_code=404, detail="Propuesta no encontrada")
+
+    integrantes_orm = db.query(IntegrantesEquipoPropuesta).filter(
+        IntegrantesEquipoPropuesta.propuestaId == propuesta_id
+    ).all()
+    integrantes_resp = []
+    for inte in integrantes_orm:
+        usu = db.query(Usuario).filter(Usuario.usuarioId == inte.usuarioId).first()
+        rol = db.query(RolesEquipo).filter(RolesEquipo.rolEquipoId == inte.getRolEquipoId()).first()
+        nombre_completo = f"{usu.nombreUsuario} {usu.apellido1Usuario}".strip() if usu else None
+        integrantes_resp.append(
+            IntegranteEquipoResponse(
+                integranteEquipoId=inte.getIntegranteEquipoId(),
+                propuestaId=inte.getPropuestaId(),
+                usuarioId=inte.usuarioId,
+                nombreCompleto=nombre_completo,
+                correoInstitucional=usu.correoInstitucional if usu else None,
+                tipoHoraId=inte.getTipoHoraId() or 1,
+                horasSemanales=inte.getHorasSemanales(),
+                rolEquipoId=inte.getRolEquipoId(),
+                orcid=inte.getOrcid()
+            )
+        )
+
+    colaboradores_orm = db.query(ColaboradoresExternos).filter(
+        ColaboradoresExternos.propuestaId == propuesta_id
+    ).all()
+    colabs_resp = [
+        ColaboradorExternoResponse(
+            colaboradorId=c.getColaboradorId(),
+            propuestaId=c.getPropuestaId(),
+            nombreColaborador=c.getNombreColaborador(),
+            apellido1Colaborador=c.getApellido1Colaborador(),
+            apellido2Colaborador=c.getApellido2Colaborador(),
+            idOrcid=c.getIdOrcid(),
+            institucionEmpresa=c.getInstitucionEmpresa()
+        ) for c in colaboradores_orm
+    ]
+
+    return {
+        "integrantes": integrantes_resp,
+        "colaboradoresExternos": colabs_resp
+    }

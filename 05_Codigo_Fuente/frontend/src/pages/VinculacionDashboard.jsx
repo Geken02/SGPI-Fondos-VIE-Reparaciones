@@ -82,16 +82,7 @@ const VinculacionDashboard = () => {
           </div>
         </div>
 
-        {/* Banner de Plazo de Evaluación */}
-        <div className="vinculacion-banner-plazo">
-          <div className="plazo-left">
-            <span className="plazo-icon">⏱</span>
-            <span className="plazo-texto">
-              Plazo ordinario de evaluación: <strong>24–28 de agosto 2027</strong>
-            </span>
-          </div>
-          <div className="plazo-tag">Quedan 3 días</div>
-        </div>
+        
 
         {/* Fila de 3 Tarjetas KPI */}
         <div className="kpi-cards-grid">
