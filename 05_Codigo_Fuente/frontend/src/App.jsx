@@ -1,4 +1,4 @@
-﻿// src/App.jsx
+// src/App.jsx
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ModalProvider } from './context/ModalContext';
@@ -231,6 +231,7 @@ const App = () => {
             <Route path="propuestas" element={<InvestigadorPropuestas />} />
             <Route path="convocatorias" element={<InvestigadorConvocatorias />} />
             <Route path="crear-propuesta" element={<InvestigadorPropuestas />} />
+            <Route path="equipo" element={<InvestigadorEquipos />} />
             <Route path="equipos" element={<InvestigadorEquipos />} />
             <Route path="formularios" element={<InvestigadorFormularios />} />
             <Route path="historial" element={<InvestigadorHistorial />} />
@@ -243,6 +244,8 @@ const App = () => {
             <Route path="presupuesto" element={<FormularioPresupuesto />} />
 
             {/* Rutas Módulo Vinculación */}
+            <Route path="vinculacion" element={<VinculacionDashboard />} />
+            <Route path="bandeja-evaluacion" element={<VinculacionDashboard />} />
             <Route path="bandeja-vinculacion" element={<VinculacionDashboard />} />
             <Route path="dictamenes" element={<VinculacionDictamenes />} />
             <Route path="detalle-dictamen" element={<VinculacionDetalleDictamen />} />
