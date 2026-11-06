@@ -1,7 +1,7 @@
 // Configuración — preferencias de la Dirección de Investigación (GET/PUT /direccion-investigacion/configuracion)
 import { useEffect, useState } from 'react';
 import { direccionService, mensajeErrorDireccion, MODO_DEMO } from '../../services/direccionService';
-import { FIRMANTES } from '../../components/direccion/direccionConstantes';
+import { CANALES, FIRMANTES } from '../../components/direccion/direccionConstantes';
 import { useCarga } from '../../components/cie/useCarga';
 import { Icono, EncabezadoPagina, Cargando, ErrorCarga, AvisoExito } from '../../components/direccion/DireccionUi';
 
@@ -15,12 +15,15 @@ const Formulario = ({ inicial }) => {
   const [intento, setIntento] = useState(false);
 
   const cambiar = (campo, valor) => { setConfig((c) => ({ ...c, [campo]: valor })); setExito(''); };
+  const alternarCanal = (id) => cambiar('canales',
+    config.canales.includes(id) ? config.canales.filter((c) => c !== id) : [...config.canales, id]);
 
   const prefijoInvalido = !PREFIJO_VALIDO.test(config.prefijoOficio);
+  const sinCanales = config.canales.length === 0;
 
   const guardar = async () => {
     setIntento(true); setErrorGuardar(''); setExito('');
-    if (prefijoInvalido) return;
+    if (prefijoInvalido || sinCanales) return;
     setGuardando(true);
     try {
       await direccionService.guardarConfiguracion(config);
@@ -55,12 +58,21 @@ const Formulario = ({ inicial }) => {
 
         <div className="cie-columna">
           <div className="dir-subcard">
-            <h3 className="gv-subcard-titulo">Notificaciones</h3>
+            <h3 className="gv-subcard-titulo">Canales de notificación</h3>
             <div className="cie-cuerpo">
-              <p className="dir-ayuda-campo">
-                Las notificaciones oficiales se registran dentro del sistema y el investigador
-                las ve en la campana de la plataforma.
-              </p>
+              <div className="dir-opciones">
+                {CANALES.map((c) => (
+                  <label key={c.id} className="dir-opcion dir-check">
+                    <input type="checkbox" checked={config.canales.includes(c.id)} onChange={() => alternarCanal(c.id)} />
+                    <span><strong>{c.etiqueta}</strong><small>{c.detalle}</small></span>
+                  </label>
+                ))}
+                <label className="dir-opcion dir-check">
+                  <input type="checkbox" checked={config.copiaGestora} onChange={(e) => cambiar('copiaGestora', e.target.checked)} />
+                  <span><strong>Enviar copia a la Persona Gestora de la VIE</strong><small>La Gestora recibe una copia de cada notificación oficial.</small></span>
+                </label>
+              </div>
+              {intento && sinCanales && <p className="cie-error" role="alert">Activa al menos un canal de notificación.</p>}
             </div>
           </div>
         </div>
@@ -93,7 +105,7 @@ const ConfiguracionDireccion = () => {
   return (
     <>
       <EncabezadoPagina titulo="Configuración"
-        subtitulo="Define el firmante y la numeración de oficios de la Dirección de Investigación." />
+        subtitulo="Define el firmante, la numeración de oficios y los canales de notificación de la Dirección de Investigación." />
       {error && <ErrorCarga error={error} alReintentar={recargar} />}
       {cargando && <Cargando texto="Cargando configuración..." />}
       {!cargando && !error && datos && <Formulario inicial={datos} />}

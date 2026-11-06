@@ -15,6 +15,8 @@ export const MODO_DEMO = false;
 export const CONFIG_INICIAL = {
   firmante: 'Director/a de Investigación',
   prefijoOficio: 'DI-OF',
+  canales: ['Interno_Sistema', 'Correo_Electronico'],
+  copiaGestora: true,
 };
 
 const TIPOS_DOCUMENTO_API = {
@@ -29,38 +31,18 @@ const TIPOS_NOTIFICACION_API = {
   observaciones: 'Solicitud_Subsanacion',
 };
 
+const normalizarDecision = (tipo) => {
+  const texto = String(tipo || '').toLowerCase();
 
-const normalizarDecision = (tipo, contenido = '') => {
-  const texto = `${String(tipo || '')}\n${String(contenido || '')}`.toLowerCase();
+  if (texto.includes('aprobad')) return 'Aprobar';
+  if (texto.includes('rechaz')) return 'Rechazar';
 
-  // Primero se respeta la decisión explícita del CIE.
-  const decision = texto.match(
-    /decisi[oó]n(?:\s+del\s+cie)?\s*:\s*(aprobar|rechazar)/i
-  );
-
-  if (decision?.[1] === 'aprobar') return 'Aprobar';
-  if (decision?.[1] === 'rechazar') return 'Rechazar';
-
-  // Se comprueba primero el rechazo para evitar confundir
-  // "no favorable" con "favorable".
-  if (
-    /\b(no\s+(?:es\s+)?favorable|desfavorable|rechazada|rechazado|se rechaza)\b/i.test(texto)
-  ) {
-    return 'Rechazar';
-  }
-
-  if (
-    /\b(aprobada|aprobado|se aprueba|favorable)\b/i.test(texto)
-  ) {
-    return 'Aprobar';
-  }
-
+  // El tipo de dictamen no permite deducir una decisión.
   return 'Sin decisión registrada';
 };
 
-
 const normalizarDictamen = (d) => ({
-  propuestaId: d.propuestaId,
+  propuestaId: d.dictamenId,
   dictamenId: d.dictamenId,
   codigo: d.codigo || '',
   titulo: d.titulo || '',
@@ -68,7 +50,7 @@ const normalizarDictamen = (d) => ({
   escuela: d.escuela || '',
   fechaDictamen: d.fechaEmision || null,
   numeroOficio: d.numeroOficio || '',
-  decision: normalizarDecision(d.decision || d.tipo, d.contenido),
+  decision: normalizarDecision(d.tipo),
   estado: d.estado || 'por_revisar',
 });
 
@@ -84,12 +66,12 @@ const normalizarDetalle = (respuesta) => {
     escuela: respuesta.escuela || '',
     fechaDictamen: dictamen.fechaEmision || null,
     numeroOficio: dictamen.numeroOficio || '',
-    decision: normalizarDecision(respuesta.decision || dictamen.tipo, dictamen.contenido),
+    decision: normalizarDecision(dictamen.tipo),
     estado: respuesta.estado || 'por_revisar',
-    justificacion: respuesta.justificacion || dictamen.contenido || '',
-    observaciones: respuesta.observaciones || '',
-    criterios: Array.isArray(respuesta.criterios) ? respuesta.criterios : [],
-    documentos: Array.isArray(respuesta.documentos) ? respuesta.documentos.map(normalizarDocumento) : [],
+    justificacion: dictamen.contenido || '',
+    observaciones: '',
+    criterios: [],
+    documentos: [],
     historial: Array.isArray(respuesta.historial)
       ? respuesta.historial
       : [],
@@ -226,8 +208,14 @@ export const direccionService = {
 
     const payload = {
       tipo: tipoApi,
+      canales: datos.canales,
       mensaje: datos.mensaje,
       asunto: datos.asunto || `Resolución del CIE — ${datos.codigo || ''}`.trim(),
+      documentoIds: datos.documentoIds || [],
+      copiaGestora: Boolean(datos.copiaGestora),
+      idempotencyKey: datos.idempotencyKey || (
+        globalThis.crypto?.randomUUID?.() || `sgpi-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`
+      ),
     };
 
     const { data } = await api.post(
@@ -240,6 +228,11 @@ export const direccionService = {
       destinatario: data.destinatario || codigo,
       tipo: TIPOS_NOTIFICACION.find((t) => t.id === datos.tipo)?.titulo,
     };
+  },
+
+  async reintentarEnvioCorreo(envioId) {
+    const { data } = await api.post(`${BASE}/envios-correo/${envioId}/reintentar`);
+    return data;
   },
 
   async obtenerConfiguracion() {

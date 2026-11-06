@@ -422,8 +422,8 @@ CREATE TABLE PropuestaContenido (
     FOREIGN KEY (usuarioAuditoriaId) REFERENCES Usuarios(usuarioId)
 );
 
-CREATE TABLE IF NOT EXISTS PropuestaDeclaraciones (
-    propuestaId INT UNIQUE NOT NULL PRIMARY KEY,
+CREATE TABLE PropuestaDeclaraciones (
+    propuestaId INT UNIQUE NOT NULL PRIMARY KEY, -- Relación 1:1 con Propuestas
     tieneFinanciamientoPrevio BOOLEAN DEFAULT FALSE,
     tieneContinuidadProyecto BOOLEAN DEFAULT FALSE,
     requiereInstrumentoJuridico BOOLEAN DEFAULT FALSE,
@@ -436,7 +436,11 @@ CREATE TABLE IF NOT EXISTS PropuestaDeclaraciones (
     aceptaDeclaracionJurada BOOLEAN DEFAULT FALSE,
     fechaFirmaDeclaracion TIMESTAMP NULL,
     creadoEn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (propuestaId) REFERENCES Propuestas(propuestaId)
+    usuarioAuditoriaId SMALLINT NULL,
+    ultimaAuditoria TIMESTAMP NULL,
+    FOREIGN KEY (propuestaId) REFERENCES Propuestas(propuestaId),
+    FOREIGN KEY (tipoInnovacionId) REFERENCES TiposInnovacion(tipoInnovacionId),
+    FOREIGN KEY (usuarioAuditoriaId) REFERENCES Usuarios(usuarioId)
 );
 
 CREATE TABLE ObjetivosEspecificos (

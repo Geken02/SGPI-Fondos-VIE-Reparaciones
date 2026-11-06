@@ -1,4 +1,3 @@
-# src/models/__init__.py
 from src.models.usuarios import Usuario
 from src.models.escuelas import Escuela, Campus
 from src.models.roles import RolesSistema, UsuarioRol, Permisos, RolPermisos
@@ -36,7 +35,6 @@ from src.models.catalogos import (
 )
 
 from src.models.recuperacion import TokenRecuperacion
-from src.models.asignaciones_consejo import AsignacionesConsejo
 
 
 __all__ = [
@@ -64,7 +62,5 @@ __all__ = [
     "LineasInvestigacion", "TiposHora", "NivelesTrl", "Modalidades",
     "TiposInnovacion", "ModulosSistema", "TamaniosFuente", "FiltrosDaltonismo",
     "ConfiguracionesSistema", "AsignacionesGestora", "PreferenciasAccesibilidad",
-    "HistorialEstadosPropuesta",
-    "TokenRecuperacion",
-    "AsignacionesConsejo",
+    "HistorialEstadosPropuesta", "TokenRecuperacion" 
 ]

@@ -17,7 +17,7 @@ router = APIRouter(
     tags=["Dirección de Investigación"],
 )
 
-ROLES_DIRECCION = ["DireccionInvestigacion", "SubdirectorInvestigacion", "SuperAdministrador"]
+ROLES_DIRECCION = ["DireccionInvestigacion", "SuperAdministrador"]
 SEGURIDAD = [Depends(requerir_rol(ROLES_DIRECCION))]
 
 
@@ -67,6 +67,15 @@ def registrar_notificacion(
     usuario: Usuario = Depends(obtener_usuario_actual),
 ):
     return servicio.registrar_notificacion(db, codigo, datos, usuario)
+
+
+@router.post("/envios-correo/{envio_id}/reintentar", dependencies=SEGURIDAD)
+def reintentar_envio_correo(
+    envio_id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+):
+    return servicio.reintentar_envio_correo(db, envio_id, usuario)
 
 
 @router.get("/configuracion", dependencies=SEGURIDAD)
