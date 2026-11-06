@@ -1,6 +1,13 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable, { applyPlugin } from 'jspdf-autotable';
 import ExcelJS from 'exceljs';
+
+// Inicializar plugin autoTable en prototipo de jsPDF
+try {
+  applyPlugin(jsPDF);
+} catch (_e) {
+  // Ignorado si ya se encuentra aplicado
+}
 
 /* ═══════════════════════════════════════════════════════════════════════
    UTILIDADES DE EXPORTACIÓN — PDF (Form-04) y Excel (Form-05 / Form-06)
@@ -77,6 +84,20 @@ export function exportarForm04PDF(datos, codigo = '') {
   const addPage = () => { doc.addPage(); y = 14; };
   const checkPage = (need = 30) => { if (y + need > 265) addPage(); };
 
+  const renderTable = (options) => {
+    try {
+      if (typeof doc.autoTable === 'function') {
+        doc.autoTable(options);
+        return;
+      }
+    } catch (_e) {}
+    try {
+      autoTable(doc, options);
+    } catch (err) {
+      console.warn('Error al renderizar tabla con autoTable:', err);
+    }
+  };
+
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text('Instituto Tecnológico de Costa Rica', margin, y);
@@ -105,138 +126,232 @@ export function exportarForm04PDF(datos, codigo = '') {
     doc.setFontSize(10);
   };
 
+  const formatVal = (v) => {
+    if (v === null || v === undefined) return '';
+    if (typeof v === 'boolean') return v ? 'Sí' : 'No';
+    if (typeof v === 'object') {
+      if (v.aplica === true) {
+        return `Sí${v.detalle ? ` — ${v.detalle}` : (v.tipo ? ` — ${v.tipo}` : (v.nombre ? ` — ${v.nombre}` : (v.oficioDictamen ? ` — Oficio: ${v.oficioDictamen}` : '')))}`;
+      }
+      if (v.aplica === false) return 'No aplica';
+      if (v.aplica === 'Sí') return `Sí${v.programa ? ` — Programa: ${v.programa}, Universidad: ${v.universidad || ''}` : ''}`;
+      if (v.aplica === 'No') return 'No';
+      return '';
+    }
+    const s = String(v).trim();
+    if (s === '—' || s === 'No especificado' || s === 'Ninguno' || s === 'Ninguno registrado' || s === 'undefined' || s === 'null') return '';
+    return s;
+  };
+
   const field = (label, value) => {
-    checkPage(12);
+    checkPage(14);
     doc.setFont('helvetica', 'bold');
     doc.text(`${label}:`, margin, y);
     doc.setFont('helvetica', 'normal');
-    const lines = doc.splitTextToSize(safe(value, '—'), contentW - 2);
-    doc.text(lines, margin + 2, y + 5);
-    y += 5 + lines.length * 4.2;
+    const valStr = formatVal(value);
+    if (valStr) {
+      const lines = doc.splitTextToSize(valStr, contentW - 4);
+      doc.text(lines, margin + 2, y + 4.5);
+      y += 4.5 + lines.length * 4.2 + 2;
+    } else {
+      // Si no hay respuesta, se deja la pregunta sola con espacio limpio
+      y += 6;
+    }
   };
 
   const multiField = (label, value) => {
-    checkPage(18);
+    const valStr = formatVal(value);
+    const lines = valStr ? doc.splitTextToSize(valStr, contentW - 4) : [];
+    checkPage(lines.length > 0 ? 16 + lines.length * 4.2 : 12);
     doc.setFont('helvetica', 'bold');
     doc.text(`${label}:`, margin, y);
-    y += 5;
+    y += 4.5;
     doc.setFont('helvetica', 'normal');
-    const text = safe(value, 'No especificado');
-    const lines = doc.splitTextToSize(text, contentW - 4);
-    for (let i = 0; i < lines.length; i++) {
-      checkPage(5);
-      doc.text(lines[i], margin + 2, y);
-      y += 4.2;
+    if (lines.length > 0) {
+      for (let i = 0; i < lines.length; i++) {
+        checkPage(5);
+        doc.text(lines[i], margin + 2, y);
+        y += 4.2;
+      }
+      y += 2;
+    } else {
+      y += 2;
     }
-    y += 2;
   };
 
   section('1. IDENTIFICACIÓN Y MODALIDAD');
-  field('Nombre del Proyecto', datos.nombreProyecto);
-  field('Modalidad', datos.modalidad);
+  field('Nombre del Proyecto', datos.nombreProyecto || datos.titulo);
+  field('Modalidad', datos.modalidad || (datos.modalidadId === 4 ? 'Desarrollo tecnológico' : (datos.modalidadId === 2 ? 'Investigación aplicada' : (datos.modalidadId === 3 ? 'Investigación básica y aplicada' : 'Investigación básica'))));
   field('Fecha de Inicio', datos.fechaInicio);
-  field('Fecha de Finalización', datos.fechaFin);
+  field('Fecha de Finalización', datos.fechaFin || datos.fechaFinalizacion);
 
   section('2. FINANCIACIÓN PREVIA Y VINCULACIÓN');
-  field('Otras Fuentes de Financiamiento', datos.otrasFuentes?.aplica ? `Sí — ${datos.otrasFuentes.detalle || ''}` : 'No aplica');
-  field('Vinculación Técnica', datos.vinculacionTecnica?.aplica ? `Sí — ${datos.vinculacionTecnica.detalle || ''}` : 'No aplica');
-  field('Problemas Nacionales', datos.problemasNacionales?.aplica ? `Sí — ${datos.problemasNacionales.detalle || ''}` : 'No aplica');
+  field('Otras Fuentes de Financiamiento', datos.otrasFuentes);
+  field('Vinculación Técnica', datos.vinculacionTecnica);
+  field('Problemas Nacionales', datos.problemasNacionales);
 
   section('3. INSTRUMENTOS JURÍDICOS Y CONVENIOS');
-  field('Requiere Instrumento Jurídico', datos.requiereInstrumento?.aplica ? `Sí — ${datos.requiereInstrumento.tipo || ''}` : 'No');
-  field('Convenio Marco', datos.convenioMarco?.aplica ? `Sí — ${datos.convenioMarco.nombre || ''}` : 'No');
-  field('Base para Posgrado', datos.basePosgrado?.aplica !== 'No' ? `Sí — Programa: ${datos.basePosgrado?.programa || ''}, Universidad: ${datos.basePosgrado?.universidad || ''}` : 'No');
+  field('Requiere Instrumento Jurídico', datos.requiereInstrumento);
+  field('Convenio Marco', datos.convenioMarco);
+  field('Base para Posgrado', datos.basePosgrado);
 
   section('4. PROPIEDAD INTELECTUAL E INNOVACIÓN');
-  field('Información Confidencial', datos.infoConfidencial?.aplica ? `Sí — ${datos.infoConfidencial.detalle || ''}` : 'No');
-  field('Potencial de PI', datos.potencialPI?.aplica ? `Sí — Oficio: ${datos.potencialPI.oficioDictamen || ''}` : 'No');
-  field('Posee Innovación', datos.poseeInnovacion?.aplica ? `Sí — Tipo: ${datos.poseeInnovacion.tipo || ''}` : 'No');
+  field('Información Confidencial', datos.infoConfidencial);
+  field('Potencial de PI', datos.potencialPI);
+  field('Posee Innovación', datos.poseeInnovacion);
 
   section('5. ESCALA TRL');
-  field('Nivel TRL Seleccionado', datos.trlSeleccionado);
+  field('Nivel TRL Seleccionado', datos.trlSeleccionado || datos.nivelTrlActual);
 
   section('6. RESUMEN Y ABSTRACT');
-  multiField('Resumen', datos.resumen);
-  field('Palabras Clave', datos.palabrasClave);
-  multiField('Abstract', datos.abstract);
+  multiField('Resumen', datos.resumen || datos?.contenido?.resumen);
+  field('Palabras Clave', datos.palabrasClave || datos?.contenido?.palabrasClave);
+  multiField('Abstract', datos.abstract || datos?.contenido?.abstract);
   field('Keywords', datos.keywords);
 
   section('7. EQUIPO DE INVESTIGACIÓN');
-  if (datos.investigadoresTEC?.length > 0) {
-    doc.autoTable({
+  const invTec = Array.isArray(datos.investigadoresTEC) && datos.investigadoresTEC.length > 0
+    ? datos.investigadoresTEC
+    : (Array.isArray(datos.integrantes) ? datos.integrantes : []);
+  if (invTec.length > 0) {
+    renderTable({
       startY: y, margin: { left: margin, right: margin },
-      head: [['Nombre', 'Escuela/Depto', 'Horas', 'Rol']],
-      body: datos.investigadoresTEC.map(i => [safe(i.nombre), safe(i.escuela || i.departamento), safe(i.horas), safe(i.rol)]),
+      head: [['Nombre', 'Instancia / Escuela', 'Horas', 'Rol']],
+      body: invTec.map(i => [
+        safe(i.nombreCompleto || i.nombre || `${i.nombreUsuario || ''} ${i.apellido1Usuario || ''}`.trim() || 'Investigador(a)'),
+        safe(i.instancia || i.escuela || i.departamento || 'TEC'),
+        safe(i.horas || (i.horasSemanales ? `${i.horasSemanales} h` : '10 h')),
+        safe(i.rol || (i.rolEquipoId === 1 ? 'Coordinador(a)' : 'Co-Investigador(a)'))
+      ]),
       styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] }
     });
-    y = doc.lastAutoTable.finalY + 6;
-  } else { field('Investigadores TEC', 'Ninguno registrado'); }
-  if (datos.colaboradoresExternos?.length > 0) {
+    y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
+  } else {
+    field('Investigadores TEC', '');
+  }
+
+  const colExt = Array.isArray(datos.colaboradoresExternos) ? datos.colaboradoresExternos : [];
+  if (colExt.length > 0) {
     checkPage(20);
     doc.setFont('helvetica', 'bold'); doc.text('Colaboradores Externos:', margin, y); y += 5;
-    doc.autoTable({
+    renderTable({
       startY: y, margin: { left: margin, right: margin },
-      head: [['Nombre', 'Institución', 'Tipo']],
-      body: datos.colaboradoresExternos.map(c => [safe(c.nombre), safe(c.institucion), safe(c.tipo)]),
+      head: [['Nombre', 'Institución / Empresa', 'Tipo']],
+      body: colExt.map(c => [
+        safe(c.nombre || `${c.nombreColaborador || ''} ${c.apellido1Colaborador || ''}`.trim() || 'Colaborador(a)'),
+        safe(c.institucion || c.institucionEmpresa || 'Institución Externa'),
+        safe(c.tipo || 'Colaborador(a) Externo')
+      ]),
       styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] }
     });
-    y = doc.lastAutoTable.finalY + 6;
+    y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
+  } else {
+    field('Colaboradores Externos', '');
   }
 
   section('8. PROBLEMA DE INVESTIGACIÓN');
-  multiField('Planteamiento del Problema', datos.problemaInvestigacion);
+  multiField('Planteamiento del Problema', datos.problemaInvestigacion || datos?.contenido?.problemaInvestigacion);
 
   section('9. OBJETIVOS DEL PROYECTO');
-  multiField('Objetivo General', datos.objetivoGeneral);
-  const objs = Array.isArray(datos.objetivosEspecificos) ? datos.objetivosEspecificos : [];
+  multiField('Objetivo General', datos.objetivoGeneral || datos?.contenido?.objetivoGeneral);
+  
+  const rawObjs = datos.objetivosEspecificos || datos?.contenido?.objetivosEspecificos || [];
+  let objs = [];
+  if (Array.isArray(rawObjs)) {
+    objs = rawObjs;
+  } else if (typeof rawObjs === 'string') {
+    objs = rawObjs.split(';').map(s => s.replace(/^\n+|\n+$/g, '').trim()).filter(Boolean);
+  }
+
   if (objs.length > 0) {
+    checkPage(15);
     doc.setFont('helvetica', 'bold'); doc.text('Objetivos Específicos:', margin, y); y += 5;
     doc.setFont('helvetica', 'normal');
-    objs.forEach((o, i) => { if (o && o.trim()) { checkPage(8); const l = doc.splitTextToSize(`${i + 1}. ${o}`, contentW - 6); doc.text(l, margin + 4, y); y += l.length * 4.2 + 1; } });
+    objs.forEach((o, i) => {
+      const oText = typeof o === 'string' ? o : (o.descripcion || o.objetivo || '');
+      if (oText && oText.trim()) {
+        checkPage(8);
+        const l = doc.splitTextToSize(`${i + 1}. ${oText.trim()}`, contentW - 6);
+        doc.text(l, margin + 4, y);
+        y += l.length * 4.2 + 1;
+      }
+    });
     y += 2;
+  } else {
+    field('Objetivos Específicos', '');
   }
 
   section('10. ESTADO DEL ARTE');
-  multiField('Estado del Arte', datos.estadoArte);
+  multiField('Estado del Arte', datos.estadoArte || datos?.contenido?.estadoArte);
 
   section('11. METODOLOGÍA');
-  multiField('Metodología', datos.metodologia);
+  multiField('Metodología', datos.metodologia || datos?.contenido?.metodologia);
 
   section('12. PLAN DE ACCIÓN Y GESTIÓN DE RIESGOS');
   if (datos.actividadesCronograma?.length > 0) {
-    doc.autoTable({ startY: y, margin: { left: margin, right: margin }, head: [['Actividad', 'Responsable', 'Inicio', 'Fin']], body: datos.actividadesCronograma.map(a => [safe(a.actividad || a.nombre), safe(a.responsable), safe(a.inicio), safe(a.fin)]), styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] } });
-    y = doc.lastAutoTable.finalY + 6;
+    renderTable({ startY: y, margin: { left: margin, right: margin }, head: [['Actividad', 'Responsable', 'Inicio', 'Fin']], body: datos.actividadesCronograma.map(a => [safe(a.actividad || a.nombre), safe(a.responsable), safe(a.inicio), safe(a.fin)]), styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] } });
+    y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
+  } else {
+    field('Cronograma de Actividades', '');
   }
   if (datos.riesgosMitigacion?.length > 0) {
     checkPage(20);
-    doc.autoTable({ startY: y, margin: { left: margin, right: margin }, head: [['Riesgo', 'Probabilidad', 'Impacto', 'Mitigación']], body: datos.riesgosMitigacion.map(r => [safe(r.riesgo || r.nombre), safe(r.probabilidad), safe(r.impacto), safe(r.mitigacion)]), styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] } });
-    y = doc.lastAutoTable.finalY + 6;
+    renderTable({ startY: y, margin: { left: margin, right: margin }, head: [['Riesgo', 'Probabilidad', 'Impacto', 'Mitigación']], body: datos.riesgosMitigacion.map(r => [safe(r.riesgo || r.nombre), safe(r.probabilidad), safe(r.impacto), safe(r.mitigacion)]), styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] } });
+    y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
+  } else {
+    field('Matriz de Riesgos y Mitigación', '');
   }
 
   section('13. PRESUPUESTO PLURIANUAL');
-  if (datos.presupuestoAnual?.length > 0) {
-    doc.autoTable({ startY: y, margin: { left: margin, right: margin }, head: [['Año', 'Operativo (₡)', 'Duradero (₡)']], body: datos.presupuestoAnual.map(p => [safe(p.ano), safe(p.operativo || '0'), safe(p.duradero || '0')]), styles: { fontSize: 9, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] } });
-    y = doc.lastAutoTable.finalY + 6;
+  let presAnual = Array.isArray(datos.presupuestoAnual) && datos.presupuestoAnual.length > 0 ? datos.presupuestoAnual : [];
+  if (presAnual.length === 0 && Array.isArray(datos.presupuesto) && datos.presupuesto.length > 0) {
+    const porAno = {};
+    datos.presupuesto.forEach(p => {
+      const a = p.anioEjecucion || p.anio || 1;
+      if (!porAno[a]) porAno[a] = { ano: `Año ${a}`, operativo: 0, duradero: 0 };
+      const monto = Number(p.montoSolicitado || p.monto || 0);
+      if (p.esDuradero) porAno[a].duradero += monto;
+      else porAno[a].operativo += monto;
+    });
+    presAnual = Object.values(porAno).map(r => ({
+      ano: r.ano,
+      operativo: r.operativo.toLocaleString('es-CR'),
+      duradero: r.duradero.toLocaleString('es-CR')
+    }));
+  }
+
+  if (presAnual.length > 0) {
+    renderTable({ startY: y, margin: { left: margin, right: margin }, head: [['Año', 'Operativo (₡)', 'Duradero (₡)']], body: presAnual.map(p => [safe(p.ano), safe(p.operativo || '0'), safe(p.duradero || '0')]), styles: { fontSize: 9, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] } });
+    y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
+  } else {
+    field('Presupuesto Plurianual', '');
   }
 
   section('14. PRODUCTOS ACADÉMICOS COMPROMETIDOS');
-  field('Rango de Horas', datos.rangoHorasCompromiso);
+  if (datos.rangoHorasCompromiso) field('Rango de Horas', datos.rangoHorasCompromiso);
   if (datos.productos14a) {
     const p = datos.productos14a;
-    if (p.opcion1?.check) field('Artículo en revista indexada', `Cantidad: ${p.opcion1.cantidad}, Objetivo: ${p.opcion1.objetivo}`);
-    if (p.opcion2?.check) field('Memoria / Ponencia', `Cantidad: ${p.opcion2.cantidad}, Objetivo: ${p.opcion2.objetivo}`);
-    if (p.opcion3?.check) field('Libro / Capítulo de libro', `Cantidad: ${p.opcion3.cantidad}, Objetivo: ${p.opcion3.objetivo}`);
+    if (p.opcion1?.check) field('Artículo en revista indexada', `Cantidad: ${p.opcion1.cantidad || 1}, Objetivo: ${p.opcion1.objetivo || 'General'}`);
+    if (p.opcion2?.check) field('Memoria / Ponencia', `Cantidad: ${p.opcion2.cantidad || 1}, Objetivo: ${p.opcion2.objetivo || 'General'}`);
+    if (p.opcion3?.check) field('Libro / Capítulo de libro', `Cantidad: ${p.opcion3.cantidad || 1}, Objetivo: ${p.opcion3.objetivo || 'General'}`);
     if (p.adicional1) field('Producto adicional 1', p.adicional1);
     if (p.adicional2) field('Producto adicional 2', p.adicional2);
   }
+  if (Array.isArray(datos.productosAcademicos) && datos.productosAcademicos.length > 0) {
+    datos.productosAcademicos.forEach((pa, idx) => {
+      field(`Producto Académico ${idx + 1}`, `${pa.descripcion || 'Producto'} (Cantidad: ${pa.cantidadComprometida || 1})`);
+    });
+  }
 
   section('15. ESTRATEGIA DE DIVULGACIÓN Y ASPECTOS ÉTICOS');
-  if (datos.divulgacion) {
+  if (datos.divulgacion && typeof datos.divulgacion === 'object') {
     const d = datos.divulgacion;
     if (d.cientifica) multiField('Divulgación Científica', d.cientifica);
     if (d.canalesInstitucionales) multiField('Canales Institucionales', d.canalesInstitucionales);
     if (d.socializacion) multiField('Socialización', d.socializacion);
     if (d.mediosMasivos) multiField('Medios Masivos', d.mediosMasivos);
+  } else {
+    field('Estrategia de Divulgación', '');
   }
   if (datos.aspectosEticos) {
     const ae = datos.aspectosEticos;
@@ -245,18 +360,22 @@ export function exportarForm04PDF(datos, codigo = '') {
     if (ae.biodiversidad) eticos.push('Biodiversidad');
     if (ae.animales) eticos.push('Animales');
     if (ae.comunidadesIndigenas) eticos.push('Comunidades indígenas');
-    field('Aspectos Éticos', eticos.length > 0 ? eticos.join(', ') : 'Ninguno');
+    field('Aspectos Éticos', eticos.length > 0 ? eticos.join(', ') : '');
+  } else {
+    field('Aspectos Éticos', '');
   }
-  multiField('Hoja de Ruta', datos.hojaRuta);
+  multiField('Hoja de Ruta', datos.hojaRuta || datos?.contenido?.hojaRuta);
 
   section('16. DECLARACIÓN JURADA Y FIRMA');
-  field('Resguardo en Repositorio', datos.resguardoCompromiso ? 'Sí' : 'No');
-  field('Resguardo de Software', datos.resguardoSoftware ? 'Sí' : 'No');
+  field('Resguardo en Repositorio', datos.resguardoCompromiso);
+  field('Resguardo de Software', datos.resguardoSoftware);
   multiField('Referencias Bibliográficas', datos.referenciasBibliograficas);
-  if (datos.firmaCoordinador) {
+  if (datos.firmaCoordinador && datos.firmaCoordinador.nombre) {
     field('Firmado por', datos.firmaCoordinador.nombre);
     field('Cédula', datos.firmaCoordinador.cedula);
     field('Firma Digital', datos.firmaCoordinador.firmadoDigital ? 'Sí' : 'No');
+  } else {
+    field('Firma de la Persona Coordinadora', '');
   }
 
   const totalPages = doc.internal.getNumberOfPages();
@@ -548,60 +667,150 @@ export async function exportarPresupuestoExcel(presupuestos, propuesta, usuario)
    ═══════════════════════════════════════════════════════════════ */
 export async function descargarPropuestaPDF(propuestaId, propuestaService) {
   try {
-    let datos = null;
-    try { datos = await propuestaService.obtenerPropuesta(propuestaId); } catch (_e) {}
+    const resolvedId = (propuestaId && String(propuestaId) !== 'undefined')
+      ? propuestaId
+      : (localStorage.getItem('propuesta_activa_id') || '');
 
-    const localKey = `borrador_form04_${propuestaId}`;
-    const localData = localStorage.getItem(localKey);
-    const local = localData ? JSON.parse(localData) : {};
+    let datos = null;
+    try {
+      if (resolvedId && propuestaService && propuestaService.obtenerPropuesta) {
+        datos = await propuestaService.obtenerPropuesta(resolvedId);
+      }
+    } catch (_e) {
+      console.warn('No se pudo obtener detalle remoto, usando datos locales:', _e);
+    }
+
+    let local = {};
+    const possibleKeys = [
+      `borrador_form04_${resolvedId}`,
+      `propuesta_${resolvedId}_form04`,
+      'borrador_form04_ultimo'
+    ];
+    for (const k of possibleKeys) {
+      try {
+        const raw = localStorage.getItem(k);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            local = { ...parsed, ...local };
+          }
+        }
+      } catch (_e) {}
+    }
+
+    let local05 = {};
+    try {
+      const r05 = localStorage.getItem(`propuesta_${resolvedId}_plan_riesgos`) || localStorage.getItem(`borrador_form05_${resolvedId}`);
+      if (r05) local05 = JSON.parse(r05);
+    } catch (_e) {}
+
+    let local06 = null;
+    try {
+      const r06 = localStorage.getItem(`propuesta_${resolvedId}_presupuesto`);
+      if (r06) local06 = JSON.parse(r06);
+    } catch (_e) {}
+
+    const decl = datos?.declaraciones || {};
+    const cont = datos?.contenido || {};
+
+    const modalidadesMap = {
+      1: 'Investigación básica',
+      2: 'Investigación aplicada',
+      3: 'Investigación básica y aplicada',
+      4: 'Desarrollo tecnológico'
+    };
+    const modalidadCalculada = local.modalidad || datos?.modalidad || modalidadesMap[datos?.modalidadId] || 'Investigación básica';
+
+    let divulgacionObj = local.divulgacion || {};
+    if (!divulgacionObj.cientifica && cont.estrategiaDivulgacion) {
+      try {
+        const parsedDiv = JSON.parse(cont.estrategiaDivulgacion);
+        if (parsedDiv && typeof parsedDiv === 'object') divulgacionObj = { ...divulgacionObj, ...parsedDiv };
+      } catch (_e) {
+        divulgacionObj.cientifica = cont.estrategiaDivulgacion;
+      }
+    }
+
+    let integrantesTec = [];
+    if (datos?.integrantes && datos.integrantes.length > 0) {
+      integrantesTec = datos.integrantes.map(i => ({
+        nombre: i.nombreCompleto || i.nombre || '',
+        nombreCompleto: i.nombreCompleto || i.nombre || '',
+        escuela: i.instancia || i.escuela || 'TEC',
+        instancia: i.instancia || i.escuela || 'TEC',
+        horas: `${i.horasSemanales || 10} h`,
+        rol: i.rolEquipoId === 1 ? 'Coordinador(a)' : (i.rol || 'Co-Investigador(a)')
+      }));
+    } else if (local.investigadoresTEC && local.investigadoresTEC.length > 0) {
+      integrantesTec = local.investigadoresTEC;
+    } else if (local05.integrantes && local05.integrantes.length > 0) {
+      integrantesTec = local05.integrantes;
+    }
+
+    let colaboradoresExt = [];
+    if (datos?.colaboradoresExternos && datos.colaboradoresExternos.length > 0) {
+      colaboradoresExt = datos.colaboradoresExternos.map(c => ({
+        nombre: `${c.nombreColaborador || ''} ${c.apellido1Colaborador || ''}`.trim() || c.nombre || '',
+        institucion: c.institucionEmpresa || c.institucion || 'Institución Externa',
+        tipo: 'Colaborador(a) Externo'
+      }));
+    } else if (local.colaboradoresExternos && local.colaboradoresExternos.length > 0) {
+      colaboradoresExt = local.colaboradoresExternos;
+    }
+
+    const actividades = (local.actividadesCronograma && local.actividadesCronograma.length > 0)
+      ? local.actividadesCronograma
+      : (local05.actividades || []);
 
     const merged = {
-      nombreProyecto: datos?.titulo || local.nombreProyecto || '',
-      modalidad: local.modalidad || '',
+      nombreProyecto: datos?.titulo || local.nombreProyecto || local05.nombrePropuesta || '',
+      modalidad: modalidadCalculada,
       fechaInicio: datos?.fechaInicio || local.fechaInicio || '',
       fechaFin: datos?.fechaFinalizacion || local.fechaFin || '',
       trlSeleccionado: datos?.nivelTrlActual || local.trlSeleccionado || '',
-      resumen: datos?.contenido?.resumen || local.resumen || '',
-      palabrasClave: datos?.contenido?.palabrasClave || local.palabrasClave || '',
-      abstract: datos?.contenido?.abstract || local.abstract || '',
+      resumen: cont.resumen || datos?.resumen || local.resumen || '',
+      palabrasClave: cont.palabrasClave || datos?.palabrasClave || local.palabrasClave || '',
+      abstract: cont.abstract || datos?.abstract || local.abstract || '',
       keywords: local.keywords || '',
-      problemaInvestigacion: datos?.contenido?.problemaInvestigacion || local.problemaInvestigacion || '',
-      objetivoGeneral: datos?.contenido?.objetivoGeneral || local.objetivoGeneral || '',
-      objetivosEspecificos: local.objetivosEspecificos || [],
-      estadoArte: datos?.contenido?.estadoArte || local.estadoArte || '',
-      metodologia: datos?.contenido?.metodologia || local.metodologia || '',
-      otrasFuentes: local.otrasFuentes || {},
-      vinculacionTecnica: local.vinculacionTecnica || {},
+      problemaInvestigacion: cont.problemaInvestigacion || datos?.problemaInvestigacion || local.problemaInvestigacion || '',
+      objetivoGeneral: cont.objetivoGeneral || datos?.objetivoGeneral || local.objetivoGeneral || '',
+      objetivosEspecificos: cont.objetivosEspecificos || local.objetivosEspecificos || [],
+      estadoArte: cont.estadoArte || datos?.estadoArte || local.estadoArte || '',
+      metodologia: cont.metodologia || datos?.metodologia || local.metodologia || '',
+      otrasFuentes: local.otrasFuentes || { aplica: Boolean(decl.tieneFinanciamientoPrevio) },
+      vinculacionTecnica: local.vinculacionTecnica || { aplica: Boolean(decl.tieneContinuidadProyecto) },
       problemasNacionales: local.problemasNacionales || {},
-      requiereInstrumento: local.requiereInstrumento || {},
+      requiereInstrumento: local.requiereInstrumento || { aplica: Boolean(decl.requiereInstrumentoJuridico), tipo: 'Convenio' },
       convenioMarco: local.convenioMarco || {},
-      basePosgrado: local.basePosgrado || {},
-      infoConfidencial: local.infoConfidencial || {},
-      potencialPI: local.potencialPI || {},
-      poseeInnovacion: local.poseeInnovacion || {},
-      investigadoresTEC: local.investigadoresTEC || [],
-      colaboradoresExternos: local.colaboradoresExternos || [],
-      actividadesCronograma: local.actividadesCronograma || [],
+      basePosgrado: local.basePosgrado || { aplica: decl.tieneBasePosgrado ? 'Sí' : 'No' },
+      infoConfidencial: local.infoConfidencial || { aplica: Boolean(decl.tieneInformacionConfidencial) },
+      potencialPI: local.potencialPI || { aplica: Boolean(decl.tienePotencialPI) },
+      poseeInnovacion: local.poseeInnovacion || { aplica: Boolean(decl.poseeInnovacion) },
+      investigadoresTEC: integrantesTec,
+      colaboradoresExternos: colaboradoresExt,
+      actividadesCronograma: actividades,
       riesgosMitigacion: local.riesgosMitigacion || [],
+      presupuesto: datos?.presupuesto || local06 || [],
       presupuestoAnual: local.presupuestoAnual || [],
       fuentesAdicionales: local.fuentesAdicionales || {},
       productos14a: local.productos14a || {},
       productos14b: local.productos14b || {},
+      productosAcademicos: datos?.productosAcademicos || [],
       rangoHorasCompromiso: local.rangoHorasCompromiso || '',
-      divulgacion: local.divulgacion || {},
+      divulgacion: divulgacionObj,
       aspectosEticos: local.aspectosEticos || {},
-      hojaRuta: datos?.contenido?.hojaRuta || local.hojaRuta || '',
-      resguardoCompromiso: local.resguardoCompromiso || false,
+      hojaRuta: cont.hojaRuta || datos?.hojaRuta || local.hojaRuta || '',
+      resguardoCompromiso: local.resguardoCompromiso || Boolean(decl.aceptaResguardoRepositorio),
       resguardoSoftware: local.resguardoSoftware || false,
       referenciasBibliograficas: local.referenciasBibliograficas || '',
-      firmaCoordinador: local.firmaCoordinador || {}
+      firmaCoordinador: local.firmaCoordinador || (datos?.investigadorCoordId ? { nombre: 'Persona Coordinadora del Proyecto' } : {})
     };
 
-    const codigoPropuesta = datos?.codigoPropuesta || `Propuesta-${propuestaId}`;
+    const codigoPropuesta = datos?.codigoPropuesta || (resolvedId ? `FVIE-${resolvedId}` : 'Form04');
     exportarForm04PDF(merged, codigoPropuesta);
   } catch (err) {
-    console.error('Error al generar PDF:', err);
-    alert('Error al generar el PDF. Verifique que la propuesta tenga datos guardados.');
+    console.error('Error al generar PDF de propuesta:', err);
+    alert('No se pudo generar el PDF de la propuesta: ' + (err.message || 'Error desconocido'));
   }
 }
 
@@ -609,7 +818,14 @@ export async function descargarPropuestaPDF(propuestaId, propuestaService) {
 /* ═══════════════════════════════════════════════════════════════
    5.  DESCARGAR PLAN Y RIESGOS DE UNA PROPUESTA  →  XLSX
    ═══════════════════════════════════════════════════════════════ */
-export async function descargarPlanRiesgoExcel(propuestaId) {
+export async function descargarPlanRiesgoExcel(propuestaId, propuestaService) {
+  let propuesta = null;
+  if (propuestaService && propuestaId) {
+    try {
+      propuesta = await propuestaService.obtenerPropuesta(propuestaId);
+    } catch (_e) {}
+  }
+
   // Try primary key first, then fallback to borrador key
   const primaryKey = `propuesta_${propuestaId}_plan_riesgos`;
   const borradorKey = `borrador_form05_${propuestaId}`;
@@ -622,15 +838,25 @@ export async function descargarPlanRiesgoExcel(propuestaId) {
   const local05 = primaryData ? JSON.parse(primaryData) : (borradorData ? JSON.parse(borradorData) : {});
   const local04 = localData04 ? JSON.parse(localData04) : {};
 
+  let integrantesList = local05.integrantes || [];
+  if (integrantesList.length === 0 && propuesta?.integrantes?.length > 0) {
+    integrantesList = propuesta.integrantes.map(i => ({
+      nombre: i.nombreCompleto || i.nombre || '',
+      iniciales: (i.nombreCompleto || i.nombre || '').split(' ').map(w => w[0]).join('').slice(0, 4).toUpperCase(),
+      rol: i.rolEquipoId === 1 ? 'Coordinador(a)' : (i.rol || 'Co-Investigador(a)')
+    }));
+  }
+
   const datos = {
-    nombrePropuesta: local05.nombrePropuesta || local04.nombreProyecto || '',
+    nombrePropuesta: local05.nombrePropuesta || local04.nombreProyecto || propuesta?.titulo || '',
     tipoIniciativa: local05.tipoIniciativa || local04.modalidad || '',
     duracionMeses: local05.duracionMeses || '',
-    integrantes: local05.integrantes || [],
+    integrantes: integrantesList,
     actividades: local05.actividades || local04.actividadesCronograma || []
   };
 
-  await exportarForm05Excel(datos, `Propuesta-${propuestaId}`);
+  const cod = propuesta?.codigoPropuesta || `Propuesta-${propuestaId}`;
+  await exportarForm05Excel(datos, cod);
 }
 
 

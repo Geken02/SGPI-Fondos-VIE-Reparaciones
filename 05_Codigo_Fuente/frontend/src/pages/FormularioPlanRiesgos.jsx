@@ -5,6 +5,87 @@ import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from '../components/LimitedInput';
 import { exportarForm05Excel } from '../utils/exportUtils';
 
+const obtenerIniciales = (nombre) => {
+  if (!nombre) return 'TEC';
+  const partes = nombre.trim().split(/\s+/);
+  if (partes.length >= 2) {
+    return (partes[0][0] + partes[1][0]).toUpperCase();
+  }
+  return partes[0].slice(0, 2).toUpperCase();
+};
+
+const construirIntegrantesDeEquipo = (propData, form04Data, usuarioActual) => {
+  const lista = [];
+  const nombresVistos = new Set();
+
+  const agregar = (nombre, rol, id, usuarioId, escuela) => {
+    if (!nombre) return;
+    const norm = nombre.trim().toLowerCase();
+    if (nombresVistos.has(norm)) return;
+    nombresVistos.add(norm);
+
+    lista.push({
+      id: id || Date.now() + Math.random(),
+      usuarioId: usuarioId || null,
+      nombre: nombre.trim(),
+      iniciales: obtenerIniciales(nombre),
+      rol: rol || 'Colaborador técnico',
+      escuela: escuela || 'TEC'
+    });
+  };
+
+  // 1. Coordinador actual
+  if (usuarioActual?.nombre) {
+    const nomCoord = `${usuarioActual.nombre} ${usuarioActual.apellido1 || ''}`.trim();
+    agregar(nomCoord, 'Persona coordinadora', usuarioActual.id, usuarioActual.id, usuarioActual.escuela || 'TEC');
+  }
+
+  // 2. Integrantes de la BD
+  if (propData?.integrantes && Array.isArray(propData.integrantes)) {
+    propData.integrantes.forEach((inte, i) => {
+      agregar(
+        inte.nombreCompleto, 
+        inte.rolEquipoId === 1 ? 'Persona coordinadora' : 'Co-Investigador(a)',
+        inte.integranteEquipoId || (i + 1),
+        inte.usuarioId,
+        'TEC'
+      );
+    });
+  }
+
+  // 3. Colaboradores externos de la BD
+  if (propData?.colaboradoresExternos && Array.isArray(propData.colaboradoresExternos)) {
+    propData.colaboradoresExternos.forEach((col, i) => {
+      agregar(
+        col.nombreCompleto,
+        col.rolProyecto || 'Colaborador externo',
+        col.colaboradorExternoId || ('ext_' + i),
+        null,
+        col.institucion || 'Externa'
+      );
+    });
+  }
+
+  // 4. Datos de Form-04 local si existen
+  if (form04Data?.investigadoresTEC && Array.isArray(form04Data.investigadoresTEC)) {
+    form04Data.investigadoresTEC.forEach((inv) => {
+      if (inv.nombre) {
+        agregar(inv.nombre, inv.rol || 'Co-Investigador(a)', inv.id, inv.usuarioId, inv.instancia || 'TEC');
+      }
+    });
+  }
+
+  if (form04Data?.colaboradoresExternos && Array.isArray(form04Data.colaboradoresExternos)) {
+    form04Data.colaboradoresExternos.forEach((col) => {
+      if (col.nombre) {
+        agregar(col.nombre, 'Colaborador externo', col.id, null, col.institucion || 'Externa');
+      }
+    });
+  }
+
+  return lista;
+};
+
 const FormularioPlanRiesgos = () => {
   const { usuario } = useAuth();
   const navigate = useNavigate();
@@ -20,6 +101,10 @@ const FormularioPlanRiesgos = () => {
   const [integrantes, setIntegrantes] = useState([]);
   const [nuevoIntegrante, setNuevoIntegrante] = useState({ nombre: '', iniciales: '', rol: 'Colaborador técnico' });
   const [mostrarModalNuevoIntegrante, setMostrarModalNuevoIntegrante] = useState(false);
+  const [investigadoresBD, setInvestigadoresBD] = useState([]);
+  const [tipoMiembroModal, setTipoMiembroModal] = useState('tec');
+  const [errorModalIntegrante, setErrorModalIntegrante] = useState('');
+  const [filtroBusquedaInvestigador, setFiltroBusquedaInvestigador] = useState('');
 
   // Plan de Acción y Matriz de Riesgos
   const [actividades, setActividades] = useState([]);
@@ -73,7 +158,36 @@ const FormularioPlanRiesgos = () => {
       if (!id) return;
       localStorage.setItem('propuesta_activa_id', String(id));
 
-      // 1. Cargar datos locales de Form-05 si existen
+      // 1. Cargar datos locales de Form-04 si existen
+      let form04Data = null;
+      try {
+        const rawF4 = localStorage.getItem(`borrador_form04_${id}`);
+        if (rawF4) form04Data = JSON.parse(rawF4);
+      } catch (_e) {}
+
+      // 2. Cargar catálogos y propuesta desde BD
+      try {
+        const [prop, catalogos] = await Promise.all([
+          propuestaService.obtenerPropuesta(id).catch(() => null),
+          propuestaService.obtenerCatalogosFormulario().catch(() => null)
+        ]);
+
+        if (catalogos?.investigadores) {
+          setInvestigadoresBD(catalogos.investigadores);
+        }
+
+        if (prop) {
+          if (prop.titulo) setNombrePropuesta(prop.titulo);
+          if (prop.modalidad) setTipoIniciativa(prop.modalidad);
+        }
+
+        const miembrosCompletos = construirIntegrantesDeEquipo(prop, form04Data, usuario);
+        if (miembrosCompletos.length > 0) {
+          setIntegrantes(miembrosCompletos);
+        }
+      } catch (_e) {}
+
+      // 3. Cargar datos locales de Form-05 si existen
       try {
         const localRaw = localStorage.getItem(`propuesta_${id}_plan_riesgos`);
         if (localRaw) {
@@ -81,34 +195,21 @@ const FormularioPlanRiesgos = () => {
           if (l.nombrePropuesta) setNombrePropuesta(l.nombrePropuesta);
           if (l.tipoIniciativa) setTipoIniciativa(l.tipoIniciativa);
           if (l.duracionMeses) setDuracionMeses(l.duracionMeses);
-          if (l.integrantes && l.integrantes.length > 0) setIntegrantes(l.integrantes);
           if (l.actividades && l.actividades.length > 0) setActividades(l.actividades);
+          if (l.integrantes && l.integrantes.length > 0) {
+            setIntegrantes(prev => {
+              const mapa = new Map();
+              prev.forEach(m => mapa.set((m.nombre || '').toLowerCase().trim(), m));
+              l.integrantes.forEach(m => {
+                const k = (m.nombre || '').toLowerCase().trim();
+                if (!mapa.has(k)) mapa.set(k, m);
+              });
+              return Array.from(mapa.values());
+            });
+          }
           setGuardadoMsg('Borrador cargado');
         }
       } catch (_e) {}
-
-      // 2. Cargar datos oficiales de la propuesta
-      try {
-        const prop = await propuestaService.obtenerPropuesta(id);
-        console.log(prop);
-        if (prop) {
-          if (prop.titulo) setNombrePropuesta(prop.titulo);
-          if (prop.modalidad) setTipoIniciativa(prop.modalidad);
-          if (prop.integrantes && prop.integrantes.length > 0) {
-            setIntegrantes(prev => {
-              if (prev.length > 1) return prev;
-              return prop.integrantes.map((inte, idx) => ({
-                id: inte.integranteEquipoId || idx + 1,
-                nombre: inte.nombreCompleto || 'Investigador',
-                iniciales: (inte.nombreCompleto || 'INV').split(' ').map(w => w[0]).join('').slice(0, 3).toUpperCase(),
-                rol: inte.rolEquipoId === 1 ? 'Persona coordinadora' : 'Colaborador técnico'
-              }));
-            });
-          }
-        }
-      } catch (_e) {
-        // En blanco
-      }
     };
     cargarPropuestaBD();
   }, [propuestaIdUrl]);
@@ -168,12 +269,89 @@ const FormularioPlanRiesgos = () => {
     navigate('/dashboard/propuestas');
   };
 
-  const handleAgregarIntegrante = (e) => {
+  const handleAgregarIntegrante = async (e) => {
     e.preventDefault();
-    if (!nuevoIntegrante.nombre || !nuevoIntegrante.iniciales) return;
-    setIntegrantes([...integrantes, { id: Date.now(), ...nuevoIntegrante }]);
-    setNuevoIntegrante({ nombre: '', iniciales: '', rol: 'Colaborador técnico' });
+    setErrorModalIntegrante('');
+
+    let nombreFinal = '';
+    let usuarioIdFinal = null;
+    let rolFinal = nuevoIntegrante.rol || 'Co-Investigador(a)';
+    let inicialesFinal = nuevoIntegrante.iniciales || '';
+    let escuelaFinal = 'TEC';
+
+    if (tipoMiembroModal === 'tec') {
+      if (!nuevoIntegrante.usuarioId) {
+        setErrorModalIntegrante('Por favor seleccione un investigador registrado en la base de datos institucional.');
+        return;
+      }
+      usuarioIdFinal = nuevoIntegrante.usuarioId;
+      nombreFinal = nuevoIntegrante.nombre;
+      escuelaFinal = nuevoIntegrante.escuela || 'TEC';
+    } else {
+      if (!nuevoIntegrante.nombre.trim()) {
+        setErrorModalIntegrante('Por favor ingrese el nombre completo del colaborador externo.');
+        return;
+      }
+      nombreFinal = nuevoIntegrante.nombre.trim();
+      escuelaFinal = nuevoIntegrante.institucion || 'Externa';
+    }
+
+    if (!inicialesFinal) {
+      inicialesFinal = obtenerIniciales(nombreFinal);
+    }
+
+    // Verificar si ya existe en la lista de integrantes
+    const yaExiste = integrantes.some(m => 
+      (usuarioIdFinal && m.usuarioId === usuarioIdFinal) ||
+      (m.nombre && m.nombre.toLowerCase().trim() === nombreFinal.toLowerCase().trim())
+    );
+
+    if (yaExiste) {
+      setErrorModalIntegrante('Esta persona ya se encuentra incorporada en el equipo.');
+      return;
+    }
+
+    const nuevo = {
+      id: usuarioIdFinal || Date.now(),
+      usuarioId: usuarioIdFinal,
+      nombre: nombreFinal,
+      iniciales: inicialesFinal,
+      rol: rolFinal,
+      escuela: escuelaFinal
+    };
+
+    const nuevaLista = [...integrantes, nuevo];
+    setIntegrantes(nuevaLista);
+
+    // Persistir en backend si existe id de propuesta
+    const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
+    if (id) {
+      try {
+        const payload = {
+          integrantes: nuevaLista.filter(m => m.usuarioId).map(m => ({
+            usuarioId: m.usuarioId,
+            tipoHoraId: 1,
+            horasSemanales: 10.0,
+            rolEquipoId: (m.rol || '').toLowerCase().includes('coordinad') ? 1 : (m.rol || '').toLowerCase().includes('asistente') ? 3 : 2,
+            orcid: null
+          })),
+          colaboradoresExternos: nuevaLista.filter(m => !m.usuarioId && m.id !== 1).map(m => ({
+            nombreCompleto: m.nombre,
+            institucion: m.escuela || 'Institución Externa',
+            rolProyecto: m.rol,
+            correoElectronico: null
+          }))
+        };
+        await propuestaService.guardarEquipoCompleto(id, payload);
+      } catch (err) {
+        console.warn('Error al sincronizar integrante con BD desde Form-05:', err);
+      }
+    }
+
     setMostrarModalNuevoIntegrante(false);
+    setErrorModalIntegrante('');
+    setFiltroBusquedaInvestigador('');
+    setNuevoIntegrante({ usuarioId: null, nombre: '', iniciales: '', rol: 'Co-Investigador(a)', escuela: 'TEC', institucion: '' });
   };
 
   const handleAgregarFilaActividad = () => {
@@ -281,13 +459,7 @@ const FormularioPlanRiesgos = () => {
         <div className="form-section-box">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
             <h2 className="section-title-h2" style={{ margin: 0 }}>2. Registro de Integrantes e Iniciales</h2>
-            <button 
-              type="button" 
-              className="btn-link-action"
-              onClick={() => setMostrarModalNuevoIntegrante(true)}
-            >
-              + Añadir
-            </button>
+            <button type="button" className="btn-nueva-propuesta" style={{ padding: "6px 16px", fontSize: "13px" }} onClick={() => { setMostrarModalNuevoIntegrante(true); setErrorModalIntegrante(""); }}>+ Añadir Miembro</button>
           </div>
           <div className="table-responsive-container">
             <table className="institucional-data-table">
@@ -330,7 +502,7 @@ const FormularioPlanRiesgos = () => {
 
         {/* 3. Plan de Acción y Matriz de Riesgos */}
         <div className="form-section-box">
-          <h2 className="section-title-h2">3. Plan de Acción y Matriz de Riesgos</h2>
+          <div style={{ marginBottom: "12px" }}><h2 className="section-title-h2" style={{ margin: 0 }}>3. Plan de Acción y Matriz de Riesgos</h2></div>
           <div className="table-responsive-container" style={{ overflowX: 'auto' }}>
             <table className="institucional-data-table" style={{ minWidth: numAnios === 3 ? '2200px' : numAnios === 2 ? '1800px' : '1400px' }}>
               <thead>
@@ -338,11 +510,11 @@ const FormularioPlanRiesgos = () => {
                   <th rowSpan={2} style={{ width: '70px', minWidth: '70px' }}>OBJETIVO</th>
                   <th rowSpan={2} style={{ minWidth: '140px' }}>ACTIVIDADES</th>
                   <th rowSpan={2} style={{ minWidth: '120px' }}>RESULTADO ESPERADO</th>
-                  <th rowSpan={2} style={{ width: '80px', minWidth: '80px' }}>PARTICIPANTES</th>
+                  <th rowSpan={2} style={{ width: "130px", minWidth: "130px" }}>PARTICIPANTES</th>
                   <th rowSpan={2} style={{ width: '90px', minWidth: '90px' }}>RESPONSABILIDAD</th>
                   <th rowSpan={2} style={{ minWidth: '120px' }}>RIESGOS IDENTIFICADOS</th>
                   <th rowSpan={2} style={{ minWidth: '120px' }}>MEDIDAS DE MITIGACIÓN</th>
-                  <th rowSpan={2} style={{ width: '90px', minWidth: '90px' }}>RESPONSABLE DE LA GESTIÓN</th>
+                  <th rowSpan={2} style={{ width: "140px", minWidth: "140px" }}>RESPONSABLE DE GESTIÓN</th>
                   <th rowSpan={2} style={{ width: '70px', minWidth: '70px' }}>MES DE INICIO DE ACTIVIDAD</th>
                   <th rowSpan={2} style={{ width: '70px', minWidth: '70px' }}>DURACIÓN (MESES)</th>
                   {Array.from({ length: numAnios }, (_, a) => (
@@ -421,7 +593,7 @@ const FormularioPlanRiesgos = () => {
                       >
                         <option value="">—</option>
                         {integrantes.map(int => (
-                          <option key={int.id} value={int.iniciales}>{int.iniciales}</option>
+                          <option key={int.id} value={int.iniciales}>{int.iniciales} — {int.nombre} ({int.rol})</option>
                         ))}
                       </select>
                     </td>
@@ -479,7 +651,7 @@ const FormularioPlanRiesgos = () => {
                       >
                         <option value="">—</option>
                         {integrantes.map(int => (
-                          <option key={int.id} value={int.iniciales}>{int.iniciales}</option>
+                          <option key={int.id} value={int.iniciales}>{int.iniciales} — {int.nombre} ({int.rol})</option>
                         ))}
                       </select>
                     </td>
@@ -598,64 +770,377 @@ const FormularioPlanRiesgos = () => {
         </div>
       </div>
 
-      {/* Modal Añadir Participante */}
-      {mostrarModalNuevoIntegrante && (
-        <div className="crear-propuesta-modal-overlay" onClick={() => setMostrarModalNuevoIntegrante(false)}>
-          <div className="crear-propuesta-modal-card" style={{ maxWidth: '480px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="crear-propuesta-modal-header">
-              <div className="modal-header-title">+ Añadir Participante al Registro</div>
-              <button type="button" className="btn-modal-close" onClick={() => setMostrarModalNuevoIntegrante(false)}>✕</button>
-            </div>
-            <form onSubmit={handleAgregarIntegrante} style={{ padding: '24px' }}>
-              <div className="modal-form-group">
-                <LimitedInput 
-                  label="Nombre Completo del Participante"
-                  required
-                  maxLength={50}
-                  placeholder="Ej: Lic. Esteban Mora Rojas"
-                  className="modal-form-input"
-                  value={nuevoIntegrante.nombre}
-                  onChange={(e) => setNuevoIntegrante({ ...nuevoIntegrante, nombre: e.target.value })}
-                />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
-                <div className="modal-form-group">
-                  <LimitedInput 
-                    label="Iniciales"
-                    required
-                    maxLength={5}
-                    placeholder="EMR"
-                    className="modal-form-input"
-                    value={nuevoIntegrante.iniciales}
-                    onChange={(e) => setNuevoIntegrante({ ...nuevoIntegrante, iniciales: e.target.value.toUpperCase() })}
-                  />
+      {/* Modal Añadir Miembro / Participante Mejorado */}
+      {mostrarModalNuevoIntegrante && (() => {
+        const filtradosBD = investigadoresBD.filter(u => {
+          if (!filtroBusquedaInvestigador) return true;
+          const q = filtroBusquedaInvestigador.toLowerCase();
+          return (
+            (u.nombreCompleto || '').toLowerCase().includes(q) ||
+            (u.correo || '').toLowerCase().includes(q) ||
+            (u.escuela || '').toLowerCase().includes(q)
+          );
+        });
+
+        return (
+          <div 
+            className="crear-propuesta-modal-overlay" 
+            onClick={() => { setMostrarModalNuevoIntegrante(false); setErrorModalIntegrante(''); }}
+          >
+            <div 
+              className="crear-propuesta-modal-card" 
+              style={{ 
+                maxWidth: '580px', 
+                borderRadius: '12px', 
+                overflow: 'hidden', 
+                boxShadow: '0 25px 50px -12px rgba(0, 40, 85, 0.3), 0 0 0 1px rgba(0, 40, 85, 0.08)' 
+              }} 
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header con gradiente institucional */}
+              <div 
+                style={{ 
+                  background: 'linear-gradient(135deg, #002855 0%, #0369a1 100%)', 
+                  color: '#ffffff', 
+                  padding: '18px 24px', 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center' 
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ 
+                    width: '38px', 
+                    height: '38px', 
+                    borderRadius: '10px', 
+                    background: 'rgba(255, 255, 255, 0.15)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    backdropFilter: 'blur(4px)'
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <line x1="19" y1="8" x2="19" y2="14" />
+                      <line x1="22" y1="11" x2="16" y2="11" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#ffffff' }}>
+                      + Añadir Miembro al Equipo
+                    </h3>
+                    <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.85)', marginTop: '2px' }}>
+                      Se incorporará al equipo y estará disponible para asignar en actividades y riesgos
+                    </div>
+                  </div>
                 </div>
-                <div className="modal-form-group">
-                  <label className="modal-form-label">Rol de Referencia</label>
-                  <select 
-                    className="modal-form-select"
-                    value={nuevoIntegrante.rol}
-                    onChange={(e) => setNuevoIntegrante({ ...nuevoIntegrante, rol: e.target.value })}
+                <button 
+                  type="button" 
+                  onClick={() => { setMostrarModalNuevoIntegrante(false); setErrorModalIntegrante(''); }}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.12)',
+                    border: 'none',
+                    color: '#ffffff',
+                    width: '30px',
+                    height: '30px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    fontSize: '15px',
+                    lineHeight: 1
+                  }}
+                  aria-label="Cerrar modal"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Selector de Tipo de Integrante */}
+              <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', padding: '0 24px' }}>
+                <button
+                  type="button"
+                  onClick={() => { setTipoMiembroModal('tec'); setErrorModalIntegrante(''); }}
+                  style={{
+                    padding: '12px 16px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    border: 'none',
+                    borderBottom: tipoMiembroModal === 'tec' ? '2.5px solid #002855' : '2.5px solid transparent',
+                    color: tipoMiembroModal === 'tec' ? '#002855' : '#64748b',
+                    background: 'transparent',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🏫 Investigador TEC (Base de Datos)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setTipoMiembroModal('externo'); setErrorModalIntegrante(''); }}
+                  style={{
+                    padding: '12px 16px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    border: 'none',
+                    borderBottom: tipoMiembroModal === 'externo' ? '2.5px solid #002855' : '2.5px solid transparent',
+                    color: tipoMiembroModal === 'externo' ? '#002855' : '#64748b',
+                    background: 'transparent',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🌐 Colaborador Externo
+                </button>
+              </div>
+
+              {/* Formulario */}
+              <form onSubmit={handleAgregarIntegrante} style={{ margin: 0 }}>
+                <div style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  
+                  {tipoMiembroModal === 'tec' ? (
+                    <>
+                      {/* Búsqueda rápida de investigador TEC */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '13px', fontWeight: 600, color: '#002855' }}>
+                            Seleccionar Investigador TEC *
+                          </label>
+                          <span style={{ fontSize: '11px', color: '#64748b' }}>
+                            {filtradosBD.length} disponibles
+                          </span>
+                        </div>
+
+                        <div style={{ position: 'relative', marginBottom: '8px' }}>
+                          <input
+                            type="text"
+                            placeholder="Filtrar por nombre, correo o escuela..."
+                            value={filtroBusquedaInvestigador}
+                            onChange={(e) => setFiltroBusquedaInvestigador(e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '8px 12px 8px 30px',
+                              fontSize: '13px',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: '6px',
+                              outline: 'none',
+                              background: '#f8fafc',
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '12px' }}>🔍</span>
+                        </div>
+
+                        <select
+                          className="modal-form-select"
+                          value={nuevoIntegrante.usuarioId || ''}
+                          required
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            fontSize: '13px',
+                            border: '1.5px solid ' + (nuevoIntegrante.usuarioId ? '#0369a1' : '#cbd5e1'),
+                            borderRadius: '8px',
+                            background: '#ffffff',
+                            color: '#0f172a',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            boxSizing: 'border-box'
+                          }}
+                          onChange={(e) => {
+                            setErrorModalIntegrante('');
+                            const uId = Number(e.target.value);
+                            const sel = investigadoresBD.find(u => u.usuarioId === uId);
+                            if (sel) {
+                              setNuevoIntegrante({
+                                ...nuevoIntegrante,
+                                usuarioId: sel.usuarioId,
+                                nombre: sel.nombreCompleto,
+                                iniciales: obtenerIniciales(sel.nombreCompleto),
+                                escuela: sel.escuela || 'TEC'
+                              });
+                            } else {
+                              setNuevoIntegrante({
+                                ...nuevoIntegrante,
+                                usuarioId: null,
+                                nombre: '',
+                                iniciales: '',
+                                escuela: 'TEC'
+                              });
+                            }
+                          }}
+                        >
+                          <option value="">-- Seleccionar Investigador Registrado --</option>
+                          {filtradosBD.map(u => (
+                            <option key={u.usuarioId} value={u.usuarioId}>
+                              {u.nombreCompleto} — {u.correo} ({u.escuela || 'TEC'})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Tarjeta de preview de usuario seleccionado */}
+                      {nuevoIntegrante.usuarioId && nuevoIntegrante.nombre && (
+                        <div style={{
+                          padding: '12px 14px',
+                          backgroundColor: '#f0fdf4',
+                          border: '1px solid #86efac',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px'
+                        }}>
+                          <div style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            background: '#002855',
+                            color: '#ffffff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            fontSize: '15px',
+                            flexShrink: 0
+                          }}>
+                            {nuevoIntegrante.iniciales || 'TEC'}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>
+                              {nuevoIntegrante.nombre}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#166534', marginTop: '2px' }}>
+                              ✓ Funcionario Verificado TEC — Instancia: {nuevoIntegrante.escuela}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {/* Colaborador Externo */}
+                      <div className="modal-form-group">
+                        <label style={{ fontSize: '13px', fontWeight: 600, color: '#002855', marginBottom: '6px', display: 'block' }}>
+                          Nombre Completo del Colaborador Externo *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ej: Dra. Elena Morales Castillo"
+                          className="form-text-input"
+                          value={nuevoIntegrante.nombre}
+                          onChange={(e) => setNuevoIntegrante({ 
+                            ...nuevoIntegrante, 
+                            nombre: e.target.value,
+                            iniciales: obtenerIniciales(e.target.value)
+                          })}
+                          style={{ width: '100%', padding: '10px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
+                        />
+                      </div>
+
+                      <div className="modal-form-group">
+                        <label style={{ fontSize: '13px', fontWeight: 600, color: '#002855', marginBottom: '6px', display: 'block' }}>
+                          Institución o Empresa que Representa *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ej: Ministerio de Salud / Universidad de Costa Rica"
+                          className="form-text-input"
+                          value={nuevoIntegrante.institucion}
+                          onChange={(e) => setNuevoIntegrante({ ...nuevoIntegrante, institucion: e.target.value })}
+                          style={{ width: '100%', padding: '10px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Campos de Iniciales y Rol */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '13px', fontWeight: 600, color: '#002855', marginBottom: '6px', display: 'block' }}>
+                        Iniciales *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        maxLength={6}
+                        placeholder="EMC"
+                        className="form-text-input"
+                        value={nuevoIntegrante.iniciales}
+                        onChange={(e) => setNuevoIntegrante({ ...nuevoIntegrante, iniciales: e.target.value.toUpperCase() })}
+                        style={{ width: '100%', padding: '10px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '13px', fontWeight: 600, color: '#002855', marginBottom: '6px', display: 'block' }}>
+                        Rol en el Proyecto *
+                      </label>
+                      <select
+                        className="modal-form-select"
+                        value={nuevoIntegrante.rol}
+                        onChange={(e) => setNuevoIntegrante({ ...nuevoIntegrante, rol: e.target.value })}
+                        style={{ width: '100%', padding: '10px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box', background: '#ffffff', cursor: 'pointer' }}
+                      >
+                        <option value="Co-Investigador(a)">Co-Investigador(a)</option>
+                        <option value="Persona coordinadora">Persona coordinadora</option>
+                        <option value="Investigador Asociado">Investigador Asociado</option>
+                        <option value="Asistente TEC">Asistente TEC</option>
+                        <option value="Colaborador técnico">Colaborador técnico</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Alerta de error */}
+                  {errorModalIntegrante && (
+                    <div style={{
+                      padding: '10px 14px',
+                      backgroundColor: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '8px',
+                      color: '#b91c1c',
+                      fontSize: '13px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <span>⚠️</span>
+                      <span>{errorModalIntegrante}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div style={{
+                  padding: '16px 24px',
+                  backgroundColor: '#f8fafc',
+                  borderTop: '1px solid #e2e8f0',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  gap: '12px'
+                }}>
+                  <button 
+                    type="button" 
+                    className="btn-proposal-action btn-outline"
+                    onClick={() => { setMostrarModalNuevoIntegrante(false); setErrorModalIntegrante(''); }}
+                    style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '6px' }}
                   >
-                    <option value="Persona coordinadora">Persona coordinadora</option>
-                    <option value="Co-Investigador(a)">Co-Investigador(a)</option>
-                    <option value="Asistente TEC">Asistente TEC</option>
-                    <option value="Colaborador técnico">Colaborador técnico</option>
-                  </select>
+                    Cancelar
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="btn-nueva-propuesta"
+                    style={{ padding: '8px 20px', fontSize: '13px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <span>✓</span>
+                    Guardar Integrante
+                  </button>
                 </div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
-                <button type="button" className="btn-proposal-action btn-outline" onClick={() => setMostrarModalNuevoIntegrante(false)}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-nueva-propuesta">
-                  Añadir Participante
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

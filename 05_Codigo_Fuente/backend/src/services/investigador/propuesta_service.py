@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional, List
@@ -6,7 +7,8 @@ from fastapi import HTTPException, status
 
 from src.models.propuestas import Propuesta
 from src.models.propuesta_contenido import PropuestaContenido, PropuestaDeclaraciones
-from src.models.propuesta_equipo import IntegrantesEquipoPropuesta, RolesEquipo
+from src.models.propuesta_equipo import IntegrantesEquipoPropuesta, RolesEquipo, ColaboradoresExternos
+from datetime import date
 from src.models.presupuesto import PresupuestoPropuesta
 from src.models.propuesta_plan import Actividades
 from src.models.propuesta_documentos import PropuestaDocumentos
@@ -25,6 +27,9 @@ from src.api.schemas.investigador.propuestas import (
     DeclaracionesForm04Update,
     DeclaracionesForm04Response,
     IntegranteEquipoCreate,
+    ColaboradorExternoCreate,
+    ColaboradorExternoResponse,
+    EquipoCompletoUpdate,
     ProductoAcademicoCreate,
     RubroPresupuestoCreate,
     SubsanacionResponse,
@@ -36,6 +41,50 @@ from src.api.schemas.investigador.propuestas import (
     ProductoAcademicoResponse,
     RubroPresupuestoResponse
 )
+
+
+def obtener_propuesta_con_acceso(
+    db: Session,
+    propuesta_id: int,
+    usuario_id: int,
+    requiere_coordinador: bool = False
+) -> Propuesta:
+    """
+    Verifica que la propuesta exista y que el usuario tenga permisos adecuados.
+    - Si requiere_coordinador es True, solo el investigador coordinador / creador tiene acceso (ej. para el envío formal).
+    - Si requiere_coordinador es False, tanto el coordinador como los integrantes del equipo tienen acceso de lectura y edición.
+    """
+    propuesta = db.query(Propuesta).filter(Propuesta.propuestaId == propuesta_id).first()
+    if not propuesta:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Propuesta no encontrada"
+        )
+
+    es_coord = (propuesta.getInvestigadorCoordId() == usuario_id)
+    if requiere_coordinador:
+        if not es_coord:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Solo la persona coordinadora (propietaria de la propuesta) puede realizar el envío definitivo a la Unidad de Vinculación."
+            )
+        return propuesta
+
+    if es_coord:
+        return propuesta
+
+    es_integrante = db.query(IntegrantesEquipoPropuesta).filter(
+        IntegrantesEquipoPropuesta.propuestaId == propuesta_id,
+        IntegrantesEquipoPropuesta.usuarioId == usuario_id
+    ).first() is not None
+
+    if not es_integrante:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos para acceder o modificar esta propuesta."
+        )
+
+    return propuesta
 
 
 def crear_propuesta(
@@ -50,9 +99,18 @@ def crear_propuesta(
 
     # Validar que convocatoria y escuela existan en la BD
     conv_id = datos.convocatoriaId
-    if not db.query(Convocatorias).filter(Convocatorias.convocatoriaId == conv_id).first():
+    convocatoria = db.query(Convocatorias).filter(Convocatorias.convocatoriaId == conv_id).first()
+    if not convocatoria:
         primera_conv = db.query(Convocatorias).filter(Convocatorias.activo == True).first()
+        convocatoria = primera_conv
         conv_id = primera_conv.convocatoriaId if primera_conv else 1
+
+    hoy = date.today()
+    if convocatoria and (not convocatoria.activo or (convocatoria.fechaCierre and convocatoria.fechaCierre < hoy)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"La convocatoria '{convocatoria.nombreConvocatoria}' se encuentra cerrada (Fecha de cierre: {convocatoria.fechaCierre}). No se pueden formular nuevas propuestas para esta convocatoria."
+        )
 
     esc_id = datos.escuelaId or usuario.escuelaId() or 1
     if not db.query(Escuela).filter(Escuela.escuelaId == esc_id).first():
@@ -132,10 +190,18 @@ def listar_propuestas_investigador(
     usuario_id: int
 ) -> List[PropuestaResumenResponse]:
     """
-    Retorna la lista resumida de todas las propuestas creadas por el investigador actual.
+    Retorna la lista resumida de todas las propuestas creadas por el investigador actual
+    o en las que participa como integrante del equipo de investigación.
     """
+    subquery_integrantes = db.query(IntegrantesEquipoPropuesta.propuestaId).filter(
+        IntegrantesEquipoPropuesta.usuarioId == usuario_id
+    ).subquery()
+
     propuestas = db.query(Propuesta).filter(
-        Propuesta.investigadorCoordId == usuario_id
+        or_(
+            Propuesta.investigadorCoordId == usuario_id,
+            Propuesta.propuestaId.in_(subquery_integrantes)
+        )
     ).order_by(Propuesta.fechaCreacion.desc()).all()
 
     resultado = []
@@ -146,8 +212,10 @@ def listar_propuestas_investigador(
         # Validar individualmente si cada formulario está completado
         f01 = bool(p.getFechaEnvio() is not None) or \
               db.query(PropuestaDocumentos).filter(PropuestaDocumentos.propuestaId == p.getPropuestaId(), PropuestaDocumentos.tipoDocumentoId == 1).count() > 0
-        f02 = db.query(Actividades).filter(Actividades.propuestaId == p.getPropuestaId()).count() > 0 or               db.query(PropuestaDocumentos).filter(PropuestaDocumentos.propuestaId == p.getPropuestaId(), PropuestaDocumentos.tipoDocumentoId == 2).count() > 0
-        f03 = db.query(PresupuestoPropuesta).filter(PresupuestoPropuesta.propuestaId == p.getPropuestaId()).count() > 0 or               db.query(PropuestaDocumentos).filter(PropuestaDocumentos.propuestaId == p.getPropuestaId(), PropuestaDocumentos.tipoDocumentoId == 3).count() > 0
+        f02 = db.query(Actividades).filter(Actividades.propuestaId == p.getPropuestaId()).count() > 0 or \
+              db.query(PropuestaDocumentos).filter(PropuestaDocumentos.propuestaId == p.getPropuestaId(), PropuestaDocumentos.tipoDocumentoId == 2).count() > 0
+        f03 = db.query(PresupuestoPropuesta).filter(PresupuestoPropuesta.propuestaId == p.getPropuestaId()).count() > 0 or \
+              db.query(PropuestaDocumentos).filter(PropuestaDocumentos.propuestaId == p.getPropuestaId(), PropuestaDocumentos.tipoDocumentoId == 3).count() > 0
 
         # Subsanación activa más reciente
         sub_orm = db.query(Subsanaciones).filter(
@@ -174,6 +242,8 @@ def listar_propuestas_investigador(
                 nombreEstadoSubsanacion=est_sub.nombreEstadoSubsanacion if est_sub else "Pendiente"
             )
 
+        es_propietario = (p.getInvestigadorCoordId() == usuario_id)
+
         resultado.append(PropuestaResumenResponse(
             propuestaId=p.getPropuestaId(),
             codigoPropuesta=p.getCodigoPropuesta(),
@@ -189,6 +259,8 @@ def listar_propuestas_investigador(
             nivelTrlEsperado=p.getNivelTrlEsperado(),
             fechaCreacion=p.getFechaCreacion(),
             fechaEnvio=p.getFechaEnvio(),
+            investigadorCoordId=p.getInvestigadorCoordId(),
+            esPropietario=es_propietario,
             form01Completado=f01,
             form02Completado=f02,
             form03Completado=f03,
@@ -203,18 +275,9 @@ def obtener_propuesta_detalle(
     usuario_id: int
 ) -> PropuestaDetalleResponse:
     """
-    Retorna el detalle completo de una propuesta del investigador.
+    Retorna el detalle completo de una propuesta del investigador o donde participa como integrante.
     """
-    propuesta = db.query(Propuesta).filter(
-        Propuesta.propuestaId == propuesta_id,
-        Propuesta.investigadorCoordId == usuario_id
-    ).first()
-
-    if not propuesta:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Propuesta no encontrada o no pertenece al usuario autenticado"
-        )
+    propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
 
     estado = db.query(EstadosPropuesta).filter(EstadosPropuesta.estadoPropuestaId == propuesta.getEstadoId()).first()
     escuela = db.query(Escuela).filter(Escuela.escuelaId == propuesta.getEscuelaId()).first()
@@ -222,6 +285,21 @@ def obtener_propuesta_detalle(
     declaraciones = db.query(PropuestaDeclaraciones).filter(PropuestaDeclaraciones.propuestaId == propuesta_id).first()
 
     # Integrantes
+    colaboradores_orm = db.query(ColaboradoresExternos).filter(
+        ColaboradoresExternos.propuestaId == propuesta_id
+    ).all()
+    colaboradores_resp = [
+        ColaboradorExternoResponse(
+            colaboradorId=c.getColaboradorId(),
+            propuestaId=c.getPropuestaId(),
+            nombreColaborador=c.getNombreColaborador(),
+            apellido1Colaborador=c.getApellido1Colaborador(),
+            apellido2Colaborador=c.getApellido2Colaborador(),
+            idOrcid=c.getIdOrcid(),
+            institucionEmpresa=c.getInstitucionEmpresa()
+        ) for c in colaboradores_orm
+    ]
+
     integrantes_orm = db.query(IntegrantesEquipoPropuesta).filter(
         IntegrantesEquipoPropuesta.propuestaId == propuesta_id
     ).all()
@@ -252,7 +330,7 @@ def obtener_propuesta_detalle(
         ProductoAcademicoResponse(
             productoId=prod.getProductoId(),
             propuestaId=prod.getPropuestaId(),
-            tipoProductoId=prod.TipoProductoId(),
+            tipoProductoAcademicoId=prod.getTipoProductoAcademicoId(),
             descripcion=prod.getDescripcion(),
             cantidadComprometida=prod.getCantidadComprometida(),
             fechaEntregaEstimada=prod.getFechaEntregaEstimada(),
@@ -346,6 +424,8 @@ def obtener_propuesta_detalle(
         fechaFinalizacion=propuesta.getFechaFinalizacion(),
         fechaCreacion=propuesta.getFechaCreacion(),
         fechaEnvio=propuesta.getFechaEnvio(),
+        investigadorCoordId=propuesta.getInvestigadorCoordId(),
+        esPropietario=(propuesta.getInvestigadorCoordId() == usuario_id),
         resumen=contenido.getResumen() if contenido else None,
         palabrasClave=contenido.getPalabrasClave() if contenido else None,
         abstract=contenido.getAbstract() if contenido else None,
@@ -356,6 +436,7 @@ def obtener_propuesta_detalle(
         contenido=contenido_resp,
         declaraciones=declaraciones_resp,
         integrantes=integrantes_resp,
+        colaboradoresExternos=colaboradores_resp,
         productosAcademicos=productos_resp,
         presupuesto=presupuesto_resp,
         subsanaciones=subsanaciones_resp
@@ -371,13 +452,7 @@ def actualizar_propuesta_cabecera(
     """
     Actualiza la información general de la propuesta. Permitido en estado BORRADOR o SUBSANACION.
     """
-    propuesta = db.query(Propuesta).filter(
-        Propuesta.propuestaId == propuesta_id,
-        Propuesta.investigadorCoordId == usuario_id
-    ).first()
-
-    if not propuesta:
-        raise HTTPException(status_code=404, detail="Propuesta no encontrada")
+    propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
 
     if propuesta.getEstadoId() not in [1, 10]:
         raise HTTPException(status_code=400, detail="Solo se pueden editar propuestas en Borrador o en Subsanación")
@@ -416,13 +491,7 @@ def actualizar_contenido_form04(
     """
     Actualiza la información descriptiva (Resumen, Metodología, etc.) del Formulario 04.
     """
-    propuesta = db.query(Propuesta).filter(
-        Propuesta.propuestaId == propuesta_id,
-        Propuesta.investigadorCoordId == usuario_id
-    ).first()
-
-    if not propuesta:
-        raise HTTPException(status_code=404, detail="Propuesta no encontrada")
+    propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
 
     contenido = db.query(PropuestaContenido).filter(
         PropuestaContenido.propuestaId == propuesta_id
@@ -471,13 +540,7 @@ def actualizar_declaraciones_form04(
     """
     Actualiza las declaraciones éticas, ambientales y de PI del Formulario 04.
     """
-    propuesta = db.query(Propuesta).filter(
-        Propuesta.propuestaId == propuesta_id,
-        Propuesta.investigadorCoordId == usuario_id
-    ).first()
-
-    if not propuesta:
-        raise HTTPException(status_code=404, detail="Propuesta no encontrada")
+    propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
 
     declaraciones = db.query(PropuestaDeclaraciones).filter(
         PropuestaDeclaraciones.propuestaId == propuesta_id
@@ -526,13 +589,7 @@ def agregar_integrante_equipo(
     """
     Agrega un miembro o colaborador al equipo de la propuesta.
     """
-    propuesta = db.query(Propuesta).filter(
-        Propuesta.propuestaId == propuesta_id,
-        Propuesta.investigadorCoordId == usuario_id
-    ).first()
-
-    if not propuesta:
-        raise HTTPException(status_code=404, detail="Propuesta no encontrada")
+    propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
 
     nuevo_integrante = IntegrantesEquipoPropuesta()
     nuevo_integrante.setPropuestaId(propuesta_id)
@@ -556,13 +613,7 @@ def eliminar_integrante_equipo(
     """
     Elimina a un miembro del equipo de la propuesta. No se puede eliminar al coordinador.
     """
-    propuesta = db.query(Propuesta).filter(
-        Propuesta.propuestaId == propuesta_id,
-        Propuesta.investigadorCoordId == usuario_id
-    ).first()
-
-    if not propuesta:
-        raise HTTPException(status_code=404, detail="Propuesta no encontrada")
+    propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
 
     integrante = db.query(IntegrantesEquipoPropuesta).filter(
         IntegrantesEquipoPropuesta.integranteId == integrante_id,
@@ -589,17 +640,11 @@ def agregar_producto_academico(
     """
     Registra un producto académico o tecnológico comprometido para la propuesta.
     """
-    propuesta = db.query(Propuesta).filter(
-        Propuesta.propuestaId == propuesta_id,
-        Propuesta.investigadorCoordId == usuario_id
-    ).first()
-
-    if not propuesta:
-        raise HTTPException(status_code=404, detail="Propuesta no encontrada")
+    propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
 
     producto = ProductosAcademicos()
     producto.setPropuestaId(propuesta_id)
-    producto.setTipoProductoId(datos.tipoProductoId)
+    producto.setTipoProductoAcademicoId(getattr(datos, 'tipoProductoAcademicoId', getattr(datos, 'tipoProductoId', 1)))
     producto.setDescripcion(datos.descripcion)
     producto.setCantidadComprometida(datos.cantidadComprometida)
     producto.setFechaEntregaEstimada(datos.fechaEntregaEstimada)
@@ -621,13 +666,7 @@ def agregar_rubro_presupuesto(
     """
     Registra un rubro al presupuesto de la propuesta y actualiza el montoTotal en la cabecera.
     """
-    propuesta = db.query(Propuesta).filter(
-        Propuesta.propuestaId == propuesta_id,
-        Propuesta.investigadorCoordId == usuario_id
-    ).first()
-
-    if not propuesta:
-        raise HTTPException(status_code=404, detail="Propuesta no encontrada")
+    propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
 
     item = PresupuestoPropuesta()
     item.setPropuestaId(propuesta_id)
@@ -658,13 +697,7 @@ def guardar_presupuesto_completo(
     """
     Reemplaza todos los rubros de presupuesto de la propuesta con la nueva lista y actualiza el monto total.
     """
-    propuesta = db.query(Propuesta).filter(
-        Propuesta.propuestaId == propuesta_id,
-        Propuesta.investigadorCoordId == usuario_id
-    ).first()
-
-    if not propuesta:
-        raise HTTPException(status_code=404, detail="Propuesta no encontrada")
+    propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
 
     # Eliminar rubros anteriores
     db.query(PresupuestoPropuesta).filter(
@@ -699,14 +732,9 @@ def enviar_propuesta_revision(
 ) -> Propuesta:
     """
     Envía formalmente la propuesta a revisión institucional (cambia de BORRADOR a ENVIADA).
+    Restringido exclusivamente a la persona coordinadora / propietaria de la propuesta.
     """
-    propuesta = db.query(Propuesta).filter(
-        Propuesta.propuestaId == propuesta_id,
-        Propuesta.investigadorCoordId == usuario_id
-    ).first()
-
-    if not propuesta:
-        raise HTTPException(status_code=404, detail="Propuesta no encontrada")
+    propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=True)
 
     if propuesta.getEstadoId() not in [1, 10]:
         raise HTTPException(status_code=400, detail="Solo se pueden enviar propuestas en estado Borrador o en Subsanación")
@@ -728,7 +756,7 @@ def enviar_propuesta_revision(
         propuestaId=propuesta.getPropuestaId(),
         tipoNotificacionId=4,
         asunto=f"Propuesta enviada: {propuesta.getCodigoPropuesta()}",
-        cuerpoMensaje=f"Tu propuesta '{propuesta.getTitulo()}' ha sido enviada formalmente a revisión en la VIE.",
+        cuerpoMensaje=f"Tu propuesta '{propuesta.getTitulo()}' ha sido enviada formalmente a evaluación por la Unidad de Vinculación.",
         canalId=1,
         leida=False,
         creadoEn=datetime.now(timezone.utc),
@@ -749,13 +777,7 @@ def obtener_subsanaciones_propuesta(
     """
     Retorna el historial de subsanaciones solicitadas a una propuesta.
     """
-    propuesta = db.query(Propuesta).filter(
-        Propuesta.propuestaId == propuesta_id,
-        Propuesta.investigadorCoordId == usuario_id
-    ).first()
-
-    if not propuesta:
-        raise HTTPException(status_code=404, detail="Propuesta no encontrada")
+    propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
 
     subsanaciones = db.query(Subsanaciones).filter(
         Subsanaciones.propuestaId == propuesta_id
@@ -795,13 +817,7 @@ def responder_subsanacion(
     Si se marca reenviarPropuesta=True, cambia el estado de la propuesta a 'Enviada a VIE' (Revisión)
     cumpliendo el flujo: Revisión -> Subsanación -> Corrección por el solicitante -> Reenvío -> Nueva revisión.
     """
-    propuesta = db.query(Propuesta).filter(
-        Propuesta.propuestaId == propuesta_id,
-        Propuesta.investigadorCoordId == usuario_id
-    ).first()
-
-    if not propuesta:
-        raise HTTPException(status_code=404, detail="Propuesta no encontrada")
+    propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
 
     sub = db.query(Subsanaciones).filter(
         Subsanaciones.subsanacionId == subsanacion_id,
@@ -818,7 +834,12 @@ def responder_subsanacion(
 
     # Reenvío de la propuesta para nueva revisión
     if datos.reenviarPropuesta:
-        propuesta.setEstadoId(2)  # Enviada a VIE / En Revisión
+        if propuesta.getInvestigadorCoordId() != usuario_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Solo la persona coordinadora (propietaria de la propuesta) puede reenviar la propuesta a revisión institucional."
+            )
+        propuesta.setEstadoId(2)  # Enviada a Vinculación / En Revisión
         propuesta.setFechaEnvio(datetime.now(timezone.utc))
         propuesta.setUltimaAuditoria(datetime.now(timezone.utc))
 
@@ -828,7 +849,7 @@ def responder_subsanacion(
             propuestaId=propuesta.getPropuestaId(),
             tipoNotificacionId=4,
             asunto=f"Subsanación Respondida: {propuesta.getCodigoPropuesta()}",
-            cuerpoMensaje=f"El investigador ha corregido y reenviado la propuesta '{propuesta.getTitulo()}' para nueva revisión institucional.",
+            cuerpoMensaje=f"La propuesta '{propuesta.getTitulo()}' ha sido corregida y reenviada para nueva revisión por la Unidad de Vinculación.",
             canalId=1,
             leida=False,
             creadoEn=datetime.now(timezone.utc),
@@ -920,3 +941,127 @@ def solicitar_subsanacion(
         estadoSubsanacionId=nueva_sub.getEstadoSubsanacionId(),
         nombreEstadoSubsanacion=est_sub.nombreEstadoSubsanacion if est_sub else "Pendiente"
     )
+
+
+def guardar_equipo_completo(
+    db: Session,
+    propuesta_id: int,
+    usuario_id: int,
+    datos: EquipoCompletoUpdate
+) -> dict:
+    """
+    Sincroniza y valida de manera atómica todos los integrantes del TEC y colaboradores externos.
+    Verifica estrictamente que los miembros del TEC existan en la tabla usuarios.
+    """
+    propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
+    coord_id = propuesta.getInvestigadorCoordId()
+
+    # 1. Integrantes TEC
+    db.query(IntegrantesEquipoPropuesta).filter(
+        IntegrantesEquipoPropuesta.propuestaId == propuesta_id
+    ).delete(synchronize_session=False)
+
+    coordinador_incluido = False
+    for inte in datos.integrantes:
+        usu = db.query(Usuario).filter(Usuario.usuarioId == inte.usuarioId, Usuario.activo == True).first()
+        if not usu:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El miembro con ID {inte.usuarioId} no existe en la base de datos de usuarios del TEC."
+            )
+        if inte.usuarioId == coord_id:
+            coordinador_incluido = True
+
+        nuevo_inte = IntegrantesEquipoPropuesta()
+        nuevo_inte.setPropuestaId(propuesta_id)
+        nuevo_inte.setUsuarioId(inte.usuarioId)
+        nuevo_inte.setTipoHoraId(inte.tipoHoraId or 1)
+        nuevo_inte.setHorasSemanales(inte.horasSemanales or Decimal("10.0"))
+        nuevo_inte.setRolEquipoId(1 if inte.usuarioId == coord_id else (inte.rolEquipoId or 2))
+        nuevo_inte.setOrcid(inte.orcid)
+        nuevo_inte.setUsuarioAuditoriaId(usuario_id)
+        db.add(nuevo_inte)
+
+    if not coordinador_incluido:
+        coord = IntegrantesEquipoPropuesta()
+        coord.setPropuestaId(propuesta_id)
+        coord.setUsuarioId(coord_id)
+        coord.setTipoHoraId(1)
+        coord.setHorasSemanales(Decimal("10.0"))
+        coord.setRolEquipoId(1)
+        coord.setUsuarioAuditoriaId(usuario_id)
+        db.add(coord)
+
+    # 2. Colaboradores Externos
+    db.query(ColaboradoresExternos).filter(
+        ColaboradoresExternos.propuestaId == propuesta_id
+    ).delete(synchronize_session=False)
+
+    for col in datos.colaboradoresExternos:
+        if not col.nombreColaborador or not col.nombreColaborador.strip():
+            continue
+        nuevo_col = ColaboradoresExternos()
+        nuevo_col.setPropuestaId(propuesta_id)
+        nuevo_col.setNombreColaborador(col.nombreColaborador.strip())
+        nuevo_col.setApellido1Colaborador(col.apellido1Colaborador)
+        nuevo_col.setApellido2Colaborador(col.apellido2Colaborador)
+        nuevo_col.setIdOrcid(col.idOrcid)
+        nuevo_col.setInstitucionEmpresa(col.institucionEmpresa.strip() if col.institucionEmpresa else "Institución Externa")
+        nuevo_col.setUsuarioAuditoriaId(usuario_id)
+        db.add(nuevo_col)
+
+    db.commit()
+    return {"message": "Equipo de investigación y colaboradores externos guardados exitosamente"}
+
+
+def obtener_equipo_propuesta(
+    db: Session,
+    propuesta_id: int,
+    usuario_id: int
+) -> dict:
+    """
+    Retorna la lista de integrantes del TEC y colaboradores externos de una propuesta.
+    """
+    propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
+
+    integrantes_orm = db.query(IntegrantesEquipoPropuesta).filter(
+        IntegrantesEquipoPropuesta.propuestaId == propuesta_id
+    ).all()
+    integrantes_resp = []
+    for inte in integrantes_orm:
+        usu = db.query(Usuario).filter(Usuario.usuarioId == inte.usuarioId).first()
+        rol = db.query(RolesEquipo).filter(RolesEquipo.rolEquipoId == inte.getRolEquipoId()).first()
+        nombre_completo = f"{usu.nombreUsuario} {usu.apellido1Usuario}".strip() if usu else None
+        integrantes_resp.append(
+            IntegranteEquipoResponse(
+                integranteEquipoId=inte.getIntegranteEquipoId(),
+                propuestaId=inte.getPropuestaId(),
+                usuarioId=inte.usuarioId,
+                nombreCompleto=nombre_completo,
+                correoInstitucional=usu.correoInstitucional if usu else None,
+                tipoHoraId=inte.getTipoHoraId() or 1,
+                horasSemanales=inte.getHorasSemanales(),
+                rolEquipoId=inte.getRolEquipoId(),
+                orcid=inte.getOrcid()
+            )
+        )
+
+    colaboradores_orm = db.query(ColaboradoresExternos).filter(
+        ColaboradoresExternos.propuestaId == propuesta_id
+    ).all()
+    colabs_resp = [
+        ColaboradorExternoResponse(
+            colaboradorId=c.getColaboradorId(),
+            propuestaId=c.getPropuestaId(),
+            nombreColaborador=c.getNombreColaborador(),
+            apellido1Colaborador=c.getApellido1Colaborador(),
+            apellido2Colaborador=c.getApellido2Colaborador(),
+            idOrcid=c.getIdOrcid(),
+            institucionEmpresa=c.getInstitucionEmpresa()
+        ) for c in colaboradores_orm
+    ]
+
+    return {
+        "integrantes": integrantes_resp,
+        "colaboradoresExternos": colabs_resp
+    }

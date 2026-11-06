@@ -118,7 +118,7 @@ class PropuestaDeclaraciones(Base):
     __tablename__ = "propuestadeclaraciones"
     
     propuestaId = Column("propuestaid", Integer, ForeignKey("propuestas.propuestaid"), primary_key=True, unique=True)
-    tieneFinanciamientoPrevio = Column("tienefinancimientoprevio", Boolean, default=False)
+    tieneFinanciamientoPrevio = Column("tienefinanciamientoprevio", Boolean, default=False)
     tieneContinuidadProyecto = Column("tienecontinuidadproyecto", Boolean, default=False)
     requiereInstrumentoJuridico = Column("requiereinstrumentojuridico", Boolean, default=False)
     tieneBasePosgrado = Column("tienebaseposgrado", Boolean, default=False)

@@ -1,10 +1,10 @@
 // src/pages/miembro_cie/RubricaVie.jsx
 // Ventana 3: Rúbrica VIE digital
-//   GET /cie/rubrica · GET/PUT /cie/expedientes/:codigo/evaluacion
+//   GET /miembro-cie/rubrica · GET/PUT /miembro-cie/expedientes/:codigo/evaluacion
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { cieService, mensajeError } from '../../services/cieService';
-import { DECISIONES, calcularPromedio } from '../../components/cie/cieConstantes';
+import { calcularPromedio, RECOMENDACIONES_CIE } from '../../components/cie/cieConstantes';
 import { useCarga } from '../../components/cie/useCarga';
 import {
   Icono, Pasos, CabeceraExpediente, Radio, AreaTexto, EncabezadoPagina, VolverALaBandeja, Cargando, ErrorCarga,
@@ -25,21 +25,23 @@ const RubricaVie = () => {
   const { datos, cargando, error, recargar } = useCarga(() => cargar(codigo), [codigo]);
 
   const [puntajes, setPuntajes] = useState({});
+  const [requisitos, setRequisitos] = useState({});
   const [observaciones, setObservaciones] = useState('');
-  const [decision, setDecision] = useState('');
+  const [recomendacion, setRecomendacion] = useState('');
   const [intento, setIntento] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [errorGuardar, setErrorGuardar] = useState('');
 
   useEffect(() => { document.title = 'Rúbrica VIE - Miembro del CIE'; }, []);
 
-  // Precarga el borrador guardado (si existe)
+  // Precarga la evaluación previamente registrada (si existe)
   useEffect(() => {
     if (!datos) return;
     const previa = datos.evaluacion;
     setPuntajes(previa.existe ? Object.fromEntries(previa.puntajes.map((p) => [p.criterioId, p.puntaje])) : {});
+    setRequisitos(previa.existe ? Object.fromEntries(previa.puntajes.map((p) => [p.criterioId, p.requisitoCumplido])) : {});
     setObservaciones(previa.observaciones || '');
-    setDecision(previa.decision || '');
+    setRecomendacion(previa.recomendacion || '');
   }, [datos]);
 
   if (cargando) return <><VolverALaBandeja /><Cargando texto="Cargando rúbrica..." /></>;
@@ -54,21 +56,21 @@ const RubricaVie = () => {
   );
 
   const { criterios, escala } = rubrica;
-  const opciones = Array.from({ length: Math.floor(escala.maximo - escala.minimo) + 1 }, (_, i) => escala.minimo + i);
-  const completos = criterios.every((c) => puntajes[c.criterioId] !== undefined && puntajes[c.criterioId] !== '');
+  const opciones = escala.opciones || [0, 6, 8, 10];
+  const completos = criterios.every((c) => puntajes[c.criterioId] !== undefined && puntajes[c.criterioId] !== '') && criterios.filter((c) => c.esRequisitoObligatorio).every((c) => requisitos[c.criterioId] === true || requisitos[c.criterioId] === false);
   const promedio = calcularPromedio(criterios, puntajes);
-  const faltaDecision = decision === '';
+  const faltaRecomendacion = recomendacion === '';
 
   const guardar = async () => {
     setIntento(true);
     setErrorGuardar('');
-    if (!completos || faltaDecision) return;
+    if (!completos || faltaRecomendacion) return;
     setGuardando(true);
     try {
       await cieService.guardarEvaluacion(codigo, {
-        puntajes: criterios.map((c) => ({ criterioId: c.criterioId, puntaje: Number(puntajes[c.criterioId]) })),
+        puntajes: criterios.map((c) => ({ criterioId: c.criterioId, puntaje: Number(puntajes[c.criterioId]), requisitoCumplido: c.esRequisitoObligatorio ? requisitos[c.criterioId] : null })),
         observaciones: observaciones.trim() || null,
-        decision,
+        recomendacion,
       });
       navigate(`/cie/expedientes/${codigo}/resolucion`);
     } catch (e) {
@@ -100,13 +102,24 @@ const RubricaVie = () => {
                 <div className="cie-criterios-head"><span>Criterio (peso)</span><span>Puntaje</span></div>
                 {criterios.map((c, i) => (
                   <div key={c.criterioId} className="cie-criterio">
-                    <span>{i + 1}. {c.nombre} <small className="cie-peso">({c.peso}%)</small></span>
+                    <span>{i + 1}. {c.nombre} <small className="cie-peso">({c.peso}%)</small>{c.esRequisitoObligatorio && <small className="cie-obligatorio"> · Requisito obligatorio</small>}</span>
                     <select value={puntajes[c.criterioId] ?? ''} aria-label={`Puntaje: ${c.nombre}`}
                       aria-invalid={intento && puntajes[c.criterioId] === undefined}
                       onChange={(ev) => setPuntajes({ ...puntajes, [c.criterioId]: ev.target.value === '' ? '' : Number(ev.target.value) })}>
                       <option value="">Seleccionar</option>
                       {opciones.map((n) => <option key={n} value={n}>{n}</option>)}
                     </select>
+                    {c.esRequisitoObligatorio && (
+                      <select
+                        value={requisitos[c.criterioId] === true ? 'si' : requisitos[c.criterioId] === false ? 'no' : ''}
+                        aria-label={`Cumplimiento del requisito: ${c.nombre}`}
+                        onChange={(ev) => setRequisitos({ ...requisitos, [c.criterioId]: ev.target.value === '' ? undefined : ev.target.value === 'si' })}
+                      >
+                        <option value="">¿Cumple?</option>
+                        <option value="si">Sí cumple</option>
+                        <option value="no">No cumple</option>
+                      </select>
+                    )}
                   </div>
                 ))}
                 <div className="cie-promedio">
@@ -115,7 +128,7 @@ const RubricaVie = () => {
                 </div>
               </div>
             )}
-            {intento && !completos && <p className="cie-error cie-pad" role="alert">Califica todos los criterios para continuar.</p>}
+            {intento && !completos && <p className="cie-error cie-pad" role="alert">Completa los puntajes y marca el cumplimiento de cada requisito obligatorio.</p>}
           </div>
 
           <div className="cie-columna">
@@ -127,18 +140,16 @@ const RubricaVie = () => {
               </div>
             </div>
             <div className="gv-subcard">
-              <h3 className="gv-subcard-titulo">Recomendación final</h3>
+              <h3 className="gv-subcard-titulo">Recomendación de la evaluación</h3>
               <div className="cie-cuerpo">
                 <div className="cie-radios">
-                  {DECISIONES.map((r) => (
-                    <Radio key={r} name="recomendacion" value={r} checked={decision === r} onChange={setDecision}>{r}</Radio>
+                  {RECOMENDACIONES_CIE.map((opcion) => (
+                    <Radio key={opcion} name="recomendacion-cie" value={opcion}
+                      checked={recomendacion === opcion} onChange={setRecomendacion}>{opcion}</Radio>
                   ))}
                 </div>
-                {intento && faltaDecision && <p className="cie-error" role="alert">Selecciona una recomendación.</p>}
-                <div className="cie-nota">
-                  <Icono nombre="info" size={18} />
-                  <p>La recomendación será utilizada por la Dirección de Investigación para generar el documento oficial.</p>
-                </div>
+                {intento && faltaRecomendacion && <p className="cie-error" role="alert">Selecciona una recomendación.</p>}
+                <p className="cie-ayuda">La recomendación queda registrada junto con el promedio ponderado. La decisión definitiva de aprobar o rechazar se toma en el siguiente paso.</p>
               </div>
             </div>
           </div>
@@ -151,7 +162,7 @@ const RubricaVie = () => {
         <button type="button" className="cie-btn-outline" onClick={() => navigate(`/cie/expedientes/${codigo}`)}>
           <Icono nombre="arrowLeft" size={15} />Volver al expediente
         </button>
-        <button type="button" className="gv-btn-primario" onClick={guardar} disabled={guardando || criterios.length === 0}>
+        <button type="button" className="gv-btn-primario" onClick={guardar} disabled={guardando || criterios.length === 0 || !completos || faltaRecomendacion}>
           {guardando ? 'Guardando...' : 'Guardar rúbrica y continuar'} <Icono nombre="arrowRight" size={16} />
         </button>
       </div>

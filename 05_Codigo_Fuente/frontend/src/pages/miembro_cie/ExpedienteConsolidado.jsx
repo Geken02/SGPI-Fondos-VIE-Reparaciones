@@ -1,5 +1,5 @@
 // src/pages/miembro_cie/ExpedienteConsolidado.jsx
-// Ventana 2: Expediente consolidado (GET /cie/expedientes/:codigo)
+// Ventana 2: Expediente consolidado (GET /miembro-cie/expedientes/:codigo)
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { cieService } from '../../services/cieService';
@@ -9,7 +9,7 @@ import {
   Icono, CabeceraExpediente, Pasos, EncabezadoPagina, VolverALaBandeja, Cargando, ErrorCarga,
 } from '../../components/cie/CieUi';
 
-const TABS = ['Información general', 'Documentos', 'Dictámenes', 'Historial'];
+const TABS = ['Información general', 'Formulario Form-04', 'Documentos', 'Dictámenes', 'Historial'];
 
 const Vacio = ({ texto }) => <p className="gv-sin-resultados">{texto}</p>;
 
@@ -86,6 +86,29 @@ const ExpedienteConsolidado = () => {
               )}
             </div>
           </div>
+        )}
+
+        {tab === 'Formulario Form-04' && (
+          !e.contenidoPropuesta ? <Vacio texto="La propuesta no tiene contenido estructurado del Form-04 registrado." /> : (
+            <div className="cie-grid-2">
+              {[
+                ['Resumen', e.contenidoPropuesta.resumen],
+                ['Palabras clave', e.contenidoPropuesta.palabrasClave],
+                ['Problema de investigación', e.contenidoPropuesta.problemaInvestigacion],
+                ['Objetivo general', e.contenidoPropuesta.objetivoGeneral],
+                ['Objetivos específicos', e.contenidoPropuesta.objetivosEspecificos],
+                ['Estado del arte', e.contenidoPropuesta.estadoArte],
+                ['Metodología', e.contenidoPropuesta.metodologia],
+                ['Estrategia de divulgación', e.contenidoPropuesta.estrategiaDivulgacion],
+                ['Hoja de ruta', e.contenidoPropuesta.hojaRuta],
+              ].filter(([, valor]) => valor).map(([titulo, valor]) => (
+                <article className="gv-subcard" key={titulo}>
+                  <h3 className="gv-subcard-titulo">{titulo}</h3>
+                  <p className="cie-texto-documento">{valor}</p>
+                </article>
+              ))}
+            </div>
+          )
         )}
 
         {tab === 'Documentos' && ((e.documentos ?? []).length === 0 ? <Vacio texto="El expediente no tiene documentos cargados." /> : (

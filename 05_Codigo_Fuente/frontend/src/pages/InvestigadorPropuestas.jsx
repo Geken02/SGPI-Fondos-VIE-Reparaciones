@@ -168,6 +168,12 @@ const InvestigadorPropuestas = () => {
 
   // Flujo: Corrección por el solicitante -> Reenvío -> Nueva revisión
   const handleReenviarSubsanacion = async (propuestaId, subsanacionId) => {
+    const prop = propuestas.find(p => p.propuestaId === propuestaId);
+    if (prop && prop.esPropietario === false) {
+      alert('Solo la persona coordinadora (propietaria de la propuesta) puede reenviar la propuesta subsanada a la Unidad de Vinculación.');
+      return;
+    }
+
     const resp = (respuestasSubsanacion[propuestaId] || '').trim();
     if (!resp) {
       alert('Por favor ingrese una explicación o detalle de las correcciones realizadas antes de reenviar la propuesta.');
@@ -189,17 +195,22 @@ const InvestigadorPropuestas = () => {
       localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respuesta_fecha`, new Date().toISOString());
       localStorage.removeItem(`propuesta_${propuestaId}_subsanacion_activa`);
 
-      alert('¡Propuesta subsanada y reenviada exitosamente a la VIE!\n\nLa propuesta ha retornado al flujo de revisión por parte de la instancia evaluadora.');
+      alert('¡Propuesta subsanada y reenviada exitosamente a la Unidad de Vinculación!\n\nLa propuesta ha retornado al flujo de revisión por parte de la instancia evaluadora.');
       setRespuestasSubsanacion(prev => ({ ...prev, [propuestaId]: '' }));
       cargarPropuestas();
     } catch (err) {
       console.warn('Error al responder subsanación:', err);
-      localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respondida`, 'true');
-      localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respuesta_texto`, resp);
-      localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respuesta_fecha`, new Date().toISOString());
-      localStorage.removeItem(`propuesta_${propuestaId}_subsanacion_activa`);
-      alert('¡Propuesta subsanada y reenviada con éxito a la VIE!');
-      cargarPropuestas();
+      const detalle = err.response?.data?.detail || err.message;
+      if (err.response?.status === 403) {
+        alert(`Permiso denegado: ${detalle}`);
+      } else {
+        localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respondida`, 'true');
+        localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respuesta_texto`, resp);
+        localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respuesta_fecha`, new Date().toISOString());
+        localStorage.removeItem(`propuesta_${propuestaId}_subsanacion_activa`);
+        alert('¡Propuesta subsanada y reenviada con éxito a la Unidad de Vinculación!');
+        cargarPropuestas();
+      }
     } finally {
       setReenviando(prev => ({ ...prev, [propuestaId]: false }));
     }
@@ -282,7 +293,7 @@ const InvestigadorPropuestas = () => {
               <option value="Todos">Todos los Estados</option>
               <option value="Borrador">Borrador</option>
               <option value="Subsanación">En Subsanación</option>
-              <option value="Enviada">Enviada a VIE</option>
+              <option value="Enviada">Enviada a Vinculación</option>
               <option value="Evaluación">En Evaluación</option>
               <option value="Aprobada">Aprobada</option>
             </select>
@@ -361,6 +372,19 @@ const InvestigadorPropuestas = () => {
                     <h2 className="accordion-propuesta-title">{prop.titulo}</h2>
                     <div className="accordion-propuesta-subtitle">
                       Investigador: <strong>{prop.propietario || nombreInvestigador}</strong> 
+                      {prop.esPropietario === false && (
+                        <span style={{
+                          marginLeft: '8px',
+                          backgroundColor: '#e0f2fe',
+                          color: '#0369a1',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: '600'
+                        }}>
+                          Miembro del Equipo
+                        </span>
+                      )} 
                       <span className="meta-separator">|</span> 
                       Monto: <strong>₡ {Number(prop.montoTotal || 0).toLocaleString('es-CR')}</strong> 
                       <span className="meta-separator">|</span> 
@@ -671,14 +695,27 @@ const InvestigadorPropuestas = () => {
                               />
 
                               <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                                <button 
-                                  type="button" 
-                                  className="btn-reenviar-propuesta"
-                                  onClick={() => handleReenviarSubsanacion(prop.propuestaId, subActiva?.subsanacionId)}
-                                  disabled={reenviando[prop.propuestaId]}
-                                >
-                                  {reenviando[prop.propuestaId] ? 'Reenviando...' : '📤 Reenviar Propuesta Subsanada (Nueva Revisión)'}
-                                </button>
+                                {prop.esPropietario !== false ? (
+                                  <button 
+                                    type="button" 
+                                    className="btn-reenviar-propuesta"
+                                    onClick={() => handleReenviarSubsanacion(prop.propuestaId, subActiva?.subsanacionId)}
+                                    disabled={reenviando[prop.propuestaId]}
+                                  >
+                                    {reenviando[prop.propuestaId] ? 'Reenviando...' : '📤 Reenviar Propuesta Subsanada (Nueva Revisión)'}
+                                  </button>
+                                ) : (
+                                  <div style={{
+                                    backgroundColor: '#eff6ff',
+                                    border: '1px solid #bfdbfe',
+                                    borderRadius: '6px',
+                                    padding: '8px 12px',
+                                    color: '#1e40af',
+                                    fontSize: '12px'
+                                  }}>
+                                    🔒 Solo la persona coordinadora del proyecto puede reenviar la propuesta subsanada a la Unidad de Vinculación.
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
