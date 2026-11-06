@@ -33,6 +33,11 @@ from src.api.routers.consejo_escuela import acuerdos, votaciones, propuestas, as
 from src.api.routers.vie import miembro_cie
 from src.api.routers.vie import expedientes, subsanaciones, preferencias
 from src.api.routers import direccion_investigacion
+from src.api.routers import archivos
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware 
+from src.api.routers.consejo_escuela import asignaciones
 
 # ============================================================================
 # INICIALIZACIÓN DE LA APP
@@ -82,6 +87,9 @@ app.include_router(direccion_investigacion.router)
 app.include_router(expedientes.router)
 app.include_router(subsanaciones.router)
 app.include_router(preferencias.router)
+app.include_router(archivos.router)
+app.include_router(asignaciones.router)
+
 
 # ============================================================================
 # ENDPOINTS DE SALUD Y RAÍZ

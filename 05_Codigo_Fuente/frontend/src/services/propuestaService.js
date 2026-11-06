@@ -54,6 +54,21 @@ export const propuestaService = {
     return response.data;
   },
 
+  
+  guardarEquipoCompleto: async (id, datos) => {
+    const response = await api.put(`/investigador/propuestas/${id}/equipo-completo`, datos);
+    return response.data;
+  },
+
+  obtenerEquipo: async (id) => {
+    try {
+      const response = await api.get(`/investigador/propuestas/${id}/equipo`);
+      return response.data;
+    } catch (_e) {
+      return { integrantes: [], colaboradoresExternos: [] };
+    }
+  },
+
   guardarPresupuestoCompleto: async (id, rubros) => {
     const response = await api.put(`/investigador/propuestas/${id}/presupuesto`, rubros);
     return response.data;
