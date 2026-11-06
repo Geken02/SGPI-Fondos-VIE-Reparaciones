@@ -7,10 +7,7 @@ from pathlib import Path
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from src.models.dictamenes import Dictamenes, TiposDictamen
-from src.models.usuarios import Usuario
-from src.models.escuelas import Escuela
-from src.services.documento_oficial_pdf import generar_oficio_pdf
+from src.models.dictamenes import Dictamenes
 from src.models.propuesta_documentos import PropuestaDocumentos, TiposDocumento
 from src.models.catalogos import ConfiguracionesSistema
 from src.models.notificaciones import (
@@ -25,166 +22,62 @@ CARPETA_DOCUMENTOS = Path("storage") / "documentos_direccion"
 def _buscar_propuesta(db: Session, codigo: str):
     from src.models.propuestas import Propuesta
 
-    propuesta = (
-        db.query(Propuesta)
-        .join(Usuario, Propuesta.investigadorCoordId == Usuario.usuarioId)
-        .join(Escuela, Propuesta.escuelaId == Escuela.escuelaId)
-        .filter(Propuesta.codigoPropuesta == codigo)
-        .first()
-    )
+    propuesta = db.query(Propuesta).filter(
+        Propuesta.codigoPropuesta == codigo
+    ).first()
+
     if propuesta is None:
         raise HTTPException(status_code=404, detail="No se encontró la propuesta.")
     return propuesta
 
 
-def _dictamenes_cie(db: Session, propuesta_id: int | None = None):
-    consulta = (
-        db.query(Dictamenes)
-        .join(TiposDictamen, Dictamenes.tipoDictamenId == TiposDictamen.tipoDictamenId)
-        .filter(
-            TiposDictamen.nombreTipoDictamen.ilike("CIE"),
-            TiposDictamen.activo.is_(True),
-        )
-    )
-    if propuesta_id is not None:
-        consulta = consulta.filter(Dictamenes.propuestaId == propuesta_id)
-    return consulta
-
-
-def _decision_dictamen(contenido: str | None) -> str:
-    texto = contenido or ""
-    coincidencia = re.search(
-        r"decisi[oó]n(?:\s+del\s+CIE)?\s*:\s*(aprobar|rechazar)",
-        texto,
-        flags=re.IGNORECASE,
-    )
-    if coincidencia:
-        return "Aprobar" if coincidencia.group(1).lower() == "aprobar" else "Rechazar"
-    # Compatibilidad con resoluciones anteriores que no separaban los campos.
-    if re.search(
-        r"\b(no\s+(?:es\s+)?favorable|desfavorable|rechazada|rechazado|se rechaza)\b",
-        texto,
-        re.IGNORECASE,
-    ):
-        return "Rechazar"
-
-    if re.search(
-        r"\b(aprobada|aprobado|se aprueba|favorable)\b",
-        texto,
-        re.IGNORECASE,
-    ):
-        return "Aprobar"
-
-    return "Sin decisión registrada"
-
-
-def _estado_tramite(db: Session, propuesta_id: int) -> str:
-    documentos = (
-        db.query(PropuestaDocumentos.documentoId)
-        .join(TiposDocumento, TiposDocumento.tipoDocumentoId == PropuestaDocumentos.tipoDocumentoId)
-        .filter(
-            PropuestaDocumentos.propuestaId == propuesta_id,
-            PropuestaDocumentos.activo.is_(True),
-            TiposDocumento.nombreTipoDocumento == "Oficio_Direccion_Investigacion",
-        )
-        .count()
-    )
-    if not documentos:
-        return "por_revisar"
-
-    notificada = (
-        db.query(Notificaciones.notificacionId)
-        .join(TiposNotificacion, Notificaciones.tipoNotificacionId == TiposNotificacion.tipoNotificacionId)
-        .filter(
-            Notificaciones.propuestaId == propuesta_id,
-            TiposNotificacion.nombreTipoNotificacion.in_(["Aprobacion_Propuesta", "Rechazo_Propuesta"]),
-        )
-        .first()
-    )
-    return "completado" if notificada else "en_proceso"
-
-
-def _datos_propuesta(propuesta):
-    investigador = propuesta.investigador
-    return {
-        "investigador": " ".join(
-            parte for parte in (
-                investigador.nombreUsuario,
-                investigador.apellido1Usuario,
-                investigador.apellido2Usuario,
-            ) if parte
-        ),
-        "escuela": propuesta.escuela.nombreEscuela if propuesta.escuela else "",
-    }
-
-
 def listar_dictamenes(db: Session):
     filas = (
-        _dictamenes_cie(db)
+        db.query(Dictamenes)
         .join(Dictamenes.propuesta)
-        .order_by(Dictamenes.fechaEmision.desc(), Dictamenes.dictamenId.desc())
+        .order_by(Dictamenes.fechaEmision.desc())
         .all()
     )
     resultado = []
     for d in filas:
         p = d.propuesta
-        persona = _datos_propuesta(p)
         resultado.append({
             "dictamenId": d.dictamenId,
-            "propuestaId": p.propuestaId,
             "codigo": p.codigoPropuesta,
             "titulo": p.titulo,
-            **persona,
             "numeroOficio": d.numeroOficio,
             "fechaEmision": d.fechaEmision.isoformat() if d.fechaEmision else None,
             "contenido": d.contenido,
-            "tipo": "CIE",
-            "decision": _decision_dictamen(d.contenido),
-            "estado": _estado_tramite(db, p.propuestaId),
+            "tipo": d.tipoDictamen.nombreTipoDictamen if d.tipoDictamenId else None,
+            "estado": "por_revisar",
         })
     return resultado
 
 
 def obtener_dictamen(db: Session, codigo: str):
     propuesta = _buscar_propuesta(db, codigo)
-    d = (
-        _dictamenes_cie(db, propuesta.propuestaId)
-        .order_by(Dictamenes.fechaEmision.desc(), Dictamenes.dictamenId.desc())
-        .first()
+    dictamenes = (
+        db.query(Dictamenes)
+        .filter(Dictamenes.propuestaId == propuesta.propuestaId)
+        .order_by(Dictamenes.fechaEmision.desc())
+        .all()
     )
-    if d is None:
-        raise HTTPException(status_code=404, detail="La propuesta todavía no tiene una resolución final del CIE.")
+    if not dictamenes:
+        raise HTTPException(status_code=404, detail="La propuesta no tiene dictámenes.")
 
-    persona = _datos_propuesta(propuesta)
-    documentos = listar_documentos(db, codigo)
-    contenido = d.contenido or ""
-    justificacion = contenido
-    observaciones = ""
-    match_justificacion = re.search(r"justificaci[oó]n\s*:\s*(.*)", contenido, re.IGNORECASE | re.DOTALL)
-    if match_justificacion:
-        justificacion = match_justificacion.group(1).strip()
-    match_observaciones = re.search(r"observaciones\s*:\s*(.*)", contenido, re.IGNORECASE | re.DOTALL)
-    if match_observaciones:
-        observaciones = match_observaciones.group(1).strip()
-
+    d = dictamenes[0]
     return {
         "codigo": propuesta.codigoPropuesta,
         "titulo": propuesta.titulo,
         "propuestaId": propuesta.propuestaId,
-        **persona,
-        "estado": _estado_tramite(db, propuesta.propuestaId),
-        "decision": _decision_dictamen(contenido),
+        "estado": "por_revisar",
         "dictamen": {
             "dictamenId": d.dictamenId,
             "numeroOficio": d.numeroOficio,
             "fechaEmision": d.fechaEmision.isoformat() if d.fechaEmision else None,
-            "contenido": contenido,
-            "tipo": "CIE",
+            "contenido": d.contenido,
+            "tipo": d.tipoDictamen.nombreTipoDictamen if d.tipoDictamenId else None,
         },
-        "justificacion": justificacion,
-        "observaciones": observaciones,
-        "criterios": [],
-        "documentos": documentos,
         "historial": [],
     }
 
@@ -209,6 +102,7 @@ def listar_documentos(db: Session, codigo: str):
         "fechaCarga": doc.fechaCarga.isoformat() if doc.fechaCarga else None,
         "rutaArchivo": doc.rutaArchivo,
     } for doc in documentos]
+
 
 
 def obtener_documento_para_descarga(db: Session, documento_id: int):
@@ -262,22 +156,16 @@ def generar_documento(db: Session, codigo: str, datos, usuario):
 
     # Verificar que exista un dictamen del CIE para la propuesta.
     dictamen = (
-        _dictamenes_cie(db, propuesta.propuestaId)
-        .order_by(Dictamenes.fechaEmision.desc(), Dictamenes.dictamenId.desc())
+        db.query(Dictamenes)
+        .filter(Dictamenes.propuestaId == propuesta.propuestaId)
+        .order_by(Dictamenes.fechaEmision.desc())
         .first()
     )
 
     if dictamen is None:
         raise HTTPException(
             status_code=409,
-            detail="No se puede generar un oficio porque la propuesta todavía no tiene una resolución final del CIE.",
-        )
-
-    decision = _decision_dictamen(dictamen.contenido)
-    if decision not in {"Aprobar", "Rechazar"}:
-        raise HTTPException(
-            status_code=409,
-            detail="La resolución del CIE no contiene una decisión explícita de aprobar o rechazar.",
+            detail="No se puede generar un oficio porque la propuesta todavía no tiene un dictamen registrado.",
         )
 
     # La Dirección utiliza un tipo documental propio.
@@ -358,43 +246,14 @@ def generar_documento(db: Session, codigo: str, datos, usuario):
         "firmaDigital": False,
     }
 
-CANAL_INTERNO = "Interno_Sistema"
-
-
 def registrar_notificacion(db: Session, codigo: str, datos, usuario):
-    """Registra una única notificación interna dirigida al investigador coordinador."""
+    """Registra aviso interno y, si se solicita, ejecuta envío SMTP real con resultado auditable."""
+    from pathlib import Path
+    from datetime import datetime, timezone
+    from src.models.usuarios import Usuario
+    from src.models.catalogos import AsignacionesGestora
+
     propuesta = _buscar_propuesta(db, codigo)
-    dictamen_cie = (
-        _dictamenes_cie(db, propuesta.propuestaId)
-        .order_by(Dictamenes.fechaEmision.desc(), Dictamenes.dictamenId.desc())
-        .first()
-    )
-    if dictamen_cie is None:
-        raise HTTPException(status_code=409, detail="No existe una resolución final del CIE para esta propuesta.")
-    decision_cie = _decision_dictamen(dictamen_cie.contenido)
-    tipo_esperado = {
-        "Aprobar": "Aprobacion_Propuesta",
-        "Rechazar": "Rechazo_Propuesta",
-    }.get(decision_cie)
-    if tipo_esperado is None or datos.tipo.strip().lower() != tipo_esperado.lower():
-        raise HTTPException(
-            status_code=409,
-            detail="El tipo de notificación debe corresponder a la decisión final registrada por el CIE.",
-        )
-
-    oficio = (
-        db.query(PropuestaDocumentos.documentoId)
-        .join(TiposDocumento, TiposDocumento.tipoDocumentoId == PropuestaDocumentos.tipoDocumentoId)
-        .filter(
-            PropuestaDocumentos.propuestaId == propuesta.propuestaId,
-            PropuestaDocumentos.activo.is_(True),
-            TiposDocumento.nombreTipoDocumento == "Oficio_Direccion_Investigacion",
-        )
-        .first()
-    )
-    if oficio is None:
-        raise HTTPException(status_code=409, detail="Primero debe generar el documento oficial de Dirección de Investigación.")
-
     investigador = db.query(Usuario).filter(
         Usuario.usuarioId == propuesta.investigadorCoordId
     ).first()
@@ -408,46 +267,297 @@ def registrar_notificacion(db: Session, codigo: str, datos, usuario):
     if tipo is None:
         raise HTTPException(status_code=409, detail="No existe un tipo de notificación activo con ese nombre.")
 
-    canal = db.query(CanalesComunicacion).filter(
-        CanalesComunicacion.nombreCanal.ilike(CANAL_INTERNO),
-        CanalesComunicacion.activo.is_(True),
-    ).first()
-    if canal is None:
-        raise HTTPException(status_code=409, detail=f"No existe el canal de comunicación activo {CANAL_INTERNO}.")
+    canales = []
+    for canal_nombre in datos.canales:
+        canal = db.query(CanalesComunicacion).filter(
+            CanalesComunicacion.nombreCanal.ilike(canal_nombre.strip()),
+            CanalesComunicacion.activo.is_(True),
+        ).first()
+        if canal is None:
+            raise HTTPException(status_code=409, detail=f"No existe un canal de comunicación activo: {canal_nombre}.")
+        if canal.canalId not in {c.canalId for c in canales}:
+            canales.append(canal)
 
-    asunto = (datos.asunto or f"Actualización de la propuesta {codigo}").strip()[:200]
+    documentos = []
+    if datos.documentoIds:
+        documentos = db.query(PropuestaDocumentos).filter(
+            PropuestaDocumentos.propuestaId == propuesta.propuestaId,
+            PropuestaDocumentos.documentoId.in_(datos.documentoIds),
+            PropuestaDocumentos.activo.is_(True),
+        ).all()
+        if len(documentos) != len(set(datos.documentoIds)):
+            raise HTTPException(status_code=409, detail="Uno o más adjuntos no pertenecen a esta propuesta o ya no están activos.")
 
-    existente = db.query(Notificaciones.notificacionId).filter(
-        Notificaciones.usuarioDestinoId == investigador.usuarioId,
-        Notificaciones.propuestaId == propuesta.propuestaId,
-        Notificaciones.tipoNotificacionId == tipo.tipoNotificacionId,
-        Notificaciones.asunto == asunto,
-        Notificaciones.canalId == canal.canalId,
-    ).first()
-    if existente is not None:
-        raise HTTPException(status_code=409, detail="Esta propuesta ya fue notificada al investigador.")
+    adjuntos = []
+    raiz_storage = (Path.cwd() / "storage").resolve()
+    for documento in documentos:
+        ruta = Path(documento.rutaArchivo)
+        if not ruta.is_absolute():
+            ruta = Path.cwd() / ruta
+        ruta = ruta.resolve()
+        try:
+            ruta.relative_to(raiz_storage)
+        except ValueError as error:
+            raise HTTPException(status_code=403, detail="La ruta de un adjunto no pertenece al almacenamiento autorizado.") from error
+        if ruta.suffix.lower() != ".pdf" or not ruta.is_file():
+            raise HTTPException(status_code=409, detail=f"El adjunto {documento.nombreArchivo} no es un PDF disponible.")
+        adjuntos.append((documento.nombreArchivo, ruta))
 
-    registro = Notificaciones(
-        usuarioDestinoId=investigador.usuarioId,
-        propuestaId=propuesta.propuestaId,
-        tipoNotificacionId=tipo.tipoNotificacionId,
-        asunto=asunto,
-        cuerpoMensaje=datos.mensaje,
-        canalId=canal.canalId,
-        usuarioAuditoriaId=usuario.usuarioId,
-    )
-    db.add(registro)
-    try:
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
-    db.refresh(registro)
+    destinatarios_copia = []
+    if datos.copiaGestora:
+        asignaciones = db.query(AsignacionesGestora).filter(
+            AsignacionesGestora.escuelaId == propuesta.escuelaId,
+            AsignacionesGestora.activo.is_(True),
+        ).all()
+        ids_gestoras = {a.gestoraVIEId for a in asignaciones}
+        if ids_gestoras:
+            destinatarios_copia = db.query(Usuario).filter(
+                Usuario.usuarioId.in_(ids_gestoras),
+                Usuario.activo.is_(True),
+                Usuario.correoInstitucional.isnot(None),
+            ).all()
 
+    correos_copia = [g.correoInstitucional for g in destinatarios_copia if g.correoInstitucional]
+    receptores_internos = [investigador] + [
+        g for g in destinatarios_copia if g.usuarioId != investigador.usuarioId
+    ]
+    asunto_notificacion = (datos.asunto or f"Actualización de la propuesta {codigo}").strip()
+
+    canales_resultado = []
+    registros_creados = []
+
+    for canal in canales:
+        nombre_canal = canal.nombreCanal.strip().lower()
+        if nombre_canal in {"correo_electronico", "correo electrónico", "email"} and datos.idempotencyKey:
+            previo = db.query(EnviosCorreo).filter(
+                EnviosCorreo.claveIdempotencia == datos.idempotencyKey
+            ).first()
+            if previo is not None:
+                canales_resultado.append({
+                    "canal": canal.nombreCanal,
+                    "estado": previo.estado,
+                    "envioCorreoId": previo.envioCorreoId,
+                    "mensaje": previo.respuestaProveedor or previo.detalleError or "Solicitud ya procesada.",
+                    "reutilizado": True,
+                })
+                continue
+        registro = Notificaciones(
+            usuarioDestinoId=investigador.usuarioId,
+            propuestaId=propuesta.propuestaId,
+            tipoNotificacionId=tipo.tipoNotificacionId,
+            asunto=asunto_notificacion,
+            cuerpoMensaje=datos.mensaje,
+            claveIdempotencia=(
+                f"{datos.idempotencyKey}:internal:{investigador.usuarioId}"
+                if datos.idempotencyKey and nombre_canal in {"interno_sistema", "interno sistema"}
+                else None
+            ),
+            canalId=canal.canalId,
+            usuarioAuditoriaId=usuario.usuarioId,
+        )
+        if nombre_canal in {"interno_sistema", "interno sistema"} and datos.idempotencyKey:
+            previo_interno = db.query(Notificaciones).filter(
+                Notificaciones.claveIdempotencia == f"{datos.idempotencyKey}:internal:{investigador.usuarioId}"
+            ).first()
+            if previo_interno is not None:
+                canales_resultado.append({
+                    "canal": canal.nombreCanal, "estado": "REGISTRADO",
+                    "notificacionId": previo_interno.notificacionId,
+                    "mensaje": "Solicitud ya registrada; no se duplicó la notificación interna.",
+                    "reutilizado": True,
+                })
+                continue
+        db.add(registro)
+        db.flush()
+
+        if nombre_canal in {"interno_sistema", "interno sistema"}:
+            for receptor in receptores_internos[1:]:
+                db.add(Notificaciones(
+                    usuarioDestinoId=receptor.usuarioId,
+                    propuestaId=propuesta.propuestaId,
+                    tipoNotificacionId=tipo.tipoNotificacionId,
+                    asunto=asunto_notificacion,
+                    cuerpoMensaje=datos.mensaje,
+                    claveIdempotencia=(
+                        f"{datos.idempotencyKey}:internal:{receptor.usuarioId}"
+                        if datos.idempotencyKey else None
+                    ),
+                    canalId=canal.canalId,
+                    usuarioAuditoriaId=usuario.usuarioId,
+                ))
+            canales_resultado.append({
+                "canal": canal.nombreCanal,
+                "estado": "REGISTRADO",
+                "notificacionId": registro.notificacionId,
+                "mensaje": f"Notificación interna registrada para {len(receptores_internos)} destinatario(s).",
+            })
+            registros_creados.append(registro)
+            continue
+
+        if nombre_canal in {"correo_electronico", "correo electrónico", "email"}:
+            if not adjuntos:
+                raise HTTPException(
+                    status_code=409,
+                    detail="El correo institucional requiere al menos un oficio PDF generado para adjuntarlo.",
+                )
+            if not investigador.correoInstitucional:
+                envio = EnviosCorreo(
+                    notificacionId=registro.notificacionId,
+                    destinatario="",
+                    asunto=registro.asunto,
+                    estado="FALLIDO",
+                    intentos=0,
+                    detalleError="El investigador no tiene correo institucional registrado.",
+                    usuarioSolicitanteId=usuario.usuarioId,
+                    claveIdempotencia=datos.idempotencyKey,
+                )
+                db.add(envio)
+                db.commit()
+                canales_resultado.append({
+                    "canal": canal.nombreCanal, "estado": "FALLIDO",
+                    "envioCorreoId": envio.envioCorreoId,
+                    "mensaje": envio.detalleError,
+                })
+                registros_creados.append(registro)
+                continue
+
+            envio = EnviosCorreo(
+                notificacionId=registro.notificacionId,
+                destinatario=investigador.correoInstitucional,
+                asunto=registro.asunto,
+                estado="EN_PROCESO",
+                intentos=1,
+                usuarioSolicitanteId=usuario.usuarioId,
+                claveIdempotencia=datos.idempotencyKey,
+                documentoIds=json.dumps([d.documentoId for d in documentos]),
+                copias=json.dumps(correos_copia),
+            )
+            db.add(envio)
+            db.commit()
+            db.refresh(envio)
+            try:
+                respuesta = enviar_correo(
+                    investigador.correoInstitucional,
+                    registro.asunto,
+                    datos.mensaje,
+                    adjuntos,
+                    cc=correos_copia,
+                )
+                envio.estado = "ACEPTADO"
+                envio.respuestaProveedor = respuesta
+                envio.detalleError = None
+                canales_resultado.append({
+                    "canal": canal.nombreCanal, "estado": "ACEPTADO",
+                    "envioCorreoId": envio.envioCorreoId, "mensaje": respuesta,
+                })
+            except HTTPException as error:
+                envio.estado = "FALLIDO"
+                envio.detalleError = str(error.detail)
+                canales_resultado.append({
+                    "canal": canal.nombreCanal, "estado": "FALLIDO",
+                    "envioCorreoId": envio.envioCorreoId, "mensaje": str(error.detail),
+                })
+            finally:
+                envio.fechaActualizacion = datetime.now(timezone.utc)
+                db.commit()
+            registros_creados.append(registro)
+            continue
+
+        raise HTTPException(status_code=409, detail=f"Canal no soportado por el servicio de notificaciones: {canal.nombreCanal}.")
+
+    db.commit()
     return {
-        "mensaje": "Notificación registrada. El investigador la verá dentro del sistema.",
-        "notificacionId": registro.notificacionId,
-        "fechaEnvio": registro.fechaEnvio.isoformat() if registro.fechaEnvio else None,
+        "mensaje": "Proceso de notificación completado; revisa el resultado individual de cada canal.",
+        "destinatario": investigador.correoInstitucional,
+        "copias": correos_copia,
+        "canales": canales_resultado,
+        "notificaciones": [
+            {
+                "notificacionId": n.notificacionId,
+                "canal": n.canal.nombreCanal if n.canal else None,
+                "fechaEnvio": n.fechaEnvio.isoformat() if n.fechaEnvio else None,
+            }
+            for n in registros_creados
+        ],
+        "documentoIds": datos.documentoIds,
+    }
+
+
+def reintentar_envio_correo(db: Session, envio_id: int, usuario):
+    """Reintenta un envío fallido reutilizando su registro y adjuntos originales."""
+    from datetime import datetime, timezone
+    from pathlib import Path
+    from fastapi import HTTPException
+    from src.models.envios_correo import EnviosCorreo
+
+    envio = db.query(EnviosCorreo).filter(
+        EnviosCorreo.envioCorreoId == envio_id
+    ).first()
+    if envio is None:
+        raise HTTPException(status_code=404, detail="No existe el registro de envío.")
+    if envio.estado == "ACEPTADO":
+        raise HTTPException(status_code=409, detail="El correo ya fue aceptado por el servidor SMTP; no se reintentará para evitar duplicados.")
+    if envio.estado == "EN_PROCESO":
+        raise HTTPException(status_code=409, detail="El envío ya se encuentra en proceso.")
+    if not envio.destinatario:
+        raise HTTPException(status_code=409, detail="No se puede reintentar: el destinatario no tiene correo institucional registrado.")
+
+    notificacion = db.query(Notificaciones).filter(
+        Notificaciones.notificacionId == envio.notificacionId
+    ).first()
+    if notificacion is None or notificacion.propuestaId:
+        raise HTTPException(status_code=409, detail="No se encontró la notificación original.")
+    try:
+        ids_documentos = json.loads(envio.documentoIds or "[]")
+        copias = json.loads(envio.copias or "[]")
+    except (TypeError, ValueError) as error:
+        raise HTTPException(status_code=409, detail="Los metadatos de adjuntos del envío están dañados.") from error
+
+    documentos = db.query(PropuestaDocumentos).filter(
+        PropuestaDocumentos.propuestaId == notificacion.propuestaId,
+        PropuestaDocumentos.documentoId.in_(ids_documentos or [-1]),
+        PropuestaDocumentos.activo.is_(True),
+    ).all()
+    if len(documentos) != len(set(ids_documentos)):
+        raise HTTPException(status_code=409, detail="Ya no están disponibles todos los adjuntos originales.")
+    raiz_storage = (Path.cwd() / "storage").resolve()
+    adjuntos = []
+    for documento in documentos:
+        ruta = Path(documento.rutaArchivo)
+        if not ruta.is_absolute():
+            ruta = Path.cwd() / ruta
+        ruta = ruta.resolve()
+        try:
+            ruta.relative_to(raiz_storage)
+        except ValueError as error:
+            raise HTTPException(status_code=403, detail="La ruta de un adjunto no pertenece al almacenamiento autorizado.") from error
+        if ruta.suffix.lower() != ".pdf" or not ruta.is_file():
+            raise HTTPException(status_code=409, detail=f"El adjunto {documento.nombreArchivo} no es un PDF disponible.")
+        adjuntos.append((documento.nombreArchivo, ruta))
+
+    envio.estado = "EN_PROCESO"
+    envio.intentos += 1
+    envio.detalleError = None
+    envio.usuarioSolicitanteId = usuario.usuarioId
+    envio.fechaActualizacion = datetime.now(timezone.utc)
+    db.commit()
+    try:
+        respuesta = enviar_correo(
+            envio.destinatario, envio.asunto, notificacion.cuerpoMensaje,
+            adjuntos, cc=copias,
+        )
+        envio.estado = "ACEPTADO"
+        envio.respuestaProveedor = respuesta
+    except HTTPException as error:
+        envio.estado = "FALLIDO"
+        envio.detalleError = str(error.detail)
+    envio.fechaActualizacion = datetime.now(timezone.utc)
+    db.commit()
+    return {
+        "envioCorreoId": envio.envioCorreoId,
+        "estado": envio.estado,
+        "intentos": envio.intentos,
+        "mensaje": envio.respuestaProveedor if envio.estado == "ACEPTADO" else envio.detalleError,
     }
 
 

@@ -32,6 +32,3 @@ export const calcularPromedio = (criterios, puntajes) => {
   const suma = criterios.reduce((a, c) => a + (Number(puntajes[c.criterioId]) || 0) * c.peso, 0);
   return suma / pesoTotal;
 };
-
-// Catálogo de recomendaciones definido para las evaluaciones CIE.
-export const RECOMENDACIONES_CIE = ['Recomendar financiamiento', 'Recomendar condicionado', 'No recomendar financiamiento'];
