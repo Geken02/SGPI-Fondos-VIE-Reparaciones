@@ -28,7 +28,10 @@ export const formatearNombreRol = (rol) => {
     'CoordinadorCIE': 'Coordinador CIE',
     'DirectorEscuela': 'Director de Escuela',
     'DirectorInvestigacion': 'Director de Investigación',
-    'SubdirectorInvestigacion': 'Subdirector de Investigación'
+    'SubdirectorInvestigacion': 'Subdirector de Investigación',
+    'AsistenteConsejoEscuela': 'Asistente Consejo de Escuela',
+    'MiembroConsejoEscuela': 'Miembro Consejo de Escuela',
+    'ConsejoProfesores': 'Consejo de Profesores'
   };
   
   return mapa[rolStr] || rolStr;
@@ -199,11 +202,16 @@ export const AuthProvider = ({ children }) => {
   const rolesUsuario = Array.isArray(usuario?.roles) ? usuario.roles : [];
   const rolActivoStr = typeof rolActivo === 'string' ? rolActivo : '';
 
+  // Roles específicos del Consejo de Escuela (Agregados de Deryan)
+  const esAsistenteConsejo = rolActivoStr === 'AsistenteConsejoEscuela';
+  const esConsejoProfesores = rolActivoStr === 'ConsejoProfesores';
+  const esDirectorEscuela = rolActivoStr === 'DirectorEscuela';
+
   // GARANTÍA: Verificaciones de rol basadas SIEMPRE en el rolActivo (soporta suplantación)
   const esAdministrador = rolActivoStr === 'SuperAdministrador' || rolActivoStr === 'Administrador';
   const esInvestigador = rolActivoStr.includes('Investigador');
   const esVinculacion = rolActivoStr.includes('Vinculacion');
-  const esComiteTecnico = rolActivoStr.includes('ComiteTecnico') || rolActivoStr === 'DirectorEscuela';
+  const esComiteTecnico = rolActivoStr.includes('ComiteTecnico') || esDirectorEscuela;
   const esCIE = rolActivoStr.includes('CIE');
   const esGestora = rolActivoStr.includes('Gestora');
   const esDireccion = rolActivoStr.includes('Direccion') || rolActivoStr.includes('Investigacion');
@@ -228,6 +236,9 @@ export const AuthProvider = ({ children }) => {
         esCIE,
         esGestora,
         esDireccion,
+        esAsistenteConsejo,    // <-- Agregado para el Sidebar/App
+        esConsejoProfesores,   // <-- Agregado para el Sidebar/App
+        esDirectorEscuela,     // <-- Agregado para el Sidebar/App
         formatearNombreRol,
         cargarPerfil
       }}

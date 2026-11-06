@@ -1,4 +1,4 @@
-﻿/// src/App.jsx
+﻿// src/App.jsx
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ModalProvider } from './context/ModalContext';
@@ -11,8 +11,9 @@ import ResetPassword from './pages/ResetPassword';
 // 2. DASHBOARD GENERAL Y LAYOUTS
 import DashboardLayout from './components/DashboardLayout';
 
-// 2.1 CONSEJO DE ESCUELA (Deryan)
+// 2.1 CONSEJO DE ESCUELA (Incluye la adición de Deryan)
 import PropuestasConsejo from './pages/consejoEscuela/PropuestasConsejo';
+import AsignacionesConsejo from './pages/consejoEscuela/AsignacionesConsejo';
 import VotacionesConsejo from './pages/consejoEscuela/VotacionesConsejo';
 import AcuerdosConsejo from './pages/consejoEscuela/AcuerdosConsejo';
 
@@ -141,10 +142,7 @@ const DashboardRedirect = () => {
   if (rolActivo === 'MiembroCIE' || rolActivo === 'CoordinadorCIE' || rolActivo === 'PresidenteCIE') {
     return <Navigate to="/cie/bandeja" replace />;
   }
-  if (
-    rolActivo === 'MiembroComiteTecnico' ||
-    rolActivo === 'CoordinadorComiteTecnico'
-  ) {
+  if (rolActivo === 'MiembroComiteTecnico' || rolActivo === 'CoordinadorComiteTecnico' || rolActivo === 'DirectorEscuela') {
     return <Navigate to="/comite-tecnico/propuestas-asignadas" replace />;
   }
   if (rolActivo === 'AsistenteComiteTecnico') {
@@ -153,20 +151,18 @@ const DashboardRedirect = () => {
   if (rolActivo === 'EvaluadorVinculacion' || rolActivo === 'Vinculacion' || rolActivo === 'CoordinadorVinculacion') {
     return <Navigate to="/dashboard/vinculacion" replace />;
   }
+  
   // Redirección para roles del Consejo de Escuela
-  if (
-    rolActivo === 'AsistenteConsejoEscuela' ||
-    rolActivo === 'MiembroConsejoEscuela' ||
-    rolActivo === 'ConsejoProfesores' ||
-    rolActivo === 'DirectorEscuela'
-  ) {
+  if (rolActivo === 'AsistenteConsejoEscuela' || rolActivo === 'MiembroConsejoEscuela' || rolActivo === 'ConsejoProfesores') {
     return <Navigate to="/dashboard/propuestas-consejo" replace />;
   }
-  if (rolActivo === 'InvestigadorCoordinador' || rolActivo === 'Investigador' || rolActivo === 'InvestigadorColaborador' || (typeof rolActivo === 'string' && rolActivo.includes('Investigador'))) {
-    return <InvestigadorDashboard />;
+  
+  // Redirección por defecto para cualquier rol de investigador
+  if (rolActivo && rolActivo.includes('Investigador')) {
+    return <Navigate to="/dashboard/inicio" replace />;
   }
   
-  return <InvestigadorDashboard />;
+  return <Navigate to="/dashboard/inicio" replace />;
 };
 
 // ============================================================================
@@ -224,15 +220,14 @@ const App = () => {
             <Route path="configuracion" element={<Configuracion />} />
             <Route path="ayuda" element={<Ayuda />} />
 
-            {/* Rutas Módulo Consejo de Escuela (Deryan) */}
+            {/* Rutas Módulo Consejo de Escuela (Fusionado con Deryan) */}
             <Route path="propuestas-consejo" element={<PropuestasConsejo />} />
+            <Route path="asignaciones-consejo" element={<AsignacionesConsejo />} />
             <Route path="votaciones-consejo" element={<VotacionesConsejo />} />
             <Route path="acuerdos-consejo" element={<AcuerdosConsejo />} />
 
-            {/* Rutas Módulo Investigador */}
+            {/* Rutas Módulo Investigador (Limpio y sin duplicados) */}
             <Route path="inicio" element={<InvestigadorDashboard />} />
-            <Route path="investigador" element={<InvestigadorDashboard />} />
-            <Route path="InvestigadorDashboard" element={<InvestigadorDashboard />} />
             <Route path="propuestas" element={<InvestigadorPropuestas />} />
             <Route path="convocatorias" element={<InvestigadorConvocatorias />} />
             <Route path="crear-propuesta" element={<InvestigadorPropuestas />} />

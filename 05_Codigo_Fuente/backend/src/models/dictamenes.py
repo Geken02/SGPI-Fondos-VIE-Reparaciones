@@ -73,6 +73,7 @@ class Dictamenes(Base):
     ultimaAuditoria = Column("ultimaauditoria", DateTime, nullable=True)
     
     propuesta = relationship("Propuesta", back_populates="dictamenes")
+    tipoDictamen = relationship("TiposDictamen")
     usuarioRemitente = relationship("Usuario", foreign_keys=[usuarioRemitenteId])
     # --- Getters y Setters (Dictamenes) ---
     def getDictamenId(self):

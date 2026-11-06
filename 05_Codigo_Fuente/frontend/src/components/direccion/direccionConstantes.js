@@ -23,14 +23,11 @@ export const TIPOS_DOCUMENTO = [
     descripcion: 'Documento oficial que comunica la aprobación de la propuesta.' },
   { id: 'rechazo', decision: 'Rechazar', titulo: 'Oficio de rechazo',
     descripcion: 'Documento oficial que comunica el rechazo de la propuesta.' },
-  { id: 'observaciones', decision: null, titulo: 'Oficio con observaciones',
-    descripcion: 'Documento oficial con observaciones del CIE.' },
 ];
 
 export const PLANTILLAS = [
   { id: 'aprobacion', nombre: 'Oficio de aprobación VIE' },
   { id: 'rechazo', nombre: 'Oficio de rechazo VIE' },
-  { id: 'observaciones', nombre: 'Oficio con observaciones VIE' },
 ];
 
 export const FIRMANTES = ['Director/a de Investigación', 'Vicerrector/a de Investigación y Extensión'];
@@ -40,14 +37,6 @@ export const TIPOS_NOTIFICACION = [
     descripcion: 'Informa la aprobación de la propuesta y los próximos pasos.' },
   { id: 'rechazo', decision: 'Rechazar', titulo: 'Notificación de rechazo',
     descripcion: 'Informa el rechazo de la propuesta y la justificación.' },
-  { id: 'observaciones', decision: null, titulo: 'Notificación con observaciones',
-    descripcion: 'Informa las observaciones y el proceso de subsanación.' },
-];
-
-// Canales reales del catálogo CanalesComunicacion
-export const CANALES = [
-  { id: 'Interno_Sistema', etiqueta: 'Notificación dentro del sistema', detalle: 'Aparece en la campana de la plataforma.' },
-  { id: 'Correo_Electronico', etiqueta: 'Correo institucional (@tec.ac.cr)', detalle: 'Se envía a la cuenta institucional.' },
 ];
 
 export const tipoPorDecision = (lista, decision) =>
