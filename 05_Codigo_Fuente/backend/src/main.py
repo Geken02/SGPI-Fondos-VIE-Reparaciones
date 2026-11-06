@@ -1,7 +1,14 @@
+# src/main.py
+from dotenv import load_dotenv
+load_dotenv()  # Fuerza la carga del .env
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.database import engine, Base
 from src.config import settings
+
+# 🔍 AGREGA ESTO PARA VER LA URL REAL (Oculta la contraseña por seguridad)
+db_url_debug = settings.DATABASE_URL.replace("Fondos-Vie123", "***")
+print(f"🔍 DEBUG DATABASE_URL: '{db_url_debug}'")
 
 from src.models import *  
 
@@ -30,10 +37,15 @@ from src.api.routers.consejo_escuela import asignaciones
 app = FastAPI(title="SGPI Fondos VIE")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Permite GET, POST, PUT, DELETE, OPTIONS, etc.
+    allow_headers=["*"],  # Permite todos los encabezados (incluido Authorization)
 )
 
 
