@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import consejoEscuelaService from '../../services/consejoEscuelaService';
-import './asignacionesConsejo.css';
+import './AsignacionesConsejo.css';
 
 const AsignacionesConsejo = () => {
   const [propuestas, setPropuestas] = useState([]);
