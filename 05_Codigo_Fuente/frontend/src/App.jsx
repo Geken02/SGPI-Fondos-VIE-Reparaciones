@@ -224,13 +224,14 @@ const App = () => {
             <Route path="propuestas-consejo" element={<PropuestasConsejo />} />
             <Route path="votaciones-consejo" element={<VotacionesConsejo />} />
             <Route path="acuerdos-consejo" element={<AcuerdosConsejo />} />
+            <Route path="asignaciones-consejo" element={<AsignacionesConsejo />} />
 
             {/* Rutas Módulo Investigador (Limpio y sin duplicados) */}
             <Route path="inicio" element={<InvestigadorDashboard />} />
             <Route path="propuestas" element={<InvestigadorPropuestas />} />
             <Route path="convocatorias" element={<InvestigadorConvocatorias />} />
             <Route path="crear-propuesta" element={<InvestigadorPropuestas />} />
-            <Route path="equipo" element={<InvestigadorEquipos />} />
+            <Route path="equipos" element={<InvestigadorEquipos />} />
             <Route path="formularios" element={<InvestigadorFormularios />} />
             <Route path="historial" element={<InvestigadorHistorial />} />
             <Route path="buscar" element={<InvestigadorBuscar />} />
@@ -242,7 +243,7 @@ const App = () => {
             <Route path="presupuesto" element={<FormularioPresupuesto />} />
 
             {/* Rutas Módulo Vinculación */}
-            <Route path="vinculacion" element={<VinculacionDashboard />} />
+            <Route path="bandeja-vinculacion" element={<VinculacionDashboard />} />
             <Route path="dictamenes" element={<VinculacionDictamenes />} />
             <Route path="detalle-dictamen" element={<VinculacionDetalleDictamen />} />
             <Route path="evaluar-propuesta" element={<VinculacionEvaluar />} />
