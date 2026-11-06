@@ -228,9 +228,9 @@ const App = () => {
 
             {/* Rutas Módulo Consejo de Escuela */}
             <Route path="propuestas-consejo" element={<PropuestasConsejo />} />
-            <Route path="asignaciones-consejo" element={<AsignacionesConsejo />} />
             <Route path="votaciones-consejo" element={<VotacionesConsejo />} />
             <Route path="acuerdos-consejo" element={<AcuerdosConsejo />} />
+            <Route path="asignaciones-consejo" element={<AsignacionesConsejo />} />
             
 
             {/* Rutas Módulo Investigador */}
