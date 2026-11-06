@@ -162,11 +162,11 @@ def crear_dictamen_vinculacion(
 
     db.add(dictamen)
 
-    # Actualizar estado de la propuesta a EN_VINCULACION (ID 3) si está en ENVIADA (ID 2)
-    if propuesta.getEstadoId() == 2:
-        propuesta.setEstadoId(3)
-        propuesta.setUsuarioAuditoriaId(usuario_id)
-        propuesta.setUltimaAuditoria(datetime.now(timezone.utc))
+    # Actualizar estado de la propuesta a EN_COMITE (ID 4) al emitir dictamen de Vinculación
+    # Tras emitir el dictamen, la propuesta pasa formalmente a Evaluación por Comité Técnico (ID 4)
+    propuesta.setEstadoId(4)
+    propuesta.setUsuarioAuditoriaId(usuario_id)
+    propuesta.setUltimaAuditoria(datetime.now(timezone.utc))
 
     # Notificación para el investigador de la propuesta
     if propuesta.getInvestigadorCoordId():
