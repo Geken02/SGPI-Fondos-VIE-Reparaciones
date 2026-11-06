@@ -240,3 +240,33 @@ BEGIN
     RAISE NOTICE '============================================';
 END $$;
 
+
+-- ============================================================
+-- MIGRACION: Tabla asignacionesconsejo
+-- Consejo de Escuela - Asignaciones de propuestas
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS asignacionesconsejo (
+    asignacionid SERIAL PRIMARY KEY,
+    propuestaid INTEGER NOT NULL,
+    usuarioid INTEGER NOT NULL,
+    asignadoporid INTEGER NOT NULL,
+    fechaasignacion TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT fk_asignacionesconsejo_propuesta
+        FOREIGN KEY (propuestaid)
+        REFERENCES propuestas(propuestaid),
+
+    CONSTRAINT fk_asignacionesconsejo_usuario
+        FOREIGN KEY (usuarioid)
+        REFERENCES usuarios(usuarioid),
+
+    CONSTRAINT fk_asignacionesconsejo_asignadopor
+        FOREIGN KEY (asignadoporid)
+        REFERENCES usuarios(usuarioid),
+
+    CONSTRAINT uq_asignacion_consejo_propuesta_usuario
+        UNIQUE (propuestaid, usuarioid)
+);
+

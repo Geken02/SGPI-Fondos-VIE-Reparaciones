@@ -285,6 +285,11 @@ const Sidebar = () => {
             <span className="sidebar-pill-icon">{IconoVotacion}</span>
             <span className="sidebar-pill-label">Participar en Votaciones</span>
           </NavLink>
+
+          <NavLink to="/dashboard/asignaciones-consejo" className={({ isActive }) =>`sidebar-pill ${isActive ? 'active' : ''}`}>
+            <span className="sidebar-pill-icon"> {IconoUsuarios} </span>
+            <span className="sidebar-pill-label"> Asignación de Miembros </span>
+          </NavLink>
         </>
       );
     }

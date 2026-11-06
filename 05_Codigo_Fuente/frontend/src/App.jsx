@@ -222,7 +222,6 @@ const App = () => {
 
             {/* Rutas Módulo Consejo de Escuela (Fusionado con Deryan) */}
             <Route path="propuestas-consejo" element={<PropuestasConsejo />} />
-            <Route path="asignaciones-consejo" element={<AsignacionesConsejo />} />
             <Route path="votaciones-consejo" element={<VotacionesConsejo />} />
             <Route path="acuerdos-consejo" element={<AcuerdosConsejo />} />
 
