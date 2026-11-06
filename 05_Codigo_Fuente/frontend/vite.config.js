@@ -10,7 +10,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8000', // Tu backend de FastAPI
+        target: 'https://sgpi-fondos-vie-reparaciones.onrender.com',
         changeOrigin: true,
       }
     }
