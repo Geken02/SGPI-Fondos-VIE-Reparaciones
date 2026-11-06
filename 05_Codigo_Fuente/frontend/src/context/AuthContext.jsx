@@ -28,7 +28,10 @@ export const formatearNombreRol = (rol) => {
     'CoordinadorCIE': 'Coordinador CIE',
     'DirectorEscuela': 'Director de Escuela',
     'DirectorInvestigacion': 'Director de Investigación',
-    'SubdirectorInvestigacion': 'Subdirector de Investigación'
+    'SubdirectorInvestigacion': 'Subdirector de Investigación',
+    'AsistenteConsejoEscuela': 'Asistente Consejo de Escuela',
+    'MiembroConsejoEscuela': 'Miembro Consejo de Escuela',
+    'ConsejoProfesores': 'Consejo de Profesores'
   };
   
   return mapa[rolStr] || rolStr;
@@ -199,6 +202,11 @@ export const AuthProvider = ({ children }) => {
   const rolesUsuario = Array.isArray(usuario?.roles) ? usuario.roles : [];
   const rolActivoStr = typeof rolActivo === 'string' ? rolActivo : '';
   // Roles del Consejo de Escuela
+  const esAsistenteConsejo = rolActivoStr === 'AsistenteConsejoEscuela';
+  const esConsejoProfesores = rolActivoStr === 'ConsejoProfesores';
+  const esDirectorEscuela = rolActivoStr === 'DirectorEscuela';
+
+  // Roles específicos del Consejo de Escuela (Agregados de Deryan)
   const esAsistenteConsejo = rolActivoStr === 'AsistenteConsejoEscuela';
   const esConsejoProfesores = rolActivoStr === 'ConsejoProfesores';
   const esDirectorEscuela = rolActivoStr === 'DirectorEscuela';

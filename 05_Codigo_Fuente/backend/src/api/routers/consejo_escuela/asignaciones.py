@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from src.database import get_db
 from src.models.usuarios import Usuario
 from src.services.consejo_escuela import asignaciones_service
-from src.services.consejo_escuela.asignaciones import (
+from src.api.schemas.consejo_escuela.asignaciones import (
     AsignacionConsejoCrear,
 )
 from src.utils.dependencias import requerir_rol

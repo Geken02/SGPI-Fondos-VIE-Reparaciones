@@ -7,13 +7,13 @@ import { Icono, EncabezadoPagina } from '../../components/direccion/DireccionUi'
 const PASOS = [
   { icono: 'clipboard', titulo: '1. Revisar el dictamen', texto: 'Abre un dictamen de la bandeja y verifica la decisión del CIE, la justificación y la rúbrica VIE.', ruta: 'dictamenes' },
   { icono: 'fileText', titulo: '2. Generar el documento', texto: 'Elige el tipo de oficio según la decisión, revisa la vista previa y genera el documento.', ruta: 'documentos-oficiales' },
-  { icono: 'send', titulo: '3. Notificar', texto: 'Adjunta el oficio, revisa el mensaje y envía la notificación formal al investigador.', ruta: 'notificacion' },
+  { icono: 'send', titulo: '3. Notificar', texto: 'Revisa el mensaje y envía la notificación formal al investigador.', ruta: 'notificacion' },
 ];
 
 const PREGUNTAS = [
   ['¿Qué significan los estados de un dictamen?', 'Por revisar: el CIE emitió la resolución y aún no se trabaja. En proceso: ya se generó al menos un documento oficial. Completado: el investigador ya fue notificado.'],
   ['¿Puedo generar un oficio distinto a la decisión del CIE?', 'No. El oficio de aprobación solo está disponible para resoluciones aprobadas y el de rechazo para las rechazadas. El oficio con observaciones puede usarse en ambos casos.'],
-  ['¿Por qué no puedo enviar la notificación?', 'Se requiere al menos un documento oficial generado, un mensaje no vacío y un canal activo en Configuración. Además, un dictamen ya notificado no puede notificarse de nuevo.'],
+  ['¿Por qué no puedo enviar la notificación?', 'Se requiere al menos un documento oficial generado y un mensaje no vacío. Además, un dictamen ya notificado no puede notificarse de nuevo.'],
   ['¿Cómo cambio el firmante o el prefijo del número de oficio?', 'En Configuración. Los cambios se aplican a los documentos que generes a partir de ese momento.'],
   ['¿Dónde veo las resoluciones anteriores?', 'En la bandeja de dictámenes recibidos puedes filtrar por escuela y estado, y buscar por código, título o investigador.'],
 ];

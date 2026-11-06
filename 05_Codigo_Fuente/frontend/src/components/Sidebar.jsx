@@ -11,8 +11,7 @@ const Sidebar = () => {
   // ==========================================
   // DETECCIÓN DE TODOS LOS ROLES
   // ==========================================
-  const esAdministrador =
-    rolActivo === 'SuperAdministrador' || rolActivo === 'Administrador';
+  const esAdministrador = rolActivo === 'SuperAdministrador' || rolActivo === 'Administrador';
 
   const esAsistenteComite = rolActivo === 'AsistenteComiteTecnico';
   const esCoordinadorComite = rolActivo === 'CoordinadorComiteTecnico';
@@ -42,15 +41,11 @@ const Sidebar = () => {
   const esSubdirectorInvestigacion = rolActivo === 'SubdirectorInvestigacion';
   const esDireccion = esDirectorInvestigacion || esSubdirectorInvestigacion;
 
-  const esInvestigador =
-    rolActivo === 'InvestigadorCoordinador' ||
-    rolActivo === 'Investigador' ||
-    rolActivo === 'InvestigadorColaborador';
+  const esInvestigador = rolActivo === 'InvestigadorCoordinador' || rolActivo === 'Investigador' || rolActivo === 'InvestigadorColaborador';
 
-  console.log('ROL ACTIVO DETECTADO:', rolActivo);
-  console.log('¿ES DIRECCIÓN DE INVESTIGACIÓN?:', esDireccion);
-  console.log("🔍 ROL ACTIVO DETECTADO:", rolActivo);
-
+  // Logs para depuración
+  console.log('🔍 ROL ACTIVO DETECTADO:', rolActivo);
+  console.log('🔍 ¿ES DIRECCIÓN DE INVESTIGACIÓN?:', esDireccion);
 
   const isItemActive = (path, isRouterActive) => {
     if (isRouterActive) return true;
@@ -287,17 +282,10 @@ const Sidebar = () => {
             <span className="sidebar-pill-icon">{IconoDocumento}</span>
             <span className="sidebar-pill-label">Expedientes de Propuestas</span>
           </NavLink>
-
-          <NavLink
-            to="/dashboard/asignaciones-consejo"
-            className={({ isActive }) =>
-              `sidebar-pill-btn ${isActive ? 'active' : ''}`
-            }
-          >
+          <NavLink to="/dashboard/asignaciones-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
             <span className="sidebar-pill-icon">{IconoUsuarios}</span>
             <span className="sidebar-pill-label">Asignación de Miembros</span>
           </NavLink>
-
           <NavLink to="/dashboard/votaciones-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
             <span className="sidebar-pill-icon">{IconoVotacion}</span>
             <span className="sidebar-pill-label">Gestión de Votaciones</span>
@@ -316,17 +304,14 @@ const Sidebar = () => {
       return (
         <>
           <div className="sidebar-group-title">Consejo de Profesores</div>
-
-          <NavLink to="/dashboard/asignaciones-consejo" className={({ isActive }) =>`sidebar-pill ${isActive ? 'active' : ''}`}>
-            <span className="sidebar-pill-icon"> {IconoUsuarios} </span>
-            <span className="sidebar-pill-label"> Asignación de Miembros </span>
+          <NavLink to="/dashboard/asignaciones-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
+            <span className="sidebar-pill-icon">{IconoUsuarios}</span>
+            <span className="sidebar-pill-label">Asignación de Miembros</span>
           </NavLink>
-
           <NavLink to="/dashboard/propuestas-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
             <span className="sidebar-pill-icon">{IconoDocumento}</span>
             <span className="sidebar-pill-label">Propuestas y Rúbrica-02</span>
           </NavLink>
-
           <NavLink to="/dashboard/votaciones-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
             <span className="sidebar-pill-icon">{IconoVotacion}</span>
             <span className="sidebar-pill-label">Participar en Votaciones</span>
@@ -340,12 +325,10 @@ const Sidebar = () => {
       return (
         <>
           <div className="sidebar-group-title">Dirección de Escuela</div>
-
           <NavLink to="/dashboard/propuestas-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
             <span className="sidebar-pill-icon">{IconoDocumento}</span>
             <span className="sidebar-pill-label">Propuestas Avaladas</span>
           </NavLink>
-
           <NavLink to="/dashboard/acuerdos-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
             <span className="sidebar-pill-icon">{IconoChecklist}</span>
             <span className="sidebar-pill-label">Formalización de Acuerdos</span>
@@ -359,7 +342,6 @@ const Sidebar = () => {
       return (
         <>
           <div className="sidebar-group-title">Miembro del Consejo</div>
-
           <NavLink to="/dashboard/propuestas-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
             <span className="sidebar-pill-icon">{IconoDocumento}</span>
             <span className="sidebar-pill-label">Propuestas</span>

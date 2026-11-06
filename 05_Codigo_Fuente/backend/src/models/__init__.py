@@ -1,3 +1,4 @@
+# src/models/__init__.py
 from src.models.usuarios import Usuario
 from src.models.escuelas import Escuela, Campus
 from src.models.roles import RolesSistema, UsuarioRol, Permisos, RolPermisos
