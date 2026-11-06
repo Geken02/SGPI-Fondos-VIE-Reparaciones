@@ -28,7 +28,7 @@ const VinculacionDashboard = () => {
           const coordId = p.investigadorCoordId || p.investigador_coord_id;
           return !coordId || coordId !== usuarioId;
         });
-        setPropuestas(propuestasFiltradas.map(p => ({
+        setPropuestas(data.map(p => ({
           id: p.codigoPropuesta || `FVIE-2027-00${p.propuestaId}`,
           propuestaId: p.propuestaId,
           titulo: p.titulo,

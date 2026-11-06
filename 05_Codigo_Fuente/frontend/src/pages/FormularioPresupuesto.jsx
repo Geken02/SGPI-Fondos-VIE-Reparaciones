@@ -261,7 +261,7 @@ const FormularioPresupuesto = () => {
     window.dispatchEvent(new Event('propuestaCreada'));
 
     setTimeout(() => {
-      alert('¡Presupuesto Operativo (Formulario 06) enviado exitosamente a la VIE!');
+      alert('¡Presupuesto Operativo (Formulario 06) guardado exitosamente!');
       setGuardando(false);
       navigate('/dashboard/propuestas');
     }, 450);
