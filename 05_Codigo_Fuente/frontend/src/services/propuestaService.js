@@ -105,11 +105,11 @@ export const propuestaService = {
     const formData = new FormData();
     formData.append('archivo', archivo);
     formData.append('tipo_documento_id', tipoDocumentoId);
-    const response = await api.post(`/api/propuestas/${propuestaId}/archivos`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    
+    // ✅ Axios detecta FormData y agrega el "boundary" automáticamente.
+    const response = await api.post(`/api/propuestas/${propuestaId}/archivos`, formData);
+    
     return response.data;
   }
+
 };

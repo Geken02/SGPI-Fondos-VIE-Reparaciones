@@ -53,11 +53,10 @@ export const vinculacionService = {
     const formData = new FormData();
     formData.append('archivo', archivo);
     formData.append('tipo_documento_id', 5); // 5 = Dictamen_Vinculacion
-    const response = await api.post(`/api/propuestas/${propuestaId}/archivos`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    
+   
+    const response = await api.post(`/api/propuestas/${propuestaId}/archivos`, formData);
+    
     return response.data;
   }
 };
