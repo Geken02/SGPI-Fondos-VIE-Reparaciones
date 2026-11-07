@@ -18,7 +18,6 @@ class AsignacionComite(Base):
     ultimaAuditoria = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relaciones
-    propuesta = relationship("Propuesta", back_populates="asignaciones")
     evaluador = relationship("Usuario", foreign_keys=[evaluadorId])
     asignadoPor = relationship("Usuario", foreign_keys=[asignadoPorId])
     usuarioAuditoria = relationship("Usuario", foreign_keys=[usuarioAuditoriaId])
