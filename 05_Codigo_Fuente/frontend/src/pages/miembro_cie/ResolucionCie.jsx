@@ -1,5 +1,5 @@
 // src/pages/miembro_cie/ResolucionCie.jsx
-// Ventana 4: Resolución del CIE (POST /cie/expedientes/:codigo/resolucion)
+// Ventana 4: Resolución del CIE (POST /miembro-cie/expedientes/:codigo/resolucion)
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { cieService, mensajeError } from '../../services/cieService';
@@ -33,7 +33,6 @@ const ResolucionCie = () => {
   const [errorEmitir, setErrorEmitir] = useState('');
 
   useEffect(() => { document.title = 'Resolución del CIE - Miembro del CIE'; }, []);
-  useEffect(() => { if (datos?.evaluacion.decision) setDecision(datos.evaluacion.decision); }, [datos]);
 
   if (cargando) return <><VolverALaBandeja /><Cargando texto="Cargando resultado..." /></>;
   if (error) return <><VolverALaBandeja /><ErrorCarga error={error} alReintentar={error.estado === 404 ? null : recargar} /></>;

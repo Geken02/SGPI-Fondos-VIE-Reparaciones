@@ -187,12 +187,20 @@ export default function BandejaDeCompletitud() {
                   <td style={{ padding: '16px 20px' }}>{propuesta.investigador}</td>
                   <td style={{ padding: '16px 20px' }}>{propuesta.escuela}</td>
                   <td style={{ padding: '16px 20px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', fontWeight: '500' }}>
-                      {!propuesta.documentosFaltantes?.includes(1) && <span style={{ color: '#10b981' }}>✓ Form-04</span>}
-                      {!propuesta.documentosFaltantes?.includes(2) && <span style={{ color: '#10b981' }}>✓ Form-05</span>}
-                      {propuesta.documentosFaltantes?.includes(3) && <span style={{ color: '#ef4444' }}>✗ Form-06</span>}
-                    </div>
-                  </td>
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', fontWeight: '500' }}>
+    {/* Si el documento ESTÁ en la lista de faltantes, muéstralo en rojo */}
+    {propuesta.documentosFaltantes?.includes(1) && <span style={{ color: '#ef4444' }}> Form-04</span>}
+    {propuesta.documentosFaltantes?.includes(2) && <span style={{ color: '#ef4444' }}>✗ Form-05</span>}
+    {propuesta.documentosFaltantes?.includes(3) && <span style={{ color: '#ef4444' }}>✗ Form-06</span>}
+    {propuesta.documentosFaltantes?.includes(5) && <span style={{ color: '#ef4444' }}>✗ Presupuesto</span>}
+    
+    {/* Opcional: Si quieres mostrar los que SÍ están presentes en verde */}
+    {!propuesta.documentosFaltantes?.includes(1) && <span style={{ color: '#10b981' }}>✓ Form-04</span>}
+    {!propuesta.documentosFaltantes?.includes(2) && <span style={{ color: '#10b981' }}>✓ Form-05</span>}
+    {!propuesta.documentosFaltantes?.includes(3) && <span style={{ color: '#10b981' }}>✓ Form-06</span>}
+    {!propuesta.documentosFaltantes?.includes(5) && <span style={{ color: '#10b981' }}>✓ Presupuesto</span>}
+  </div>
+</td>
                   <td style={{ padding: '16px 20px' }}>
                     <span style={{
                       padding: '4px 12px',
