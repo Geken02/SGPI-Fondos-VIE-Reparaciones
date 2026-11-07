@@ -59,6 +59,36 @@ const InvestigadorPropuestas = () => {
       e.target.value = '';
     }
   };
+
+  const handleEnviarPropuestaVinculacion = async (propuestaId) => {
+    const prop = propuestas.find(p => p.propuestaId === propuestaId);
+    if (prop && prop.esPropietario === false) {
+      alert('Solo la persona coordinadora (propietaria de la propuesta) puede enviar la propuesta a la Unidad de Vinculación.');
+      return;
+    }
+
+    if (!window.confirm('¿Está seguro de que desea enviar formalmente esta propuesta a la Unidad de Vinculación para su evaluación y dictamen?')) {
+      return;
+    }
+
+    try {
+      setEnviandoRevision(prev => ({ ...prev, [propuestaId]: true }));
+      await propuestaService.enviarRevision(propuestaId);
+
+      localStorage.setItem(`propuesta_${propuestaId}_enviada`, 'true');
+      localStorage.setItem(`propuesta_${propuestaId}_form04_enviado`, 'true');
+
+      alert('¡Propuesta enviada con éxito a la Unidad de Vinculación! El expediente ha pasado al proceso de evaluación temprana.');
+      window.dispatchEvent(new Event('propuestaCreada'));
+      await cargarPropuestas();
+    } catch (err) {
+      console.error('Error al enviar propuesta:', err);
+      const msg = err?.response?.data?.detail || err?.message || 'Error al enviar la propuesta';
+      alert(`No se pudo enviar la propuesta: ${msg}`);
+    } finally {
+      setEnviandoRevision(prev => ({ ...prev, [propuestaId]: false }));
+    }
+  };
   const [cargando, setCargando] = useState(true);
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroEscuela, setFiltroEscuela] = useState('Todas');
@@ -220,7 +250,16 @@ const InvestigadorPropuestas = () => {
     const texto = ((p.titulo || '') + ' ' + (p.codigoPropuesta || '')).toLowerCase();
     const coincideTexto = texto.includes(filtroTexto.toLowerCase());
     const coincideEscuela = filtroEscuela === 'Todas' || (p.escuela || p.nombreEscuela || '').includes(filtroEscuela);
-    const coincideEstado = filtroEstado === 'Todos' || (p.nombreEstado || p.estadoBadge || '').toLowerCase().includes(filtroEstado.toLowerCase());
+    const coincideEstado = filtroEstado === 'Todos' || (() => {
+      const nom = (p.nombreEstado || p.estadoBadge || '').toLowerCase();
+      if (filtroEstado === 'Enviada') {
+        return p.estadoId === 2 || p.estadoId === 3 || nom.includes('enviad') || nom.includes('vinculac');
+      }
+      if (filtroEstado === 'Evaluación') {
+        return p.estadoId === 3 || nom.includes('eval');
+      }
+      return nom.includes(filtroEstado.toLowerCase());
+    })();
     return coincideTexto && coincideEscuela && coincideEstado;
   });
 
@@ -328,7 +367,8 @@ const InvestigadorPropuestas = () => {
 
               const estado = esSubsanacion
                 ? 'En Subsanación'
-                : (prop.nombreEstado || prop.estadoBadge || 'Borrador');
+                : (prop.nombreEstado || prop.estadoBadge || (prop.estadoId === 3 ? 'En Evaluación de Vinculación' : prop.estadoId === 2 ? 'Enviada a VIE' : 'Borrador'));
+              const esBorrador = (prop.estadoId === 1 || estado.toLowerCase().includes('borrador')) && !esSubsanacion;
 
               const badgeClass = esSubsanacion ? 'badge-subsanacion'
                                 : estado.toLowerCase().includes('eval') ? 'badge-warning'
@@ -353,7 +393,31 @@ const InvestigadorPropuestas = () => {
                       )}
                     </div>
 
-                    <div className="header-right-actions">
+                    <div className="header-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {esBorrador && (
+                        prop.esPropietario !== false ? (
+                          <button 
+                            type="button" 
+                            className="btn-proposal-action btn-solid"
+                            style={{ backgroundColor: '#16a34a', borderColor: '#16a34a', color: '#ffffff', padding: '5px 14px', fontSize: '13px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEnviarPropuestaVinculacion(prop.propuestaId);
+                            }}
+                            disabled={enviandoRevision[prop.propuestaId]}
+                            title="Enviar propuesta completa a la Unidad de Vinculación para revisión"
+                          >
+                            {enviandoRevision[prop.propuestaId] ? 'Enviando...' : '📤 Enviar a Vinculación'}
+                          </button>
+                        ) : (
+                          <span 
+                            style={{ fontSize: '11px', color: '#64748b', backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                            title="Solo la persona coordinadora puede enviar la propuesta"
+                          >
+                            🔒 Envío por Coordinador
+                          </span>
+                        )
+                      )}
                       <button 
                         type="button" 
                         className="btn-accordion-toggle"
@@ -421,6 +485,53 @@ const InvestigadorPropuestas = () => {
                               La instancia revisora de la VIE ha devuelto esta propuesta con observaciones. Corrija los formularios o adjunte los documentos faltantes indicados a continuación y reenvíe la propuesta para una nueva revisión.
                             </div>
                           </div>
+                        </div>
+                      )}
+
+                      {/* Banner de Envío Oficial a la Unidad de Vinculación */}
+                      {esBorrador && (
+                        <div style={{
+                          margin: '14px 0 20px 0',
+                          padding: '16px 20px',
+                          backgroundColor: '#f0fdf4',
+                          border: '1.5px solid #86efac',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '12px'
+                        }}>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '15px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span>🚀</span> Enviar Propuesta a la Unidad de Vinculación
+                            </div>
+                            <div style={{ fontSize: '13px', color: '#15803d', marginTop: '3px' }}>
+                              Al presionar este botón, la propuesta cambiará formalmente de <strong>Borrador</strong> a <strong>Enviada a Vinculación</strong> para que el Centro de Vinculación inicie el proceso de evaluación y dictamen.
+                            </div>
+                          </div>
+                          {prop.esPropietario !== false ? (
+                            <button
+                              type="button"
+                              className="btn-proposal-action btn-solid"
+                              style={{ backgroundColor: '#16a34a', borderColor: '#16a34a', color: '#ffffff', padding: '10px 22px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
+                              onClick={() => handleEnviarPropuestaVinculacion(prop.propuestaId)}
+                              disabled={enviandoRevision[prop.propuestaId]}
+                            >
+                              {enviandoRevision[prop.propuestaId] ? 'Enviando a Vinculación...' : '📤 Enviar Propuesta a Vinculación'}
+                            </button>
+                          ) : (
+                            <div style={{
+                              backgroundColor: '#eff6ff',
+                              border: '1px solid #bfdbfe',
+                              borderRadius: '6px',
+                              padding: '8px 12px',
+                              color: '#1e40af',
+                              fontSize: '12px'
+                            }}>
+                              🔒 Solo la persona coordinadora del proyecto puede enviar la propuesta a la Unidad de Vinculación.
+                            </div>
+                          )}
                         </div>
                       )}
 

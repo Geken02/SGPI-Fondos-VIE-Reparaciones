@@ -55,7 +55,7 @@ const InvestigadorDashboard = () => {
 
   // Métricas reales del usuario (en 0 para usuario nuevo)
   const totalPropuestas = listaPropuestas.length;
-  const enRevision = listaPropuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('revis') || p.estadoId === 2).length;
+  const enRevision = listaPropuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('revis') || (p.nombreEstado || '').toLowerCase().includes('vinculac') || p.estadoId === 2 || p.estadoId === 3).length;
   const aprobadas = listaPropuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('aprob') || p.estadoId === 5).length;
   const rechazadas = listaPropuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('rechaz')).length;
 
@@ -262,7 +262,7 @@ const InvestigadorDashboard = () => {
                     {/* Encabezado de la tarjeta con Badges */}
                     <div className="proposal-card-top">
                       <span className={`badge-status ${prop.tipoBadge || 'info'}`}>
-                        {prop.estadoBadge || prop.nombreEstado || 'BORRADOR'}
+                        {(prop.estadoId === 2 || prop.nombreEstado === 'Enviada a VIE' || prop.estadoBadge === 'Enviada a VIE') ? 'Enviada a Vinculación' : (prop.estadoBadge || prop.nombreEstado || 'BORRADOR')}
                       </span>
                       <span className="proposal-code">
                         {prop.codigoPropuesta}

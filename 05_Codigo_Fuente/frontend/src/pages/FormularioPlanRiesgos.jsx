@@ -264,7 +264,7 @@ const FormularioPlanRiesgos = () => {
       localStorage.setItem(`propuesta_${id}_form05_enviado`, 'true');
     }
     window.dispatchEvent(new Event('propuestaCreada'));
-    alert('\u00a1Plan de Acci\u00f3n y Gesti\u00f3n del Riesgo enviado exitosamente a la VIE!');
+    alert('¡Plan de Acción y Gestión del Riesgo guardado exitosamente!');
     setGuardando(false);
     navigate('/dashboard/propuestas');
   };

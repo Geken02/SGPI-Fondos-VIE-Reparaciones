@@ -244,12 +244,14 @@ def listar_propuestas_investigador(
 
         es_propietario = (p.getInvestigadorCoordId() == usuario_id)
 
+        nom_estado = estado.nombreEstadoPropuesta if estado else None
+
         resultado.append(PropuestaResumenResponse(
             propuestaId=p.getPropuestaId(),
             codigoPropuesta=p.getCodigoPropuesta(),
             titulo=p.getTitulo(),
             estadoId=p.getEstadoId(),
-            nombreEstado=estado.nombreEstadoPropuesta if estado else None,
+            nombreEstado=nom_estado,
             etapaId=p.getEtapaId(),
             convocatoriaId=p.getConvocatoriaId(),
             escuelaId=p.getEscuelaId(),
@@ -406,12 +408,14 @@ def obtener_propuesta_detalle(
         aceptaDeclaracionJurada=declaraciones.getAceptaDeclaracionJurada() if declaraciones else False
     ) if declaraciones else None
 
+    nom_estado_det = estado.nombreEstadoPropuesta if estado else None
+
     return PropuestaDetalleResponse(
         propuestaId=propuesta.getPropuestaId(),
         codigoPropuesta=propuesta.getCodigoPropuesta(),
         titulo=propuesta.getTitulo(),
         estadoId=propuesta.getEstadoId(),
-        nombreEstado=estado.nombreEstadoPropuesta if estado else None,
+        nombreEstado=nom_estado_det,
         etapaId=propuesta.getEtapaId(),
         convocatoriaId=propuesta.getConvocatoriaId(),
         escuelaId=propuesta.getEscuelaId(),
@@ -744,8 +748,8 @@ def enviar_propuesta_revision(
     if not contenido or not contenido.getResumen() or len(contenido.getResumen().strip()) < 20:
         raise HTTPException(status_code=400, detail="Debe completar al menos el Resumen Ejecutivo del Form-04")
 
-    # Cambiar estado a ENVIADA (ID 2)
-    propuesta.setEstadoId(2)
+    # Cambiar estado a EN_VINCULACION (ID 3)
+    propuesta.setEstadoId(3)
     propuesta.setFechaEnvio(datetime.now(timezone.utc))
     propuesta.setUsuarioAuditoriaId(usuario_id)
     propuesta.setUltimaAuditoria(datetime.now(timezone.utc))
@@ -839,7 +843,7 @@ def responder_subsanacion(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Solo la persona coordinadora (propietaria de la propuesta) puede reenviar la propuesta a revisión institucional."
             )
-        propuesta.setEstadoId(2)  # Enviada a Vinculación / En Revisión
+        propuesta.setEstadoId(3)  # Enviada a Vinculación (ID 3) / En Evaluación
         propuesta.setFechaEnvio(datetime.now(timezone.utc))
         propuesta.setUltimaAuditoria(datetime.now(timezone.utc))
 
