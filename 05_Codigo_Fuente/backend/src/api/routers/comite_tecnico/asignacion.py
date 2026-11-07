@@ -78,7 +78,7 @@ def listar_evaluadores_disponibles(
     sesion: Session = Depends(get_db)
 ):
     """
-    Lista los evaluadores disponibles (miembros del comité técnico activos)
+    Lista los evaluadores disponibles (usuarios activos)
     """
     evaluadores = sesion.query(Usuario).filter(
         Usuario.activo == True
@@ -87,9 +87,11 @@ def listar_evaluadores_disponibles(
     return [
         {
             "usuarioId": e.usuarioId,
-            "nombre": f"{e.nombre} {e.apellidos}" if hasattr(e, 'apellidos') else e.nombre,
-            "correo": e.correo,
-            "escuela": e.escuela.nombre if hasattr(e, 'escuela') and e.escuela else None
+            # Construimos el nombre completo usando los campos reales de tu modelo
+            "nombre": f"{e.nombreUsuario} {e.apellido1Usuario} {e.apellido2Usuario or ''}".strip(),
+            # El campo de correo en tu modelo se llama correoInstitucional
+            "correo": e.correoInstitucional,
+            "escuela": e.escuela.nombre if e.escuela else "Sin escuela asignada"
         }
         for e in evaluadores
     ]
