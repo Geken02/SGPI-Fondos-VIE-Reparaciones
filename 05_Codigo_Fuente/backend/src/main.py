@@ -16,6 +16,7 @@ from src.api.routers import auth
 from src.api.routers.consejo_escuela import acuerdos
 from src.api.routers.admin import usuarios, catalogos, auditoria, dashboard 
 from src.api.routers.comite_tecnico import comite_tecnico
+from src.api.routers.comite_tecnico.asignacion import router as asignacion_router
 
 from src.api.routers import notificaciones as router_notificaciones
 from src.api.routers.investigador import propuestas as router_investigador
@@ -69,6 +70,7 @@ app.include_router(subsanaciones.router)
 app.include_router(preferencias.router)
 app.include_router(archivos.router)
 app.include_router(asignaciones.router)
+app.include_router(asignacion_router)
 
 
 @app.get("/")

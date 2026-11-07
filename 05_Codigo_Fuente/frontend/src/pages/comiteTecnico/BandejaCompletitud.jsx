@@ -2,12 +2,15 @@
 import { useState, useEffect } from 'react';
 import { comiteTecnicoService } from '../../services/comiteTecnicoService';
 import SubsanacionModal from '../../components/SubsanacionModal';
+import AsignarEvaluadorModal from '../../components/AsignarEvaluadorModal';
 
 export default function BandejaDeCompletitud() {
   const [propuestas, setPropuestas] = useState([]);
   const [estadisticas, setEstadisticas] = useState({ total: 0, completas: 0, incompletas: 0 });
   const [cargando, setCargando] = useState(true);
   const [modalSubsanacion, setModalSubsanacion] = useState({ abierto: false, propuesta: null });
+  const [modalAsignacion, setModalAsignacion] = useState({ abierto: false, propuesta: null });
+
 
   useEffect(() => {
     cargarPropuestas();
@@ -60,6 +63,11 @@ export default function BandejaDeCompletitud() {
       alert('Error al aprobar');
     }
   };
+
+  const handleAsignarEvaluador = async () => {
+  // Recargar la bandeja después de asignar
+  cargarPropuestas();
+};
 
   return (
     <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Inter, system-ui, sans-serif' }}>
@@ -215,40 +223,57 @@ export default function BandejaDeCompletitud() {
                     </span>
                   </td>
                   <td style={{ padding: '16px 20px' }}>
-                    {!propuesta.esCompleta ? (
-                      <button
-                        onClick={() => setModalSubsanacion({ abierto: true, propuesta })}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#f59e0b',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: '600'
-                        }}
-                      >
-                        ⚠️ Subsanar
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleAprobarCompletitud(propuesta.propuestaId)}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#10b981',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: '600'
-                        }}
-                      >
-                        ✓ Aprobar
-                      </button>
-                    )}
-                  </td>
+  {propuesta.esCompleta ? (
+    <div style={{ display: 'flex', gap: '8px' }}>
+      <button
+        onClick={() => setModalAsignacion({ abierto: true, propuesta })}
+        style={{
+          padding: '8px 16px',
+          backgroundColor: '#002855',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontSize: '13px',
+          fontWeight: '600'
+        }}
+      >
+        👥 Asignar
+      </button>
+      <button
+        onClick={() => handleAprobarCompletitud(propuesta.propuestaId)}
+        style={{
+          padding: '8px 16px',
+          backgroundColor: '#10b981',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontSize: '13px',
+          fontWeight: '600'
+        }}
+      >
+        ✓ Aprobar
+      </button>
+    </div>
+  ) : (
+    <button
+      onClick={() => setModalSubsanacion({ abierto: true, propuesta })}
+      style={{
+        padding: '8px 16px',
+        backgroundColor: '#f59e0b',
+        color: 'white',
+        border: 'none',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '13px',
+        fontWeight: '600'
+      }}
+    >
+      ⚠️ Subsanar
+    </button>
+  )}
+</td>
                 </tr>
               ))}
             </tbody>
@@ -264,6 +289,14 @@ export default function BandejaDeCompletitud() {
           onSubmit={handleSolicitarSubsanacion}
         />
       )}
+      {modalAsignacion.abierto && (
+  <AsignarEvaluadorModal
+    isOpen={modalAsignacion.abierto}
+    onClose={() => setModalAsignacion({ abierto: false, propuesta: null })}
+    propuesta={modalAsignacion.propuesta}
+    onAsignar={handleAsignarEvaluador}
+  />
+)}
     </div>
   );
 }
