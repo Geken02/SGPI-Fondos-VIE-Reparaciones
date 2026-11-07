@@ -8,13 +8,13 @@ class AsignacionComite(Base):
     __tablename__ = 'asignacionescomite'
     
     asignacionId = Column(Integer, primary_key=True, index=True)
-    propuestaId = Column(Integer, ForeignKey('propuestas.propuestaId'), nullable=False, index=True)
-    evaluadorId = Column(Integer, ForeignKey('usuarios.usuarioId'), nullable=False, index=True)
-    asignadoPorId = Column(Integer, ForeignKey('usuarios.usuarioId'), nullable=False)
+    propuestaId = Column(Integer, ForeignKey('propuestas.propuestaid'), nullable=False, index=True)
+    evaluadorId = Column(Integer, ForeignKey('usuarios.usuarioid'), nullable=False, index=True)
+    asignadoPorId = Column(Integer, ForeignKey('usuarios.usuarioid'), nullable=False)
     fechaAsignacion = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     comentarios = Column(String(200))
     activo = Column(Boolean, default=True)
-    usuarioAuditoriaId = Column(Integer, ForeignKey('usuarios.usuarioId'), nullable=True)
+    usuarioAuditoriaId = Column(Integer, ForeignKey('usuarios.usuarioid'), nullable=True)
     ultimaAuditoria = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relaciones
