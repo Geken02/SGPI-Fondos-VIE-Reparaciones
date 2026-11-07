@@ -66,12 +66,12 @@ analizarDocumentoIA: (propuestaId, data) =>
   api.post(`/api/comite-tecnico/ia/analizar-documento/${propuestaId}`, data),
 
   obtenerEvaluadoresDisponibles: async () => {
-    const response = await api.get('/comite-tecnico/evaluadores-disponibles');
+    const response = await api.get('/api/comite-tecnico/evaluadores-disponibles');
     return response.data;
   },
 
   asignarEvaluador: async (propuestaId, evaluadorId, comentarios = '') => {
-    const response = await api.post('/comite-tecnico/asignar-evaluador', {
+    const response = await api.post('/api/comite-tecnico/asignar-evaluador', {
       propuestaId,
       evaluadorId,
       comentarios
