@@ -91,7 +91,7 @@ def listar_evaluadores_disponibles(
             "nombre": f"{e.nombreUsuario} {e.apellido1Usuario} {e.apellido2Usuario or ''}".strip(),
             # El campo de correo en tu modelo se llama correoInstitucional
             "correo": e.correoInstitucional,
-            "escuela": e.escuela.nombre if e.escuela else "Sin escuela asignada"
+            "escuela": e.escuela.nombreEscuela if e.escuela else "Sin escuela asignada"
         }
         for e in evaluadores
     ]
@@ -108,7 +108,6 @@ def listar_propuestas_asignadas(
     asignaciones = sesion.query(AsignacionComite).join(Propuesta).filter(
         AsignacionComite.evaluadorId == evaluador_id,
         AsignacionComite.activo == True,
-        Propuesta.activo == True
     ).all()
     
     return [
