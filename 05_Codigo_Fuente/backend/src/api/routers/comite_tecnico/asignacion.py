@@ -78,23 +78,47 @@ def listar_evaluadores_disponibles(
     sesion: Session = Depends(get_db)
 ):
     """
-    Lista los evaluadores disponibles (usuarios activos)
+    Lista solo los usuarios que tienen roles permitidos para evaluar en el Comité Técnico.
     """
-    evaluadores = sesion.query(Usuario).filter(
-        Usuario.activo == True
-    ).all()
-    
-    return [
-        {
-            "usuarioId": e.usuarioId,
-            # Construimos el nombre completo usando los campos reales de tu modelo
-            "nombre": f"{e.nombreUsuario} {e.apellido1Usuario} {e.apellido2Usuario or ''}".strip(),
-            # El campo de correo en tu modelo se llama correoInstitucional
-            "correo": e.correoInstitucional,
-            "escuela": e.escuela.nombreEscuela if e.escuela else "Sin escuela asignada"
-        }
-        for e in evaluadores
+    roles_permitidos = [
+        'MiembroComiteTecnico', 
+        'CoordinadorComiteTecnico', 
+        'DirectorEscuela',
+        'SuperAdministrador',
+        'Administrador'
     ]
+    
+    usuarios = sesion.query(Usuario).filter(Usuario.activo == True).all()
+    evaluadores_filtrados = []
+    
+    for u in usuarios:
+        es_evaluador = False
+        for usuario_rol in u.roles:
+            # Intenta obtener el nombre del rol de forma segura
+            nombre_rol = ""
+            if hasattr(usuario_rol, 'rol') and usuario_rol.rol:
+                nombre_rol = getattr(usuario_rol.rol, 'nombre', getattr(usuario_rol.rol, 'nombreRol', ''))
+            else:
+                nombre_rol = getattr(usuario_rol, 'nombreRol', getattr(usuario_rol, 'nombre', ''))
+            
+            if nombre_rol in roles_permitidos:
+                es_evaluador = True
+                break
+        
+        if es_evaluador:
+            # Obtenemos el nombre de la escuela de forma segura (probablemente sea 'nombreEscuela')
+            nombre_escuela = "Sin escuela asignada"
+            if u.escuela:
+                nombre_escuela = getattr(u.escuela, 'nombreEscuela', getattr(u.escuela, 'nombre', 'Sin escuela asignada'))
+            
+            evaluadores_filtrados.append({
+                "usuarioId": u.usuarioId,
+                "nombre": f"{u.nombreUsuario} {u.apellido1Usuario} {u.apellido2Usuario or ''}".strip(),
+                "correo": u.correoInstitucional,
+                "escuela": nombre_escuela
+            })
+    
+    return evaluadores_filtrados
 
 @router.get("/propuestas-asignadas/{evaluador_id}")
 def listar_propuestas_asignadas(
