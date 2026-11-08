@@ -11,11 +11,40 @@ from src.services.comite_tecnico.rubricas_data import (
 )
 
 # ============================================================================
-# CONFIGURACIÓN DIRECTA A LA API DE GOOGLE (SIN LIBRERÍAS EXTERNAS)
+# CONFIGURACIÓN: Detecta automáticamente el modelo disponible
 # ============================================================================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-# Usamos la versión v1 y el modelo 002 que es el estable para claves nuevas
-GEMINI_URL = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-002:generateContent?key={GEMINI_API_KEY}"
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1"
+
+def obtener_modelo_disponible():
+    """Consulta la API para ver qué modelos están disponibles con esta API Key."""
+    if not GEMINI_API_KEY:
+        raise ValueError("GEMINI_API_KEY no configurada")
+    
+    url = f"{GEMINI_BASE_URL}/models?key={GEMINI_API_KEY}"
+    response = requests.get(url, timeout=10)
+    
+    if response.status_code != 200:
+        raise Exception(f"Error al listar modelos: {response.text}")
+    
+    modelos = response.json().get("models", [])
+    
+    # Buscar el mejor modelo disponible (prioridad: flash > pro)
+    modelos_flash = [m["name"].replace("models/", "") for m in modelos if "flash" in m["name"].lower()]
+    modelos_pro = [m["name"].replace("models/", "") for m in modelos if "pro" in m["name"].lower()]
+    
+    if modelos_flash:
+        return modelos_flash[0]  # Usar el primer modelo flash disponible
+    elif modelos_pro:
+        return modelos_pro[0]
+    else:
+        raise Exception(f"No hay modelos disponibles. Modelos encontrados: {[m['name'] for m in modelos[:5]]}")
+
+# Obtener el modelo automáticamente al cargar el módulo
+MODELO_ACTIVO = obtener_modelo_disponible()
+GEMINI_URL = f"{GEMINI_BASE_URL}/models/{MODELO_ACTIVO}:generateContent?key={GEMINI_API_KEY}"
+
+print(f"✅ Modelo de IA activo: {MODELO_ACTIVO}")
 
 RUBRICAS_POR_MODALIDAD = {
     "fortalecimiento": RUBRICA_FORTALECIMIENTO,
@@ -106,7 +135,7 @@ def obtener_rubrica_por_modalidad(tipo_modalidad: str) -> dict:
     return RUBRICA_BASICA_APLICADA
 
 def llamar_a_gemini(prompt: str) -> str:
-    """Llama directamente a la API REST de Google. Sin librerías externas."""
+    """Llama directamente a la API REST de Google."""
     if not GEMINI_API_KEY:
         raise ValueError("La variable GEMINI_API_KEY no está configurada.")
         
@@ -132,7 +161,7 @@ def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, c
     total_evaluados = 0
     
     print(f"\n{'='*60}")
-    print(f"🤖 INICIANDO ANÁLISIS (Gemini 1.5 Flash 002 - REST API) para propuesta {propuesta_id}")
+    print(f"🤖 INICIANDO ANÁLISIS ({MODELO_ACTIVO}) para propuesta {propuesta_id}")
     
     rubrica = obtener_rubrica_por_modalidad(tipo_modalidad)
     print(f"📚 Rúbrica: {rubrica['nombre']}")
