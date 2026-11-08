@@ -14,14 +14,14 @@ from src.services.comite_tecnico.rubricas_data import (
 # CONFIGURACIÓN: Detecta automáticamente el modelo disponible
 # ============================================================================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1"
 
 def obtener_modelo_disponible():
     """Consulta la API para ver qué modelos están disponibles con esta API Key."""
     if not GEMINI_API_KEY:
         raise ValueError("GEMINI_API_KEY no configurada")
     
-    url = f"{GEMINI_BASE_URL}/models?key={GEMINI_API_KEY}"
+    # Usar v1beta que tiene los modelos más nuevos
+    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_API_KEY}"
     response = requests.get(url, timeout=10)
     
     if response.status_code != 200:
@@ -29,22 +29,46 @@ def obtener_modelo_disponible():
     
     modelos = response.json().get("models", [])
     
-    # Buscar el mejor modelo disponible (prioridad: flash > pro)
-    modelos_flash = [m["name"].replace("models/", "") for m in modelos if "flash" in m["name"].lower()]
-    modelos_pro = [m["name"].replace("models/", "") for m in modelos if "pro" in m["name"].lower()]
+    # Imprimir TODOS los modelos disponibles para debug
+    print(f"\n📋 Modelos disponibles ({len(modelos)}):")
+    for m in modelos[:10]:
+        nombre = m.get("name", "").replace("models/", "")
+        soportes = m.get("supportedGenerationMethods", [])
+        print(f"   - {nombre} | soporta: {soportes}")
     
-    if modelos_flash:
-        return modelos_flash[0]  # Usar el primer modelo flash disponible
-    elif modelos_pro:
-        return modelos_pro[0]
-    else:
-        raise Exception(f"No hay modelos disponibles. Modelos encontrados: {[m['name'] for m in modelos[:5]]}")
+    # Filtrar solo modelos que soporten generateContent
+    modelos_validos = [
+        m.get("name", "").replace("models/", "") 
+        for m in modelos 
+        if "generateContent" in m.get("supportedGenerationMethods", [])
+    ]
+    
+    print(f"\n✅ Modelos que soportan generateContent: {modelos_validos[:5]}")
+    
+    if not modelos_validos:
+        raise Exception(f"No hay modelos disponibles para generateContent")
+    
+    # Buscar el mejor modelo flash disponible (usar nombre COMPLETO)
+    for modelo in modelos_validos:
+        if "flash" in modelo.lower() and "2.5" in modelo:
+            return modelo
+    for modelo in modelos_validos:
+        if "flash" in modelo.lower() and "2.0" in modelo:
+            return modelo
+    for modelo in modelos_validos:
+        if "flash" in modelo.lower():
+            return modelo
+    
+    # Si no hay flash, usar el primero disponible
+    return modelos_validos[0]
 
 # Obtener el modelo automáticamente al cargar el módulo
 MODELO_ACTIVO = obtener_modelo_disponible()
-GEMINI_URL = f"{GEMINI_BASE_URL}/models/{MODELO_ACTIVO}:generateContent?key={GEMINI_API_KEY}"
+# Usar v1beta que es donde están los modelos nuevos
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODELO_ACTIVO}:generateContent?key={GEMINI_API_KEY}"
 
-print(f"Modelo de IA activo: {MODELO_ACTIVO}")
+print(f"\n🎯 Modelo seleccionado: {MODELO_ACTIVO}")
+print(f"🔗 URL: {GEMINI_URL}\n")
 
 RUBRICAS_POR_MODALIDAD = {
     "fortalecimiento": RUBRICA_FORTALECIMIENTO,
