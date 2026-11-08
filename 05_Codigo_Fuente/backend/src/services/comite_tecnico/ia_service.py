@@ -44,7 +44,7 @@ def obtener_modelo_disponible():
 MODELO_ACTIVO = obtener_modelo_disponible()
 GEMINI_URL = f"{GEMINI_BASE_URL}/models/{MODELO_ACTIVO}:generateContent?key={GEMINI_API_KEY}"
 
-print(f"✅ Modelo de IA activo: {MODELO_ACTIVO}")
+print(f"Modelo de IA activo: {MODELO_ACTIVO}")
 
 RUBRICAS_POR_MODALIDAD = {
     "fortalecimiento": RUBRICA_FORTALECIMIENTO,
