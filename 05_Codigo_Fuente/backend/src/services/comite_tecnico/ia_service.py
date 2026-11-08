@@ -4,23 +4,18 @@ import time
 import json
 import re
 import os
-import google.generativeai as genai
+import requests
 from src.utils.s3_client import s3_client, S3_BUCKET_NAME
 from src.services.comite_tecnico.rubricas_data import (
     RUBRICA_FORTALECIMIENTO, RUBRICA_BASICA_APLICADA, RUBRICA_DESARROLLO_TECNOLOGICO
 )
 
 # ============================================================================
-# CONFIGURACIÓN DE GEMINI
+# CONFIGURACIÓN DIRECTA A LA API DE GOOGLE (SIN LIBRERÍAS EXTERNAS)
 # ============================================================================
-# Configurar la API Key desde las variables de entorno (Render o local .env)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    print("⚠️ ADVERTENCIA: GEMINI_API_KEY no está configurada en las variables de entorno.")
-
-genai.configure(api_key=GEMINI_API_KEY)
-# Usamos 1.5 Flash por su velocidad y ventana de contexto de 1 millón de tokens
-model = genai.GenerativeModel("gemini-2.5-flash")
+# Usamos la versión v1 y el modelo 002 que es el estable para claves nuevas
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-002:generateContent?key={GEMINI_API_KEY}"
 
 RUBRICAS_POR_MODALIDAD = {
     "fortalecimiento": RUBRICA_FORTALECIMIENTO,
@@ -87,7 +82,7 @@ def extraer_texto_documento(ruta_archivo: str) -> str:
 
 def extraer_seccion_del_texto(texto_completo: str, nombre_seccion: str) -> str:
     palabras = MAPEO_SECCIONES_FORMULARIO.get(nombre_seccion.upper(), [])
-    if not palabras: return texto_completo[:500] # Aumentado un poco, Gemini maneja más contexto
+    if not palabras: return texto_completo[:1000]
     
     lineas = texto_completo.split('\n')
     seccion = []
@@ -98,7 +93,7 @@ def extraer_seccion_del_texto(texto_completo: str, nombre_seccion: str) -> str:
         if capturando:
             if linea.strip() and not re.match(r'^[\|\s\-]+$', linea):
                 seccion.append(linea)
-            if len('\n'.join(seccion)) > 800: # Aumentado el límite para dar más contexto a la IA
+            if len('\n'.join(seccion)) > 800: 
                 break
     return '\n'.join(seccion)[:1000] if seccion else texto_completo[:1000]
 
@@ -110,13 +105,34 @@ def obtener_rubrica_por_modalidad(tipo_modalidad: str) -> dict:
         if clave.lower() in tipo_lower or tipo_lower in clave.lower(): return rubrica
     return RUBRICA_BASICA_APLICADA
 
+def llamar_a_gemini(prompt: str) -> str:
+    """Llama directamente a la API REST de Google. Sin librerías externas."""
+    if not GEMINI_API_KEY:
+        raise ValueError("La variable GEMINI_API_KEY no está configurada.")
+        
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "temperature": 0.2
+        }
+    }
+    
+    headers = {"Content-Type": "application/json"}
+    response = requests.post(GEMINI_URL, json=payload, headers=headers, timeout=60)
+    
+    if response.status_code != 200:
+        raise Exception(f"Error de API {response.status_code}: {response.text}")
+        
+    return response.json()["candidates"][0]["content"]["parts"][0]["text"]
+
 def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, criterios_reales_por_seccion: dict = None) -> dict:
     inicio_total = time.time()
     sugerencias = {}
     total_evaluados = 0
     
     print(f"\n{'='*60}")
-    print(f"🤖 INICIANDO ANÁLISIS (Gemini 1.5 Flash) para propuesta {propuesta_id}")
+    print(f"🤖 INICIANDO ANÁLISIS (Gemini 1.5 Flash 002 - REST API) para propuesta {propuesta_id}")
     
     rubrica = obtener_rubrica_por_modalidad(tipo_modalidad)
     print(f"📚 Rúbrica: {rubrica['nombre']}")
@@ -143,42 +159,30 @@ def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, c
 
         criterios_lista = "\n".join([f"  - {c}" for c in criterios])
         
-        prompt = f"""Eres un evaluador experto y riguroso de proyectos de investigación académica.
+        prompt = f"""Eres un evaluador experto de proyectos de investigación.
 
 SECCIÓN A EVALUAR: {nombre}
-
-CONTENIDO DEL FORMULARIO:
+CONTENIDO:
 {texto_seccion}
 
-CRITERIOS A EVALUAR (Debes usar estos nombres EXACTOS):
+CRITERIOS (Usa estos nombres EXACTOS):
 {criterios_lista}
 
-INSTRUCCIONES CRÍTICAS:
-1. Analiza el contenido y asigna un puntaje (0, 6, 8, o 10) a CADA criterio.
-2. Escribe una justificación breve (1-2 frases) basada en evidencia del texto.
-3. Responde EXCLUSIVAMENTE con un array JSON válido. No incluyas texto antes o después del JSON.
-4. Debes generar exactamente {len(criterios)} objetos, uno por cada criterio listado.
+INSTRUCCIONES:
+1. Asigna puntaje (0, 6, 8, o 10) y nivel (Deficiente, Regular, Bueno, Excelente).
+2. Justificación breve (1-2 frases).
+3. Responde SOLO con un array JSON. Exactamente {len(criterios)} objetos.
 
-Formato JSON requerido:
+Formato JSON:
 [
-  {{"criterio": "Nombre exacto del criterio", "puntaje": 8, "nivel": "Bueno", "justificacion": "Frase breve basada en el texto."}}
+  {{"criterio": "Nombre exacto", "puntaje": 8, "nivel": "Bueno", "justificacion": "Frase."}}
 ]"""
 
         try:
-            # Llamada a Gemini con generación forzada de JSON
-            response = model.generate_content(
-                prompt,
-                generation_config=genai.GenerationConfig(
-                    response_mime_type="application/json", # ¡Esto garantiza JSON puro!
-                    temperature=0.2
-                )
-            )
-            
-            # Parsear la respuesta (ya viene limpia gracias a response_mime_type)
-            evaluaciones = json.loads(response.text)
+            respuesta_raw = llamar_a_gemini(prompt)
+            evaluaciones = json.loads(respuesta_raw)
             
             if isinstance(evaluaciones, list):
-                # Filtrar datos corruptos o incompletos
                 evaluaciones_validas = [
                     ev for ev in evaluaciones 
                     if isinstance(ev, dict) 
@@ -190,27 +194,24 @@ Formato JSON requerido:
                 ]
                 
                 if evaluaciones_validas:
-                    sugerencias[str(seccion_id)] = {
-                        "nombre": nombre,
-                        "criterios": evaluaciones_validas
-                    }
+                    sugerencias[str(seccion_id)] = {"nombre": nombre, "criterios": evaluaciones_validas}
                     total_evaluados += len(evaluaciones_validas)
-                    print(f"  ✅ {nombre}: {len(evaluaciones_validas)} criterios evaluados")
+                    print(f"  ✅ {nombre}: {len(evaluaciones_validas)} criterios")
                 else:
-                    print(f"  ⚠️ {nombre}: Evaluaciones inválidas o vacías")
+                    print(f"  ⚠️ {nombre}: JSON vacío o inválido")
             else:
-                print(f"  ⚠️ {nombre}: La respuesta no fue un array JSON")
+                print(f"  ⚠️ {nombre}: La respuesta no fue un array")
                 
-        except json.JSONDecodeError as e:
-            print(f"  💥 {nombre}: Error de formato JSON. Respuesta cruda: {response.text[:100]}")
+        except json.JSONDecodeError:
+            print(f"  💥 {nombre}: Error parseando JSON. Respuesta: {respuesta_raw[:100]}")
         except Exception as e:
             print(f"  💥 {nombre}: {str(e)[:100]}")
 
     tiempo_total = time.time() - inicio_total
-    print(f"🏁 Finalizado en {tiempo_total:.1f}s. Total criterios evaluados: {total_evaluados}")
+    print(f"🏁 Finalizado en {tiempo_total:.1f}s. Total: {total_evaluados}")
 
     if total_evaluados == 0:
-        return {"error": "La IA no pudo evaluar ningún criterio. Revisa el formato del documento o la conexión."}
+        return {"error": "La IA no evaluó ningún criterio."}
 
     return {
         "propuestaId": propuesta_id,
