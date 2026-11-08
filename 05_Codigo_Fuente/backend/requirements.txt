@@ -15,5 +15,5 @@ boto3>=1.34.0
 requests>=2.31.0
 httpx>=0.27.2
 python-docx
-google-generativeai
+google-generativeai>=0.7.0
 pdfplumber

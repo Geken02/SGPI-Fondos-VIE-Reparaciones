@@ -20,7 +20,7 @@ if not GEMINI_API_KEY:
 
 genai.configure(api_key=GEMINI_API_KEY)
 # Usamos 1.5 Flash por su velocidad y ventana de contexto de 1 millón de tokens
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
 RUBRICAS_POR_MODALIDAD = {
     "fortalecimiento": RUBRICA_FORTALECIMIENTO,
