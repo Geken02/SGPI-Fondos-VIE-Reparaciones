@@ -6,7 +6,11 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 from src.utils.s3_client import s3_client, S3_BUCKET_NAME
+from src.database import SessionLocal
+from src.models.propuesta_documentos import PropuestaDocumentos
 import os
+import hashlib
+from datetime import datetime, timezone
 
 def set_cell_shading(cell, color):
     """Aplica color de fondo a una celda."""
@@ -619,25 +623,64 @@ def crear_documento():
     # Guardar
     nombre_local = "Form-04_Completo.docx"
     doc.save(nombre_local)
-    print(f"✅ Documento generado: {nombre_local}")
+    print(f"✅ Documento generado localmente: {nombre_local}")
     return nombre_local
 
-def subir_a_seaweed(ruta_local):
-    ruta_s3 = "propuestas/2/Form-04.docx"
-    print(f"⬆Subiendo a SeaweedFS: {ruta_s3} ...")
+def subir_y_guardar_en_bd(ruta_local):
+    # Cambiado a la propuesta 13 para tus pruebas
+    ruta_s3 = "propuestas/13/Form-04.docx"
+    print(f"⬆ Subiendo a Supabase Storage: {ruta_s3} ...")
     
     try:
+        # 1. Subir el archivo a Supabase
         s3_client.upload_file(
             ruta_local, 
             S3_BUCKET_NAME, 
             ruta_s3, 
             ExtraArgs={"ContentType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
         )
-        print("✅ ¡Subido exitosamente a SeaweedFS!")
+        print("✅ ¡Archivo subido exitosamente a Supabase Storage!")
+        
+        # 2. Calcular tamaño y checksum del archivo local
+        with open(ruta_local, "rb") as f:
+            contenido = f.read()
+            tamanio_bytes = len(contenido)
+            checksum = hashlib.sha256(contenido).hexdigest()
+        
+        # 3. Construir la URL pública (ajusta 'uuhejjfivuwphsahpqhf' si tu project ref es otro)
+        url_publica = f"https://uuhejjfivuwphsahpqhf.supabase.co/storage/v1/object/public/{S3_BUCKET_NAME}/{ruta_s3}"
+        
+        # 4. Insertar el registro en la base de datos
+        sesion = SessionLocal()
+        try:
+            nuevo_documento = PropuestaDocumentos(
+                propuestaId=13,               # La propuesta de prueba
+                tipoDocumentoId=1,            # 1 = Formulario 04
+                rutaArchivo=url_publica,      # URL pública del archivo
+                nombreArchivo="Form-04_Completo.docx",
+                tamanioBytes=tamanio_bytes,
+                checksum=checksum,
+                usuarioCargaId=1,             # ID de usuario de prueba (ajusta si es necesario)
+                activo=True,
+                usuarioAuditoriaId=1,
+                ultimaAuditoria=datetime.now(timezone.utc)
+            )
+            sesion.add(nuevo_documento)
+            sesion.commit()
+            print("✅ ¡Registro guardado exitosamente en la base de datos!")
+        except Exception as e:
+            sesion.rollback()
+            print(f"❌ Error al guardar en la base de datos: {e}")
+        finally:
+            sesion.close()
+            
+        # 5. Limpiar el archivo local
         os.remove(ruta_local)
+        print("🧹 Archivo local eliminado.")
+        
     except Exception as e:
-        print(f"❌ Error al subir: {e}")
+        print(f"❌ Error durante el proceso: {e}")
 
 if __name__ == "__main__":
     archivo = crear_documento()
-    subir_a_seaweed(archivo)
+    subir_y_guardar_en_bd(archivo)
