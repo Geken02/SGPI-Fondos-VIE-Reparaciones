@@ -16,8 +16,11 @@ export const comiteTecnicoService = {
   asignarEvaluadores: (propuestaId, data) => 
     api.post(`/api/comite-tecnico/asistente/${propuestaId}/asignar-evaluadores`, data),
 
-  obtenerPropuestasAsignadas: (params = {}) => 
-    api.get('/api/comite-tecnico/asistente/propuestas-asignadas', { params }),
+  obtenerPropuestasAsignadas: async (busqueda = '') => {
+    const params = busqueda ? `?busqueda=${encodeURIComponent(busqueda)}` : '';
+    const response = await api.get(`/api/comite-tecnico/propuestas-asignadas${params}`);
+    return response.data;
+  },
 
     // Aprobar completitud (Asistente)
   aprobarCompletitud: (propuestaId) => 

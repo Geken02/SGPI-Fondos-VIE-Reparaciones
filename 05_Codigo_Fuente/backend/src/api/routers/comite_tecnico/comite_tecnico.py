@@ -162,27 +162,71 @@ def aprobar_completitud(
         
     return {"message": "Completitud aprobada. Propuesta enviada al Coordinador."}
 
-
-@router.get("/asistente/propuestas-asignadas")
+@router.get("/propuestas-asignadas")
 def propuestas_asignadas(
     busqueda: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(obtener_usuario_actual)
 ):
+    """
+    Endpoint inteligente que adapta la respuesta según el rol:
+    - Asistente/Coordinador: Ve TODAS las propuestas del comité
+    - Evaluador: Ve SOLO sus asignaciones
+    """
     try:
+        # 1. Detectar el rol del usuario
+        from src.models.roles import UsuarioRol, RolesSistema
         
-        codigos_estado_comite = ["EN_COMITE", "EN_EVALUACION"]
-        estados_comite = db.query(EstadosPropuesta).filter(
-            EstadosPropuesta.codigoEstadoPropuesta.in_(codigos_estado_comite)
-        ).all()
+        rol_usuario = None
+        rol_asignado = db.query(UsuarioRol).filter(
+            UsuarioRol.usuarioId == usuario.usuarioId,
+            UsuarioRol.activo == True
+        ).first()
         
-        if not estados_comite:
-            return {"items": [], "total": 0}
+        if rol_asignado:
+            rol_obj = db.query(RolesSistema).filter(
+                RolesSistema.rolId == rol_asignado.rolId
+            ).first()
+            rol_usuario = rol_obj.nombreRol if rol_obj else None
+        
+        # 2. Definir roles que pueden ver TODAS las propuestas (gestores)
+        roles_gestores = [
+            'AsistenteComiteTecnico',
+            'CoordinadorComiteTecnico',
+            'SuperAdministrador',
+            'Administrador'
+        ]
+        
+        es_gestor = rol_usuario in roles_gestores
+        
+        # 3. Filtrar según el rol
+        if es_gestor:
+            # GESTOR: Ver TODAS las propuestas en estados del comité
+            codigos_estado_comite = ["ENVIADA", "EN_REVISION", "SUBSANACION", "EN_COMITE", "EN_EVALUACION", "ASIGNADA"]
+            estados_comite = db.query(EstadosPropuesta).filter(
+                EstadosPropuesta.codigoEstadoPropuesta.in_(codigos_estado_comite)
+            ).all()
             
-        estado_ids = [e.estadoPropuestaId for e in estados_comite]
+            if not estados_comite:
+                return {"items": [], "total": 0}
+                
+            estado_ids = [e.estadoPropuestaId for e in estados_comite]
+            query = db.query(Propuesta).filter(Propuesta.estadoId.in_(estado_ids))
+            
+        else:
+            # EVALUADOR: Ver SOLO sus asignaciones activas
+            asignaciones = db.query(AsignacionComite).filter(
+                AsignacionComite.evaluadorId == usuario.usuarioId,
+                AsignacionComite.activo == True
+            ).all()
+            
+            if not asignaciones:
+                return {"items": [], "total": 0}
+            
+            propuesta_ids = [asig.propuestaId for asig in asignaciones]
+            query = db.query(Propuesta).filter(Propuesta.propuestaId.in_(propuesta_ids))
         
-        query = db.query(Propuesta).filter(Propuesta.estadoId.in_(estado_ids))
-        
+        # 4. Aplicar búsqueda si existe
         if busqueda:
             query = query.filter(Propuesta.titulo.ilike(f"%{busqueda}%") | Propuesta.codigoPropuesta.ilike(f"%{busqueda}%"))
         
@@ -190,24 +234,30 @@ def propuestas_asignadas(
         items = []
         
         for p in propuestas:
-            # 2. Buscar si YA tiene asignaciones (puede ser una lista vacía)
-            asignaciones = db.query(AsignacionComite).filter(
+            # 5. Buscar asignaciones de esta propuesta
+            asignaciones_propuesta = db.query(AsignacionComite).filter(
                 AsignacionComite.propuestaId == p.propuestaId,
                 AsignacionComite.activo == True
             ).all()
             
             evaluadores_nombres = []
-            for asig in asignaciones:
+            for asig in asignaciones_propuesta:
                 evaluador = db.query(Usuario).filter(Usuario.usuarioId == asig.evaluadorId).first()
                 if evaluador:
                     evaluadores_nombres.append(f"{evaluador.nombreUsuario} {evaluador.apellido1Usuario}")
             
-            # 3. Determinar el estado real de la evaluación
-            estado_eval = "Pendiente de asignación" if not asignaciones else "Pendiente de evaluación"
+            # 6. Determinar estado de evaluación
+            evaluacion = db.query(Evaluaciones).filter(
+                Evaluaciones.propuestaId == p.propuestaId,
+                Evaluaciones.evaluadorId == usuario.usuarioId
+            ).first()
             
-            ultima_evaluacion = db.query(Evaluaciones).filter(Evaluaciones.propuestaId == p.propuestaId).order_by(Evaluaciones.fechaEvaluacion.desc()).first()
-            if ultima_evaluacion and ultima_evaluacion.estadoEvaluacionId:
-                estado_obj = db.query(EstadosEvaluacion).filter(EstadosEvaluacion.estadoEvaluacionId == ultima_evaluacion.estadoEvaluacionId).first()
+            estado_eval = "Pendiente de asignación" if not asignaciones_propuesta else "Pendiente de evaluación"
+            
+            if evaluacion and evaluacion.estadoEvaluacionId:
+                estado_obj = db.query(EstadosEvaluacion).filter(
+                    EstadosEvaluacion.estadoEvaluacionId == evaluacion.estadoEvaluacionId
+                ).first()
                 if estado_obj:
                     estado_eval = estado_obj.nombreEstadoEvaluacion
             
@@ -220,7 +270,7 @@ def propuestas_asignadas(
                 "fechaAsignacion": p.fechaCreacion.isoformat() if p.fechaCreacion else None,
                 "estado": estado_eval
             })
-            
+        
         return {"items": items, "total": len(items)}
     except Exception as e:
         print(f"ERROR en propuestas_asignadas: {str(e)}")

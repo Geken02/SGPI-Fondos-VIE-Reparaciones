@@ -19,8 +19,7 @@ export default function PropuestasAsignadas() {
     try {
       setCargando(true);
       // El backend ya filtra según el rol del usuario autenticado
-      const response = await comiteTecnicoService.obtenerPropuestasAsignadas();
-      const data = response.data;
+     const data = await comiteTecnicoService.obtenerPropuestasAsignadas(busqueda);
       const lista = Array.isArray(data) ? data : (data.items || []);
       setPropuestas(lista);
     } catch (error) {
