@@ -358,12 +358,16 @@ const InvestigadorPropuestas = () => {
 
               // Evaluación de estado de subsanación real de la base de datos
               const subActiva = prop.subsanacionActiva;
+              // esSubsanacion: pendiente (1) o rechazada (3) — el investigador debe actuar
               const esSubsanacion = (
-                prop.estadoId === 10 || 
+                prop.estadoId === 10 ||
                 (prop.nombreEstado && prop.nombreEstado.toLowerCase().includes('subsan')) ||
-                (subActiva && subActiva.estadoSubsanacionId === 1)
+                (subActiva && (subActiva.estadoSubsanacionId === 1 || subActiva.estadoSubsanacionId === 3))
               );
+              // subRespondida: el investigador ya respondió (2), esperando que la gestora revise
               const subRespondida = subActiva && subActiva.estadoSubsanacionId === 2;
+              // subRechazada: la gestora rechazó la respuesta — mostrar motivo
+              const subRechazada = subActiva && subActiva.estadoSubsanacionId === 3;
 
               const estado = esSubsanacion
                 ? 'En Subsanación'
@@ -732,6 +736,15 @@ const InvestigadorPropuestas = () => {
                                 "{subActiva?.comentarioGestora || 'Favor revisar y corregir los siguientes puntos: 1. En F-02 Plan y Riesgos, aclarar las medidas de mitigación para el riesgo R2. 2. En F-03 Presupuesto, adjuntar las cotizaciones formales para las partidas de equipo y reactivos solicitados.'}"
                               </div>
                             </div>
+
+                            {/* Aviso si la respuesta anterior fue rechazada */}
+                            {subRechazada && subActiva?.comentarioResolucion && (
+                              <div style={{ margin: '12px 0', padding: '10px 14px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '6px', color: '#991b1b', fontSize: '13px' }}>
+                                <strong>⚠️ Respuesta rechazada por la Gestoría VIE:</strong>
+                                <div style={{ marginTop: '6px' }}>"{subActiva.comentarioResolucion}"</div>
+                                <div style={{ marginTop: '6px', color: '#7f1d1d', fontSize: '12px' }}>Debe corregir nuevamente y reenviar la propuesta.</div>
+                              </div>
+                            )}
 
                             {/* Panel de Acción para el Investigador */}
                             <div className="subsanacion-action-panel">

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session, aliased
 
 from src.models.escuelas import Escuela
 from src.models.propuestas import Propuesta
-from src.models.subsanaciones import EstadosSubsanacion, Subsanaciones
+from src.models.subsanaciones import EstadosSubsanacion, Subsanaciones, obtener_o_crear_estado_subsanacion
 from src.models.usuarios import Usuario
 from src.models.catalogos import AsignacionesGestora
 from src.services.vie.expediente_service import es_superadministrador, verificar_acceso_expediente
@@ -115,6 +115,11 @@ def crear_subsanacion(db: Session, codigo_propuesta: str, gestora_id: int, comen
             "de los requisitos."
         )
 
+    # Cambiar estado de la propuesta a EN_SUBSANACION (10)
+    estado_prop_sub = obtener_o_crear_estado_subsanacion(db)
+    if estado_prop_sub:
+        p.estadoId = estado_prop_sub.estadoPropuestaId
+
     sub = Subsanaciones(
         propuestaId=p.propuestaId,
         gestoraVIEId=gestora_id,
@@ -146,5 +151,24 @@ def resolver_subsanacion(db: Session, subsanacion_id: int, gestora_id: int, acci
     sub.estadoSubsanacionId = destino.estadoSubsanacionId
     sub.comentarioResolucion = comentario or None
     sub.fechaResolucion = datetime.now()
+
+    # Actualizar estado de la propuesta segun la accion
+    if propuesta is not None:
+        if accion == "ACEPTAR":
+            # Volver al estado EN_COMITE (4) o EN_VINCULACION (3) segun el flujo
+            from src.models.convocatorias import EstadosPropuesta
+            estado_comite = db.query(EstadosPropuesta).filter(
+                EstadosPropuesta.codigoEstadoPropuesta == "EN_COMITE"
+            ).first()
+            if estado_comite:
+                propuesta.estadoId = estado_comite.estadoPropuestaId
+            else:
+                propuesta.estadoId = 4  # fallback
+        else:  # RECHAZAR
+            # Mantener en EN_SUBSANACION (10) para que el investigador corrija de nuevo
+            estado_prop_sub = obtener_o_crear_estado_subsanacion(db)
+            if estado_prop_sub:
+                propuesta.estadoId = estado_prop_sub.estadoPropuestaId
+
     db.commit()
     return _fila_por_id(db, subsanacion_id)

@@ -897,8 +897,10 @@ def solicitar_subsanacion(
     if not propuesta:
         raise HTTPException(status_code=404, detail="Propuesta no encontrada")
 
-    # Cambiar estado de propuesta a 10: 'En Subsanación'
-    propuesta.setEstadoId(10)
+    # Cambiar estado de propuesta a EN_SUBSANACION (10)
+    from src.models.subsanaciones import obtener_o_crear_estado_subsanacion
+    _estado_en_sub = obtener_o_crear_estado_subsanacion(db)
+    propuesta.setEstadoId(_estado_en_sub.estadoPropuestaId if _estado_en_sub else 10)
     propuesta.setUltimaAuditoria(datetime.now(timezone.utc))
 
     nueva_sub = Subsanaciones()
