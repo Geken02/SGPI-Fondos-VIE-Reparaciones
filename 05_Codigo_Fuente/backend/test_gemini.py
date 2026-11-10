@@ -1,50 +1,105 @@
 import requests
 import json
+import re
 
-print("="*60)
-print("🧪 PRUEBA DIRECTA DE API DE GEMINI (v3 - Anti-Timeout)")
-print("="*60)
+print("="*70)
+print(" PRUEBA LOCAL DE HUGGING FACE API (Gratis + Cloud)")
+print("="*70)
 
-api_key = input("\n1. Pega tu API Key de Google AI Studio: ").strip()
-if not api_key:
-    print("❌ No se proporcionó clave.")
+api_token = input("\n1. Pega tu API Token de Hugging Face (debe empezar con 'hf_'): ").strip()
+
+if not api_token:
+    print("❌ No se proporcionó token.")
     exit()
 
-base_url = "https://generativelanguage.googleapis.com/v1beta"
+if not api_token.startswith("hf_"):
+    print("️ ADVERTENCIA: El token debería empezar con 'hf_'. ¿Estás seguro de que es correcto?")
+    continuar = input("¿Deseas continuar de todos modos? (s/n): ")
+    if continuar.lower() != 's':
+        exit()
 
-# Lista de modelos a probar en orden de preferencia
-modelos_a_probar = ["gemini-3.8-flash", "gemini-1.5-flash", "gemini-flash-latest"]
+# Configuración
+model = "mistralai/Mistral-7B-Instruct-v0.2"
+api_url = f"https://api-inference.huggingface.co/models/{model}"
+headers = {
+    "Authorization": f"Bearer {api_token}",
+    "Content-Type": "application/json"
+}
 
-print("\n🔍 Probando generación de contenido (esto puede tardar unos segundos)...")
+print(f"\n🔍 Probando conexión con: {model}")
+print("⏳ Enviando petición (la primera vez puede tardar 20-30 segundos)...")
 
-for modelo in modelos_a_probar:
-    print(f"🔄 Intentando con: {modelo} ...")
-    generate_url = f"{base_url}/models/{modelo}:generateContent?key={api_key}"
-    
-    payload = {
-        "contents": [{"parts": [{"text": "Responde ÚNICAMENTE con la palabra: FUNCIONA"}]}],
-        "generationConfig": {"temperature": 0.1}
+# Prompt de prueba simple
+prompt = "<s>[INST] Responde ÚNICAMENTE con este JSON: {\"estado\": \"FUNCIONA\"} [/INST]"
+
+payload = {
+    "inputs": prompt,
+    "parameters": {
+        "temperature": 0.1,
+        "max_new_tokens": 50,
+        "return_full_text": False
     }
-    
-    headers = {"Content-Type": "application/json"}
-    
-    try:
-        # Aumentamos el timeout a 60 segundos para evitar cortes por lentitud de red
-        gen_response = requests.post(generate_url, json=payload, headers=headers, timeout=60)
-        
-        if gen_response.status_code == 200:
-            resultado = gen_response.json()
-            texto = resultado["candidates"][0]["content"]["parts"][0]["text"]
-            print(f"\n🎉 ¡ÉXITO TOTAL con el modelo: {modelo}!")
-            print(f"✅ La IA respondió: {texto.strip()}")
-            print(f"👉 INSTRUCCIÓN: Usa '{modelo}' en tu archivo ia_service.py")
-            exit() # Salimos del script porque ya funcionó
-        else:
-            print(f"   ⚠️ Falló con código {gen_response.status_code}: {gen_response.text[:100]}")
-            
-    except requests.exceptions.ReadTimeout:
-        print(f"   ⏱️ Timeout (la red tardó mucho). Probando siguiente modelo...")
-    except Exception as e:
-        print(f"   ❌ Error de red: {e}")
+}
 
-print("\n❌ Ningún modelo respondió a tiempo. Revisa tu conexión a internet, VPN o Firewall.")
+try:
+    response = requests.post(api_url, headers=headers, json=payload, timeout=60)
+    
+    if response.status_code == 503:
+        print("\n⏳ El modelo se está cargando en los servidores de Hugging Face.")
+        print("   Esto es normal la primera vez. Espera 30 segundos y vuelve a ejecutar el script.")
+        exit()
+    
+    if response.status_code != 200:
+        print(f"\n❌ ERROR de API (Código {response.status_code}):")
+        try:
+            error_data = response.json()
+            print(json.dumps(error_data, indent=2))
+        except:
+            print(response.text)
+        exit()
+    
+    # Procesar respuesta
+    data = response.json()
+    
+    if isinstance(data, list) and "generated_text" in data[0]:
+        texto_generado = data[0]["generated_text"]
+        print(f"\n✅ ¡Respuesta recibida!")
+        print(f"📝 Texto generado: {texto_generado.strip()}")
+        
+        # Intentar extraer y validar JSON
+        try:
+            # Buscar patrón JSON en la respuesta
+            match = re.search(r'\{[^}]*\}', texto_generado)
+            if match:
+                json_str = match.group(0)
+                json_validado = json.loads(json_str)
+                
+                print("\n" + "="*70)
+                print(" ¡ÉXITO TOTAL!")
+                print("="*70)
+                print(f"✅ Hugging Face API funciona correctamente.")
+                print(f"✅ JSON válido extraído: {json.dumps(json_validado)}")
+                print("\n👉 INSTRUCCIONES PARA RENDER:")
+                print(f"   1. Ve a Render → Environment Variables")
+                print(f"   2. Agrega: HF_API_TOKEN = {api_token[:10]}...")
+                print(f"   3. En tu ia_service.py, usa el modelo:")
+                print(f'      MODELO_ACTIVO = "{model}"')
+                print("="*70)
+            else:
+                print("\n⚠️ La respuesta no contiene un JSON claro, pero la API respondió.")
+                print("   Esto puede ser normal. El parser del código principal es más robusto.")
+                
+        except json.JSONDecodeError:
+            print("\n⚠️ La API respondió, pero el texto no es JSON válido.")
+            print("   Esto puede pasar si el modelo no siguió bien las instrucciones.")
+            print("   El código principal tiene un parser más robusto para manejar esto.")
+    else:
+        print(f"\n❌ Respuesta inesperada de la API:")
+        print(json.dumps(data, indent=2))
+        
+except requests.exceptions.Timeout:
+    print("\n❌ Timeout: La petición tardó más de 60 segundos.")
+    print("   Esto puede pasar si Hugging Face está cargando el modelo.")
+    print("   Espera unos minutos y vuelve a intentar.")
+except Exception as e:
+    print(f"\n❌ Error inesperado: {e}")

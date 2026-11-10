@@ -4,27 +4,27 @@ import time
 import json
 import re
 import os
-from openai import OpenAI
+import requests
 from src.utils.s3_client import s3_client, S3_BUCKET_NAME
 from src.services.comite_tecnico.rubricas_data import (
     RUBRICA_FORTALECIMIENTO, RUBRICA_BASICA_APLICADA, RUBRICA_DESARROLLO_TECNOLOGICO
 )
 
 # ============================================================================
-# CONFIGURACIÓN DE GROQ (Rápido, Gratis y Estable)
+# CONFIGURACIÓN DE HUGGING FACE (Gratis, Cloud, Sin Tarjeta)
 # ============================================================================
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-if not GROQ_API_KEY:
-    raise ValueError("⚠️ La variable de entorno GROQ_API_KEY no está configurada.")
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+if not HF_API_TOKEN:
+    raise ValueError("⚠️ La variable de entorno HF_API_TOKEN no está configurada.")
 
-# Cliente de OpenAI configurado para apuntar a los servidores de Groq
-client = OpenAI(
-    api_key=GROQ_API_KEY,
-    base_url="https://api.groq.com/openai/v1"
-)
+# Modelo gratuito y estable que no requiere aprobación de puerta (Gate) en HF
+MODELO_ACTIVO = "mistralai/Mistral-7B-Instruct-v0.2"
+HF_API_URL = f"https://api-inference.huggingface.co/models/{MODELO_ACTIVO}"
 
-# Modelo Llama 3 en Groq (extremadamente rápido y soporta JSON)
-MODELO_ACTIVO = "llama-3.3-70b-versatile"
+HEADERS = {
+    "Authorization": f"Bearer {HF_API_TOKEN}",
+    "Content-Type": "application/json"
+}
 
 RUBRICAS_POR_MODALIDAD = {
     "fortalecimiento": RUBRICA_FORTALECIMIENTO,
@@ -114,22 +114,48 @@ def obtener_rubrica_por_modalidad(tipo_modalidad: str) -> dict:
         if clave.lower() in tipo_lower or tipo_lower in clave.lower(): return rubrica
     return RUBRICA_BASICA_APLICADA
 
+def extraer_json_de_respuesta(texto: str) -> list:
+    """Extrae robustamente el array JSON de la respuesta, incluso si tiene markdown."""
+    # 1. Intentar encontrar un bloque de código JSON
+    match = re.search(r'```json\s*(\[[\s\S]*?\])\s*```', texto, re.IGNORECASE)
+    if match:
+        return json.loads(match.group(1))
+    
+    # 2. Intentar encontrar cualquier array JSON
+    match = re.search(r'\[\s*\{.*?\}\s*\]', texto, re.DOTALL)
+    if match:
+        return json.loads(match.group(0))
+        
+    # 3. Si falla, intentar parsear todo el texto (a veces lo devuelve limpio)
+    return json.loads(texto)
+
 def llamar_a_ia(prompt: str) -> str:
-    """Llama a Groq (Llama 3) de forma rápida y fiable."""
-    try:
-        response = client.chat.completions.create(
-            model=MODELO_ACTIVO,
-            messages=[
-                {"role": "system", "content": "Eres un evaluador experto de proyectos de investigación. Responde SIEMPRE en formato JSON válido, sin texto adicional ni markdown."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.2,
-            max_tokens=2000,
-            response_format={"type": "json_object"} # Fuerza la respuesta JSON
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        raise Exception(f"Error en la IA: {str(e)}")
+    """Llama a la API gratuita de Hugging Face."""
+    # Formato de chat específico para Mistral Instruct
+    mensajes = f"<s>[INST] Eres un evaluador experto de proyectos de investigación. Responde ÚNICAMENTE con un array JSON válido, sin texto adicional, sin markdown, sin explicaciones.\n\n{prompt} [/INST]"
+    
+    payload = {
+        "inputs": mensajes,
+        "parameters": {
+            "temperature": 0.1,
+            "max_new_tokens": 1500,
+            "return_full_text": False
+        }
+    }
+    
+    # La primera vez que se llama a un modelo inactivo en HF, puede tardar ~20-30s en "despertar"
+    response = requests.post(HF_API_URL, headers=HEADERS, json=payload, timeout=60)
+    
+    if response.status_code == 503:
+        raise Exception("El modelo se está cargando en Hugging Face. Espera 30 segundos y vuelve a intentar.")
+    elif response.status_code != 200:
+        raise Exception(f"Error de API {response.status_code}: {response.text}")
+        
+    resultado = response.json()
+    if isinstance(resultado, list) and "generated_text" in resultado[0]:
+        return resultado[0]["generated_text"]
+    
+    raise Exception(f"Respuesta inesperada de HF: {resultado}")
 
 def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, criterios_reales_por_seccion: dict = None) -> dict:
     inicio_total = time.time()
@@ -137,7 +163,7 @@ def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, c
     total_evaluados = 0
     
     print(f"\n{'='*60}")
-    print(f"🤖 INICIANDO ANÁLISIS (Groq - Llama 3) para propuesta {propuesta_id}")
+    print(f"🤖 INICIANDO ANÁLISIS (Hugging Face - Mistral 7B) para propuesta {propuesta_id}")
     
     rubrica = obtener_rubrica_por_modalidad(tipo_modalidad)
     print(f"📚 Rúbrica: {rubrica['nombre']}")
@@ -174,21 +200,16 @@ CRITERIOS (Usa estos nombres EXACTOS):
 INSTRUCCIONES:
 1. Asigna puntaje (0, 6, 8, o 10) y nivel (Deficiente, Regular, Bueno, Excelente).
 2. Justificación breve (1-2 frases).
-3. Responde SOLO con un array JSON dentro de un objeto. Exactamente {len(criterios)} objetos.
+3. Responde SOLO con un array JSON. Exactamente {len(criterios)} objetos.
 
 Formato JSON requerido:
-{{
-  "evaluaciones": [
-    {{"criterio": "Nombre exacto", "puntaje": 8, "nivel": "Bueno", "justificacion": "Frase."}}
-  ]
-}}"""
+[
+  {{"criterio": "Nombre exacto", "puntaje": 8, "nivel": "Bueno", "justificacion": "Frase."}}
+]"""
 
         try:
             respuesta_raw = llamar_a_ia(prompt)
-            data = json.loads(respuesta_raw)
-            
-            # Groq a veces envuelve el array en un objeto "evaluaciones" por el response_format
-            evaluaciones = data.get("evaluaciones", data) if isinstance(data, dict) else data
+            evaluaciones = extraer_json_de_respuesta(respuesta_raw)
             
             if isinstance(evaluaciones, list):
                 evaluaciones_validas = [
@@ -206,12 +227,12 @@ Formato JSON requerido:
                     total_evaluados += len(evaluaciones_validas)
                     print(f"  ✅ {nombre}: {len(evaluaciones_validas)} criterios")
                 else:
-                    print(f"  ⚠️ {nombre}: JSON vacío o inválido")
+                    print(f"  ⚠️ {nombre}: JSON vacío o inválido. Respuesta: {respuesta_raw[:100]}")
             else:
                 print(f"  ⚠️ {nombre}: La respuesta no fue un array")
                 
         except json.JSONDecodeError:
-            print(f"  💥 {nombre}: Error parseando JSON. Respuesta: {respuesta_raw[:100]}")
+            print(f"  💥 {nombre}: Error parseando JSON. Respuesta: {respuesta_raw[:150]}")
         except Exception as e:
             print(f"  💥 {nombre}: {str(e)[:100]}")
 
