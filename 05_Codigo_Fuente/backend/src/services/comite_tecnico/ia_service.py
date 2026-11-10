@@ -24,7 +24,7 @@ client = OpenAI(
 )
 
 # Modelo Llama 3 en Groq (extremadamente rápido y soporta JSON)
-MODELO_ACTIVO = "llama-3.1-70b-versatile"
+MODELO_ACTIVO = "llama-3.3-70b-versatile"
 
 RUBRICAS_POR_MODALIDAD = {
     "fortalecimiento": RUBRICA_FORTALECIMIENTO,
