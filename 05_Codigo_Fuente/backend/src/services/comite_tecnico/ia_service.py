@@ -115,20 +115,57 @@ def obtener_rubrica_por_modalidad(tipo_modalidad: str) -> dict:
         if clave.lower() in tipo_lower or tipo_lower in clave.lower(): return rubrica
     return RUBRICA_BASICA_APLICADA
 
-def extraer_json_de_respuesta(texto: str) -> list:
-    """Extrae robustamente el array JSON de la respuesta, ignorando texto extra."""
-    # 1. Buscar bloque de código markdown
-    match = re.search(r'```json\s*(\[[\s\S]*?\])\s*```', texto, re.IGNORECASE)
-    if match:
-        return json.loads(match.group(1))
+def extraer_json_de_respuesta(respuesta) -> list:
+    """
+    Extrae robustamente el array JSON de la respuesta.
+    Maneja casos donde la respuesta ya es una lista, un string con JSON, o texto con markdown.
+    """
+    # 1. Si ya es una lista, devuélvela directamente
+    if isinstance(respuesta, list):
+        return respuesta
     
-    # 2. Buscar cualquier array que empiece con [ y termine con ]
-    match = re.search(r'\[\s*\{.*?\}\s*\]', texto, re.DOTALL)
-    if match:
-        return json.loads(match.group(0))
+    # 2. Si es un diccionario que contiene una lista bajo la clave "evaluaciones" o similar
+    if isinstance(respuesta, dict):
+        if "evaluaciones" in respuesta and isinstance(respuesta["evaluaciones"], list):
+            return respuesta["evaluaciones"]
+        for key, value in respuesta.items():
+            if isinstance(value, list):
+                return value
+    
+    # 3. Si es un string, procesarlo
+    if isinstance(respuesta, str):
+        texto = respuesta.strip()
         
-    # 3. Intento directo
-    return json.loads(texto)
+        # Intentar 1: Buscar bloque de código markdown ```json ... ```
+        match = re.search(r'```json\s*(\[[\s\S]*?\])\s*```', texto, re.IGNORECASE)
+        if match:
+            try:
+                return json.loads(match.group(1))
+            except json.JSONDecodeError:
+                pass
+        
+        # Intentar 2: Buscar cualquier array que empiece con [ y termine con ]
+        match = re.search(r'\[\s*\{.*?\}\s*\]', texto, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group(0))
+            except json.JSONDecodeError:
+                pass
+        
+        # Intentar 3: Parsear todo el string directamente
+        try:
+            parsed = json.loads(texto)
+            if isinstance(parsed, list):
+                return parsed
+            elif isinstance(parsed, dict):
+                for value in parsed.values():
+                    if isinstance(value, list):
+                        return value
+        except json.JSONDecodeError:
+            pass
+    
+    print(f"⚠️ No se pudo extraer JSON de: {str(respuesta)[:200]}")
+    return []
 
 def llamar_a_ia(prompt: str) -> str:
     """Llama a Cloudflare Workers AI."""
@@ -167,12 +204,14 @@ def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, c
     rubrica = obtener_rubrica_por_modalidad(tipo_modalidad)
     print(f"📚 Rúbrica: {rubrica['nombre']}")
     
+    # 1. Extraer texto completo del documento
     try:
         texto_completo = extraer_texto_documento(f"propuestas/{propuesta_id}/Form-04.docx")
         print(f"📏 Texto extraído: {len(texto_completo)} caracteres")
     except Exception as e:
         return {"error": f"No se pudo leer el documento: {str(e)}"}
 
+    # 2. Iterar por cada sección de la rúbrica
     for seccion in rubrica["secciones"]:
         nombre = seccion["nombre"]
         seccion_id = seccion["id"]
@@ -210,7 +249,7 @@ Formato JSON requerido:
             respuesta_raw = llamar_a_ia(prompt)
             evaluaciones = extraer_json_de_respuesta(respuesta_raw)
             
-            if isinstance(evaluaciones, list):
+            if isinstance(evaluaciones, list) and len(evaluaciones) > 0:
                 evaluaciones_validas = [
                     ev for ev in evaluaciones 
                     if isinstance(ev, dict) 
@@ -226,14 +265,12 @@ Formato JSON requerido:
                     total_evaluados += len(evaluaciones_validas)
                     print(f"  ✅ {nombre}: {len(evaluaciones_validas)} criterios")
                 else:
-                    print(f"  ⚠️ {nombre}: JSON vacío o inválido. Respuesta: {respuesta_raw[:100]}")
+                    print(f"  ⚠️ {nombre}: JSON vacío o inválido. Respuesta: {str(respuesta_raw)[:100]}")
             else:
-                print(f"  ⚠️ {nombre}: La respuesta no fue un array")
+                print(f"  ⚠️ {nombre}: La respuesta no fue un array válido. Respuesta: {str(respuesta_raw)[:100]}")
                 
-        except json.JSONDecodeError:
-            print(f"  💥 {nombre}: Error parseando JSON. Respuesta: {respuesta_raw[:150]}")
         except Exception as e:
-            print(f"  💥 {nombre}: {str(e)[:100]}")
+            print(f"  💥 {nombre}: Error inesperado: {str(e)[:100]}")
 
     tiempo_total = time.time() - inicio_total
     print(f"🏁 Finalizado en {tiempo_total:.1f}s. Total: {total_evaluados}")
