@@ -116,19 +116,16 @@ def obtener_rubrica_por_modalidad(tipo_modalidad: str) -> dict:
     return RUBRICA_BASICA_APLICADA
 
 def extraer_json_de_respuesta(respuesta) -> list:
-    """
-    Extrae robustamente el array JSON de la respuesta.
-    Maneja casos donde la respuesta ya es una lista, un string con JSON, o texto con markdown.
-    """
+    """Extrae robustamente el array JSON de la respuesta."""
     # 1. Si ya es una lista, devuélvela directamente
     if isinstance(respuesta, list):
         return respuesta
     
-    # 2. Si es un diccionario que contiene una lista bajo la clave "evaluaciones" o similar
+    # 2. Si es un diccionario, busca la lista dentro
     if isinstance(respuesta, dict):
         if "evaluaciones" in respuesta and isinstance(respuesta["evaluaciones"], list):
             return respuesta["evaluaciones"]
-        for key, value in respuesta.items():
+        for value in respuesta.values():
             if isinstance(value, list):
                 return value
     
@@ -136,7 +133,7 @@ def extraer_json_de_respuesta(respuesta) -> list:
     if isinstance(respuesta, str):
         texto = respuesta.strip()
         
-        # Intentar 1: Buscar bloque de código markdown ```json ... ```
+        # Intento 1: Buscar bloque de código markdown ```json ... ```
         match = re.search(r'```json\s*(\[[\s\S]*?\])\s*```', texto, re.IGNORECASE)
         if match:
             try:
@@ -144,15 +141,18 @@ def extraer_json_de_respuesta(respuesta) -> list:
             except json.JSONDecodeError:
                 pass
         
-        # Intentar 2: Buscar cualquier array que empiece con [ y termine con ]
-        match = re.search(r'\[\s*\{.*?\}\s*\]', texto, re.DOTALL)
-        if match:
+        # Intento 2: Buscar el PRIMER '[' y el ÚLTIMO ']' (Mucho más robusto)
+        start_idx = texto.find('[')
+        end_idx = texto.rfind(']')
+        
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            json_str = texto[start_idx:end_idx+1]
             try:
-                return json.loads(match.group(0))
+                return json.loads(json_str)
             except json.JSONDecodeError:
                 pass
         
-        # Intentar 3: Parsear todo el string directamente
+        # Intento 3: Parsear todo el string directamente
         try:
             parsed = json.loads(texto)
             if isinstance(parsed, list):
@@ -179,7 +179,8 @@ def llamar_a_ia(prompt: str) -> str:
                 "role": "user", 
                 "content": prompt
             }
-        ]
+        ],
+        "max_tokens": 2000 
     }
     
     response = requests.post(CF_API_URL, headers=HEADERS, json=payload, timeout=60)
