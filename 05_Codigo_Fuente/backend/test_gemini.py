@@ -1,105 +1,57 @@
 import requests
 import json
-import re
 
 print("="*70)
-print(" PRUEBA LOCAL DE HUGGING FACE API (Gratis + Cloud)")
+print("🧪 PRUEBA LOCAL DE CLOUDFLARE WORKERS AI (100% Gratis, Sin Tarjeta)")
 print("="*70)
 
-api_token = input("\n1. Pega tu API Token de Hugging Face (debe empezar con 'hf_'): ").strip()
+account_id = input("\n1. Pega tu Account ID de Cloudflare: ").strip()
+api_token = input("2. Pega tu API Token de Cloudflare: ").strip()
 
-if not api_token:
-    print("❌ No se proporcionó token.")
+if not account_id or not api_token:
+    print("❌ Faltan datos.")
     exit()
 
-if not api_token.startswith("hf_"):
-    print("️ ADVERTENCIA: El token debería empezar con 'hf_'. ¿Estás seguro de que es correcto?")
-    continuar = input("¿Deseas continuar de todos modos? (s/n): ")
-    if continuar.lower() != 's':
-        exit()
+# Modelo gratuito de Cloudflare (Llama 3 8B)
+model = "@cf/meta/llama-3.1-8b-instruct"
+url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model}"
 
-# Configuración
-model = "mistralai/Mistral-7B-Instruct-v0.2"
-api_url = f"https://api-inference.huggingface.co/models/{model}"
 headers = {
     "Authorization": f"Bearer {api_token}",
     "Content-Type": "application/json"
 }
 
-print(f"\n🔍 Probando conexión con: {model}")
-print("⏳ Enviando petición (la primera vez puede tardar 20-30 segundos)...")
-
-# Prompt de prueba simple
-prompt = "<s>[INST] Responde ÚNICAMENTE con este JSON: {\"estado\": \"FUNCIONA\"} [/INST]"
-
 payload = {
-    "inputs": prompt,
-    "parameters": {
-        "temperature": 0.1,
-        "max_new_tokens": 50,
-        "return_full_text": False
-    }
+    "messages": [
+        {"role": "system", "content": "Responde ÚNICAMENTE con este JSON: {\"estado\": \"FUNCIONA\"}"},
+        {"role": "user", "content": "Hola"}
+    ]
 }
 
+print(f"\n🔍 Probando conexión con Cloudflare...")
+print("⏳ Enviando petición...")
+
 try:
-    response = requests.post(api_url, headers=headers, json=payload, timeout=60)
+    response = requests.post(url, headers=headers, json=payload, timeout=30)
     
-    if response.status_code == 503:
-        print("\n⏳ El modelo se está cargando en los servidores de Hugging Face.")
-        print("   Esto es normal la primera vez. Espera 30 segundos y vuelve a ejecutar el script.")
-        exit()
-    
-    if response.status_code != 200:
-        print(f"\n❌ ERROR de API (Código {response.status_code}):")
-        try:
-            error_data = response.json()
-            print(json.dumps(error_data, indent=2))
-        except:
-            print(response.text)
-        exit()
-    
-    # Procesar respuesta
-    data = response.json()
-    
-    if isinstance(data, list) and "generated_text" in data[0]:
-        texto_generado = data[0]["generated_text"]
-        print(f"\n✅ ¡Respuesta recibida!")
-        print(f"📝 Texto generado: {texto_generado.strip()}")
-        
-        # Intentar extraer y validar JSON
-        try:
-            # Buscar patrón JSON en la respuesta
-            match = re.search(r'\{[^}]*\}', texto_generado)
-            if match:
-                json_str = match.group(0)
-                json_validado = json.loads(json_str)
-                
-                print("\n" + "="*70)
-                print(" ¡ÉXITO TOTAL!")
-                print("="*70)
-                print(f"✅ Hugging Face API funciona correctamente.")
-                print(f"✅ JSON válido extraído: {json.dumps(json_validado)}")
-                print("\n👉 INSTRUCCIONES PARA RENDER:")
-                print(f"   1. Ve a Render → Environment Variables")
-                print(f"   2. Agrega: HF_API_TOKEN = {api_token[:10]}...")
-                print(f"   3. En tu ia_service.py, usa el modelo:")
-                print(f'      MODELO_ACTIVO = "{model}"')
-                print("="*70)
-            else:
-                print("\n⚠️ La respuesta no contiene un JSON claro, pero la API respondió.")
-                print("   Esto puede ser normal. El parser del código principal es más robusto.")
-                
-        except json.JSONDecodeError:
-            print("\n⚠️ La API respondió, pero el texto no es JSON válido.")
-            print("   Esto puede pasar si el modelo no siguió bien las instrucciones.")
-            print("   El código principal tiene un parser más robusto para manejar esto.")
+    if response.status_code == 200:
+        data = response.json()
+        if data.get("success"):
+            contenido = data["result"]["response"]
+            print("\n" + "="*70)
+            print("🎉 ¡ÉXITO TOTAL!")
+            print("="*70)
+            print(f"✅ Cloudflare AI funciona correctamente.")
+            print(f"✅ Respuesta: {contenido.strip()}")
+            print("\n👉 INSTRUCCIONES PARA RENDER:")
+            print(f"   1. Agrega variable: CF_ACCOUNT_ID = {account_id}")
+            print(f"   2. Agrega variable: CF_API_TOKEN = {api_token[:15]}...")
+            print("="*70)
+        else:
+            print(f"\n❌ Error de Cloudflare: {data.get('errors')}")
     else:
-        print(f"\n❌ Respuesta inesperada de la API:")
-        print(json.dumps(data, indent=2))
+        print(f"\n❌ ERROR HTTP {response.status_code}:")
+        print(response.text)
         
-except requests.exceptions.Timeout:
-    print("\n❌ Timeout: La petición tardó más de 60 segundos.")
-    print("   Esto puede pasar si Hugging Face está cargando el modelo.")
-    print("   Espera unos minutos y vuelve a intentar.")
 except Exception as e:
-    print(f"\n❌ Error inesperado: {e}")
+    print(f"\n❌ Error de red: {e}")

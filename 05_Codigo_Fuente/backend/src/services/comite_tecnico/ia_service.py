@@ -11,18 +11,19 @@ from src.services.comite_tecnico.rubricas_data import (
 )
 
 # ============================================================================
-# CONFIGURACIÓN DE HUGGING FACE (Gratis, Cloud, Sin Tarjeta)
+# CONFIGURACIÓN DE CLOUDFLARE WORKERS AI (100% Gratis, Sin Tarjeta, Cloud)
 # ============================================================================
-HF_API_TOKEN = os.getenv("HF_API_TOKEN")
-if not HF_API_TOKEN:
-    raise ValueError("⚠️ La variable de entorno HF_API_TOKEN no está configurada.")
+CF_ACCOUNT_ID = os.getenv("CF_ACCOUNT_ID")
+CF_API_TOKEN = os.getenv("CF_API_TOKEN")
 
-# Modelo gratuito y estable que no requiere aprobación de puerta (Gate) en HF
-MODELO_ACTIVO = "mistralai/Mistral-7B-Instruct-v0.2"
-HF_API_URL = f"https://api-inference.huggingface.co/models/{MODELO_ACTIVO}"
+if not CF_ACCOUNT_ID or not CF_API_TOKEN:
+    raise ValueError("⚠️ Faltan las variables CF_ACCOUNT_ID o CF_API_TOKEN en Render.")
+
+MODELO_ACTIVO = "@cf/meta/llama-3.1-8b-instruct"
+CF_API_URL = f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/ai/run/{MODELO_ACTIVO}"
 
 HEADERS = {
-    "Authorization": f"Bearer {HF_API_TOKEN}",
+    "Authorization": f"Bearer {CF_API_TOKEN}",
     "Content-Type": "application/json"
 }
 
@@ -115,47 +116,45 @@ def obtener_rubrica_por_modalidad(tipo_modalidad: str) -> dict:
     return RUBRICA_BASICA_APLICADA
 
 def extraer_json_de_respuesta(texto: str) -> list:
-    """Extrae robustamente el array JSON de la respuesta, incluso si tiene markdown."""
-    # 1. Intentar encontrar un bloque de código JSON
+    """Extrae robustamente el array JSON de la respuesta, ignorando texto extra."""
+    # 1. Buscar bloque de código markdown
     match = re.search(r'```json\s*(\[[\s\S]*?\])\s*```', texto, re.IGNORECASE)
     if match:
         return json.loads(match.group(1))
     
-    # 2. Intentar encontrar cualquier array JSON
+    # 2. Buscar cualquier array que empiece con [ y termine con ]
     match = re.search(r'\[\s*\{.*?\}\s*\]', texto, re.DOTALL)
     if match:
         return json.loads(match.group(0))
         
-    # 3. Si falla, intentar parsear todo el texto (a veces lo devuelve limpio)
+    # 3. Intento directo
     return json.loads(texto)
 
 def llamar_a_ia(prompt: str) -> str:
-    """Llama a la API gratuita de Hugging Face."""
-    # Formato de chat específico para Mistral Instruct
-    mensajes = f"<s>[INST] Eres un evaluador experto de proyectos de investigación. Responde ÚNICAMENTE con un array JSON válido, sin texto adicional, sin markdown, sin explicaciones.\n\n{prompt} [/INST]"
-    
+    """Llama a Cloudflare Workers AI."""
     payload = {
-        "inputs": mensajes,
-        "parameters": {
-            "temperature": 0.1,
-            "max_new_tokens": 1500,
-            "return_full_text": False
-        }
+        "messages": [
+            {
+                "role": "system", 
+                "content": "Eres un evaluador experto de proyectos de investigación. Tu ÚNICA tarea es devolver un array JSON válido. NO incluyas texto adicional, NO uses markdown, NO expliques nada. Solo el array JSON."
+            },
+            {
+                "role": "user", 
+                "content": prompt
+            }
+        ]
     }
     
-    # La primera vez que se llama a un modelo inactivo en HF, puede tardar ~20-30s en "despertar"
-    response = requests.post(HF_API_URL, headers=HEADERS, json=payload, timeout=60)
+    response = requests.post(CF_API_URL, headers=HEADERS, json=payload, timeout=60)
     
-    if response.status_code == 503:
-        raise Exception("El modelo se está cargando en Hugging Face. Espera 30 segundos y vuelve a intentar.")
-    elif response.status_code != 200:
+    if response.status_code != 200:
         raise Exception(f"Error de API {response.status_code}: {response.text}")
         
-    resultado = response.json()
-    if isinstance(resultado, list) and "generated_text" in resultado[0]:
-        return resultado[0]["generated_text"]
+    data = response.json()
+    if data.get("success"):
+        return data["result"]["response"]
     
-    raise Exception(f"Respuesta inesperada de HF: {resultado}")
+    raise Exception(f"Cloudflare falló: {data.get('errors')}")
 
 def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, criterios_reales_por_seccion: dict = None) -> dict:
     inicio_total = time.time()
@@ -163,7 +162,7 @@ def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, c
     total_evaluados = 0
     
     print(f"\n{'='*60}")
-    print(f"🤖 INICIANDO ANÁLISIS (Hugging Face - Mistral 7B) para propuesta {propuesta_id}")
+    print(f"🤖 INICIANDO ANÁLISIS (Cloudflare AI - Llama 3.1) para propuesta {propuesta_id}")
     
     rubrica = obtener_rubrica_por_modalidad(tipo_modalidad)
     print(f"📚 Rúbrica: {rubrica['nombre']}")
@@ -191,10 +190,10 @@ def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, c
         criterios_lista = "\n".join([f"  - {c}" for c in criterios])
         
         prompt = f"""SECCIÓN A EVALUAR: {nombre}
-CONTENIDO:
+CONTENIDO DEL FORMULARIO:
 {texto_seccion}
 
-CRITERIOS (Usa estos nombres EXACTOS):
+CRITERIOS A EVALUAR (Usa estos nombres EXACTOS):
 {criterios_lista}
 
 INSTRUCCIONES:
