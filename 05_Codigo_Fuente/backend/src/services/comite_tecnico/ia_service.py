@@ -4,29 +4,27 @@ import time
 import json
 import re
 import os
-import requests
+from openai import OpenAI
 from src.utils.s3_client import s3_client, S3_BUCKET_NAME
 from src.services.comite_tecnico.rubricas_data import (
     RUBRICA_FORTALECIMIENTO, RUBRICA_BASICA_APLICADA, RUBRICA_DESARROLLO_TECNOLOGICO
 )
 
 # ============================================================================
-# CONFIGURACIÓN: Detecta automáticamente el modelo disponible
+# CONFIGURACIÓN DE GROQ (Rápido, Gratis y Estable)
 # ============================================================================
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-def obtener_modelo_disponible():
-    """Determina el modelo más estable para usar."""
-    # Basado en tu prueba local, este es el modelo que tu clave acepta correctamente
-    # Render no sufrirá los timeouts de tu red local.
-    return "gemini-flash-latest"
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    raise ValueError("⚠️ La variable de entorno GROQ_API_KEY no está configurada.")
 
-# Obtener el modelo automáticamente al cargar el módulo
-MODELO_ACTIVO = obtener_modelo_disponible()
-# Usar v1beta que es donde están los modelos nuevos
-GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODELO_ACTIVO}:generateContent?key={GEMINI_API_KEY}"
+# Cliente de OpenAI configurado para apuntar a los servidores de Groq
+client = OpenAI(
+    api_key=GROQ_API_KEY,
+    base_url="https://api.groq.com/openai/v1"
+)
 
-print(f"\n🎯 Modelo seleccionado: {MODELO_ACTIVO}")
-print(f"🔗 URL: {GEMINI_URL}\n")
+# Modelo Llama 3 en Groq (extremadamente rápido y soporta JSON)
+MODELO_ACTIVO = "llama-3.1-70b-versatile"
 
 RUBRICAS_POR_MODALIDAD = {
     "fortalecimiento": RUBRICA_FORTALECIMIENTO,
@@ -116,26 +114,22 @@ def obtener_rubrica_por_modalidad(tipo_modalidad: str) -> dict:
         if clave.lower() in tipo_lower or tipo_lower in clave.lower(): return rubrica
     return RUBRICA_BASICA_APLICADA
 
-def llamar_a_gemini(prompt: str) -> str:
-    """Llama directamente a la API REST de Google."""
-    if not GEMINI_API_KEY:
-        raise ValueError("La variable GEMINI_API_KEY no está configurada.")
-        
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "responseMimeType": "application/json",
-            "temperature": 0.2
-        }
-    }
-    
-    headers = {"Content-Type": "application/json"}
-    response = requests.post(GEMINI_URL, json=payload, headers=headers, timeout=60)
-    
-    if response.status_code != 200:
-        raise Exception(f"Error de API {response.status_code}: {response.text}")
-        
-    return response.json()["candidates"][0]["content"]["parts"][0]["text"]
+def llamar_a_ia(prompt: str) -> str:
+    """Llama a Groq (Llama 3) de forma rápida y fiable."""
+    try:
+        response = client.chat.completions.create(
+            model=MODELO_ACTIVO,
+            messages=[
+                {"role": "system", "content": "Eres un evaluador experto de proyectos de investigación. Responde SIEMPRE en formato JSON válido, sin texto adicional ni markdown."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.2,
+            max_tokens=2000,
+            response_format={"type": "json_object"} # Fuerza la respuesta JSON
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        raise Exception(f"Error en la IA: {str(e)}")
 
 def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, criterios_reales_por_seccion: dict = None) -> dict:
     inicio_total = time.time()
@@ -143,7 +137,7 @@ def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, c
     total_evaluados = 0
     
     print(f"\n{'='*60}")
-    print(f"🤖 INICIANDO ANÁLISIS ({MODELO_ACTIVO}) para propuesta {propuesta_id}")
+    print(f"🤖 INICIANDO ANÁLISIS (Groq - Llama 3) para propuesta {propuesta_id}")
     
     rubrica = obtener_rubrica_por_modalidad(tipo_modalidad)
     print(f"📚 Rúbrica: {rubrica['nombre']}")
@@ -170,9 +164,7 @@ def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, c
 
         criterios_lista = "\n".join([f"  - {c}" for c in criterios])
         
-        prompt = f"""Eres un evaluador experto de proyectos de investigación.
-
-SECCIÓN A EVALUAR: {nombre}
+        prompt = f"""SECCIÓN A EVALUAR: {nombre}
 CONTENIDO:
 {texto_seccion}
 
@@ -182,16 +174,21 @@ CRITERIOS (Usa estos nombres EXACTOS):
 INSTRUCCIONES:
 1. Asigna puntaje (0, 6, 8, o 10) y nivel (Deficiente, Regular, Bueno, Excelente).
 2. Justificación breve (1-2 frases).
-3. Responde SOLO con un array JSON. Exactamente {len(criterios)} objetos.
+3. Responde SOLO con un array JSON dentro de un objeto. Exactamente {len(criterios)} objetos.
 
-Formato JSON:
-[
-  {{"criterio": "Nombre exacto", "puntaje": 8, "nivel": "Bueno", "justificacion": "Frase."}}
-]"""
+Formato JSON requerido:
+{{
+  "evaluaciones": [
+    {{"criterio": "Nombre exacto", "puntaje": 8, "nivel": "Bueno", "justificacion": "Frase."}}
+  ]
+}}"""
 
         try:
-            respuesta_raw = llamar_a_gemini(prompt)
-            evaluaciones = json.loads(respuesta_raw)
+            respuesta_raw = llamar_a_ia(prompt)
+            data = json.loads(respuesta_raw)
+            
+            # Groq a veces envuelve el array en un objeto "evaluaciones" por el response_format
+            evaluaciones = data.get("evaluaciones", data) if isinstance(data, dict) else data
             
             if isinstance(evaluaciones, list):
                 evaluaciones_validas = [
