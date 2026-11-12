@@ -116,12 +116,12 @@ def obtener_rubrica_por_modalidad(tipo_modalidad: str) -> dict:
     return RUBRICA_BASICA_APLICADA
 
 def extraer_json_de_respuesta(respuesta) -> list:
-    """Extrae robustamente el array JSON de la respuesta."""
-    # 1. Si ya es una lista, devuélvela directamente
+    """Extrae JSON robustamente, manejando respuestas truncadas."""
+    # 1. Si ya es una lista, devuélvela
     if isinstance(respuesta, list):
         return respuesta
     
-    # 2. Si es un diccionario, busca la lista dentro
+    # 2. Si es un diccionario, busca la lista
     if isinstance(respuesta, dict):
         if "evaluaciones" in respuesta and isinstance(respuesta["evaluaciones"], list):
             return respuesta["evaluaciones"]
@@ -133,7 +133,7 @@ def extraer_json_de_respuesta(respuesta) -> list:
     if isinstance(respuesta, str):
         texto = respuesta.strip()
         
-        # Intento 1: Buscar bloque de código markdown ```json ... ```
+        # Intento 1: Buscar bloque markdown ```json ... ```
         match = re.search(r'```json\s*(\[[\s\S]*?\])\s*```', texto, re.IGNORECASE)
         if match:
             try:
@@ -141,7 +141,7 @@ def extraer_json_de_respuesta(respuesta) -> list:
             except json.JSONDecodeError:
                 pass
         
-        # Intento 2: Buscar el PRIMER '[' y el ÚLTIMO ']' (Mucho más robusto)
+        # Intento 2: Buscar el PRIMER '[' y el ÚLTIMO ']'
         start_idx = texto.find('[')
         end_idx = texto.rfind(']')
         
@@ -150,9 +150,17 @@ def extraer_json_de_respuesta(respuesta) -> list:
             try:
                 return json.loads(json_str)
             except json.JSONDecodeError:
-                pass
+                # Si falla, intentar reparar JSON truncado
+                # Buscar el último '}' completo antes del corte
+                last_complete_obj = json_str.rfind('}\n')
+                if last_complete_obj != -1:
+                    json_reparado = json_str[:last_complete_obj+1] + ']'
+                    try:
+                        return json.loads(json_reparado)
+                    except json.JSONDecodeError:
+                        pass
         
-        # Intento 3: Parsear todo el string directamente
+        # Intento 3: Parsear todo el string
         try:
             parsed = json.loads(texto)
             if isinstance(parsed, list):
@@ -180,10 +188,11 @@ def llamar_a_ia(prompt: str) -> str:
                 "content": prompt
             }
         ],
-        "max_tokens": 2000 
+        "max_tokens": 4000,  # Aumentado de 2000 a 4000
+        "stream": False  # Forzar respuesta completa, no streaming
     }
     
-    response = requests.post(CF_API_URL, headers=HEADERS, json=payload, timeout=60)
+    response = requests.post(CF_API_URL, headers=HEADERS, json=payload, timeout=90)  # Timeout aumentado a 90s
     
     if response.status_code != 200:
         raise Exception(f"Error de API {response.status_code}: {response.text}")
@@ -229,22 +238,21 @@ def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, c
 
         criterios_lista = "\n".join([f"  - {c}" for c in criterios])
         
-        prompt = f"""SECCIÓN A EVALUAR: {nombre}
-CONTENIDO DEL FORMULARIO:
+        prompt = f"""SECCIÓN: {nombre}
+CONTENIDO:
 {texto_seccion}
 
-CRITERIOS A EVALUAR (Usa estos nombres EXACTOS):
+CRITERIOS (nombres exactos):
 {criterios_lista}
 
 INSTRUCCIONES:
-1. Asigna puntaje (0, 6, 8, o 10) y nivel (Deficiente, Regular, Bueno, Excelente).
-2. Justificación breve (1-2 frases).
-3. Responde SOLO con un array JSON. Exactamente {len(criterios)} objetos.
+1. Puntaje: 0, 6, 8, o 10
+2. Nivel: Deficiente, Regular, Bueno, o Excelente
+3. Justificación: MÁXIMO 15 palabras
+4. Responde SOLO con array JSON. Exactamente {len(criterios)} objetos.
 
-Formato JSON requerido:
-[
-  {{"criterio": "Nombre exacto", "puntaje": 8, "nivel": "Bueno", "justificacion": "Frase."}}
-]"""
+Formato:
+[{{"criterio": "nombre", "puntaje": 8, "nivel": "Bueno", "justificacion": "máx 15 palabras"}}]"""
 
         try:
             respuesta_raw = llamar_a_ia(prompt)
