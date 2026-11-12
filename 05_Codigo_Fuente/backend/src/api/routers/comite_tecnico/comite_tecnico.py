@@ -843,11 +843,28 @@ def propuestas_asignadas(
             
             total_asignadas = len(asignaciones_propuesta)
             
-            dictamen_existente = db.query(Dictamenes).filter(
-                Dictamenes.propuestaId == p.propuestaId
-            ).first()
+            # 🐛 LOGS DE DEBUG - AGREGA ESTO:
+            print(f"\n{'='*60}")
+            print(f"🔍 Procesando propuesta {p.propuestaId} ({p.codigoPropuesta})")
+            print(f"📊 Total asignaciones: {total_asignadas}")
             
-            ya_tiene_dictamen = dictamen_existente is not None
+            # Verificar si existe dictamen
+            try:
+                dictamen_existente = db.query(Dictamenes).filter(
+                    Dictamenes.propuestaId == p.propuestaId
+                ).first()
+                
+                ya_tiene_dictamen = dictamen_existente is not None
+                
+                print(f"📝 Dictamen existente: {dictamen_existente}")
+                print(f"✅ Ya tiene dictamen: {ya_tiene_dictamen}")
+                
+                if ya_tiene_dictamen:
+                    print(f"🎯 Estado asignado: 'Dictamen Emitido'")
+            except Exception as e:
+                print(f"❌ ERROR al consultar dictamenes: {str(e)}")
+                ya_tiene_dictamen = False
+                print(f"⚠️ Estado por error: 'Completada' (fallback)")
             
             # 7. Determinar el estado para la UI
             if es_gestor:
@@ -862,12 +879,17 @@ def propuestas_asignadas(
                         EstadosEvaluacion.nombreEstadoEvaluacion.ilike("%completada%")
                     ).count()
                     
+                    print(f"📈 Evaluaciones completadas: {evaluaciones_completadas}/{total_asignadas}")
+                    
                     if evaluaciones_completadas == total_asignadas:
-                        estado_eval = "Completada"  # ← Solo aquí aparece el botón
+                        estado_eval = "Completada"
+                        print(f"🎯 Estado asignado: 'Completada'")
                     elif evaluaciones_completadas > 0:
                         estado_eval = "En progreso"
+                        print(f"🎯 Estado asignado: 'En progreso'")
                     else:
                         estado_eval = "Pendiente de evaluación"
+                        print(f"🎯 Estado asignado: 'Pendiente de evaluación'")
             else:
                 # Para el Evaluador: mostrar SU estado personal
                 evaluacion = db.query(Evaluaciones).filter(
@@ -893,6 +915,7 @@ def propuestas_asignadas(
                 "estado": estado_eval,
                 "yaTieneDictamen": ya_tiene_dictamen
             })
+            print(f"{'='*60}\n")
         
         return {"items": items, "total": len(items)}
     except Exception as e:
