@@ -613,6 +613,9 @@ def guardar_evaluacion(
 # ============================================================================
 # COORDINADOR
 # ============================================================================
+# ============================================================================
+# COORDINADOR
+# ============================================================================
 
 @router.get("/coordinador/consolidar/{propuesta_id}")
 def consolidar_evaluaciones(propuesta_id: int, db: Session = Depends(get_db), usuario: Usuario = Depends(obtener_usuario_actual)):
@@ -662,6 +665,7 @@ def consolidar_evaluaciones(propuesta_id: int, db: Session = Depends(get_db), us
         print(f"ERROR en consolidar_evaluaciones: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
+
 @router.post("/coordinador/{propuesta_id}/emitir-dictamen", status_code=status.HTTP_201_CREATED)
 def emitir_dictamen(
     propuesta_id: int, 
@@ -670,7 +674,10 @@ def emitir_dictamen(
     usuario: Usuario = Depends(obtener_usuario_actual)
 ):
     """
-    El coordinador emite el dictamen final, lo guarda en la BD y actualiza el estado de la propuesta.
+    El coordinador emite el dictamen final:
+    1. Crea el registro en la tabla dictamenes
+    2. Cambia el estado de la propuesta a EN_CONSEJO
+    3. Devuelve confirmación
     """
     try:
         # 1. Validar que la propuesta existe
@@ -678,7 +685,7 @@ def emitir_dictamen(
         if not propuesta:
             raise HTTPException(status_code=404, detail="Propuesta no encontrada")
         
-        # 2. Extraer y validar datos del frontend
+        # 2. Extraer y validar datos
         contenido = data.get("contenido", "").strip()
         observaciones = data.get("observaciones", "").strip()
         recomienda = data.get("recomienda", False)
@@ -686,17 +693,27 @@ def emitir_dictamen(
         if not contenido:
             raise HTTPException(status_code=400, detail="El contenido del dictamen es obligatorio")
         
-        # Combinar contenido principal con observaciones si existen
+        # 3. Verificar que NO exista ya un dictamen para esta propuesta
+        dictamen_existente = db.query(Dictamenes).filter(
+            Dictamenes.propuestaId == propuesta_id
+        ).first()
+        
+        if dictamen_existente:
+            raise HTTPException(
+                status_code=400, 
+                detail="Ya existe un dictamen emitido para esta propuesta. No se puede emitir un nuevo dictamen."
+            )
+        
+        # 4. Combinar contenido con observaciones
         texto_final = contenido
         if observaciones:
             texto_final += f"\n\n--- OBSERVACIONES ADICIONALES ---\n{observaciones}"
         
-        # 3. Determinar el tipo de dictamen 
-        # ⚠️ IMPORTANTE: Ajusta estos IDs (1 y 2) según lo que tengas en tu tabla 'tiposdictamen'
-        # Ejemplo: 1 = "Recomienda", 2 = "No Recomienda"
-        tipo_dictamen_id = 1 if recomienda else 2
+        # 5. Determinar el tipo de dictamen (ajusta los IDs según tu tabla tiposdictamen)
+        # Ejecuta: SELECT "tipodictamenid", "nombretipodictamen" FROM "tiposdictamen";
+        tipo_dictamen_id = 1 if recomienda else 2  # ⚠️ AJUSTA ESTOS IDs
         
-        # 4. Crear el registro en la base de datos
+        # 6. Crear el registro en la tabla dictamenes
         nuevo_dictamen = Dictamenes(
             propuestaId=propuesta_id,
             tipoDictamenId=tipo_dictamen_id,
@@ -709,16 +726,17 @@ def emitir_dictamen(
         )
         db.add(nuevo_dictamen)
         
-        # 5. Actualizar el estado de la propuesta a "Dictaminada" o "Resuelta"
-        # ⚠️ IMPORTANTE: Ajusta "RESUELTA" o "DICTAMINADA" al código real que uses en tu tabla 'estadospropuesta'
-        estado_final = db.query(EstadosPropuesta).filter(
-            EstadosPropuesta.codigoEstadoPropuesta.in_(["RESUELTA", "DICTAMINADA", "FINALIZADA"])
+        # 7. ✅ CRÍTICO: Cambiar el estado de la propuesta a EN_CONSEJO
+        estado_consejo = db.query(EstadosPropuesta).filter(
+            EstadosPropuesta.codigoEstadoPropuesta == "EN_CONSEJO"
         ).first()
         
-        if estado_final:
-            propuesta.estadoId = estado_final.estadoPropuestaId
+        if estado_consejo:
+            propuesta.estadoId = estado_consejo.estadoPropuestaId
+        else:
+            print("⚠️ ADVERTENCIA: No se encontró el estado 'EN_CONSEJO' en la base de datos")
         
-        # 6. Confirmar cambios
+        # 8. Confirmar cambios
         db.commit()
         db.refresh(nuevo_dictamen)
         
@@ -727,7 +745,9 @@ def emitir_dictamen(
             "message": f"Dictamen emitido exitosamente: {'RECOMIENDA' if recomienda else 'NO RECOMIENDA'}",
             "dictamenId": nuevo_dictamen.dictamenId,
             "propuestaId": propuesta_id,
-            "recomienda": recomienda
+            "codigoPropuesta": propuesta.codigoPropuesta,
+            "recomienda": recomienda,
+            "nuevoEstado": "EN_CONSEJO"
         }
         
     except HTTPException:
@@ -740,6 +760,145 @@ def emitir_dictamen(
         raise HTTPException(status_code=500, detail=f"Error al emitir dictamen: {str(e)}")
 
 
+@router.get("/propuestas-asignadas")
+def propuestas_asignadas(
+    busqueda: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obtener_usuario_actual)
+):
+    """
+    Endpoint inteligente que adapta la respuesta según el rol.
+    NUEVO: Verifica si ya existe un dictamen para desactivar el botón.
+    """
+    try:
+        # 1. Detectar el rol del usuario
+        from src.models.roles import UsuarioRol, RolesSistema
+        
+        rol_usuario = None
+        rol_asignado = db.query(UsuarioRol).filter(
+            UsuarioRol.usuarioId == usuario.usuarioId,
+            UsuarioRol.activo == True
+        ).first()
+        
+        if rol_asignado:
+            rol_obj = db.query(RolesSistema).filter(
+                RolesSistema.rolId == rol_asignado.rolId
+            ).first()
+            rol_usuario = rol_obj.nombreRol if rol_obj else None
+        
+        # 2. Definir roles que pueden ver TODAS las propuestas (gestores)
+        roles_gestores = [
+            'AsistenteComiteTecnico',
+            'CoordinadorComiteTecnico',
+            'SuperAdministrador',
+            'Administrador'
+        ]
+        
+        es_gestor = rol_usuario in roles_gestores
+        
+        # 3. Filtrar según el rol
+        if es_gestor:
+            codigos_estado_comite = ["ENVIADA", "EN_REVISION", "SUBSANACION", "EN_COMITE", "EN_EVALUACION", "ASIGNADA"]
+            estados_comite = db.query(EstadosPropuesta).filter(
+                EstadosPropuesta.codigoEstadoPropuesta.in_(codigos_estado_comite)
+            ).all()
+            
+            if not estados_comite:
+                return {"items": [], "total": 0}
+                
+            estado_ids = [e.estadoPropuestaId for e in estados_comite]
+            query = db.query(Propuesta).filter(Propuesta.estadoId.in_(estado_ids))
+            
+        else:
+            asignaciones = db.query(AsignacionComite).filter(
+                AsignacionComite.evaluadorId == usuario.usuarioId,
+                AsignacionComite.activo == True
+            ).all()
+            
+            if not asignaciones:
+                return {"items": [], "total": 0}
+            
+            propuesta_ids = [asig.propuestaId for asig in asignaciones]
+            query = db.query(Propuesta).filter(Propuesta.propuestaId.in_(propuesta_ids))
+        
+        # 4. Aplicar búsqueda si existe
+        if busqueda:
+            query = query.filter(Propuesta.titulo.ilike(f"%{busqueda}%") | Propuesta.codigoPropuesta.ilike(f"%{busqueda}%"))
+        
+        propuestas = query.all()
+        items = []
+        
+        for p in propuestas:
+            # 5. Buscar asignaciones de esta propuesta
+            asignaciones_propuesta = db.query(AsignacionComite).filter(
+                AsignacionComite.propuestaId == p.propuestaId,
+                AsignacionComite.activo == True
+            ).all()
+            
+            evaluadores_nombres = []
+            for asig in asignaciones_propuesta:
+                evaluador = db.query(Usuario).filter(Usuario.usuarioId == asig.evaluadorId).first()
+                if evaluador:
+                    evaluadores_nombres.append(f"{evaluador.nombreUsuario} {evaluador.apellido1Usuario}")
+            
+            total_asignadas = len(asignaciones_propuesta)
+            
+            dictamen_existente = db.query(Dictamenes).filter(
+                Dictamenes.propuestaId == p.propuestaId
+            ).first()
+            
+            ya_tiene_dictamen = dictamen_existente is not None
+            
+            # 7. Determinar el estado para la UI
+            if es_gestor:
+                if total_asignadas == 0:
+                    estado_eval = "Pendiente de asignación"
+                elif ya_tiene_dictamen:
+                    estado_eval = "Dictamen Emitido"
+                else:
+                    # Contar evaluaciones completadas
+                    evaluaciones_completadas = db.query(Evaluaciones).join(EstadosEvaluacion).filter(
+                        Evaluaciones.propuestaId == p.propuestaId,
+                        EstadosEvaluacion.nombreEstadoEvaluacion.ilike("%completada%")
+                    ).count()
+                    
+                    if evaluaciones_completadas == total_asignadas:
+                        estado_eval = "Completada"  # ← Solo aquí aparece el botón
+                    elif evaluaciones_completadas > 0:
+                        estado_eval = "En progreso"
+                    else:
+                        estado_eval = "Pendiente de evaluación"
+            else:
+                # Para el Evaluador: mostrar SU estado personal
+                evaluacion = db.query(Evaluaciones).filter(
+                    Evaluaciones.propuestaId == p.propuestaId,
+                    Evaluaciones.evaluadorId == usuario.usuarioId
+                ).first()
+                
+                estado_eval = "Pendiente de evaluación"
+                if evaluacion and evaluacion.estadoEvaluacionId:
+                    estado_obj = db.query(EstadosEvaluacion).filter(
+                        EstadosEvaluacion.estadoEvaluacionId == evaluacion.estadoEvaluacionId
+                    ).first()
+                    if estado_obj:
+                        estado_eval = estado_obj.nombreEstadoEvaluacion
+            
+            items.append({
+                "propuestaId": p.propuestaId,
+                "codigoPropuesta": p.codigoPropuesta,
+                "titulo": p.titulo,
+                "evaluadores": ", ".join(evaluadores_nombres) if evaluadores_nombres else "Sin asignar",
+                "totalEvaluadores": total_asignadas,
+                "fechaAsignacion": p.fechaCreacion.isoformat() if p.fechaCreacion else None,
+                "estado": estado_eval,
+                "yaTieneDictamen": ya_tiene_dictamen
+            })
+        
+        return {"items": items, "total": len(items)}
+    except Exception as e:
+        print(f"ERROR en propuestas_asignadas: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+    
 # ============================================================================
 # ASISTENTE DE IA
 # ============================================================================
