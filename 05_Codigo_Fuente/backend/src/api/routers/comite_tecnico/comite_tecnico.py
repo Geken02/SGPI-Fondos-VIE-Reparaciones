@@ -179,14 +179,13 @@ def propuestas_asignadas(
     usuario: Usuario = Depends(obtener_usuario_actual)
 ):
     """
-    Endpoint inteligente que adapta la respuesta según el rol:
-    - Asistente/Coordinador: Ve TODAS las propuestas del comité
-    - Evaluador: Ve SOLO sus asignaciones
+    Endpoint con DEBUG incluido en la respuesta para verificar el estado de dictamenes.
     """
     try:
-        # 1. Detectar el rol del usuario
         from src.models.roles import UsuarioRol, RolesSistema
+        from src.models.dictamenes import Dictamenes  # ⚠️ IMPORTANTE
         
+        # 1. Detectar rol
         rol_usuario = None
         rol_asignado = db.query(UsuarioRol).filter(
             UsuarioRol.usuarioId == usuario.usuarioId,
@@ -199,7 +198,6 @@ def propuestas_asignadas(
             ).first()
             rol_usuario = rol_obj.nombreRol if rol_obj else None
         
-        # 2. Definir roles que pueden ver TODAS las propuestas (gestores)
         roles_gestores = [
             'AsistenteComiteTecnico',
             'CoordinadorComiteTecnico',
@@ -209,9 +207,8 @@ def propuestas_asignadas(
         
         es_gestor = rol_usuario in roles_gestores
         
-        # 3. Filtrar según el rol
+        # 2. Filtrar propuestas
         if es_gestor:
-            # GESTOR: Ver TODAS las propuestas en estados del comité
             codigos_estado_comite = ["ENVIADA", "EN_REVISION", "SUBSANACION", "EN_COMITE", "EN_EVALUACION", "ASIGNADA"]
             estados_comite = db.query(EstadosPropuesta).filter(
                 EstadosPropuesta.codigoEstadoPropuesta.in_(codigos_estado_comite)
@@ -222,9 +219,7 @@ def propuestas_asignadas(
                 
             estado_ids = [e.estadoPropuestaId for e in estados_comite]
             query = db.query(Propuesta).filter(Propuesta.estadoId.in_(estado_ids))
-            
         else:
-            # EVALUADOR: Ver SOLO sus asignaciones activas
             asignaciones = db.query(AsignacionComite).filter(
                 AsignacionComite.evaluadorId == usuario.usuarioId,
                 AsignacionComite.activo == True
@@ -236,15 +231,16 @@ def propuestas_asignadas(
             propuesta_ids = [asig.propuestaId for asig in asignaciones]
             query = db.query(Propuesta).filter(Propuesta.propuestaId.in_(propuesta_ids))
         
-        # 4. Aplicar búsqueda si existe
         if busqueda:
             query = query.filter(Propuesta.titulo.ilike(f"%{busqueda}%") | Propuesta.codigoPropuesta.ilike(f"%{busqueda}%"))
         
         propuestas = query.all()
         items = []
         
+        # 🐛 DEBUG GLOBAL: Contar todos los dictamenes en la BD
+        total_dictamenes_bd = db.query(Dictamenes).count()
+        
         for p in propuestas:
-            # 1. Buscar asignaciones de esta propuesta
             asignaciones_propuesta = db.query(AsignacionComite).filter(
                 AsignacionComite.propuestaId == p.propuestaId,
                 AsignacionComite.activo == True
@@ -258,26 +254,46 @@ def propuestas_asignadas(
             
             total_asignadas = len(asignaciones_propuesta)
             
-            # 2. Determinar el estado para la UI (esto es lo que controla el botón del frontend)
+            # 🐛 DEBUG: Consultar dictamen con manejo de errores explícito
+            dictamen_debug = {
+                "existe": False,
+                "error": None,
+                "total_en_bd": total_dictamenes_bd
+            }
+            
+            try:
+                dictamen_existente = db.query(Dictamenes).filter(
+                    Dictamenes.propuestaId == p.propuestaId
+                ).first()
+                
+                dictamen_debug["existe"] = dictamen_existente is not None
+                if dictamen_existente:
+                    dictamen_debug["dictamenId"] = dictamen_existente.dictamenId
+                    dictamen_debug["tipoDictamenId"] = dictamen_existente.tipoDictamenId
+            except Exception as e:
+                dictamen_debug["error"] = str(e)
+            
+            ya_tiene_dictamen = dictamen_debug["existe"]
+            
+            # 3. Determinar estado
             if es_gestor:
                 if total_asignadas == 0:
                     estado_eval = "Pendiente de asignación"
+                elif ya_tiene_dictamen:
+                    estado_eval = "Dictamen Emitido"
                 else:
                     evaluaciones_completadas = db.query(Evaluaciones).join(EstadosEvaluacion).filter(
                         Evaluaciones.propuestaId == p.propuestaId,
-                        # Usamos ilike para que funcione sin importar si se llama "Completada", "Evaluación Completada", etc.
-                        EstadosEvaluacion.nombreEstadoEvaluacion.ilike("%completada%") 
+                        EstadosEvaluacion.nombreEstadoEvaluacion.ilike("%completada%")
                     ).count()
                     
-                    # Si el número de evaluaciones completadas es igual al total de evaluadores asignados
                     if evaluaciones_completadas == total_asignadas:
-                        estado_eval = "Completada"  # ← Esto hace que aparezca el botón en el frontend
+                        estado_eval = "Completada"
                     elif evaluaciones_completadas > 0:
                         estado_eval = "En progreso"
                     else:
                         estado_eval = "Pendiente de evaluación"
             else:
-                # Para el Evaluador: mostrar SU estado personal
                 evaluacion = db.query(Evaluaciones).filter(
                     Evaluaciones.propuestaId == p.propuestaId,
                     Evaluaciones.evaluadorId == usuario.usuarioId
@@ -298,13 +314,26 @@ def propuestas_asignadas(
                 "evaluadores": ", ".join(evaluadores_nombres) if evaluadores_nombres else "Sin asignar",
                 "totalEvaluadores": total_asignadas,
                 "fechaAsignacion": p.fechaCreacion.isoformat() if p.fechaCreacion else None,
-                "estado": estado_eval  # ← El frontend usará este valor para mostrar el botón
+                "estado": estado_eval,
+                "yaTieneDictamen": ya_tiene_dictamen,
+                "debug_dictamen": dictamen_debug  # 🐛 DEBUG EN LA RESPUESTA
             })
         
-        return {"items": items, "total": len(items)}
+        return {
+            "items": items, 
+            "total": len(items),
+            "debug_global": {
+                "rol_usuario": rol_usuario,
+                "es_gestor": es_gestor,
+                "total_dictamenes_en_bd": total_dictamenes_bd
+            }
+        }
     except Exception as e:
-        print(f"ERROR en propuestas_asignadas: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
     
 # ============================================================================
 # PROFESOR EVALUADOR
