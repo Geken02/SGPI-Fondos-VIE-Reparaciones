@@ -13,7 +13,7 @@ from src.models.propuesta_equipo import IntegrantesEquipoPropuesta
 
 # ⚠️ IMPORTANTE: Verifica en tu base de datos (Supabase) cuál es el ID real 
 # para "Evaluación de Comité" o "Evaluación Preliminar". Ajusta este valor si es necesario.
-DEFAULT_TIPO_EVALUACION_ID = 1  
+DEFAULT_TIPO_EVALUACION_ID = 2  
 DEFAULT_ESTADO_BORRADOR_ID = 1  # Asumimos que 1 es "En Progreso" o "Borrador"
 
 

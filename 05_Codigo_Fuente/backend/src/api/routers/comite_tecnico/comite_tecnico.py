@@ -29,6 +29,15 @@ from src.services.comite_tecnico.rubricas_data import obtener_rubrica, calcular_
 router = APIRouter(prefix="/api/comite-tecnico", tags=["Comité Técnico"])
 
 # ============================================================================
+# ✅ NUEVO: Constantes para los campos NOT NULL de la tabla evaluaciones
+# ⚠️ IMPORTANTE: Ajusta estos valores según tu base de datos real.
+# Ejecuta en Supabase: SELECT * FROM "tiposevaluacion"; SELECT * FROM "estadosevaluacion";
+# ============================================================================
+DEFAULT_TIPO_EVALUACION_ID = 2        # ID del tipo de evaluación (ej: "Evaluación de Comité")
+DEFAULT_ESTADO_BORRADOR_ID = 1        # ID del estado "En Progreso" o "Borrador"
+DEFAULT_ESTADO_COMPLETADA_ID = 3      # ID del estado "Completada" o "Enviada"
+
+# ============================================================================
 # SCHEMAS
 # ============================================================================
 class SubsanacionRequest(BaseModel):
@@ -368,7 +377,7 @@ def obtener_estructura_rubrica(propuesta_id: int, db: Session = Depends(get_db),
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
-@router.get("/evaluador/{propuesta_id}/documentos") # ✅ ACTUALIZADO: Verifica AsignacionComite
+@router.get("/evaluador/{propuesta_id}/documentos")
 def obtener_documentos_propuesta(propuesta_id: int, db: Session = Depends(get_db), usuario: Usuario = Depends(obtener_usuario_actual)):
     try:
         # Verificar que el evaluador tenga asignada esta propuesta
@@ -397,7 +406,8 @@ def obtener_documentos_propuesta(propuesta_id: int, db: Session = Depends(get_db
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
-@router.post("/evaluador/{propuesta_id}/guardar-borrador") # ✅ ACTUALIZADO: Crea la evaluación si no existe
+# ✅ CORREGIDO: Ahora incluye tipoEvaluacionId y estadoEvaluacionId al crear
+@router.post("/evaluador/{propuesta_id}/guardar-borrador")
 def guardar_borrador(propuesta_id: int, data: dict, db: Session = Depends(get_db), usuario: Usuario = Depends(obtener_usuario_actual)):
     try:
         # 1. Verificar asignación
@@ -417,12 +427,19 @@ def guardar_borrador(propuesta_id: int, data: dict, db: Session = Depends(get_db
         ).first()
         
         if not evaluacion:
+            # ✅ CORREGIDO: Se agregan los campos NOT NULL que faltaban
             evaluacion = Evaluaciones(
                 propuestaId=propuesta_id,
                 evaluadorId=usuario.usuarioId,
-                fechaEvaluacion=datetime.now(timezone.utc)
+                tipoEvaluacionId=DEFAULT_TIPO_EVALUACION_ID,      # ✅ CAMPO OBLIGATORIO
+                estadoEvaluacionId=DEFAULT_ESTADO_BORRADOR_ID,    # ✅ CAMPO OBLIGATORIO
+                fechaEvaluacion=datetime.now(timezone.utc),
+                calificacion=0.0,
+                usuarioAuditoriaId=usuario.usuarioId,
+                ultimaAuditoria=datetime.now(timezone.utc)
             )
             db.add(evaluacion)
+            db.flush()  # Para obtener el ID antes del commit
         
         if "calificacionFinal" in data:
             evaluacion.calificacion = data["calificacionFinal"]
@@ -439,7 +456,7 @@ def guardar_borrador(propuesta_id: int, data: dict, db: Session = Depends(get_db
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
-@router.post("/evaluador/{propuesta_id}/enviar-evaluacion") # ✅ ACTUALIZADO: Verifica asignación primero
+@router.post("/evaluador/{propuesta_id}/enviar-evaluacion")
 def enviar_evaluacion(propuesta_id: int, data: dict, db: Session = Depends(get_db), usuario: Usuario = Depends(obtener_usuario_actual)):
     try:
         asignacion = db.query(AsignacionComite).filter(
@@ -484,6 +501,7 @@ def enviar_evaluacion(propuesta_id: int, data: dict, db: Session = Depends(get_d
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
+# ✅ CORREGIDO: Ahora incluye tipoEvaluacionId y estadoEvaluacionId al crear
 @router.post("/evaluaciones/{propuesta_id}", response_model=RespuestaEvaluacionSchema, status_code=status.HTTP_201_CREATED)
 def guardar_evaluacion(
     propuesta_id: int, 
@@ -517,10 +535,16 @@ def guardar_evaluacion(
         
         # 3. Crear o actualizar la evaluación
         if not evaluacion_existente:
+            # ✅ CORREGIDO: Se agregan los campos NOT NULL que faltaban
             evaluacion_existente = Evaluaciones(
                 propuestaId=propuesta_id,
                 evaluadorId=usuario.usuarioId,
-                fechaEvaluacion=datetime.now(timezone.utc)
+                tipoEvaluacionId=DEFAULT_TIPO_EVALUACION_ID,      # ✅ CAMPO OBLIGATORIO
+                estadoEvaluacionId=DEFAULT_ESTADO_BORRADOR_ID,    # ✅ CAMPO OBLIGATORIO
+                fechaEvaluacion=datetime.now(timezone.utc),
+                calificacion=0.0,
+                usuarioAuditoriaId=usuario.usuarioId,
+                ultimaAuditoria=datetime.now(timezone.utc)
             )
             db.add(evaluacion_existente)
             db.flush() # Para obtener el ID
@@ -656,7 +680,7 @@ def analizar_documento_completo_ia(
     usuario: Usuario = Depends(obtener_usuario_actual)
 ):
     try:
-        print(f"🤖 Iniciando análisis con Ollama para propuesta {propuesta_id}")
+        print(f"🤖 Iniciando análisis con Cloudflare AI para propuesta {propuesta_id}")
         resultado = analizar_documento_completo(
             propuesta_id=propuesta_id,
             tipo_modalidad=request.tipoModalidad,
@@ -677,7 +701,7 @@ def analizar_documento_completo_ia(
         raise HTTPException(status_code=500, detail=f"Error interno al analizar documento: {str(e)}")
 
     
-@router.get("/evaluador/expediente/{propuesta_id}") # ✅ ACTUALIZADO: Verifica AsignacionComite
+@router.get("/evaluador/expediente/{propuesta_id}")
 def obtener_expediente_completo(
     propuesta_id: int,
     db: Session = Depends(get_db),
