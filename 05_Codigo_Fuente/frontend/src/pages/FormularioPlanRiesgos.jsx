@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
@@ -109,6 +109,8 @@ const FormularioPlanRiesgos = () => {
   // Plan de Acción y Matriz de Riesgos
   const [actividades, setActividades] = useState([]);
   const [objetivosEspecificos, setObjetivosEspecificos] = useState([]);
+  const isInitialMountF5 = useRef(true);
+  const lastSyncedActividadesF5 = useRef('');
 
   const [guardadoMsg, setGuardadoMsg] = useState('Borrador listo para formulación');
   const [guardando, setGuardando] = useState(false);
@@ -195,15 +197,17 @@ const FormularioPlanRiesgos = () => {
         }
       } catch (_e) {}
 
-      // 3. Cargar datos locales de Form-05 si existen
+      // 3. Cargar datos locales de Form-05 y sincronizar actividades con Form-04
       try {
+        let actsCargadas = null;
+        let l = null;
         const localRaw = localStorage.getItem(`propuesta_${id}_plan_riesgos`);
         if (localRaw) {
-          const l = JSON.parse(localRaw);
+          l = JSON.parse(localRaw);
           if (l.nombrePropuesta) setNombrePropuesta(l.nombrePropuesta);
           if (l.tipoIniciativa) setTipoIniciativa(l.tipoIniciativa);
           if (l.duracionMeses) setDuracionMeses(l.duracionMeses);
-          if (l.actividades && l.actividades.length > 0) setActividades(l.actividades);
+          if (l.actividades && l.actividades.length > 0) actsCargadas = l.actividades;
           if (l.integrantes && l.integrantes.length > 0) {
             setIntegrantes(prev => {
               const mapa = new Map();
@@ -217,9 +221,106 @@ const FormularioPlanRiesgos = () => {
           }
           setGuardadoMsg('Borrador cargado');
         }
+
+        // Si Form-04 tiene actividades guardadas, comparar fechas para usar la versión más reciente
+        if (form04Data?.actividadesCronograma && Array.isArray(form04Data.actividadesCronograma) && form04Data.actividadesCronograma.length > 0) {
+          const f4Time = form04Data.fechaGuardado ? new Date(form04Data.fechaGuardado).getTime() : 0;
+          const f5Time = l?.fechaGuardado ? new Date(l.fechaGuardado).getTime() : 0;
+          if (!actsCargadas || f4Time >= f5Time) {
+            actsCargadas = form04Data.actividadesCronograma;
+          }
+        }
+
+        if (actsCargadas && actsCargadas.length > 0) {
+          setActividades(actsCargadas);
+          lastSyncedActividadesF5.current = JSON.stringify(actsCargadas);
+        }
       } catch (_e) {}
     };
-    cargarPropuestaBD();
+    cargarPropuestaBD().finally(() => {
+      isInitialMountF5.current = false;
+    });
+  }, [propuestaIdUrl]);
+
+  // Sincronización continua de la matriz con Form-04
+  useEffect(() => {
+    if (isInitialMountF5.current) return;
+    const serialized = JSON.stringify(actividades);
+    if (serialized === lastSyncedActividadesF5.current) return;
+    lastSyncedActividadesF5.current = serialized;
+
+    const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
+    if (!id || id === 'undefined') return;
+
+    try {
+      const ahora = new Date().toISOString();
+      // 1. Guardar en Form 05
+      const rawF5 = localStorage.getItem(`propuesta_${id}_plan_riesgos`);
+      const f5Data = rawF5 ? JSON.parse(rawF5) : {};
+      f5Data.actividades = actividades;
+      f5Data.nombrePropuesta = nombrePropuesta || f5Data.nombrePropuesta;
+      f5Data.tipoIniciativa = tipoIniciativa || f5Data.tipoIniciativa;
+      f5Data.duracionMeses = duracionMeses || f5Data.duracionMeses;
+      f5Data.integrantes = integrantes || f5Data.integrantes;
+      f5Data.fechaGuardado = ahora;
+      localStorage.setItem(`propuesta_${id}_plan_riesgos`, JSON.stringify(f5Data));
+      localStorage.setItem(`borrador_form05_${id}`, JSON.stringify(f5Data));
+
+      // 2. Mantener sincronizado borrador de Form 04
+      const rawF4 = localStorage.getItem(`borrador_form04_${id}`);
+      const f4Data = rawF4 ? JSON.parse(rawF4) : {};
+      f4Data.actividadesCronograma = actividades;
+      f4Data.fechaGuardado = ahora;
+      localStorage.setItem(`borrador_form04_${id}`, JSON.stringify(f4Data));
+      localStorage.setItem('borrador_form04_ultimo', JSON.stringify(f4Data));
+
+      // 3. Emitir evento de sincronización para cualquier vista de Form 04
+      window.dispatchEvent(new CustomEvent('sgpi_matrices_sync', {
+        detail: { propuestaId: String(id), actividades: actividades, fuente: 'form05' }
+      }));
+    } catch (_e) {}
+  }, [actividades, nombrePropuesta, tipoIniciativa, duracionMeses, integrantes]);
+
+  // Escuchar sincronización de actividades provenientes de Form-04
+  useEffect(() => {
+    const handleSync = (e) => {
+      const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
+      if (!id || !e.detail || e.detail.fuente === 'form05') return;
+      if (String(e.detail.propuestaId) === String(id) && Array.isArray(e.detail.actividades)) {
+        const serialized = JSON.stringify(e.detail.actividades);
+        if (serialized !== lastSyncedActividadesF5.current) {
+          lastSyncedActividadesF5.current = serialized;
+          setActividades(e.detail.actividades);
+        }
+      }
+    };
+
+    const handleStorage = (e) => {
+      const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
+      if (!id) return;
+      if (e.key === `borrador_form04_${id}`) {
+        try {
+          const raw = localStorage.getItem(`borrador_form04_${id}`);
+          if (raw) {
+            const data = JSON.parse(raw);
+            if (data.actividadesCronograma && Array.isArray(data.actividadesCronograma)) {
+              const serialized = JSON.stringify(data.actividadesCronograma);
+              if (serialized !== lastSyncedActividadesF5.current) {
+                lastSyncedActividadesF5.current = serialized;
+                setActividades(data.actividadesCronograma);
+              }
+            }
+          }
+        } catch (_e) {}
+      }
+    };
+
+    window.addEventListener('sgpi_matrices_sync', handleSync);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('sgpi_matrices_sync', handleSync);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, [propuestaIdUrl]);
 
   const handleGuardarBorrador = async () => {
@@ -240,6 +341,14 @@ const FormularioPlanRiesgos = () => {
       localStorage.setItem(`propuesta_${id}_plan_riesgos`, JSON.stringify(dataToSave));
       // También guardar como borrador_form05 para compatibilidad con exportUtils
       localStorage.setItem(`borrador_form05_${id}`, JSON.stringify(dataToSave));
+      try {
+        const rawF4 = localStorage.getItem(`borrador_form04_${id}`);
+        const f4Data = rawF4 ? JSON.parse(rawF4) : {};
+        f4Data.actividadesCronograma = dataToSave.actividades;
+        f4Data.fechaGuardado = dataToSave.fechaGuardado;
+        localStorage.setItem(`borrador_form04_${id}`, JSON.stringify(f4Data));
+        localStorage.setItem('borrador_form04_ultimo', JSON.stringify(f4Data));
+      } catch (_e) {}
       try {
         await propuestaService.actualizarCabecera(id, {
           titulo: nombrePropuesta || 'Iniciativa de Investigación'
@@ -270,6 +379,14 @@ const FormularioPlanRiesgos = () => {
       localStorage.setItem(`propuesta_${id}_plan_riesgos`, JSON.stringify(dataToSave));
       localStorage.setItem(`borrador_form05_${id}`, JSON.stringify(dataToSave));
       localStorage.setItem(`propuesta_${id}_form05_enviado`, 'true');
+      try {
+        const rawF4 = localStorage.getItem(`borrador_form04_${id}`);
+        const f4Data = rawF4 ? JSON.parse(rawF4) : {};
+        f4Data.actividadesCronograma = dataToSave.actividades;
+        f4Data.fechaGuardado = dataToSave.fechaGuardado;
+        localStorage.setItem(`borrador_form04_${id}`, JSON.stringify(f4Data));
+        localStorage.setItem('borrador_form04_ultimo', JSON.stringify(f4Data));
+      } catch (_e) {}
     }
     window.dispatchEvent(new Event('propuestaCreada'));
     alert('¡Plan de Acción y Gestión del Riesgo guardado exitosamente!');
