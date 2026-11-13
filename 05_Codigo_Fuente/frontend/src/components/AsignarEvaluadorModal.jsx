@@ -1,6 +1,6 @@
-// src/components/AsignarEvaluadorModal.jsx
 import { useState, useEffect } from 'react';
 import { comiteTecnicoService } from '../services/comiteTecnicoService';
+import '../styles/AsignarEvaluadorModal.css';
 
 export default function AsignarEvaluadorModal({ isOpen, onClose, propuesta, onAsignar }) {
   const [evaluadores, setEvaluadores] = useState([]);
@@ -49,49 +49,32 @@ export default function AsignarEvaluadorModal({ isOpen, onClose, propuesta, onAs
   if (!isOpen) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '32px',
-        maxWidth: '500px',
-        width: '90%',
-        maxHeight: '80vh',
-        overflow: 'auto'
-      }}>
-        <h2 style={{ color: '#002855', marginBottom: '24px' }}>
+    <div className="asignar-modal-overlay" onClick={onClose}>
+      <div 
+        className="asignar-modal-container" 
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
+        <h2 id="modal-title" className="asignar-modal-title">
           Asignar Evaluador
         </h2>
         
-        <p style={{ marginBottom: '16px', color: '#64748b' }}>
+        <p className="asignar-modal-info">
           <strong>Propuesta:</strong> {propuesta.codigoPropuesta} - {propuesta.titulo}
         </p>
 
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-            Seleccionar Evaluador:
+        <div className="asignar-form-group">
+          <label htmlFor="evaluador-select" className="asignar-label">
+            Seleccionar Evaluador: <span style={{color: '#ef4444'}}>*</span>
           </label>
           <select
+            id="evaluador-select"
             value={evaluadorSeleccionado}
             onChange={(e) => setEvaluadorSeleccionado(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              fontSize: '14px'
-            }}
+            className="asignar-select"
+            aria-required="true"
           >
             <option value="">-- Seleccione un evaluador --</option>
             {evaluadores.map((ev) => (
@@ -102,54 +85,35 @@ export default function AsignarEvaluadorModal({ isOpen, onClose, propuesta, onAs
           </select>
         </div>
 
-        <div style={{ marginBottom: '24px' }}>
-          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+        <div className="asignar-form-group">
+          <label htmlFor="comentarios-textarea" className="asignar-label">
             Comentarios (opcional):
           </label>
           <textarea
+            id="comentarios-textarea"
             value={comentarios}
             onChange={(e) => setComentarios(e.target.value)}
             rows={4}
-            style={{
-              width: '100%',
-              padding: '10px',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              fontSize: '14px',
-              resize: 'vertical'
-            }}
+            className="asignar-textarea"
             placeholder="Instrucciones especiales para el evaluador..."
           />
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+        <div className="asignar-actions">
           <button
+            type="button"
             onClick={onClose}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#e2e8f0',
-              color: '#475569',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '600'
-            }}
+            className="asignar-btn-cancel"
+            aria-label="Cancelar asignación"
           >
             Cancelar
           </button>
           <button
+            type="button"
             onClick={handleAsignar}
             disabled={cargando || !evaluadorSeleccionado}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#002855',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: cargando ? 'not-allowed' : 'pointer',
-              fontWeight: '600',
-              opacity: cargando || !evaluadorSeleccionado ? 0.5 : 1
-            }}
+            className="asignar-btn-submit"
+            aria-label={cargando ? 'Asignando evaluador' : 'Confirmar asignación de evaluador'}
           >
             {cargando ? 'Asignando...' : 'Asignar Evaluador'}
           </button>

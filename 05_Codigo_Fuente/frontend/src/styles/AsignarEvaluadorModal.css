@@ -1,0 +1,179 @@
+/* src/styles/AsignarEvaluadorModal.css */
+
+/* ==========================================================================
+   ESTILOS BASE - MODAL ASIGNAR EVALUADOR
+   ========================================================================== */
+
+.asignar-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.asignar-modal-container {
+  background-color: white;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.asignar-modal-title {
+  color: #002855;
+  margin: 0 0 24px 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.asignar-modal-info {
+  margin-bottom: 20px;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.asignar-form-group {
+  margin-bottom: 20px;
+}
+
+.asignar-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #334155;
+  font-size: 14px;
+}
+
+.asignar-select,
+.asignar-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background-color: white;
+  color: #334155;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.asignar-select:focus,
+.asignar-textarea:focus {
+  outline: none;
+  border-color: #002855;
+  box-shadow: 0 0 0 3px rgba(0, 40, 85, 0.1);
+}
+
+.asignar-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.asignar-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.asignar-btn-cancel {
+  padding: 10px 20px;
+  background-color: #e2e8f0;
+  color: #475569;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.asignar-btn-cancel:hover {
+  background-color: #cbd5e1;
+}
+
+.asignar-btn-submit {
+  padding: 10px 20px;
+  background-color: #002855;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: opacity 0.2s, background-color 0.2s;
+}
+
+.asignar-btn-submit:hover:not(:disabled) {
+  background-color: #001a38;
+}
+
+.asignar-btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   PARCHE DE ALTO CONTRASTE - ASIGNAR EVALUADOR MODAL
+   ========================================================================== */
+
+.high-contrast-mode .asignar-modal-container {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .asignar-modal-title,
+.high-contrast-mode .asignar-label {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .asignar-modal-info {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .asignar-select,
+.high-contrast-mode .asignar-textarea {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .asignar-select:focus,
+.high-contrast-mode .asignar-textarea:focus {
+  border-color: #FFFF00 !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.3) !important;
+}
+
+.high-contrast-mode .asignar-btn-cancel {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .asignar-btn-cancel:hover {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .asignar-btn-submit {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .asignar-btn-submit:hover:not(:disabled) {
+  background-color: #CCCC00 !important;
+}
