@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { comiteTecnicoService } from '../../services/comiteTecnicoService';
 import SubsanacionModal from '../../components/SubsanacionModal';
 import AsignarEvaluadorModal from '../../components/AsignarEvaluadorModal';
-import '../../styles/BandejaCompletitud.css'; // ✅ Importamos el CSS
+import '../../styles/bandejacompletitud.css';
 
 export default function BandejaDeCompletitud() {
   const [propuestas, setPropuestas] = useState([]);
