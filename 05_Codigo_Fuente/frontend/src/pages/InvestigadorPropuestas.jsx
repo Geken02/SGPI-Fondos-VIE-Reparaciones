@@ -253,7 +253,7 @@ const InvestigadorPropuestas = () => {
         {/* Barra de Filtros */}
         <div className="propuestas-filters-bar">
           <div className="filter-search-box" style={{ flex: 1.5 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
@@ -835,7 +835,7 @@ const InvestigadorPropuestas = () => {
           /* Estado Vacío Institucional */
           <div className="proposals-empty-state">
             <div className="empty-icon-circle">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0369A1" strokeWidth="1.5">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0369A1" strokeWidth="1.5" aria-hidden="true">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
                 <line x1="12" y1="18" x2="12" y2="12"></line>

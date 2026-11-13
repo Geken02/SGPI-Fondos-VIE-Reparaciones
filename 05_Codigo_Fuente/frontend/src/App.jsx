@@ -16,7 +16,6 @@ import PropuestasConsejo from './pages/consejoEscuela/PropuestasConsejo';
 import AsignacionesConsejo from './pages/consejoEscuela/AsignacionesConsejo';
 import VotacionesConsejo from './pages/consejoEscuela/VotacionesConsejo';
 import AcuerdosConsejo from './pages/consejoEscuela/AcuerdosConsejo';
-import AsignacionesConsejo from './pages/consejoEscuela/AsignacionesConsejo';
 
 // 3. ADMINISTRACIÓN
 import AdminPanel from './pages/admin/AdminPanel';

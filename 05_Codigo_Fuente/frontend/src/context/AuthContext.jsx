@@ -206,10 +206,6 @@ export const AuthProvider = ({ children }) => {
   const esConsejoProfesores = rolActivoStr === 'ConsejoProfesores';
   const esDirectorEscuela = rolActivoStr === 'DirectorEscuela';
 
-  // Roles específicos del Consejo de Escuela (Agregados de Deryan)
-  const esAsistenteConsejo = rolActivoStr === 'AsistenteConsejoEscuela';
-  const esConsejoProfesores = rolActivoStr === 'ConsejoProfesores';
-  const esDirectorEscuela = rolActivoStr === 'DirectorEscuela';
 
   // GARANTÍA: Verificaciones de rol basadas SIEMPRE en el rolActivo (soporta suplantación)
   const esAdministrador = rolActivoStr === 'SuperAdministrador' || rolActivoStr === 'Administrador';
