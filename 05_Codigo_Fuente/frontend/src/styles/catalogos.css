@@ -13,6 +13,21 @@
   margin-bottom: 16px;
 }
 
+.breadcrumbs ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.breadcrumbs li {
+  display: inline-flex;
+  align-items: center;
+}
+
 .breadcrumbs a {
   color: #003366;
   text-decoration: none;
@@ -103,6 +118,7 @@
   color: #9ca3af;
 }
 
+/* ✅ FIX DEL BUG: el input ahora declara color explícito y placeholder visible */
 .search-input {
   width: 100%;
   padding: 10px 12px 10px 40px;
@@ -111,6 +127,12 @@
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s ease;
+  color: #1e293b;
+  background-color: #ffffff;
+}
+
+.search-input::placeholder {
+  color: #94a3b8;
 }
 
 .search-input:focus {
@@ -303,11 +325,11 @@
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .search-box {
     max-width: 100%;
   }
-  
+
   .paginacion {
     flex-direction: column;
     gap: 12px;
@@ -318,11 +340,8 @@
 /* ==========================================================================
    PARCHE DE ALTO CONTRASTE - MÓDULO ADMINISTRACIÓN
    (Usuarios, Asignación de Gestoras, Convocatoria, Catálogos)
-   Solo se activa cuando <body> tiene la clase 'high-contrast-mode'.
-   No afecta el modo normal. Gana sobre estilos inline con !important.
    ========================================================================== */
 
-/* 1. CONTENEDORES Y TARJETAS → fondo negro */
 .high-contrast-mode .usuarios-container,
 .high-contrast-mode .asignacion-container,
 .high-contrast-mode .convocatoria-container,
@@ -339,7 +358,6 @@
   border-color: #FFFFFF !important;
 }
 
-/* 2. TEXTOS GENERALES → blanco */
 .high-contrast-mode .usuarios-header h1,
 .high-contrast-mode .asignacion-header h1,
 .high-contrast-mode .convocatoria-header h1,
@@ -376,7 +394,6 @@
   color: #CCCCCC !important;
 }
 
-/* 3. BREADCRUMBS */
 .high-contrast-mode .breadcrumbs {
   color: #CCCCCC !important;
 }
@@ -387,7 +404,6 @@
   color: #888888 !important;
 }
 
-/* 4. TABLAS (Usuarios y Catálogos) → fondo negro, bordes blancos */
 .high-contrast-mode .tabla-usuarios,
 .high-contrast-mode .tabla-datos {
   background: #000000 !important;
@@ -415,7 +431,6 @@
   background: #1a1a1a !important;
 }
 
-/* 5. INPUTS Y SELECTS → fondo negro, borde blanco, texto blanco */
 .high-contrast-mode .filtro-input,
 .high-contrast-mode .filtro-select,
 .high-contrast-mode .buscador-input,
@@ -426,6 +441,12 @@
   color: #FFFFFF !important;
   border: 2px solid #FFFFFF !important;
 }
+
+/* ✅ Placeholder visible en alto contraste */
+.high-contrast-mode .search-input::placeholder {
+  color: #AAAAAA !important;
+}
+
 .high-contrast-mode .filtro-input:focus,
 .high-contrast-mode .filtro-select:focus,
 .high-contrast-mode .buscador-input:focus,
@@ -436,7 +457,6 @@
   box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.3) !important;
 }
 
-/* Iconos dentro de inputs (lupa, etc.) → amarillo */
 .high-contrast-mode .filtro-icon,
 .high-contrast-mode .buscador-icon,
 .high-contrast-mode .input-icon,
@@ -444,7 +464,6 @@
   color: #FFFF00 !important;
 }
 
-/* 6. BOTONES PRIMARIOS (Agregar, Guardar, Mover) → amarillo con texto negro */
 .high-contrast-mode .btn-agregar,
 .high-contrast-mode .btn-primary,
 .high-contrast-mode .btn-small,
@@ -462,7 +481,6 @@
   background: #CCCC00 !important;
 }
 
-/* 7. BOTONES SECUNDARIOS (Cancelar) → negro con borde amarillo */
 .high-contrast-mode .btn-cancel {
   background: #000000 !important;
   color: #FFFF00 !important;
@@ -473,7 +491,6 @@
   color: #000000 !important;
 }
 
-/* 8. BOTONES DE ACCIÓN (editar, eliminar en tablas) */
 .high-contrast-mode .btn-accion,
 .high-contrast-mode .btn-icon {
   background: #000000 !important;
@@ -485,10 +502,9 @@
   background: #FFFF00 !important;
   color: #000000 !important;
 }
-.high-contrast-mode .btn-icon.danger:hover {
-  background: #FF3333 !important;
-  color: #FFFFFF !important;
-  border-color: #FF3333 !important;
+.high-contrast-mode .btn-accion:hover svg,
+.high-contrast-mode .btn-icon:hover svg {
+  stroke: #000000 !important;
 }
 
 .high-contrast-mode .btn-quitar {
@@ -498,7 +514,6 @@
   background: #330000 !important;
 }
 
-/* 9. BADGES DE ESTADO (Activo/Inactivo, roles, etc.) */
 .high-contrast-mode .rol-badge,
 .high-contrast-mode .estado-badge,
 .high-contrast-mode .estado-badge.activo,
@@ -518,14 +533,12 @@
   border: 1px solid #FFFF00 !important;
 }
 
-/* 10. AVATAR CIRCULAR */
 .high-contrast-mode .avatar-circle {
   background: #000000 !important;
   color: #FFFF00 !important;
   border: 2px solid #FFFF00 !important;
 }
 
-/* 11. CHECKBOXES */
 .high-contrast-mode .checkbox-row,
 .high-contrast-mode .escuela-checkbox,
 .high-contrast-mode .form-checkbox input[type="checkbox"] {
@@ -533,7 +546,6 @@
   border-color: #FFFFFF !important;
 }
 
-/* 12. LISTA DE ESCUELAS (Asignación de Gestoras) */
 .high-contrast-mode .lista-escuelas {
   background: #000000 !important;
   border-color: #FFFFFF !important;
@@ -556,7 +568,6 @@
   color: #FFFF00 !important;
 }
 
-/* 13. TIMELINE (Convocatoria) */
 .high-contrast-mode .timeline::before {
   background: #555555 !important;
 }
@@ -595,7 +606,6 @@
   color: #FFFF00 !important;
 }
 
-/* 14. TABS DE CONVOCATORIAS */
 .high-contrast-mode .convocatoria-tab {
   background: #000000 !important;
   color: #FFFFFF !important;
@@ -626,7 +636,6 @@
   color: #000000 !important;
 }
 
-/* 15. TABS DE CATÁLOGOS */
 .high-contrast-mode .catalogos-tabs {
   border-bottom-color: #FFFFFF !important;
 }
@@ -643,7 +652,6 @@
   border-bottom-color: #FFFF00 !important;
 }
 
-/* 16. TOGGLE SWITCHES (Bloqueo de Convocatoria) */
 .high-contrast-mode .toggle-slider {
   background: #555555 !important;
 }
@@ -660,7 +668,6 @@
   color: #FFFFFF !important;
 }
 
-/* 17. ETAPAS (Convocatoria) */
 .high-contrast-mode .etapa-item {
   background: #000000 !important;
   border-color: #FFFFFF !important;
@@ -674,14 +681,12 @@
   border-color: #FFFFFF !important;
 }
 
-/* 18. TIMELINE VACÍO */
 .high-contrast-mode .timeline-vacio {
   background: #000000 !important;
   color: #CCCCCC !important;
   border-color: #FFFFFF !important;
 }
 
-/* 19. PAGINACIÓN */
 .high-contrast-mode .btn-paginacion {
   background: #000000 !important;
   color: #FFFFFF !important;
@@ -698,14 +703,12 @@
   border-color: #FFFF00 !important;
 }
 
-/* 20. SPINNER (carga) */
 .high-contrast-mode .spinner,
 .high-contrast-mode .spinner-small {
   border-color: #555555 !important;
   border-top-color: #FFFF00 !important;
 }
 
-/* 21. TOAST (notificaciones) */
 .high-contrast-mode .toast {
   background: #000000 !important;
   color: #FFFFFF !important;
@@ -715,14 +718,12 @@
   color: #FFFFFF !important;
 }
 
-/* 22. CLAVE BADGE (Catálogos) */
 .high-contrast-mode .clave-badge {
   background: #000000 !important;
   color: #FFFF00 !important;
   border: 1px solid #FFFF00 !important;
 }
 
-/* 23. FORM CHECKBOX LABEL */
 .high-contrast-mode .form-checkbox {
   color: #FFFFFF !important;
 }
