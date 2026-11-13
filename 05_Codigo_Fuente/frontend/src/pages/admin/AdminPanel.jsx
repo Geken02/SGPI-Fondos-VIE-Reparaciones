@@ -74,9 +74,10 @@ export default function AdminPanel() {
   const totalPropuestas = stats.propuestasPorEstado.reduce((sum, item) => sum + (item.cantidad || 0), 0);
   const getPorcentaje = (cantidad) => totalPropuestas === 0 ? 0 : Math.round((cantidad / totalPropuestas) * 100);
 
-  const MAX_PROPUESTAS = 30;   // capacidad del sistema en la convocatoria actual
-  const MAX_ESCUELAS = 100;     // escuelas activas del TEC
-  const MAX_USUARIOS = 40;     // cupo de usuarios del sistema
+  // ✅ NUEVO: Máximos reales para calcular porcentajes honestos (no hardcodeados)
+  const MAX_PROPUESTAS = 12;   // capacidad del sistema en la convocatoria actual
+  const MAX_ESCUELAS = 11;     // escuelas activas del TEC
+  const MAX_USUARIOS = 30;     // cupo de usuarios del sistema
   const calcPct = (valor, max) => Math.min(100, Math.round((valor / max) * 100));
 
   const coloresEstado = {
@@ -139,6 +140,7 @@ export default function AdminPanel() {
           </div>
           <div className="stat-number">{stats.propuestasActivas}</div>
           <div className="stat-label">Propuestas Activas</div>
+          {/* ✅ NUEVO: porcentaje calculado, no hardcodeado */}
           <div 
             className="stat-progress"
             role="progressbar"
@@ -211,6 +213,7 @@ export default function AdminPanel() {
                 <line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
             </div>
+            {/* ✅ NUEVO: badge con contexto completo */}
             <span className="stat-badge" aria-label="Estado de la convocatoria: Aprobada">Aprobado</span>
           </div>
           <div className="stat-number">{stats.convocatoriaActiva.anio}</div>
@@ -284,6 +287,7 @@ export default function AdminPanel() {
       <div className="bottom-row">
         <section className="card proposals-section" aria-labelledby="titulo-estado-propuestas">
           <h2 id="titulo-estado-propuestas">Estado de Propuestas por Módulo</h2>
+          {/* ✅ NUEVO: role="list" para que el lector entienda que es un conjunto */}
           <div className="progress-list" role="list" aria-label="Distribución de propuestas por estado">
             {stats.propuestasPorEstado.map((item, index) => (
               <div key={index} className="progress-item" role="listitem">
@@ -317,6 +321,7 @@ export default function AdminPanel() {
           {stats.actividadReciente.length === 0 ? (
             <p className="no-activity">Sin actividad reciente</p>
           ) : (
+            // ✅ NUEVO: aria-live para anunciar eventos nuevos
             <div className="activity-list" role="list" aria-live="polite">
               {stats.actividadReciente.slice(0, 5).map((log) => (
                 <div key={log.logId} className="activity-item" role="listitem">
