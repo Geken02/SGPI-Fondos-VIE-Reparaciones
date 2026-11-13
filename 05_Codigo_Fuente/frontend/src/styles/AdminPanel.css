@@ -627,3 +627,142 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   PARCHE DE ALTO CONTRASTE PARA EL PANEL DE ADMINISTRADOR
+   (Solo se activa cuando <body> tiene la clase 'high-contrast-mode'.
+   No afecta el modo normal. Gana sobre estilos inline con !important.)
+   ========================================================================== */
+
+/* 1. TODAS las tarjetas del admin → fondo negro */
+.high-contrast-mode .stat-card,
+.high-contrast-mode .quick-card,
+.high-contrast-mode .card,
+.high-contrast-mode .proposals-section,
+.high-contrast-mode .activity-section,
+.high-contrast-mode .users-section,
+.high-contrast-mode .modo-global-card,
+.high-contrast-mode .superadmin-section {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  background-image: none !important; /* mata el gradiente de modo-global-card */
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+}
+
+/* 2. Textos dentro de las tarjetas → blanco (incluye los h2 invisibles) */
+.high-contrast-mode .card h2,
+.high-contrast-mode .card h3,
+.high-contrast-mode .stat-label,
+.high-contrast-mode .stat-number,
+.high-contrast-mode .progress-label,
+.high-contrast-mode .progress-stats,
+.high-contrast-mode .activity-desc,
+.high-contrast-mode .activity-date,
+.high-contrast-mode .no-activity,
+.high-contrast-mode .quick-card p,
+.high-contrast-mode .quick-card h3,
+.high-contrast-mode .users-info h3,
+.high-contrast-mode .users-info p,
+.high-contrast-mode .modo-global-info h3,
+.high-contrast-mode .modo-global-info p {
+  color: #FFFFFF !important;
+}
+
+/* 3. BARRAS DE PROGRESO → amarillo uniforme (gana sobre los inline styles
+      de coloresEstado[] que vienen desde React) */
+.high-contrast-mode .progress-fill,
+.high-contrast-mode .stat-progress-fill,
+.high-contrast-mode .stat-progress-fill.gray,
+.high-contrast-mode .stat-progress-fill.blue {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+}
+
+/* 4. Pistas (tracks) de las barras → gris oscuro con borde blanco visible */
+.high-contrast-mode .progress-bar,
+.high-contrast-mode .stat-progress {
+  background: #333333 !important;
+  background-color: #333333 !important;
+  border: 1px solid #FFFFFF !important;
+}
+
+/* 5. Íconos de las tarjetas (los cuadritos con SVG) → amarillo sobre negro */
+.high-contrast-mode .stat-icon-wrapper,
+.high-contrast-mode .quick-icon,
+.high-contrast-mode .users-icon,
+.high-contrast-mode .modo-global-icon,
+.high-contrast-mode .superadmin-icon {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .stat-icon-wrapper svg,
+.high-contrast-mode .quick-icon svg,
+.high-contrast-mode .users-icon svg,
+.high-contrast-mode .modo-global-icon svg {
+  stroke: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+/* 6. Botones → amarillo con texto negro (estándar de contraste máximo) */
+.high-contrast-mode .btn-access,
+.high-contrast-mode .btn-activar,
+.high-contrast-mode .btn-primary,
+.high-contrast-mode .admin-error button {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+/* 7. Botón outline (Gestión de Usuarios) → amarillo sobre negro */
+.high-contrast-mode .btn-outline {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-outline:hover {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* 8. Badge "Aprobado" y cambios porcentuales */
+.high-contrast-mode .stat-badge {
+  background: #000000 !important;
+  color: #00FF00 !important;
+  border: 1px solid #00FF00 !important;
+}
+
+.high-contrast-mode .stat-change.positive { color: #00FF00 !important; }
+.high-contrast-mode .stat-change.negative { color: #FF5555 !important; }
+.high-contrast-mode .stat-change.neutral  { color: #FFFFFF !important; }
+
+/* 9. Enlace "Ver toda la actividad →" (estaba en verde sobre blanco) */
+.high-contrast-mode .view-all {
+  color: #FFFF00 !important;
+}
+
+/* 10. Punto de actividad (el ● amarillo que aparecía suelto) */
+.high-contrast-mode .activity-icon {
+  color: #FFFF00 !important;
+}
+
+/* 11. Separadores y bordes internos */
+.high-contrast-mode .activity-item {
+  border-bottom-color: #555555 !important;
+}
+
+/* 12. Loading y error del admin */
+.high-contrast-mode .admin-loading,
+.high-contrast-mode .admin-error {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .loading-spinner {
+  border-color: #555555 !important;
+  border-top-color: #FFFF00 !important;
+}
