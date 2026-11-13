@@ -86,27 +86,27 @@ const VinculacionDashboard = () => {
 
         {/* Fila de 3 Tarjetas KPI */}
         <div className="kpi-cards-grid">
-          <div className="kpi-card">
+          <div className="kpi-card" aria-label="KPI: Propuestas Asignadas">
             <div className="kpi-card-label">PROPUESTAS ASIGNADAS</div>
             <div className="kpi-stat-row">
               <span className="kpi-big-number">{totalAsignadas}</span>
-              <span className="kpi-stat-icon">📋</span>
+              <span className="kpi-stat-icon" aria-hidden="true">📋</span>
             </div>
           </div>
 
-          <div className="kpi-card kpi-card-highlight">
+          <div className="kpi-card kpi-card-highlight" aria-label="KPI: Pendientes por Evaluar">
             <div className="kpi-card-label">PENDIENTES POR EVALUAR</div>
             <div className="kpi-stat-row">
               <span className="kpi-big-number">{pendientes}</span>
-              <span className="kpi-stat-icon" style={{ color: '#0369A1' }}>⭕</span>
+              <span className="kpi-stat-icon" aria-hidden="true" style={{ color: '#0369A1' }}>⭕</span>
             </div>
           </div>
 
-          <div className="kpi-card">
+          <div className="kpi-card" aria-label="KPI: Evaluaciones Completadas">
             <div className="kpi-card-label">EVALUACIONES COMPLETADAS</div>
             <div className="kpi-stat-row">
               <span className="kpi-big-number">{completadas}</span>
-              <span className="kpi-stat-icon" style={{ color: '#16a34a' }}>✓</span>
+              <span className="kpi-stat-icon" aria-hidden="true" style={{ color: '#16a34a' }}>✓</span>
             </div>
           </div>
         </div>
@@ -114,7 +114,7 @@ const VinculacionDashboard = () => {
         {/* Barra de Filtros */}
         <div className="proposals-filters-bar" style={{ marginTop: '24px' }}>
           <div className="filter-search-box">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
@@ -125,6 +125,7 @@ const VinculacionDashboard = () => {
               onChange={(e) => setFiltroTexto(e.target.value)}
               maxLength={200}
               className="filter-search-input"
+              aria-label="Buscar por código, título o investigador"
               containerStyle={{ flex: 1 }}
               style={{ border: 'none', outline: 'none', background: 'transparent' }}
             />
@@ -134,6 +135,7 @@ const VinculacionDashboard = () => {
             value={filtroEstado} 
             onChange={(e) => setFiltroEstado(e.target.value)}
             className="filter-select"
+            aria-label="Filtrar por estado de evaluación"
           >
             <option value="Todas">Estado: Todas ▾</option>
             <option value="Pendiente">Pendiente</option>
@@ -145,6 +147,7 @@ const VinculacionDashboard = () => {
             value={filtroDpto} 
             onChange={(e) => setFiltroDpto(e.target.value)}
             className="filter-select"
+            aria-label="Filtrar por departamento o escuela"
           >
             <option value="Todos">Dpto: Todos ▾</option>
             <option value="IE">IE (Electrónica)</option>
@@ -179,7 +182,14 @@ const VinculacionDashboard = () => {
                 propuestasFiltradas.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      <span className="code-link" onClick={() => handleAccion(item)}>
+                      <span 
+                        className="code-link" 
+                        role="button" 
+                        tabIndex={0}
+                        aria-label={`Abrir detalle de propuesta ${item.id}`}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleAccion(item); } }}
+                        onClick={() => handleAccion(item)}
+                      >
                         {item.id}
                       </span>
                     </td>
@@ -187,12 +197,12 @@ const VinculacionDashboard = () => {
                       {item.titulo}
                     </td>
                     <td>
-                      <span className={`badge-status-vinculacion ${item.estado.toLowerCase().replace(' ', '-')}`}>
+                      <span className={`badge-status-vinculacion ${item.estado.toLowerCase().replace(' ', '-')}`} aria-label={`Estado: ${item.estado}`}>
                         {item.estado}
                       </span>
                     </td>
                     <td>
-                      <span className="badge-escuela-abbr">{item.escuela}</span>
+                      <span className="badge-escuela-abbr" aria-label={`Escuela: ${item.escuela}`}>{item.escuela}</span>
                     </td>
                     <td>{item.investigador}</td>
                     <td>{item.fecha}</td>
@@ -200,6 +210,7 @@ const VinculacionDashboard = () => {
                       <button
                         type="button"
                         className={`btn-proposal-action ${item.tipoAccion === 'outline' ? 'btn-outline' : 'btn-solid'}`}
+                        aria-label={`${item.accion} propuesta ${item.id}: ${item.titulo}`}
                         onClick={() => handleAccion(item)}
                         style={{ padding: '6px 16px', fontSize: '13px' }}
                       >

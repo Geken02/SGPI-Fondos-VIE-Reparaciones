@@ -136,7 +136,7 @@ const InvestigadorFormularios = () => {
         {/* Barra de Filtros */}
         <div className="propuestas-filters-bar" style={{ marginBottom: '24px' }}>
           <div className="filter-search-box" style={{ flex: 1.8 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
@@ -149,6 +149,7 @@ const InvestigadorFormularios = () => {
               className="filter-search-input"
               containerStyle={{ flex: 1 }}
               style={{ border: 'none', outline: 'none', background: 'transparent' }}
+              aria-label="Buscar formularios por código, nombre o propuesta"
             />
           </div>
 
@@ -156,6 +157,7 @@ const InvestigadorFormularios = () => {
             value={filtroCodigo}
             onChange={(e) => setFiltroCodigo(e.target.value)}
             className="filter-select"
+            aria-label="Filtrar por código de formulario"
           >
             <option value="Todos">Formulario: Todos ▾</option>
             <option value="Form 04">Form 04</option>
@@ -167,6 +169,7 @@ const InvestigadorFormularios = () => {
             value={filtroTipo}
             onChange={(e) => setFiltroTipo(e.target.value)}
             className="filter-select"
+            aria-label="Filtrar por tipo de formulario"
           >
             <option value="Todos">Tipo: Todos ▾</option>
             <option value="Oficial VIE">Oficial VIE</option>
@@ -183,12 +186,14 @@ const InvestigadorFormularios = () => {
             showCounter={false}
             className="filter-date-input"
             containerStyle={{ width: '150px' }}
+            aria-label="Filtrar formularios por rango de fechas"
           />
 
           <button
             type="button"
             className="btn-limpiar-filtros"
             onClick={limpiarFiltros}
+            aria-label="Limpiar filtros de formularios"
           >
             Limpiar
           </button>
@@ -202,7 +207,7 @@ const InvestigadorFormularios = () => {
             </div>
           ) : formulariosFiltrados.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#64748b' }}>
-              <span style={{ fontSize: '40px', display: 'block', marginBottom: '12px' }}>📋</span>
+              <span style={{ fontSize: '40px', display: 'block', marginBottom: '12px' }} aria-hidden="true">📋</span>
               {propuestas.length === 0 ? (
                 <>
                   <p style={{ fontSize: '15px', fontWeight: 600, color: '#334155' }}>No tienes propuestas aún</p>
@@ -242,6 +247,7 @@ const InvestigadorFormularios = () => {
                         <button
                           type="button"
                           className="btn-table-action"
+                          aria-label={`Ver vista previa de ${item.codigo}: ${item.descripcion}`}
                           onClick={() => setModalVistaDoc(item)}
                         >
                           Ver
@@ -249,6 +255,7 @@ const InvestigadorFormularios = () => {
                         <button
                           type="button"
                           className="btn-table-action"
+                          aria-label={`Editar ${item.codigo}: ${item.descripcion}`}
                           onClick={() => handleEditar(item)}
                         >
                           Editar
@@ -256,6 +263,7 @@ const InvestigadorFormularios = () => {
                         <button
                           type="button"
                           className="btn-table-action btn-table-action-primary"
+                          aria-label={`Descargar archivo de ${item.codigo}: ${item.descripcion}`}
                           onClick={() => {
                           if (item.codigo === 'Form 04') {
                             descargarPropuestaPDF(item.propuestaId, propuestaService);

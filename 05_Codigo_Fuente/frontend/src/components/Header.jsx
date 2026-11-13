@@ -97,7 +97,7 @@ const Header = () => {
         <div className="header-icon-container">
           <button 
             type="button"
-            className="btn-notification-bell"
+            className="btn-notification-bell" aria-label="Abrir notificaciones"
             onClick={() => {
               setShowNotifications(!showNotifications);
               setShowProfile(false);
@@ -125,7 +125,7 @@ const Header = () => {
         <div className="header-avatar-container">
           <button 
             type="button"
-            className="btn-user-avatar"
+            className="btn-user-avatar" aria-label="Abrir perfil de usuario"
             onClick={() => {
               setShowProfile(!showProfile);
               setShowNotifications(false);

@@ -140,7 +140,14 @@ const InvestigadorDashboard = () => {
             <div className="kpi-donut-layout">
               {/* Gráfico Donut SVG */}
               <div className="donut-chart-wrapper">
-                <svg viewBox="0 0 36 36" className="donut-svg">
+                <svg 
+                  viewBox="0 0 36 36" 
+                  className="donut-svg"
+                  role="img"
+                  aria-label={`Gráfico de estado de propuestas. Total: ${totalPropuestas}. En proceso: ${enProceso}, Aprobadas: ${aprobadas}, Rechazadas: ${rechazadas}, Canceladas: ${canceladas}`}
+                >
+                  <title>Distribución de estados de propuestas</title>
+                  <desc>{`Gráfico circular que muestra un total de ${totalPropuestas} propuestas: ${enProceso} en proceso, ${aprobadas} aprobadas, ${rechazadas} rechazadas y ${canceladas} canceladas.`}</desc>
                   {/* Pista circular de fondo */}
                   <path
                     className="donut-bg-track"
@@ -197,21 +204,21 @@ const InvestigadorDashboard = () => {
               </div>
 
               {/* Leyenda */}
-              <div className="kpi-legend">
+              <div className="kpi-legend" aria-label="Leyenda de estados">
                 <div className="kpi-legend-row">
-                  <span className="dot dot-cyan" style={{ background: '#0284c7', backgroundColor: '#0284c7' }}></span>
+                  <span className="dot dot-cyan" aria-hidden="true" style={{ background: '#0284c7', backgroundColor: '#0284c7' }}></span>
                   <span className="legend-text"><strong>{enProceso}</strong> En proceso</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-dark" style={{ background: '#002855', backgroundColor: '#002855' }}></span>
+                  <span className="dot dot-dark" aria-hidden="true" style={{ background: '#002855', backgroundColor: '#002855' }}></span>
                   <span className="legend-text"><strong>{aprobadas}</strong> Aprobadas</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-coral" style={{ background: '#EF3340', backgroundColor: '#EF3340' }}></span>
+                  <span className="dot dot-coral" aria-hidden="true" style={{ background: '#EF3340', backgroundColor: '#EF3340' }}></span>
                   <span className="legend-text"><strong>{rechazadas}</strong> Rechazadas</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-gray" style={{ background: '#94a3b8', backgroundColor: '#94a3b8' }}></span>
+                  <span className="dot dot-gray" aria-hidden="true" style={{ background: '#94a3b8', backgroundColor: '#94a3b8' }}></span>
                   <span className="legend-text"><strong>{canceladas}</strong> Canceladas</span>
                 </div>
               </div>
@@ -269,7 +276,7 @@ const InvestigadorDashboard = () => {
             {/* Barra de Filtros */}
             <div className="proposals-filters-bar">
               <div className="filter-search-box">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <circle cx="11" cy="11" r="8"></circle>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
@@ -289,6 +296,7 @@ const InvestigadorDashboard = () => {
                 value={filtroEscuela} 
                 onChange={(e) => setFiltroEscuela(e.target.value)}
                 className="filter-select"
+                aria-label="Filtrar propuestas por escuela"
               >
                 <option value="Todas">Escuela: Todas ▾</option>
                 <option value="Ingeniería Electrónica">Ingeniería Electrónica</option>
@@ -300,6 +308,7 @@ const InvestigadorDashboard = () => {
                 value={filtroEstado} 
                 onChange={(e) => setFiltroEstado(e.target.value)}
                 className="filter-select"
+                aria-label="Filtrar propuestas por estado"
               >
                 <option value="Todos">Estado: Todos ▾</option>
                 <option value="En proceso">En proceso</option>
@@ -377,7 +386,7 @@ const InvestigadorDashboard = () => {
                 /* Estado vacío para usuario nuevo sin propuestas */
                 <div className="proposals-empty-state">
                   <div className="empty-icon-circle">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0369A1" strokeWidth="1.5">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0369A1" strokeWidth="1.5" aria-hidden="true">
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                       <polyline points="14 2 14 8 20 8"></polyline>
                       <line x1="12" y1="18" x2="12" y2="12"></line>
@@ -413,9 +422,13 @@ const InvestigadorDashboard = () => {
               {/* Aviso 1: Convocatoria */}
               <div 
                 className="quick-card"
+                role="button"
+                tabIndex={0}
+                aria-label="Convocatoria VIE 2026. Cierra el 30 de Noviembre. Haga clic o presione Enter para más información"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alert('Información oficial de la Convocatoria Fondos VIE 2026. Cierre: 30 de Noviembre.'); } }}
                 onClick={() => alert('Información oficial de la Convocatoria Fondos VIE 2026. Cierre: 30 de Noviembre.')}
               >
-                <div className="quick-card-icon">📅</div>
+                <div className="quick-card-icon" aria-hidden="true">📅</div>
                 <div className="quick-card-content">
                   <div className="quick-card-title">Convocatoria VIE 2026</div>
                   <div className="quick-card-sub">Cierra el 30 de Noviembre</div>
@@ -425,9 +438,13 @@ const InvestigadorDashboard = () => {
               {/* Aviso 2: Plantillas */}
               <div 
                 className="quick-card"
+                role="button"
+                tabIndex={0}
+                aria-label="Plantillas de Presupuesto. Descargar formato oficial F02. Haga clic o presione Enter para descargar"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos VIE)...'); } }}
                 onClick={() => alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos VIE)...')}
               >
-                <div className="quick-card-icon">🧩</div>
+                <div className="quick-card-icon" aria-hidden="true">🧩</div>
                 <div className="quick-card-content">
                   <div className="quick-card-title">Plantillas de Presupuesto</div>
                   <div className="quick-card-sub">Descargar formato oficial F02</div>
@@ -437,9 +454,13 @@ const InvestigadorDashboard = () => {
               {/* Aviso 3: Reglamento */}
               <div 
                 className="quick-card"
+                role="button"
+                tabIndex={0}
+                aria-label="Reglamento de Investigación. Guía y normativa vigente. Haga clic o presione Enter para consultar"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alert('Abriendo Reglamento General de Investigación y Extensión del ITCR.'); } }}
                 onClick={() => alert('Abriendo Reglamento General de Investigación y Extensión del ITCR.')}
               >
-                <div className="quick-card-icon">📖</div>
+                <div className="quick-card-icon" aria-hidden="true">📖</div>
                 <div className="quick-card-content">
                   <div className="quick-card-title">Reglamento de Investigación</div>
                   <div className="quick-card-sub">Guía y normativa vigente</div>

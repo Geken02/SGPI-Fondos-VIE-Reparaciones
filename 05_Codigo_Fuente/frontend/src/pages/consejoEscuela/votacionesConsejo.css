@@ -1,4 +1,4 @@
-﻿.votaciones-consejo {
+.votaciones-consejo {
   padding: 28px;
   color: #263238;
 }
@@ -225,3 +225,31 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Accesibilidad: texto oscuro legible en tarjetas claras */
+.votaciones-consejo .crear-votacion-card,
+.votaciones-consejo .votacion-card,
+.votaciones-consejo .accion-voto,
+.votaciones-consejo .resultado-votacion {
+  color: #1f2937 !important;
+}
+.votaciones-consejo .crear-votacion-card h2,
+.votaciones-consejo .votacion-card h3,
+.votaciones-consejo .votacion-card h4,
+.votaciones-consejo .votacion-card p,
+.votaciones-consejo .votacion-card li,
+.votaciones-consejo .accion-voto label,
+.votaciones-consejo .resultado-votacion {
+  color: #1f2937 !important;
+}
+.votaciones-consejo .votacion-card {
+  background: #ffffff !important;
+}
+.votaciones-consejo button:focus-visible,
+.votaciones-consejo input:focus-visible,
+.votaciones-consejo select:focus-visible,
+.votaciones-consejo textarea:focus-visible {
+  outline: 3px solid #facc15;
+  outline-offset: 2px;
+}
+

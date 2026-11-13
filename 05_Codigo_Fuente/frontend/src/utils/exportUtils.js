@@ -289,14 +289,56 @@ export function exportarForm04PDF(datos, codigo = '') {
 
   section('12. PLAN DE ACCIÓN Y GESTIÓN DE RIESGOS');
   if (datos.actividadesCronograma?.length > 0) {
-    renderTable({ startY: y, margin: { left: margin, right: margin }, head: [['Obj.', 'Actividad principal', 'Responsable', 'Periodo']], body: datos.actividadesCronograma.map(a => [safe(a.obj || a.objetivo || 'OE 1'), safe(a.actividad || a.nombre), safe(a.responsable || 'Equipo'), safe([a.a1 && 'Año 1', a.a2 && 'Año 2', a.a3 && 'Año 3'].filter(Boolean).join(', ') || [a.inicio, a.fin].filter(Boolean).join(' - ') || 'Periodo regular')]), styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] } });
+    renderTable({
+      startY: y,
+      margin: { left: margin, right: margin },
+      head: [['Obj.', 'Actividad principal', 'Resultado', 'Responsable', 'Periodo']],
+      body: datos.actividadesCronograma.map(a => [
+        safe(a.obj || a.objetivo || 'OE 1'),
+        safe(a.actividad || a.nombre),
+        safe(a.resultado || a.entregable || '-'),
+        safe(a.responsable || a.participante || 'Equipo'),
+        safe(
+          (a.mesInicio ? `Mes ${a.mesInicio} (${a.duracionMesesAct || 1}m)` : '') ||
+          [a.a1 && 'Año 1', a.a2 && 'Año 2', a.a3 && 'Año 3'].filter(Boolean).join(', ') ||
+          [a.inicio, a.fin].filter(Boolean).join(' - ') ||
+          'Periodo regular'
+        )
+      ]),
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [0, 40, 85] }
+    });
     y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
   } else {
     field('Cronograma de Actividades', '');
   }
-  if (datos.riesgosMitigacion?.length > 0) {
+
+  // Riesgos: tomar de riesgosMitigacion o de las actividades que tienen riesgos registrados
+  const riesgosCombinados = [
+    ...(Array.isArray(datos.riesgosMitigacion) ? datos.riesgosMitigacion : []),
+    ...(Array.isArray(datos.actividadesCronograma) ? datos.actividadesCronograma.filter(a => a.riesgo).map(a => ({
+      riesgo: a.riesgo,
+      probabilidad: 'Media',
+      impacto: 'Moderado',
+      mitigacion: a.mitigacion || a.responsableGestion || 'Plan de contingencia'
+    })) : [])
+  ];
+
+  if (riesgosCombinados.length > 0) {
     checkPage(20);
-    renderTable({ startY: y, margin: { left: margin, right: margin }, head: [['Riesgo', 'Probabilidad', 'Impacto', 'Mitigación']], body: datos.riesgosMitigacion.map(r => [safe(r.riesgo || r.nombre), safe(r.probabilidad), safe(r.impacto), safe(r.mitigacion)]), styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] } });
+    renderTable({
+      startY: y,
+      margin: { left: margin, right: margin },
+      head: [['Riesgo', 'Probabilidad', 'Impacto', 'Mitigación']],
+      body: riesgosCombinados.map(r => [
+        safe(r.riesgo || r.nombre),
+        safe(r.probabilidad || 'Media'),
+        safe(r.impacto || 'Moderado'),
+        safe(r.mitigacion || '-')
+      ]),
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [0, 40, 85] }
+    });
     y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
   } else {
     field('Matriz de Riesgos y Mitigación', '');
@@ -336,6 +378,30 @@ export function exportarForm04PDF(datos, codigo = '') {
     if (p.opcion3?.check) field('Libro / Capítulo de libro', `Cantidad: ${p.opcion3.cantidad || 1}, Objetivo: ${p.opcion3.objetivo || 'General'}`);
     if (p.adicional1) field('Producto adicional 1', p.adicional1);
     if (p.adicional2) field('Producto adicional 2', p.adicional2);
+  }
+  if (datos.productos14b) {
+    const pb = datos.productos14b;
+    const activosMap = {
+      patente: 'Patente de invención o modelo de utilidad',
+      diseno: 'Diseño industrial registrado',
+      software: 'Desarrollo de Software institucional',
+      secreto: 'Secreto empresarial o Know-How formalizado',
+      obtencion: 'Obtención Vegetal / Variedad protegida',
+      marca: 'Marca comercial o signo distintivo',
+      circuito: 'Esquema de trazado de circuitos integrados',
+      otros: 'Otros activos tecnológicos protegibles',
+      articulo: 'Artículo en revista indexada (WoS/Scopus/SciELO)',
+      memoria: 'Artículos en revistas o conferencias',
+      paquete: 'Paquete tecnológico transferible o prototipo',
+      norma: 'Norma técnica (INTECO u homologado)'
+    };
+    Object.entries(pb).forEach(([k, item]) => {
+      if (item?.check && item?.cantidad > 0) {
+        const nom = activosMap[k] || k;
+        const ref = item.consecutivo ? `Dictamen: ${item.consecutivo}` : (item.objetivo ? `Objetivo: ${item.objetivo}` : '');
+        field(nom, `Cantidad: ${item.cantidad}${ref ? `, ${ref}` : ''}`);
+      }
+    });
   }
   if (Array.isArray(datos.productosAcademicos) && datos.productosAcademicos.length > 0) {
     datos.productosAcademicos.forEach((pa, idx) => {

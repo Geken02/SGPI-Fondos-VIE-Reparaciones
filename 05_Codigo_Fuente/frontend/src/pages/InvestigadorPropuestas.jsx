@@ -315,7 +315,7 @@ const InvestigadorPropuestas = () => {
         {/* Barra de Filtros */}
         <div className="propuestas-filters-bar">
           <div className="filter-search-box" style={{ flex: 1.5 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
@@ -327,15 +327,18 @@ const InvestigadorPropuestas = () => {
               maxLength={100}
               showCounter={false}
               className="filter-search-input"
+              aria-label="Buscar por código FVIE o título del proyecto"
             />
           </div>
 
           <div className="filter-select-group">
-            <label className="filter-select-label">Escuela:</label>
+            <label className="filter-select-label" htmlFor="filtro-escuela-select">Escuela:</label>
             <select 
+              id="filtro-escuela-select"
               className="filter-select"
               value={filtroEscuela}
               onChange={(e) => setFiltroEscuela(e.target.value)}
+              aria-label="Filtrar propuestas por escuela"
             >
               <option value="Todas">Todas las Escuelas</option>
               <option value="Electrónica">Ing. Electrónica</option>
@@ -346,11 +349,13 @@ const InvestigadorPropuestas = () => {
           </div>
 
           <div className="filter-select-group">
-            <label className="filter-select-label">Estado:</label>
+            <label className="filter-select-label" htmlFor="filtro-estado-select">Estado:</label>
             <select 
+              id="filtro-estado-select"
               className="filter-select"
               value={filtroEstado}
               onChange={(e) => setFiltroEstado(e.target.value)}
+              aria-label="Filtrar propuestas por estado"
             >
               <option value="Todos">Todos los Estados</option>
               <option value="Borrador">Borrador</option>
@@ -365,6 +370,7 @@ const InvestigadorPropuestas = () => {
             type="button" 
             className="btn-limpiar-filtros"
             onClick={limpiarFiltros}
+            aria-label="Restablecer y limpiar filtros de búsqueda"
           >
             Limpiar
           </button>
@@ -459,7 +465,9 @@ const InvestigadorPropuestas = () => {
                       {prop.esPropietario !== false && !esCancelada && (
                         <button
                           type="button"
+                          className="btn-cancelar-propuesta-mini"
                           title="Cancelar propuesta"
+                          aria-label={`Cancelar propuesta: ${prop.titulo || prop.codigoPropuesta}`}
                           onClick={(e) => { e.stopPropagation(); handleCancelarPropuesta(prop.propuestaId); }}
                           disabled={cancelando[prop.propuestaId]}
                           style={{
@@ -470,12 +478,15 @@ const InvestigadorPropuestas = () => {
                             cursor: 'pointer', lineHeight: 1, padding: 0
                           }}
                         >
-                          {cancelando[prop.propuestaId] ? '...' : 'x'}
+                          <span aria-hidden="true">{cancelando[prop.propuestaId] ? '...' : '✕'}</span>
+                          <span className="sr-only">Cancelar propuesta</span>
                         </button>
                       )}
                       <button 
                         type="button" 
                         className="btn-accordion-toggle"
+                        aria-expanded={estaAbierto}
+                        aria-label={estaAbierto ? `Ocultar datos de propuesta ${prop.codigoPropuesta}: ${prop.titulo}` : `Ver datos de propuesta ${prop.codigoPropuesta}: ${prop.titulo}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleAcordeon(itemKey);
@@ -1063,7 +1074,7 @@ const InvestigadorPropuestas = () => {
           /* Estado Vacío Institucional */
           <div className="proposals-empty-state">
             <div className="empty-icon-circle">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0369A1" strokeWidth="1.5">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0369A1" strokeWidth="1.5" aria-hidden="true">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
                 <line x1="12" y1="18" x2="12" y2="12"></line>
