@@ -3603,81 +3603,95 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 
 /* ==========================================================================
-   PARCHE FINAL SIDEBAR - ALTO CONTRASTE
-   Corrige íconos negros sobre botones amarillos y título de grupo ilegible
+   PARCHE FINAL SIDEBAR - ALTO CONTRASTE (VERSIÓN ROBUSTA)
    ========================================================================== */
 
-/* 1. Título del grupo (ej: "ADMINISTRACIÓN") → amarillo brillante sobre negro */
+/* 1. Título del grupo (ej: "ADMINISTRACIÓN") */
 .high-contrast-mode .sidebar-group-title {
   color: #FFFF00 !important;
   font-weight: 700 !important;
   letter-spacing: 1px !important;
 }
 
-/* 2. Botones del sidebar → fondo negro, borde amarillo, texto amarillo */
-.high-contrast-mode .sidebar-pill-btn {
+/* 2. TODOS los botones del sidebar → fondo negro, borde amarillo, texto amarillo */
+.high-contrast-mode .sidebar-pill-btn,
+.high-contrast-mode a.sidebar-pill-btn,
+.high-contrast-mode button.sidebar-pill-btn {
   background: #000000 !important;
   background-color: #000000 !important;
   color: #FFFF00 !important;
   border: 2px solid #FFFF00 !important;
 }
 
-/* 3. ÍCONOS dentro de botones normales → amarillos */
+/* 3. TEXTO dentro de los botones → amarillo */
+.high-contrast-mode .sidebar-pill-btn .sidebar-pill-label,
+.high-contrast-mode .sidebar-pill-btn span,
+.high-contrast-mode .sidebar-pill-btn a,
+.high-contrast-mode .sidebar-pill-label {
+  color: #FFFF00 !important;
+}
+
+/* 4. ÍCONOS dentro de botones inactivos → amarillos */
 .high-contrast-mode .sidebar-pill-btn .sidebar-pill-icon,
-.high-contrast-mode .sidebar-pill-btn .sidebar-pill-icon svg {
+.high-contrast-mode .sidebar-pill-btn .sidebar-pill-icon svg,
+.high-contrast-mode .sidebar-pill-icon svg path,
+.high-contrast-mode .sidebar-pill-icon svg circle,
+.high-contrast-mode .sidebar-pill-icon svg line,
+.high-contrast-mode .sidebar-pill-icon svg polyline,
+.high-contrast-mode .sidebar-pill-icon svg rect {
   color: #FFFF00 !important;
   stroke: #FFFF00 !important;
   fill: none !important;
 }
 
-/* 4. Botón ACTIVO (con la barrita roja) → fondo amarillo, texto e ícono NEGROS */
-.high-contrast-mode .sidebar-pill-btn.active {
+/* 5. Botón ACTIVO → fondo amarillo, texto e ícono NEGROS */
+.high-contrast-mode .sidebar-pill-btn.active,
+.high-contrast-mode a.sidebar-pill-btn.active,
+.high-contrast-mode button.sidebar-pill-btn.active {
   background: #FFFF00 !important;
   background-color: #FFFF00 !important;
   color: #000000 !important;
   border-color: #FFFFFF !important;
 }
 
-/* 5. ÍCONOS dentro del botón activo → NEGROS (para contrastar con fondo amarillo) */
+/* 6. TEXTO del botón activo → NEGRO */
+.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-label,
+.high-contrast-mode .sidebar-pill-btn.active span,
+.high-contrast-mode .sidebar-pill-btn.active a {
+  color: #000000 !important;
+}
+
+/* 7. ÍCONOS del botón activo → NEGROS */
 .high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon,
-.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg {
+.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg,
+.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg path,
+.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg circle,
+.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg line,
+.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg polyline,
+.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg rect {
   color: #000000 !important;
   stroke: #000000 !important;
 }
 
-/* 6. La barrita roja lateral del botón activo → la hacemos blanca para que se vea sobre amarillo */
+/* 8. Barrita lateral roja del botón activo → negra (para que se vea sobre amarillo) */
 .high-contrast-mode .sidebar-pill-btn.active::before {
   background-color: #000000 !important;
 }
 
-/* 7. Botón "Crear propuesta" (el que tiene estilo inline) → forzar mismo estilo */
-.high-contrast-mode button.sidebar-pill-btn {
-  background: #000000 !important;
-  color: #FFFF00 !important;
-  border: 2px solid #FFFF00 !important;
-}
-
-.high-contrast-mode button.sidebar-pill-btn .sidebar-pill-icon svg {
-  stroke: #FFFF00 !important;
-}
-
-.high-contrast-mode button.sidebar-pill-btn.active {
-  background: #FFFF00 !important;
-  color: #000000 !important;
-}
-
-.high-contrast-mode button.sidebar-pill-btn.active .sidebar-pill-icon svg {
-  stroke: #000000 !important;
-}
-
-/* 8. Hover sobre botones → invertir colores para feedback visual claro */
+/* 9. Hover sobre botones inactivos → invertir colores */
 .high-contrast-mode .sidebar-pill-btn:hover:not(.active) {
   background: #FFFF00 !important;
   color: #000000 !important;
 }
 
-.high-contrast-mode .sidebar-pill-btn:hover:not(.active) .sidebar-pill-icon,
-.high-contrast-mode .sidebar-pill-btn:hover:not(.active) .sidebar-pill-icon svg {
+.high-contrast-mode .sidebar-pill-btn:hover:not(.active) .sidebar-pill-label,
+.high-contrast-mode .sidebar-pill-btn:hover:not(.active) span {
   color: #000000 !important;
+}
+
+.high-contrast-mode .sidebar-pill-btn:hover:not(.active) .sidebar-pill-icon svg,
+.high-contrast-mode .sidebar-pill-btn:hover:not(.active) .sidebar-pill-icon svg path,
+.high-contrast-mode .sidebar-pill-btn:hover:not(.active) .sidebar-pill-icon svg circle {
   stroke: #000000 !important;
+  color: #000000 !important;
 }
