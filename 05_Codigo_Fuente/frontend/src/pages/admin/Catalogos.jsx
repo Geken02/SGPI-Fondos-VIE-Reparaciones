@@ -19,78 +19,28 @@ const NOMBRES_CATALOGOS = {
 };
 
 const CAMPOS_TABLA = {
-  'escuelas': { 
-    id: 'escuelaId', 
-    clave: 'codigoEscuela', 
-    nombre: 'nombreEscuela', 
-    campus: 'nombreCampus' 
-  },
-  'lineas-investigacion': { 
-    id: 'lineaId', 
-    clave: 'lineaId', 
-    nombre: 'nombreLinea' 
-  },
-  'roles-equipo': { 
-    id: 'rolEquipoId', 
-    clave: 'rolEquipoId', 
-    nombre: 'nombreRol' 
-  },
-  'niveles-trl': { 
-    id: 'nivelTrlId', 
-    clave: 'nivelTrlId', 
-    nombre: 'descripcionNivel' 
-  },
-  'tipos-hora': { 
-    id: 'tipoHoraId', 
-    clave: 'codigoTipo', 
-    nombre: 'descripcion' 
-  },
-  'modalidades': { 
-    id: 'modalidadId', 
-    clave: 'modalidadId', 
-    nombre: 'nombreModalidad' 
-  },
-  'campus': { 
-    id: 'campusId', 
-    clave: 'campusId', 
-    nombre: 'nombreCampus' 
-  },
-  'convocatorias': { 
-    id: 'convocatoriaId', 
-    clave: 'convocatoriaId', 
-    nombre: 'nombreConvocatoria' 
-  },
-  'etapas': { 
-    id: 'etapaId', 
-    clave: 'etapaId', 
-    nombre: 'nombreEtapa' 
-  },
-  'configuraciones': { 
-    id: 'configuracionId', 
-    clave: 'claveConfiguracion', 
-    nombre: 'valorConfiguracion',
-    descripcion: 'descripcion'
-  },
+  'escuelas': { id: 'escuelaId', clave: 'codigoEscuela', nombre: 'nombreEscuela', campus: 'nombreCampus' },
+  'lineas-investigacion': { id: 'lineaId', clave: 'lineaId', nombre: 'nombreLinea' },
+  'roles-equipo': { id: 'rolEquipoId', clave: 'rolEquipoId', nombre: 'nombreRol' },
+  'niveles-trl': { id: 'nivelTrlId', clave: 'nivelTrlId', nombre: 'descripcionNivel' },
+  'tipos-hora': { id: 'tipoHoraId', clave: 'codigoTipo', nombre: 'descripcion' },
+  'modalidades': { id: 'modalidadId', clave: 'modalidadId', nombre: 'nombreModalidad' },
+  'campus': { id: 'campusId', clave: 'campusId', nombre: 'nombreCampus' },
+  'convocatorias': { id: 'convocatoriaId', clave: 'convocatoriaId', nombre: 'nombreConvocatoria' },
+  'etapas': { id: 'etapaId', clave: 'etapaId', nombre: 'nombreEtapa' },
+  'configuraciones': { id: 'configuracionId', clave: 'claveConfiguracion', nombre: 'valorConfiguracion', descripcion: 'descripcion' },
 };
 
-// ============================================================================
-// FUNCIONES AUXILIARES
-// ============================================================================
 const obtenerValor = (registro, nombreCampo) => {
   if (!registro || !nombreCampo) return '—';
-  
-  // 1. Intento directo (campo plano)
   if (registro[nombreCampo] !== undefined && registro[nombreCampo] !== null && registro[nombreCampo] !== '') {
     return registro[nombreCampo];
   }
-  
-  // 2. Intento anidado (por si el backend devuelve { campus: { nombreCampus: 'X' } })
   for (const key in registro) {
     if (typeof registro[key] === 'object' && registro[key] !== null && registro[key][nombreCampo] !== undefined) {
       return registro[key][nombreCampo];
     }
   }
-  
   return '—';
 };
 
@@ -113,7 +63,7 @@ export default function Catalogos() {
   const [pagina, setPagina] = useState(1);
   const [totalRegistros, setTotalRegistros] = useState(0);
   const [tamanoPagina] = useState(10);
-  
+
   const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
   const [modalEditarAbierto, setModalEditarAbierto] = useState(false);
   const [registroEditando, setRegistroEditando] = useState(null);
@@ -132,15 +82,7 @@ export default function Catalogos() {
         tamanoPagina,
         busqueda: busqueda || undefined,
       });
-      
       const items = response.data.items || [];
-      
-      // 🔍 DIAGNÓSTICO AUTOMÁTICO: Te dirá exactamente qué claves devuelve el backend
-      console.log(`📦 DATOS CRUDOS DE ${catalogoActivo.toUpperCase()}:`, items);
-      if (items.length > 0) {
-        console.log(`🔑 CLAVES DISPONIBLES EN EL PRIMER REGISTRO:`, Object.keys(items[0]));
-      }
-      
       setDatos(items);
       setTotalRegistros(response.data.total || 0);
     } catch (error) {
@@ -164,7 +106,6 @@ export default function Catalogos() {
       Object.keys(datosLimpios).forEach(key => {
         if (datosLimpios[key] === '') datosLimpios[key] = null;
       });
-
       await catalogoService.crear(catalogoActivo, datosLimpios);
       mostrarToast('Registro creado exitosamente');
       setModalCrearAbierto(false);
@@ -189,12 +130,10 @@ export default function Catalogos() {
     try {
       const id = obtenerIdReal(registroEditando, catalogoActivo);
       if (!id) throw new Error("No se pudo identificar el ID del registro");
-
       const datosLimpios = { ...formData };
       Object.keys(datosLimpios).forEach(key => {
         if (datosLimpios[key] === '') datosLimpios[key] = null;
       });
-
       await catalogoService.actualizar(catalogoActivo, id, datosLimpios);
       mostrarToast('Registro actualizado exitosamente');
       setModalEditarAbierto(false);
@@ -222,7 +161,6 @@ export default function Catalogos() {
     try {
       const id = obtenerIdReal(registro, catalogoActivo);
       if (!id) throw new Error("No se pudo identificar el ID del registro");
-
       await catalogoService.cambiarEstado(catalogoActivo, id, !registro.activo);
       mostrarToast(`Registro ${registro.activo ? 'desactivado' : 'activado'} exitosamente`);
       cargarDatos();
@@ -233,31 +171,42 @@ export default function Catalogos() {
   };
 
   const totalPaginas = Math.ceil(totalRegistros / tamanoPagina);
+  const config = CAMPOS_TABLA[catalogoActivo] || {};
 
   return (
     <div className="catalogos-container">
+      {/* ✅ 1. TOAST: role="status" para que el narrador lo anuncie sin interrumpir bruscamente */}
       {toast && (
-        <div className={`toast ${toast.tipo}`}>
-          <span className="toast-icon">{toast.tipo === 'success' ? '✓' : '✕'}</span>
+        <div className={`toast ${toast.tipo}`} role="status" aria-live="polite">
+          <span className="toast-icon" aria-hidden="true">{toast.tipo === 'success' ? '✓' : '✕'}</span>
           <span className="toast-message">{toast.mensaje}</span>
         </div>
       )}
 
-      <div className="breadcrumbs">
-        <Link to="/dashboard">Inicio</Link>
-        <span className="breadcrumb-separator">›</span>
-        <span>Gestión de Catálogos</span>
-      </div>
+      {/* ✅ 2. BREADCRUMBS: Navegación semántica con <nav> y <ol> */}
+      <nav className="breadcrumbs" aria-label="Ruta de navegación">
+        <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <li><Link to="/dashboard">Inicio</Link></li>
+          <li className="breadcrumb-separator" aria-hidden="true">›</li>
+          <li aria-current="page">Gestión de Catálogos</li>
+        </ol>
+      </nav>
 
-      <div className="catalogos-header">
-        <h1>Gestión de Catálogos</h1>
+      <header className="catalogos-header">
+        <h1 id="titulo-catalogos">Gestión de Catálogos</h1>
         <p>Administrar los catálogos base del sistema.</p>
-      </div>
+      </header>
 
-      <div className="catalogos-tabs">
+      {/* ✅ 3. TABS: role="tablist" y aria-selected para que el narrador sepa cuál está activo */}
+      <div className="catalogos-tabs" role="tablist" aria-label="Categorías de catálogos">
         {Object.keys(NOMBRES_CATALOGOS).map((clave) => (
           <button
             key={clave}
+            role="tab"
+            id={`tab-${clave}`}
+            aria-selected={catalogoActivo === clave}
+            aria-controls="panel-catalogos"
+            tabIndex={catalogoActivo === clave ? 0 : -1}
             className={`tab-btn ${catalogoActivo === clave ? 'active' : ''}`}
             onClick={() => {
               setCatalogoActivo(clave);
@@ -269,160 +218,176 @@ export default function Catalogos() {
           </button>
         ))}
       </div>
-<div className="catalogos-toolbar">
-  <div className="cat-search-box">
-    <svg className="cat-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-      <circle cx="11" cy="11" r="8"/>
-      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-    </svg>
-    <input
-      type="text"
-      id="busqueda-catalogo"
-      className="cat-search-input"
-      aria-label={`Buscar en ${NOMBRES_CATALOGOS[catalogoActivo]}`}
-      placeholder={`Buscar ${NOMBRES_CATALOGOS[catalogoActivo].toLowerCase()}...`}
-      value={busqueda}
-      onChange={(e) => {
-        setBusqueda(e.target.value);
-        setPagina(1);
-      }}
-    />
-    {busqueda && (
-      <button
-        type="button"
-        className="cat-search-clear"
-        onClick={() => { setBusqueda(''); setPagina(1); }}
-        aria-label="Limpiar búsqueda"
-        title="Limpiar búsqueda"
+
+      {/* ✅ 4. PANEL DE CONTENIDO: role="tabpanel" vinculado al tab activo */}
+      <div
+        id="panel-catalogos"
+        role="tabpanel"
+        aria-labelledby={`tab-${catalogoActivo}`}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-    )}
-  </div>
-  <button className="btn-agregar" onClick={() => setModalCrearAbierto(true)} aria-haspopup="dialog">
-    + Agregar nuevo
-  </button>
-</div>
-
-      <div className="tabla-container">
-        {cargando ? (
-          <div className="tabla-loading">
-            <div className="spinner"></div>
-            <p>Cargando datos...</p>
+        <div className="catalogos-toolbar">
+          <div className="cat-search-box">
+            <svg className="cat-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              type="text"
+              id="busqueda-catalogo"
+              className="cat-search-input"
+              aria-label={`Buscar en ${NOMBRES_CATALOGOS[catalogoActivo]}`}
+              placeholder={`Buscar ${NOMBRES_CATALOGOS[catalogoActivo].toLowerCase()}...`}
+              value={busqueda}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setPagina(1);
+              }}
+            />
+            {busqueda && (
+              <button
+                type="button"
+                className="cat-search-clear"
+                onClick={() => { setBusqueda(''); setPagina(1); }}
+                aria-label="Limpiar búsqueda"
+                title="Limpiar búsqueda"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            )}
           </div>
-        ) : datos.length === 0 ? (
-          <div className="tabla-vacia">
-            <p>No se encontraron registros</p>
-          </div>
-        ) : (
-          <table className="tabla-datos">
-            <thead>
-              <tr>
-                <th>CLAVE</th>
-                <th>NOMBRE</th>
-                <th>ESTATUS</th>
-                {CAMPOS_TABLA[catalogoActivo]?.campus && <th>CAMPUS</th>}
-                <th>ACCIONES</th>
-              </tr>
-            </thead>
-            <tbody>
-              {datos.map((registro, index) => {
-                const config = CAMPOS_TABLA[catalogoActivo] || {};
-                return (
-                  <tr key={getRegistroKey(registro, catalogoActivo, index)}>
-                    <td>
-                      <span className="clave-badge">
-                        {obtenerValor(registro, config.clave)}
-                      </span>
-                    </td>
-                    <td className="nombre-celda">
-                      {obtenerValor(registro, config.nombre)}
-                    </td>
-                    <td>
-                      <span className={`estatus-badge ${registro.activo ? 'activo' : 'inactivo'}`}>
-                        {registro.activo ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                    {config.campus && (
-                      <td>{obtenerValor(registro, config.campus)}</td>
-                    )}
-                    <td>
-                      <div className="acciones-celda">
-                        <button 
-                          className="btn-accion" 
-                          title="Editar"
-                          onClick={() => {
-                            setRegistroEditando(registro);
-                            setModalEditarAbierto(true);
-                          }}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                          </svg>
-                        </button>
-                        <button 
-                          className="btn-accion" 
-                          title={registro.activo ? 'Desactivar' : 'Activar'}
-                          onClick={() => handleCambiarEstado(registro)}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                            {registro.activo ? (
-                              <>
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                <line x1="9" y1="9" x2="15" y2="15"/>
-                                <line x1="15" y1="9" x2="9" y2="15"/>
-                              </>
-                            ) : (
-                              <>
-                                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
-                                <line x1="12" y1="2" x2="12" y2="12"/>
-                              </>
-                            )}
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <div className="paginacion">
-        <div className="paginacion-info">
-          Mostrando {datos.length > 0 ? ((pagina - 1) * tamanoPagina + 1) : 0}-
-          {Math.min(pagina * tamanoPagina, totalRegistros)} de {totalRegistros} registros
+          <button className="btn-agregar" onClick={() => setModalCrearAbierto(true)} aria-haspopup="dialog">
+            + Agregar nuevo
+          </button>
         </div>
-        <div className="paginacion-botones">
-          <button
-            className="btn-paginacion"
-            disabled={pagina === 1}
-            onClick={() => setPagina(pagina - 1)}
-          >
-            ← Anterior
-          </button>
-          {Array.from({ length: Math.min(totalPaginas, 5) }, (_, i) => i + 1).map((num) => (
+
+        <div className="tabla-container">
+          {cargando ? (
+            /* ✅ 5. LOADING: role="status" para anunciar carga */
+            <div className="tabla-loading" role="status" aria-live="polite">
+              <div className="spinner"></div>
+              <p>Cargando datos...</p>
+            </div>
+          ) : datos.length === 0 ? (
+            <div className="tabla-vacia" role="status">
+              <p>No se encontraron registros</p>
+            </div>
+          ) : (
+            /* ✅ 6. TABLA: aria-label descriptivo y scope="col" en los th */
+            <table className="tabla-datos" aria-label={`Registros de ${NOMBRES_CATALOGOS[catalogoActivo]}`}>
+              <thead>
+                <tr>
+                  <th scope="col">CLAVE</th>
+                  <th scope="col">NOMBRE</th>
+                  <th scope="col">ESTATUS</th>
+                  {config.campus && <th scope="col">CAMPUS</th>}
+                  <th scope="col">ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody>
+                {datos.map((registro, index) => {
+                  const nombreRegistro = obtenerValor(registro, config.nombre);
+                  return (
+                    <tr key={getRegistroKey(registro, catalogoActivo, index)}>
+                      <td>
+                        <span className="clave-badge">
+                          {obtenerValor(registro, config.clave)}
+                        </span>
+                      </td>
+                      <td className="nombre-celda">
+                        {nombreRegistro}
+                      </td>
+                      <td>
+                        <span className={`estatus-badge ${registro.activo ? 'activo' : 'inactivo'}`} aria-label={`Estado: ${registro.activo ? 'Activo' : 'Inactivo'}`}>
+                          {registro.activo ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      {config.campus && (
+                        <td>{obtenerValor(registro, config.campus)}</td>
+                      )}
+                      <td>
+                        <div className="acciones-celda">
+                          {/* ✅ 7. BOTONES DE ACCIÓN: aria-label explícito con el nombre del registro (el atributo title NO lo leen bien los narradores) */}
+                          <button
+                            className="btn-accion"
+                            aria-label={`Editar ${nombreRegistro}`}
+                            onClick={() => {
+                              setRegistroEditando(registro);
+                              setModalEditarAbierto(true);
+                            }}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </button>
+                          <button
+                            className="btn-accion"
+                            aria-label={`${registro.activo ? 'Desactivar' : 'Activar'} ${nombreRegistro}`}
+                            onClick={() => handleCambiarEstado(registro)}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
+                              {registro.activo ? (
+                                <>
+                                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                  <line x1="9" y1="9" x2="15" y2="15"/>
+                                  <line x1="15" y1="9" x2="9" y2="15"/>
+                                </>
+                              ) : (
+                                <>
+                                  <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                                  <line x1="12" y1="2" x2="12" y2="12"/>
+                                </>
+                              )}
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* ✅ 8. PAGINACIÓN: role="navigation" y aria-current="page" en el botón activo */}
+        <div className="paginacion" role="navigation" aria-label="Paginación de registros">
+          <div className="paginacion-info">
+            Mostrando {datos.length > 0 ? ((pagina - 1) * tamanoPagina + 1) : 0}-
+            {Math.min(pagina * tamanoPagina, totalRegistros)} de {totalRegistros} registros
+          </div>
+          <div className="paginacion-botones">
             <button
-              key={num}
-              className={`btn-paginacion ${pagina === num ? 'active' : ''}`}
-              onClick={() => setPagina(num)}
+              className="btn-paginacion"
+              disabled={pagina === 1}
+              onClick={() => setPagina(pagina - 1)}
+              aria-label="Ir a la página anterior"
             >
-              {num}
+              ← Anterior
             </button>
-          ))}
-          <button
-            className="btn-paginacion"
-            disabled={pagina >= totalPaginas}
-            onClick={() => setPagina(pagina + 1)}
-          >
-            Siguiente →
-          </button>
+            {Array.from({ length: Math.min(totalPaginas, 5) }, (_, i) => i + 1).map((num) => (
+              <button
+                key={num}
+                className={`btn-paginacion ${pagina === num ? 'active' : ''}`}
+                onClick={() => setPagina(num)}
+                aria-label={`Ir a la página ${num}`}
+                aria-current={pagina === num ? 'page' : undefined}
+              >
+                {num}
+              </button>
+            ))}
+            <button
+              className="btn-paginacion"
+              disabled={pagina >= totalPaginas}
+              onClick={() => setPagina(pagina + 1)}
+              aria-label="Ir a la página siguiente"
+            >
+              Siguiente →
+            </button>
+          </div>
         </div>
       </div>
 
