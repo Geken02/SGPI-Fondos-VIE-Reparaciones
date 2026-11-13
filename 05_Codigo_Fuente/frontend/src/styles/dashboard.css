@@ -3368,3 +3368,330 @@ input:checked + .slider:before { transform: translateX(20px); }
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   ACCESIBILIDAD: NAVEGACIÓN POR TECLADO, LECTOR DE PANTALLA Y ALTO CONTRASTE
+   ========================================================================== */
+
+/* 1. Navegación por teclado: Foco visible, grueso y de alto contraste */
+*:focus-visible {
+  outline: 3px solid var(--tec-boton-primario, #0369A1) !important;
+  outline-offset: 3px !important;
+  border-radius: 4px;
+  z-index: 100;
+}
+
+/* Eliminar el anillo de foco al hacer clic con el mouse, pero mantenerlo para teclado */
+*:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+/* 2. Lector de pantalla: Clase para ocultar visualmente pero mantener accesible */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* 3. Modo de Alto Contraste (Se activa añadiendo la clase 'high-contrast-mode' al <body>) */
+.high-contrast-mode {
+  --tec-azul-principal: #000000;
+  --tec-boton-primario: #FFFF00; /* Amarillo sobre negro (estándar WCAG AAA) */
+  --tec-boton-hover: #CCCC00;
+  --tec-rojo: #FF3333;
+  --tec-bg-pagina: #000000;
+  --tec-card-bg: #000000;
+  --tec-borde: #FFFFFF;
+  --tec-texto-oscuro: #FFFFFF;
+  --tec-texto-cuerpo: #FFFFFF;
+  --tec-texto-muted: #FFFFFF;
+  --tec-texto-caption: #FFFFFF;
+  --tec-celeste-suave: #000000;
+}
+
+/* Sobrescrituras específicas para garantizar legibilidad en alto contraste */
+.high-contrast-mode body,
+.high-contrast-mode .dashboard-layout,
+.high-contrast-mode .main-body,
+.high-contrast-mode .dashboard-main-card,
+.high-contrast-mode .proposal-item-card,
+.high-contrast-mode .convocatoria-card,
+.high-contrast-mode .propuesta-accordion-card,
+.high-contrast-mode .modal-content,
+.high-contrast-mode .form-paper-container,
+.high-contrast-mode .new-expense-card-panel {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tec-sidebar {
+  background-color: #000000 !important;
+  border-right: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .sidebar-pill-btn {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .sidebar-pill-btn.active {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .sidebar-pill-btn .sidebar-pill-icon,
+.high-contrast-mode .sidebar-pill-btn .sidebar-pill-icon svg {
+  color: #FFFF00 !important;
+  stroke: #FFFF00 !important;
+}
+
+.high-contrast-mode h1,
+.high-contrast-mode h2,
+.high-contrast-mode h3,
+.high-contrast-mode h4,
+.high-contrast-mode p,
+.high-contrast-mode span,
+.high-contrast-mode label,
+.high-contrast-mode td,
+.high-contrast-mode th,
+.high-contrast-mode .welcome-title {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-nueva-propuesta,
+.high-contrast-mode .btn-solid,
+.high-contrast-mode .btn-form-nav.btn-primary,
+.high-contrast-mode .btn-envio-definitivo,
+.high-contrast-mode .btn-modal-crear {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-outline,
+.high-contrast-mode .btn-modal-cancelar,
+.high-contrast-mode .btn-form-nav.btn-outline,
+.high-contrast-mode .btn-doc-action {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-status,
+.high-contrast-mode .conv-status-badge,
+.high-contrast-mode .estado-badge,
+.high-contrast-mode .badge-subsanacion,
+.high-contrast-mode .badge-cancelada {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .form-text-input,
+.high-contrast-mode .form-text-area,
+.high-contrast-mode .modal-input,
+.high-contrast-mode .filtro-search,
+.high-contrast-mode .filtro-select,
+.high-contrast-mode .tec-search-box {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .form-text-input:focus,
+.high-contrast-mode .form-text-area:focus,
+.high-contrast-mode .tec-search-box:focus-within {
+  border-color: #FFFF00 !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.3) !important;
+}
+
+.high-contrast-mode .tec-header {
+  background-color: #000000 !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .search-input {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .search-input::placeholder {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .proposals-empty-state,
+.high-contrast-mode .subsanacion-banner-box,
+.high-contrast-mode .vie-reminder-box,
+.high-contrast-mode .compromiso-callout-card {
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .institucional-data-table th,
+.high-contrast-mode .institucional-data-table td,
+.high-contrast-mode .vinculacion-table th,
+.high-contrast-mode .vinculacion-table td {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .institucional-data-table tr:hover td,
+.high-contrast-mode .vinculacion-table tr:hover td {
+  background-color: #1a1a1a !important;
+}
+
+/* ============================================================================
+   BOTÓN DE ALTO CONTRASTE (Header)
+   ============================================================================ */
+.btn-alto-contraste {
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.btn-alto-contraste:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-color: #7dd3fc;
+}
+
+.btn-alto-contraste[aria-pressed="true"] {
+  background-color: #ffff00;
+  color: #000000;
+  border-color: #ffffff;
+}
+
+/* ============================================================================
+   SKIP LINK (Enlace para saltar al contenido)
+   ============================================================================ */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  background-color: #002855;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 0 0 8px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  z-index: 10000;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+  outline: 3px solid #ffff00;
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   PARCHE FINAL SIDEBAR - ALTO CONTRASTE (VERSIÓN ROBUSTA)
+   ========================================================================== */
+
+/* 1. Título del grupo (ej: "ADMINISTRACIÓN") */
+.high-contrast-mode .sidebar-group-title {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+  letter-spacing: 1px !important;
+}
+
+/* 2. TODOS los botones del sidebar → fondo negro, borde amarillo, texto amarillo */
+.high-contrast-mode .sidebar-pill-btn,
+.high-contrast-mode a.sidebar-pill-btn,
+.high-contrast-mode button.sidebar-pill-btn {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+/* 3. TEXTO dentro de los botones → amarillo */
+.high-contrast-mode .sidebar-pill-btn .sidebar-pill-label,
+.high-contrast-mode .sidebar-pill-btn span,
+.high-contrast-mode .sidebar-pill-btn a,
+.high-contrast-mode .sidebar-pill-label {
+  color: #FFFF00 !important;
+}
+
+/* 4. ÍCONOS dentro de botones inactivos → amarillos */
+.high-contrast-mode .sidebar-pill-btn .sidebar-pill-icon,
+.high-contrast-mode .sidebar-pill-btn .sidebar-pill-icon svg,
+.high-contrast-mode .sidebar-pill-icon svg path,
+.high-contrast-mode .sidebar-pill-icon svg circle,
+.high-contrast-mode .sidebar-pill-icon svg line,
+.high-contrast-mode .sidebar-pill-icon svg polyline,
+.high-contrast-mode .sidebar-pill-icon svg rect {
+  color: #FFFF00 !important;
+  stroke: #FFFF00 !important;
+  fill: none !important;
+}
+
+/* 5. Botón ACTIVO → fondo amarillo, texto e ícono NEGROS */
+.high-contrast-mode .sidebar-pill-btn.active,
+.high-contrast-mode a.sidebar-pill-btn.active,
+.high-contrast-mode button.sidebar-pill-btn.active {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border-color: #FFFFFF !important;
+}
+
+/* 6. TEXTO del botón activo → NEGRO */
+.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-label,
+.high-contrast-mode .sidebar-pill-btn.active span,
+.high-contrast-mode .sidebar-pill-btn.active a {
+  color: #000000 !important;
+}
+
+/* 7. ÍCONOS del botón activo → NEGROS */
+.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon,
+.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg,
+.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg path,
+.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg circle,
+.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg line,
+.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg polyline,
+.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg rect {
+  color: #000000 !important;
+  stroke: #000000 !important;
+}
+
+/* 8. Barrita lateral roja del botón activo → negra (para que se vea sobre amarillo) */
+.high-contrast-mode .sidebar-pill-btn.active::before {
+  background-color: #000000 !important;
+}
+
+/* 9. Hover sobre botones inactivos → invertir colores */
+.high-contrast-mode .sidebar-pill-btn:hover:not(.active) {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .sidebar-pill-btn:hover:not(.active) .sidebar-pill-label,
+.high-contrast-mode .sidebar-pill-btn:hover:not(.active) span {
+  color: #000000 !important;
+}
+
+.high-contrast-mode .sidebar-pill-btn:hover:not(.active) .sidebar-pill-icon svg,
+.high-contrast-mode .sidebar-pill-btn:hover:not(.active) .sidebar-pill-icon svg path,
+.high-contrast-mode .sidebar-pill-btn:hover:not(.active) .sidebar-pill-icon svg circle {
+  stroke: #000000 !important;
+  color: #000000 !important;
+}

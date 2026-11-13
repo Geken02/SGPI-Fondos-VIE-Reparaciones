@@ -1,11 +1,77 @@
-/* src/styles/admin.css */
+/* ============================================================================
+   VARIABLES GLOBALES Y MODO DE ALTO CONTRASTE
+   ============================================================================ */
+:root {
+  /* Colores base (Tema claro por defecto, mejorados para contraste WCAG AA) */
+  --color-fondo: #f5f5f5;
+  --color-fondo-tarjeta: #ffffff;
+  --color-texto-principal: #111827; /* Más oscuro que #1a1a1a para mejor contraste */
+  --color-texto-secundario: #374151; /* Mejorado de #666 para cumplir WCAG AA */
+  --color-primario: #003366;
+  --color-primario-hover: #002244;
+  --color-borde: #d1d5db;
+  --color-borde-enfoque: #2563eb; /* Azul brillante para foco de teclado */
+  --color-exito: #15803d; /* Verde más oscuro para mejor lectura */
+  --color-advertencia: #a16207;
+  --color-peligro: #dc2626;
+  --color-progreso-fondo: #e5e7eb;
+}
 
+/* Clase que se activa en el <body> o contenedor principal para Alto Contraste */
+.high-contrast-mode {
+  --color-fondo: #000000;
+  --color-fondo-tarjeta: #000000;
+  --color-texto-principal: #ffffff;
+  --color-texto-secundario: #ffffff;
+  --color-primario: #ffff00; /* Amarillo sobre negro: estándar de alto contraste */
+  --color-primario-hover: #cccc00;
+  --color-borde: #ffffff;
+  --color-borde-enfoque: #00ff00; /* Verde neón para foco en modo oscuro */
+  --color-exito: #00ff00;
+  --color-advertencia: #ffff00;
+  --color-peligro: #ff3333;
+  --color-progreso-fondo: #333333;
+}
+
+/* ============================================================================
+   ACCESIBILIDAD: NAVEGACIÓN POR TECLADO
+   ============================================================================ */
+/* Foco visible y grueso SOLO cuando se navega con teclado (Tab) */
+*:focus-visible {
+  outline: 3px solid var(--color-borde-enfoque);
+  outline-offset: 2px;
+  border-radius: 4px;
+  z-index: 10;
+}
+
+/* Eliminar el anillo de foco al hacer clic con el mouse, pero mantenerlo para teclado */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Clase utilitaria para ocultar visualmente pero mantener para lectores de pantalla */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================================================================
+   ESTRUCTURA PRINCIPAL
+   ============================================================================ */
 .admin-container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 24px;
-  background: #f5f5f5;
+  background: var(--color-fondo);
   min-height: 100vh;
+  color: var(--color-texto-principal);
 }
 
 .admin-header {
@@ -15,17 +81,19 @@
 .admin-header h1 {
   font-size: 28px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-texto-principal);
   margin: 0 0 8px 0;
 }
 
 .admin-header p {
   font-size: 14px;
-  color: #666;
+  color: var(--color-texto-secundario);
   margin: 0;
 }
 
-/* Stats Row */
+/* ============================================================================
+   TARJETAS DE ESTADÍSTICAS
+   ============================================================================ */
 .stats-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -34,11 +102,11 @@
 }
 
 .stat-card {
-  background: white;
+  background: var(--color-fondo-tarjeta);
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--color-borde);
 }
 
 .stat-top {
@@ -51,72 +119,69 @@
 .stat-icon-wrapper {
   width: 40px;
   height: 40px;
-  background: #f0f4f8;
+  background: var(--color-fondo);
+  border: 1px solid var(--color-borde);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #003366;
+  color: var(--color-primario);
 }
 
 .stat-change {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700; /* Negrita para mejor legibilidad */
 }
 
 .stat-change.positive {
-  color: #16a34a;
+  color: var(--color-exito);
 }
 
 .stat-change.neutral {
-  color: #666;
+  color: var(--color-texto-secundario);
 }
 
 .stat-badge {
-  background: #dcfce7;
-  color: #16a34a;
+  background: rgba(21, 128, 61, 0.1);
+  color: var(--color-exito);
   padding: 4px 12px;
   border-radius: 12px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
+  border: 1px solid var(--color-exito); /* Borde para alto contraste */
 }
 
 .stat-number {
   font-size: 36px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-texto-principal);
   margin-bottom: 4px;
 }
 
 .stat-label {
   font-size: 14px;
-  color: #666;
+  color: var(--color-texto-secundario);
   margin-bottom: 12px;
 }
 
 .stat-progress {
   height: 8px;
-  background: #e5e7eb;
+  background: var(--color-progreso-fondo);
   border-radius: 4px;
   overflow: hidden;
+  border: 1px solid var(--color-borde); /* Borde para modo alto contraste */
 }
 
 .stat-progress-fill {
   height: 100%;
-  background: #003366;
+  background: var(--color-primario);
   border-radius: 4px;
   transition: width 0.5s ease;
 }
 
-.stat-progress-fill.gray {
-  background: #6b7280;
-}
-
-.stat-progress-fill.blue {
-  background: #0284c7;
-}
-
-/* Quick Access Row */
+/* ============================================================================
+   ACCESOS RÁPIDOS
+   ============================================================================ */
 .quick-access-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -125,13 +190,13 @@
 }
 
 .quick-card {
-  background: white;
+  background: var(--color-fondo-tarjeta);
   border-radius: 8px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  border: 2px solid #003366;
+  border: 2px solid var(--color-primario);
   text-decoration: none;
-  color: inherit;
+  color: var(--color-texto-principal);
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
@@ -142,44 +207,56 @@
   transform: translateY(-2px);
 }
 
+.quick-card:focus-visible {
+  outline: 3px solid var(--color-borde-enfoque);
+  outline-offset: 2px;
+}
+
 .quick-icon {
   margin-bottom: 16px;
-  color: #003366;
+  color: var(--color-primario);
 }
 
 .quick-card h3 {
   font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-texto-principal);
   margin: 0 0 8px 0;
 }
 
 .quick-card p {
   font-size: 14px;
-  color: #666;
+  color: var(--color-texto-secundario);
   margin: 0 0 16px 0;
   line-height: 1.5;
   flex: 1;
 }
 
 .btn-access {
-  background: #003366;
-  color: white;
+  background: var(--color-primario);
+  color: #ffffff;
   border: none;
   padding: 10px 20px;
   border-radius: 6px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: background 0.2s ease;
   width: 100%;
+  text-align: center;
+}
+
+.high-contrast-mode .btn-access {
+  color: #000000; /* Texto negro sobre fondo amarillo en alto contraste */
 }
 
 .btn-access:hover {
-  background: #002244;
+  background: var(--color-primario-hover);
 }
 
-/* Bottom Row */
+/* ============================================================================
+   FILA INFERIOR (Propuestas y Actividad)
+   ============================================================================ */
 .bottom-row {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -188,17 +265,17 @@
 }
 
 .card {
-  background: white;
+  background: var(--color-fondo-tarjeta);
   border-radius: 8px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--color-borde);
 }
 
 .card h2 {
   font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-texto-principal);
   margin: 0 0 20px 0;
 }
 
@@ -223,46 +300,29 @@
 
 .progress-label {
   font-size: 14px;
-  font-weight: 500;
-  color: #374151;
+  font-weight: 600;
+  color: var(--color-texto-principal);
 }
 
 .progress-stats {
   font-size: 14px;
-  color: #666;
+  color: var(--color-texto-secundario);
+  font-weight: 600;
 }
 
 .progress-bar {
   height: 8px;
-  background: #e5e7eb;
+  background: var(--color-progreso-fondo);
   border-radius: 4px;
   overflow: hidden;
+  border: 1px solid var(--color-borde);
 }
 
 .progress-fill {
   height: 100%;
   border-radius: 4px;
   transition: width 0.5s ease;
-}
-
-.progress-fill.blue {
-  background: #60a5fa;
-}
-
-.progress-fill.orange {
-  background: #fb923c;
-}
-
-.progress-fill.green {
-  background: #4ade80;
-}
-
-.progress-fill.purple {
-  background: #a78bfa;
-}
-
-.progress-fill.gray {
-  background: #d1d5db;
+  background: var(--color-primario);
 }
 
 /* Activity List */
@@ -277,7 +337,7 @@
   display: flex;
   gap: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--color-borde);
 }
 
 .activity-item:last-child {
@@ -287,6 +347,7 @@
 .activity-icon {
   font-size: 20px;
   flex-shrink: 0;
+  color: var(--color-primario);
 }
 
 .activity-content {
@@ -295,22 +356,22 @@
 
 .activity-desc {
   font-size: 14px;
-  font-weight: 500;
-  color: #374151;
+  font-weight: 600;
+  color: var(--color-texto-principal);
   margin: 0 0 4px 0;
 }
 
 .activity-date {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--color-texto-secundario);
   margin: 0;
 }
 
 .view-all {
   display: block;
   font-size: 14px;
-  font-weight: 600;
-  color: #2563eb;
+  font-weight: 700;
+  color: var(--color-borde-enfoque);
   text-decoration: none;
   margin-top: 16px;
 }
@@ -321,12 +382,14 @@
 
 .no-activity {
   font-size: 14px;
-  color: #9ca3af;
+  color: var(--color-texto-secundario);
   text-align: center;
   padding: 20px 0;
 }
 
-/* Users Section */
+/* ============================================================================
+   SECCIÓN DE USUARIOS
+   ============================================================================ */
 .users-section {
   display: flex;
   justify-content: space-between;
@@ -341,96 +404,195 @@
 }
 
 .users-icon {
-  color: #003366;
+  color: var(--color-primario);
 }
 
 .users-info h3 {
   font-size: 16px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-texto-principal);
   margin: 0 0 4px 0;
 }
 
 .users-info p {
   font-size: 14px;
-  color: #666;
+  color: var(--color-texto-secundario);
   margin: 0;
 }
 
 .btn-outline {
-  background: white;
-  color: #003366;
-  border: 2px solid #003366;
+  background: var(--color-fondo-tarjeta);
+  color: var(--color-primario);
+  border: 2px solid var(--color-primario);
   padding: 10px 20px;
   border-radius: 6px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
   transition: all 0.2s ease;
 }
 
 .btn-outline:hover {
-  background: #003366;
-  color: white;
+  background: var(--color-primario);
+  color: #ffffff;
 }
 
-/* SuperAdmin Section */
-.superadmin-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
+.high-contrast-mode .btn-outline:hover {
+  color: #000000;
 }
 
-.superadmin-content {
+/* ============================================================================
+   TARJETA: MODO DE ACCESO GLOBAL (SuperAdmin)
+   ============================================================================ */
+.modo-global-card {
+  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%);
+  border: 1.5px solid var(--color-primario);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 51, 102, 0.08);
+}
+
+.high-contrast-mode .modo-global-card {
+  background: #000000;
+  border: 2px solid var(--color-primario);
+}
+
+.modo-global-content {
   display: flex;
   align-items: center;
+  gap: 20px;
+}
+
+.modo-global-icon {
+  background: var(--color-fondo-tarjeta);
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primario);
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.modo-global-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.modo-global-info {
+  flex: 1;
+}
+
+.modo-global-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-texto-principal);
+  letter-spacing: -0.01em;
+}
+
+.modo-global-info p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-texto-secundario);
+  font-weight: 600;
+}
+
+.btn-activar {
+  background: var(--color-primario);
+  color: #ffffff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(0, 51, 102, 0.2);
+}
+
+.high-contrast-mode .btn-activar {
+  color: #000000;
+  border: 2px solid #ffffff;
+}
+
+.btn-activar:hover {
+  background: var(--color-primario-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 51, 102, 0.3);
+}
+
+.btn-activar:active {
+  transform: translateY(0);
+}
+
+/* ============================================================================
+   ESTADOS DE CARGA Y ERROR (Consolidados)
+   ============================================================================ */
+.admin-loading,
+.admin-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  font-size: 16px;
   gap: 16px;
 }
 
-.superadmin-icon {
-  color: #0284c7;
+.admin-loading {
+  color: var(--color-texto-secundario);
 }
 
-.superadmin-info h3 {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 0 0 4px 0;
+.admin-error {
+  color: var(--color-peligro);
 }
 
-.superadmin-info p {
-  font-size: 14px;
-  color: #666;
-  margin: 0;
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--color-progreso-fondo);
+  border-top-color: var(--color-primario);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-.btn-primary {
-  background: #003366;
-  color: white;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.admin-error button {
+  background: var(--color-primario);
+  color: #ffffff;
   border: none;
   padding: 10px 20px;
   border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease;
+  font-size: 14px;
+  font-weight: 700;
 }
 
-.btn-primary:hover {
-  background: #002244;
+.high-contrast-mode .admin-error button {
+  color: #000000;
+  border: 2px solid #ffffff;
 }
 
-/* Loading */
-.admin-loading {
-  text-align: center;
-  padding: 40px;
-  color: #666;
-  font-size: 16px;
+.admin-error button:hover {
+  background: var(--color-primario-hover);
 }
 
-/* Responsive */
+/* ============================================================================
+   DISEÑO RESPONSIVE
+   ============================================================================ */
 @media (max-width: 1200px) {
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
@@ -447,151 +609,6 @@
   }
 }
 
-@media (max-width: 600px) {
-  .stats-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Loading y Error States */
-.admin-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  color: #666;
-  font-size: 16px;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #e5e7eb;
-  border-top-color: #003366;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 16px;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.admin-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  color: #dc2626;
-  font-size: 16px;
-  gap: 16px;
-}
-
-.admin-error button {
-  background: #003366;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.admin-error button:hover {
-  background: #002244;
-}
-
-/* ============================================================================
-   TARJETA: MODO DE ACCESO GLOBAL (SuperAdmin)
-   ============================================================================ */
-
-.modo-global-card {
-  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%);
-  border: 1.5px solid #003366;
-  border-radius: 12px;
-  padding: 24px 28px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 51, 102, 0.08);
-}
-
-.modo-global-content {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-/* Ícono de escudo */
-.modo-global-icon {
-  background: white;
-  border: 1px solid #dbeafe;
-  border-radius: 10px;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #003366;
-  flex-shrink: 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.modo-global-icon svg {
-  width: 28px;
-  height: 28px;
-}
-
-/* Información textual */
-.modo-global-info {
-  flex: 1;
-}
-
-.modo-global-info h3 {
-  margin: 0 0 4px 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.01em;
-}
-
-.modo-global-info p {
-  margin: 0;
-  font-size: 14px;
-  color: #003366;
-  font-weight: 500;
-}
-
-/* Botón "Activar →" */
-.btn-activar {
-  background: #003366;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  box-shadow: 0 2px 6px rgba(0, 51, 102, 0.2);
-}
-
-.btn-activar:hover {
-  background: #002244;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 51, 102, 0.3);
-}
-
-.btn-activar:active {
-  transform: translateY(0);
-}
-
-/* Responsive: en móviles apila verticalmente */
 @media (max-width: 768px) {
   .modo-global-content {
     flex-direction: column;
@@ -605,48 +622,147 @@
   }
 }
 
-/* Estados de carga y error */
-.loading-state,
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
+@media (max-width: 600px) {
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--gris-200);
-  border-top-color: var(--tec-azul);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 16px;
+/* ==========================================================================
+   PARCHE DE ALTO CONTRASTE PARA EL PANEL DE ADMINISTRADOR
+   (Solo se activa cuando <body> tiene la clase 'high-contrast-mode'.
+   No afecta el modo normal. Gana sobre estilos inline con !important.)
+   ========================================================================== */
+
+/* 1. TODAS las tarjetas del admin → fondo negro */
+.high-contrast-mode .stat-card,
+.high-contrast-mode .quick-card,
+.high-contrast-mode .card,
+.high-contrast-mode .proposals-section,
+.high-contrast-mode .activity-section,
+.high-contrast-mode .users-section,
+.high-contrast-mode .modo-global-card,
+.high-contrast-mode .superadmin-section {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  background-image: none !important; /* mata el gradiente de modo-global-card */
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+/* 2. Textos dentro de las tarjetas → blanco (incluye los h2 invisibles) */
+.high-contrast-mode .card h2,
+.high-contrast-mode .card h3,
+.high-contrast-mode .stat-label,
+.high-contrast-mode .stat-number,
+.high-contrast-mode .progress-label,
+.high-contrast-mode .progress-stats,
+.high-contrast-mode .activity-desc,
+.high-contrast-mode .activity-date,
+.high-contrast-mode .no-activity,
+.high-contrast-mode .quick-card p,
+.high-contrast-mode .quick-card h3,
+.high-contrast-mode .users-info h3,
+.high-contrast-mode .users-info p,
+.high-contrast-mode .modo-global-info h3,
+.high-contrast-mode .modo-global-info p {
+  color: #FFFFFF !important;
 }
 
-.loading-state p,
-.error-state p {
-  color: var(--texto-secundario);
-  font-size: 14px;
+/* 3. BARRAS DE PROGRESO → amarillo uniforme (gana sobre los inline styles
+      de coloresEstado[] que vienen desde React) */
+.high-contrast-mode .progress-fill,
+.high-contrast-mode .stat-progress-fill,
+.high-contrast-mode .stat-progress-fill.gray,
+.high-contrast-mode .stat-progress-fill.blue {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
 }
 
-.error-state button {
-  margin-top: 16px;
-  background: var(--tec-azul);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
+/* 4. Pistas (tracks) de las barras → gris oscuro con borde blanco visible */
+.high-contrast-mode .progress-bar,
+.high-contrast-mode .stat-progress {
+  background: #333333 !important;
+  background-color: #333333 !important;
+  border: 1px solid #FFFFFF !important;
 }
 
-.error-state button:hover {
-  background: var(--tec-azul-oscuro);
+/* 5. Íconos de las tarjetas (los cuadritos con SVG) → amarillo sobre negro */
+.high-contrast-mode .stat-icon-wrapper,
+.high-contrast-mode .quick-icon,
+.high-contrast-mode .users-icon,
+.high-contrast-mode .modo-global-icon,
+.high-contrast-mode .superadmin-icon {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .stat-icon-wrapper svg,
+.high-contrast-mode .quick-icon svg,
+.high-contrast-mode .users-icon svg,
+.high-contrast-mode .modo-global-icon svg {
+  stroke: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+/* 6. Botones → amarillo con texto negro (estándar de contraste máximo) */
+.high-contrast-mode .btn-access,
+.high-contrast-mode .btn-activar,
+.high-contrast-mode .btn-primary,
+.high-contrast-mode .admin-error button {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+/* 7. Botón outline (Gestión de Usuarios) → amarillo sobre negro */
+.high-contrast-mode .btn-outline {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-outline:hover {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* 8. Badge "Aprobado" y cambios porcentuales */
+.high-contrast-mode .stat-badge {
+  background: #000000 !important;
+  color: #00FF00 !important;
+  border: 1px solid #00FF00 !important;
+}
+
+.high-contrast-mode .stat-change.positive { color: #00FF00 !important; }
+.high-contrast-mode .stat-change.negative { color: #FF5555 !important; }
+.high-contrast-mode .stat-change.neutral  { color: #FFFFFF !important; }
+
+/* 9. Enlace "Ver toda la actividad →" (estaba en verde sobre blanco) */
+.high-contrast-mode .view-all {
+  color: #FFFF00 !important;
+}
+
+/* 10. Punto de actividad (el ● amarillo que aparecía suelto) */
+.high-contrast-mode .activity-icon {
+  color: #FFFF00 !important;
+}
+
+/* 11. Separadores y bordes internos */
+.high-contrast-mode .activity-item {
+  border-bottom-color: #555555 !important;
+}
+
+/* 12. Loading y error del admin */
+.high-contrast-mode .admin-loading,
+.high-contrast-mode .admin-error {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .loading-spinner {
+  border-color: #555555 !important;
+  border-top-color: #FFFF00 !important;
 }
