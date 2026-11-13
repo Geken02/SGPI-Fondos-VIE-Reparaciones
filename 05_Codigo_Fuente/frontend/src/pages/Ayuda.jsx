@@ -54,7 +54,7 @@ const Ayuda = () => {
         {/* Buscador grande de ayuda */}
         <div className="ayuda-search-container">
           <div className="ayuda-search-box">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#627d98" strokeWidth="2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#627d98" strokeWidth="2" aria-hidden="true">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>

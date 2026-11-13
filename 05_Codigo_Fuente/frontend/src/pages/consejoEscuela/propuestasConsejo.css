@@ -1,9 +1,7 @@
-﻿/* src/pages/consejoEscuela/propuestasConsejo.css */
 .propuestas-consejo {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  color: #334155;
+  width: 100%;
+  padding: 24px;
+  color: #1f2937;
 }
 
 /* Encabezado de página */
@@ -212,14 +210,46 @@
   .pagina-encabezado {
     flex-direction: column;
   }
-  
-  .detalle-propuesta strong {
-    display: block;
-    width: 100%;
-    margin-bottom: 0.25rem;
-  }
-  
-  .tabla-contenedor {
-    overflow-x: auto;
-  }
 }
+
+/* Accesibilidad: contraste consistente en tablas y tarjetas del Consejo */
+.propuestas-consejo .tabla-contenedor {
+  background: #ffffff !important;
+  color: #1f2937 !important;
+}
+.propuestas-consejo .tabla-propuestas thead,
+.propuestas-consejo .tabla-propuestas thead tr,
+.propuestas-consejo .tabla-propuestas thead th {
+  background: #1e3a5f !important;
+  color: #ffffff !important;
+}
+.propuestas-consejo .tabla-propuestas tbody,
+.propuestas-consejo .tabla-propuestas tbody tr,
+.propuestas-consejo .tabla-propuestas tbody td {
+  color: #1f2937 !important;
+}
+.propuestas-consejo .tabla-propuestas tbody tr {
+  background: #ffffff !important;
+}
+.propuestas-consejo .tabla-propuestas tbody tr:nth-child(even) {
+  background: #f1f5f9 !important;
+}
+.propuestas-consejo .tabla-propuestas tbody td {
+  background-color: transparent !important;
+}
+.propuestas-consejo .detalle-propuesta,
+.propuestas-consejo .mensaje-cargando,
+.propuestas-consejo .mensaje-vacio {
+  background: #ffffff !important;
+  color: #1f2937 !important;
+}
+.propuestas-consejo .detalle-propuesta p,
+.propuestas-consejo .detalle-propuesta strong,
+.propuestas-consejo .mensaje-vacio p {
+  color: #1f2937 !important;
+}
+.propuestas-consejo button:focus-visible {
+  outline: 3px solid #facc15;
+  outline-offset: 3px;
+}
+

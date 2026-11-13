@@ -1,4 +1,4 @@
-﻿.acuerdos-consejo {
+.acuerdos-consejo {
   width: 100%;
   padding: 24px;
   color: #1f2937;
@@ -216,3 +216,26 @@
     padding: 16px;
   }
 }
+
+/* Accesibilidad: contraste de paneles y tablas de acuerdos */
+.acuerdos-consejo .acuerdos-panel,
+.acuerdos-consejo .acuerdos-tabla-contenedor {
+  color: #1f2937 !important;
+}
+.acuerdos-consejo .acuerdos-tabla th {
+  background: #1e3a5f !important;
+  color: #ffffff !important;
+}
+.acuerdos-consejo .acuerdos-tabla td {
+  color: #1f2937 !important;
+}
+.acuerdos-consejo .acuerdos-tabla tbody tr:nth-child(even) {
+  background: #f1f5f9 !important;
+}
+.acuerdos-consejo button:focus-visible,
+.acuerdos-consejo input:focus-visible,
+.acuerdos-consejo select:focus-visible {
+  outline: 3px solid #facc15;
+  outline-offset: 2px;
+}
+

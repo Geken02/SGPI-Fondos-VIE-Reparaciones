@@ -97,7 +97,7 @@ const VinculacionDictamenes = () => {
         {/* Barra de Filtros */}
         <div className="proposals-filters-bar" style={{ marginTop: '24px' }}>
           <div className="filter-search-box">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
