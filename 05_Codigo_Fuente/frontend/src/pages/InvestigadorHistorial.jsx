@@ -50,6 +50,7 @@ const InvestigadorHistorial = () => {
             <button 
               type="button" 
               className="btn-nueva-propuesta"
+              aria-label="Descargar todos los expedientes y finiquitos cerrados en formato ZIP"
               disabled={proyectosCerrados.length === 0}
               style={{ opacity: proyectosCerrados.length === 0 ? 0.6 : 1 }}
               onClick={() => {
@@ -65,13 +66,13 @@ const InvestigadorHistorial = () => {
 
         {/* Tarjetas KPI de Expedientes Cerrados */}
         <div className="convocatorias-stats-grid" style={{ marginBottom: '24px' }}>
-          <div className="conv-stat-card">
-            <div className={`stat-indicator-dot ${proyectosCerrados.length > 0 ? 'dot-green' : 'dot-blue'}`}></div>
+          <div className="conv-stat-card" role="region" aria-label={`Total de expedientes cerrados: ${proyectosCerrados.length}`}>
+            <div className={`stat-indicator-dot ${proyectosCerrados.length > 0 ? 'dot-green' : 'dot-blue'}`} aria-hidden="true"></div>
             <div className="stat-number">{proyectosCerrados.length} Expedientes</div>
             <div className="stat-label">Historial Convocatorias Registradas</div>
           </div>
-          <div className="conv-stat-card">
-            <div className="stat-indicator-dot dot-blue"></div>
+          <div className="conv-stat-card" role="region" aria-label="Procesos al día">
+            <div className="stat-indicator-dot dot-blue" aria-hidden="true"></div>
             <div className="stat-number">{proyectosCerrados.length > 0 ? '100% Al día' : '0 Pendientes'}</div>
             <div className="stat-label">Sin Procesos pendientes</div>
           </div>
@@ -85,6 +86,7 @@ const InvestigadorHistorial = () => {
               value={filtroAno} 
               onChange={(e) => setFiltroAno(e.target.value)}
               className="filter-select"
+              aria-label="Filtrar por año o convocatoria"
             >
               <option value="Todos">Todos los años (2020-2026) ▾</option>
               <option value="2026">Año 2026</option>
@@ -130,6 +132,7 @@ const InvestigadorHistorial = () => {
                   <button 
                     type="button" 
                     className="btn-historial-action btn-outline"
+                    aria-label={`Descargar informe final oficial para ${item.codigoPropuesta}: ${item.titulo}`}
                     onClick={() => alert(`Descargando Informe Final Oficial para ${item.codigoPropuesta}`)}
                   >
                     Informe Final
@@ -137,6 +140,7 @@ const InvestigadorHistorial = () => {
                   <button 
                     type="button" 
                     className="btn-historial-action btn-primary"
+                    aria-label={`Descargar acta de finiquito FVIE para ${item.codigoPropuesta}: ${item.titulo}`}
                     onClick={() => alert(`Descargando Acta de Finiquito FVIE para ${item.codigoPropuesta}`)}
                   >
                     Finiquito FVIE →
@@ -147,7 +151,7 @@ const InvestigadorHistorial = () => {
           </div>
         ) : (
           <div className="proposals-empty-state" style={{ padding: '48px 24px', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-            <div style={{ fontSize: '42px', marginBottom: '12px' }}>📁</div>
+            <div style={{ fontSize: '42px', marginBottom: '12px' }} aria-hidden="true">📁</div>
             <h3 style={{ fontSize: '18px', color: '#002855', margin: '0 0 8px 0', fontWeight: 600 }}>
               No tienes proyectos cerrados o finiquitados
             </h3>

@@ -172,6 +172,7 @@ const InvestigadorConvocatorias = () => {
               onChange={(e) => setFiltroTexto(e.target.value)}
               maxLength={200}
               className="filter-search-input"
+              aria-label="Buscar convocatorias por palabra clave, temática o entidad"
               containerStyle={{ flex: 1 }}
               style={{ border: 'none', outline: 'none', background: 'transparent' }}
             />
@@ -181,6 +182,7 @@ const InvestigadorConvocatorias = () => {
             value={filtroTipo} 
             onChange={(e) => setFiltroTipo(e.target.value)}
             className="filter-select"
+            aria-label="Filtrar convocatorias por tipo de fondo"
           >
             <option value="Todos">Tipo de Fondo: Todos ▾</option>
             <option value="TRADICIONAL">Fondo Tradicional</option>
@@ -194,6 +196,7 @@ const InvestigadorConvocatorias = () => {
             value={filtroArea} 
             onChange={(e) => setFiltroArea(e.target.value)}
             className="filter-select"
+            aria-label="Filtrar convocatorias por área de conocimiento"
           >
             <option value="Todas">Área Conocimiento: Todas ▾</option>
             <option value="Ingeniería y Tecnología">Ingeniería y Tecnología</option>
@@ -204,6 +207,7 @@ const InvestigadorConvocatorias = () => {
           <button 
             type="button" 
             className="btn-limpiar-filtros"
+            aria-label="Limpiar todos los filtros de convocatorias"
             onClick={limpiarFiltros}
           >
             Limpiar Filtros
@@ -235,8 +239,10 @@ const InvestigadorConvocatorias = () => {
                       className={`btn-favorite-star ${esFav ? 'is-fav' : ''}`}
                       onClick={() => toggleFavorita(conv.id)}
                       title={esFav ? 'Quitar de favoritas' : 'Marcar como favorita'}
+                      aria-label={esFav ? `Quitar ${conv.nombre} de convocatorias favoritas` : `Marcar ${conv.nombre} como favorita`}
                     >
-                      ★
+                      <span aria-hidden="true">★</span>
+                      <span className="sr-only">{esFav ? 'Favorita' : 'No favorita'}</span>
                     </button>
                   </div>
 

@@ -69,27 +69,27 @@ const VinculacionDictamenes = () => {
 
         {/* 3 KPIs dinámicos */}
         <div className="kpi-cards-grid">
-          <div className="kpi-card">
+          <div className="kpi-card" aria-label="KPI: Dictámenes Emitidos">
             <div className="kpi-card-label">DICTÁMENES EMITIDOS</div>
             <div className="kpi-stat-row">
               <span className="kpi-big-number">{totalDictamenes}</span>
-              <span className="kpi-stat-icon">📄</span>
+              <span className="kpi-stat-icon" aria-hidden="true">📄</span>
             </div>
           </div>
 
-          <div className="kpi-card">
+          <div className="kpi-card" aria-label="KPI: Recomendados">
             <div className="kpi-card-label">RECOMENDADOS</div>
             <div className="kpi-stat-row">
               <span className="kpi-big-number">{recomendados}</span>
-              <span className="kpi-stat-icon" style={{ color: '#16a34a' }}>✓</span>
+              <span className="kpi-stat-icon" aria-hidden="true" style={{ color: '#16a34a' }}>✓</span>
             </div>
           </div>
 
-          <div className="kpi-card">
+          <div className="kpi-card" aria-label="KPI: No Recomendados">
             <div className="kpi-card-label">NO RECOMENDADOS</div>
             <div className="kpi-stat-row">
               <span className="kpi-big-number">{noRecomendados}</span>
-              <span className="kpi-stat-icon" style={{ color: '#EF3340' }}>✕</span>
+              <span className="kpi-stat-icon" aria-hidden="true" style={{ color: '#EF3340' }}>✕</span>
             </div>
           </div>
         </div>
@@ -97,7 +97,7 @@ const VinculacionDictamenes = () => {
         {/* Barra de Filtros */}
         <div className="proposals-filters-bar" style={{ marginTop: '24px' }}>
           <div className="filter-search-box">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
@@ -108,6 +108,7 @@ const VinculacionDictamenes = () => {
               onChange={(e) => setFiltroTexto(e.target.value)}
               maxLength={200}
               className="filter-search-input"
+              aria-label="Buscar en dictámenes emitidos"
               containerStyle={{ flex: 1 }}
               style={{ border: 'none', outline: 'none', background: 'transparent' }}
             />
@@ -117,6 +118,7 @@ const VinculacionDictamenes = () => {
             value={filtroResultado} 
             onChange={(e) => setFiltroResultado(e.target.value)}
             className="filter-select"
+            aria-label="Filtrar por resultado de dictamen"
           >
             <option value="Todos">Resultado: Todos ▾</option>
             <option value="Aprobado">Aprobado</option>
@@ -127,6 +129,7 @@ const VinculacionDictamenes = () => {
             value={filtroDpto} 
             onChange={(e) => setFiltroDpto(e.target.value)}
             className="filter-select"
+            aria-label="Filtrar por departamento o escuela"
           >
             <option value="Todos">Dpto: Todos ▾</option>
             <option value="IE">IE</option>

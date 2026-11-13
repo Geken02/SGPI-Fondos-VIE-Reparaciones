@@ -845,6 +845,7 @@ const FormularioPlanRiesgos = () => {
                             <input
                               type="checkbox"
                               checked={checked}
+                              aria-label={`Actividad ${i + 1}, Año ${a + 1}, Mes ${m + 1}`}
                               onChange={() => handleTogglePeriodo(i, a + 1, m + 1)}
                               style={{ cursor: 'pointer', width: '14px', height: '14px' }}
                             />
@@ -858,8 +859,10 @@ const FormularioPlanRiesgos = () => {
                         className="btn-icon-action btn-icon-delete"
                         onClick={() => handleEliminarActividad(act.id)}
                         title="Eliminar fila"
+                        aria-label={`Eliminar fila de actividad ${i + 1}`}
                       >
-                        ✕
+                        <span aria-hidden="true">✕</span>
+                        <span className="sr-only">Eliminar fila</span>
                       </button>
                     </td>
                   </tr>
@@ -871,6 +874,7 @@ const FormularioPlanRiesgos = () => {
           <button 
             type="button" 
             className="btn-add-table-row"
+            aria-label="Agregar nueva fila de actividad al cronograma"
             onClick={handleAgregarFilaActividad}
           >
             + Agregar Actividad

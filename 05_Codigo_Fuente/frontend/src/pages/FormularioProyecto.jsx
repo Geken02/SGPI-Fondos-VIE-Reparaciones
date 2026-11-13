@@ -886,7 +886,7 @@ const FormularioProyecto = () => {
                   <p className="form-field-hint">
                     Seleccione la modalidad. Recuerde que elegir "Desarrollo tecnológico" activará la sección 14b de compromisos de propiedad industrial.
                   </p>
-                  <div className="modalidades-grid-cards">
+                  <div className="modalidades-grid-cards" role="radiogroup" aria-label="Modalidad del proyecto">
                     {[
                       { key: 'Investigación básica', desc: 'Generación de nuevo conocimiento fundamental sin aplicación comercial inmediata.' },
                       { key: 'Investigación aplicada', desc: 'Adquisición de nuevo conocimiento orientado a objetivos o metas prácticas específicas.' },
@@ -896,9 +896,14 @@ const FormularioProyecto = () => {
                       <div 
                         key={m.key} 
                         className={`modalidad-card-option ${modalidad === m.key ? 'is-selected' : ''}`}
+                        role="radio"
+                        aria-checked={modalidad === m.key}
+                        tabIndex={0}
+                        aria-label={`Modalidad: ${m.key}. ${m.desc}`}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setModalidad(m.key); } }}
                         onClick={() => setModalidad(m.key)}
                       >
-                        <div className="modalidad-radio-circle">
+                        <div className="modalidad-radio-circle" aria-hidden="true">
                           {modalidad === m.key && <span className="inner-dot"></span>}
                         </div>
                         <div className="modalidad-texts">
@@ -2157,6 +2162,7 @@ const FormularioProyecto = () => {
                                     <input
                                       type="checkbox"
                                       checked={checked}
+                                      aria-label={`Actividad ${i + 1}, Año ${a + 1}, Mes ${m + 1}`}
                                       onChange={() => handleTogglePeriodo(i, a + 1, m + 1)}
                                       style={{ cursor: 'pointer', width: '14px', height: '14px' }}
                                     />
@@ -2171,9 +2177,11 @@ const FormularioProyecto = () => {
                                 type="button" 
                                 className="btn-icon-action btn-icon-delete"
                                 title="Eliminar actividad"
+                                aria-label={`Eliminar fila de actividad ${i + 1}`}
                                 onClick={() => handleEliminarActividad(act.id || i)}
                               >
-                                ✕
+                                <span aria-hidden="true">✕</span>
+                                <span className="sr-only">Eliminar actividad</span>
                               </button>
                             </td>
                           </tr>
@@ -2186,6 +2194,7 @@ const FormularioProyecto = () => {
                 <button 
                   type="button" 
                   className="btn-add-table-row"
+                  aria-label="Agregar nueva fila de actividad al cronograma"
                   onClick={handleAgregarFilaActividad}
                 >
                   + Agregar Actividad

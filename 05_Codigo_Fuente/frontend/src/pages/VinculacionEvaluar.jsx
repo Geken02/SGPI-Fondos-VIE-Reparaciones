@@ -144,6 +144,7 @@ const VinculacionEvaluar = () => {
           <button 
             type="button" 
             className="btn-link-volver"
+            aria-label="Volver a la bandeja de entrada"
             onClick={() => navigate('/dashboard')}
           >
             ← Volver a la bandeja de entrada
@@ -219,11 +220,15 @@ const VinculacionEvaluar = () => {
                 <div className="expediente-resumen-title">Documentos Adjuntos:</div>
                 <div 
                   className="documento-adjunto-card" 
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Descargar documento adjunto: Form-04_Propuesta.pdf"
                   style={{ marginTop: '6px' }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); descargarPropuestaPDF(propuestaId, propuestaService); } }}
                   onClick={() => descargarPropuestaPDF(propuestaId, propuestaService)}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>📄</span>
+                    <span aria-hidden="true">📄</span>
                     <div>
                       <div className="doc-nombre">Form-04_Propuesta.pdf</div>
                       <div className="doc-peso">Formulario oficial</div>
@@ -235,6 +240,7 @@ const VinculacionEvaluar = () => {
               <button 
                 type="button" 
                 className="btn-proposal-action btn-outline"
+                aria-label="Descargar Form-04 completo en formato PDF"
                 style={{ width: '100%', marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 onClick={() => descargarPropuestaPDF(propuestaId, propuestaService)}
               >
@@ -354,9 +360,11 @@ const VinculacionEvaluar = () => {
                           type="button" 
                           className="btn-eliminar-adjunto"
                           onClick={() => { setArchivoAdjunto(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                          title="Eliminar archivo"
+                          title="Eliminar archivo adjunto"
+                          aria-label="Eliminar archivo adjunto"
                         >
-                          ✕
+                          <span aria-hidden="true">✕</span>
+                          <span className="sr-only">Eliminar archivo adjunto</span>
                         </button>
                       </div>
                     ) : (
@@ -425,14 +433,20 @@ const VinculacionEvaluar = () => {
                       type="button"
                       className="btn-eliminar-adjunto"
                       onClick={() => { setArchivoSubida(null); if (fileInputSubidaRef.current) fileInputSubidaRef.current.value = ''; }}
-                      title="Eliminar archivo"
+                      title="Eliminar archivo adjunto"
+                      aria-label="Eliminar archivo adjunto"
                     >
-                      ✕
+                      <span aria-hidden="true">✕</span>
+                      <span className="sr-only">Eliminar archivo adjunto</span>
                     </button>
                   </div>
                 ) : (
                   <div 
                     className="dropzone-upload-box"
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Zona de subida de dictamen firmado. Haga clic o presione Enter para seleccionar un archivo PDF, DOC o DOCX"
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputSubidaRef.current?.click(); } }}
                     onClick={() => fileInputSubidaRef.current?.click()}
                     onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     onDrop={(e) => {
@@ -448,7 +462,7 @@ const VinculacionEvaluar = () => {
                       }
                     }}
                   >
-                    <div className="dropzone-icon">↑</div>
+                    <div className="dropzone-icon" aria-hidden="true">↑</div>
                     <div className="dropzone-title">
                       Arrastre el archivo firmado aquí
                     </div>
