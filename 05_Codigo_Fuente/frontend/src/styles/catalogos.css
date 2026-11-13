@@ -104,39 +104,50 @@
   gap: 16px;
 }
 
+/* ✅ Buscador con FLEX (sin position:absolute): ícono e input en fila */
 .search-box {
-  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   flex: 1;
   max-width: 400px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9ca3af;
-}
-
-/* ✅ FIX DEL BUG: el input ahora declara color explícito y placeholder visible */
-.search-input {
-  width: 100%;
-  padding: 10px 12px 10px 40px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.2s ease;
-  color: #1e293b;
   background-color: #ffffff;
+  border: 1.5px solid #94a3b8;
+  border-radius: 8px;
+  padding: 0 14px;
+  height: 42px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.search-input::placeholder {
-  color: #94a3b8;
-}
-
-.search-input:focus {
+/* Anillo de foco cuando el input está activo (accesible con teclado) */
+.search-box:focus-within {
   border-color: #003366;
+  box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.15);
+}
+
+/* ✅ Ícono con contraste AA (7.5:1 sobre blanco) */
+.search-icon {
+  flex-shrink: 0;
+  color: #475569;
+}
+
+/* ✅ Input transparente, ocupa el resto del flex */
+.search-input {
+  flex: 1;
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: #1e293b;
+  padding: 0;
+  line-height: 1.5;
+}
+
+/* ✅ Placeholder con contraste AA (4.6:1 sobre blanco) */
+.search-input::placeholder {
+  color: #64748b;
 }
 
 .btn-agregar {
