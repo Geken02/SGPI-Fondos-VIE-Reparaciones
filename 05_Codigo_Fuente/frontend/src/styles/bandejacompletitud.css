@@ -1,57 +1,32 @@
-/* src/styles/bandejaCompletitud.css */
+/* src/styles/BandejaCompletitud.css */
 
-/* Variables de colores TEC */
-:root {
-  --tec-azul: #002855;
-  --tec-azul-claro: #e6f0ff;
-  --tec-gris-texto: #334155;
-  --tec-gris-claro: #64748b;
-  --tec-fondo: #f8fafc;
-  --tec-exito: #10b981;
-  --tec-exito-bg: #d1fae5;
-  --tec-alerta: #f59e0b;
-  --tec-alerta-bg: #fef3c7;
-  --tec-peligro: #ef4444;
-  --tec-peligro-bg: #fee2e2;
-}
-
-.bandeja-completitud {
+.bandeja-container {
   padding: 32px;
   max-width: 1400px;
   margin: 0 auto;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  color: var(--tec-gris-texto);
+  color: #334155;
 }
 
-.bandeja-header h1 {
-  color: var(--tec-azul);
-  margin: 0 0 8px 0;
+.bandeja-header {
+  margin-bottom: 32px;
+}
+
+.bandeja-title {
+  color: #002855;
   font-size: 28px;
   font-weight: 700;
+  margin: 0 0 8px 0;
 }
 
-.bandeja-header p {
-  color: var(--tec-gris-claro);
+.bandeja-subtitle {
+  color: #64748b;
   font-size: 15px;
-  margin: 0 0 24px 0;
+  margin: 0;
 }
 
-/* Alerta de plazo */
-.alerta-plazo {
-  background-color: var(--tec-alerta-bg);
-  border: 1px solid #fcd34d;
-  border-radius: 8px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 32px;
-  color: #92400e;
-  font-size: 14px;
-}
-
-/* Tarjetas de estadísticas */
-.stats-container {
+/* Estadísticas */
+.stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 24px;
@@ -62,30 +37,28 @@
   background: white;
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
-  border-left: 4px solid var(--tec-azul);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #002855;
 }
 
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1);
+.stat-card.warning {
+  border-left-color: #f59e0b;
 }
 
-.stat-card.warning { border-left-color: var(--tec-alerta); }
-.stat-card.success { border-left-color: var(--tec-exito); }
+.stat-card.success {
+  border-left-color: #10b981;
+}
 
 .stat-value {
   font-size: 36px;
   font-weight: 800;
-  color: var(--tec-azul);
+  color: #002855;
   margin-bottom: 4px;
-  line-height: 1;
 }
 
 .stat-label {
   font-size: 14px;
-  color: var(--tec-gris-claro);
+  color: #64748b;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -95,65 +68,68 @@
 .tabla-container {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
-  overflow: hidden; /* Para que los bordes redondeados funcionen */
-  overflow-x: auto; /* Scroll horizontal en móviles */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
-.tabla-propuestas {
+.tabla-bandeja {
   width: 100%;
   border-collapse: collapse;
-  min-width: 800px; /* Evita que se aplaste en pantallas pequeñas */
 }
 
-.tabla-propuestas th {
-  background-color: var(--tec-fondo);
-  padding: 14px 20px;
-  text-align: left;
-  font-weight: 600;
-  color: var(--tec-gris-claro);
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.tabla-bandeja thead {
+  background-color: #f8fafc;
   border-bottom: 2px solid #e2e8f0;
 }
 
-.tabla-propuestas td {
+.tabla-bandeja th {
+  padding: 14px 20px;
+  text-align: left;
+  font-weight: 600;
+  color: #64748b;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.tabla-bandeja td {
   padding: 16px 20px;
   border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
-  font-size: 14px;
 }
 
-.tabla-propuestas tbody tr:hover {
-  background-color: #fafbfc;
+.tabla-bandeja tbody tr {
+  border-bottom: 1px solid #f1f5f9;
 }
 
-.tabla-propuestas tbody tr:last-child td {
+.tabla-bandeja tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.tabla-bandeja tbody tr:last-child {
   border-bottom: none;
 }
 
 /* Elementos de la tabla */
-.codigo-propuesta {
-  background-color: var(--tec-azul-claro);
-  color: var(--tec-azul);
+.codigo-badge {
+  background-color: #e6f0ff;
+  color: #002855;
   padding: 4px 10px;
   border-radius: 6px;
-  font-family: 'Monaco', 'Consolas', monospace;
+  font-family: monospace;
   font-size: 13px;
   font-weight: 600;
 }
 
-.titulo-truncado {
+.titulo-celda {
   max-width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 500;
-  color: var(--tec-azul);
+  color: #002855;
 }
 
-.documentacion-check {
+.doc-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -161,72 +137,81 @@
   font-weight: 500;
 }
 
-.doc-ok { color: var(--tec-exito); display: flex; align-items: center; gap: 4px; }
-.doc-falta { color: var(--tec-peligro); display: flex; align-items: center; gap: 4px; }
+.doc-ok {
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
-/* Badges de estado */
-.badge-estado {
+.doc-falta {
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.estado-badge {
   padding: 4px 12px;
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
   display: inline-block;
 }
 
-.badge-estado.completa {
-  background-color: var(--tec-exito-bg);
+.estado-badge.completa {
+  background-color: #d1fae5;
   color: #065f46;
 }
 
-.badge-estado.incompleta {
-  background-color: var(--tec-peligro-bg);
+.estado-badge.incompleta {
+  background-color: #fee2e2;
   color: #991b1b;
 }
 
-/* Botones de acción */
-.acciones {
+/* Botones */
+.acciones-cell {
   display: flex;
   gap: 8px;
 }
 
-.btn-accion {
+.btn-asignar, .btn-aprobar, .btn-subsanar {
   padding: 8px 16px;
+  color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  transition: opacity 0.2s;
 }
+
+.btn-asignar {
+  background-color: #002855;
+}
+.btn-asignar:hover { opacity: 0.9; }
 
 .btn-aprobar {
-  background-color: var(--tec-exito);
-  color: white;
+  background-color: #10b981;
 }
-.btn-aprobar:hover { background-color: #059669; transform: translateY(-1px); }
+.btn-aprobar:hover { opacity: 0.9; }
 
 .btn-subsanar {
-  background-color: var(--tec-alerta);
-  color: white;
+  background-color: #f59e0b;
 }
-.btn-subsanar:hover { background-color: #d97706; transform: translateY(-1px); }
+.btn-subsanar:hover { opacity: 0.9; }
 
 /* Estados de carga y vacío */
-.loading, .empty-state {
+.loading-state, .empty-state {
   padding: 80px 20px;
   text-align: center;
-  color: var(--tec-gris-claro);
+  color: #64748b;
 }
 
 .spinner {
   border: 3px solid #f3f4f6;
-  border-top: 3px solid var(--tec-azul);
+  border-top: 3px solid #002855;
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -241,36 +226,27 @@
 
 /* ==========================================================================
    PARCHE DE ALTO CONTRASTE - BANDEJA DE COMPLETITUD
-   Solo se activa cuando <body> tiene la clase 'high-contrast-mode'.
-   No afecta el modo normal. Gana sobre estilos inline con !important.
    ========================================================================== */
 
-/* 1. CONTENEDOR PRINCIPAL */
-.high-contrast-mode .bandeja-completitud {
+.high-contrast-mode .bandeja-container,
+.high-contrast-mode .bandeja-title,
+.high-contrast-mode .bandeja-subtitle,
+.high-contrast-mode .stat-label,
+.high-contrast-mode .tabla-bandeja th,
+.high-contrast-mode .tabla-bandeja td,
+.high-contrast-mode .loading-state,
+.high-contrast-mode .empty-state {
   color: #FFFFFF !important;
 }
 
-/* 2. HEADER */
-.high-contrast-mode .bandeja-header h1 {
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .bandeja-header p {
-  color: #CCCCCC !important;
-}
-
-/* 3. ALERTA DE PLAZO */
-.high-contrast-mode .alerta-plazo {
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border-color: #FFFF00 !important;
-}
-
-/* 4. TARJETAS DE ESTADÍSTICAS */
-.high-contrast-mode .stat-card {
+.high-contrast-mode .stat-card,
+.high-contrast-mode .tabla-container {
   background: #000000 !important;
-  border-left-color: #FFFF00 !important;
   border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .stat-card {
+  border-left: 4px solid #FFFF00 !important;
 }
 
 .high-contrast-mode .stat-card.warning {
@@ -285,45 +261,26 @@
   color: #FFFF00 !important;
 }
 
-.high-contrast-mode .stat-label {
-  color: #CCCCCC !important;
-}
-
-/* 5. TABLA */
-.high-contrast-mode .tabla-container {
-  background: #000000 !important;
-  border: 2px solid #FFFFFF !important;
-}
-
-.high-contrast-mode .tabla-propuestas {
-  background: #000000 !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .tabla-propuestas th {
+.high-contrast-mode .tabla-bandeja thead {
   background-color: #1a1a1a !important;
-  color: #FFFFFF !important;
   border-bottom-color: #FFFFFF !important;
 }
 
-.high-contrast-mode .tabla-propuestas td {
-  background: #000000 !important;
-  color: #FFFFFF !important;
+.high-contrast-mode .tabla-bandeja tbody tr {
   border-bottom-color: #333333 !important;
 }
 
-.high-contrast-mode .tabla-propuestas tbody tr:hover {
+.high-contrast-mode .tabla-bandeja tbody tr:hover {
   background-color: #1a1a1a !important;
 }
 
-/* 6. ELEMENTOS DE LA TABLA */
-.high-contrast-mode .codigo-propuesta {
+.high-contrast-mode .codigo-badge {
   background-color: #000000 !important;
   color: #FFFF00 !important;
   border: 1px solid #FFFF00 !important;
 }
 
-.high-contrast-mode .titulo-truncado {
+.high-contrast-mode .titulo-celda {
   color: #FFFFFF !important;
 }
 
@@ -335,55 +292,27 @@
   color: #FF3333 !important;
 }
 
-/* 7. BADGES DE ESTADO */
-.high-contrast-mode .badge-estado {
+.high-contrast-mode .estado-badge,
+.high-contrast-mode .estado-badge.completa,
+.high-contrast-mode .estado-badge.incompleta {
   background-color: #000000 !important;
+  color: #FFFF00 !important;
   border: 2px solid #FFFF00 !important;
 }
 
-.high-contrast-mode .badge-estado.completa {
-  background-color: #000000 !important;
-  color: #00FF00 !important;
-  border-color: #00FF00 !important;
-}
-
-.high-contrast-mode .badge-estado.incompleta {
-  background-color: #000000 !important;
-  color: #FF3333 !important;
-  border-color: #FF3333 !important;
-}
-
-/* 8. BOTONES DE ACCIÓN */
-.high-contrast-mode .btn-accion {
-  border: 2px solid #FFFFFF !important;
-}
-
-.high-contrast-mode .btn-aprobar {
-  background-color: #00FF00 !important;
-  color: #000000 !important;
-  border-color: #00FF00 !important;
-  font-weight: 700 !important;
-}
-
-.high-contrast-mode .btn-aprobar:hover {
-  background-color: #00CC00 !important;
-}
-
+.high-contrast-mode .btn-asignar,
+.high-contrast-mode .btn-aprobar,
 .high-contrast-mode .btn-subsanar {
   background-color: #FFFF00 !important;
   color: #000000 !important;
-  border-color: #FFFF00 !important;
+  border: 2px solid #FFFFFF !important;
   font-weight: 700 !important;
 }
 
+.high-contrast-mode .btn-asignar:hover,
+.high-contrast-mode .btn-aprobar:hover,
 .high-contrast-mode .btn-subsanar:hover {
   background-color: #CCCC00 !important;
-}
-
-/* 9. ESTADOS DE CARGA Y VACÍO */
-.high-contrast-mode .loading,
-.high-contrast-mode .empty-state {
-  color: #FFFFFF !important;
 }
 
 .high-contrast-mode .spinner {
