@@ -348,21 +348,27 @@ export default function AdminPanel() {
           {stats.actividadReciente.length === 0 ? (
             <p className="no-activity">Sin actividad reciente</p>
           ) : (
-            <div className="activity-list" role="list" aria-live="polite">
-              {stats.actividadReciente.slice(0, 5).map((log) => (
-                <div key={log.logId} className="activity-item" role="listitem">
-                  <span className="activity-icon" aria-hidden="true">●</span>
-                  <div className="activity-content">
-                    <p className="activity-desc">{log.descripcion}</p>
-                    <p className="activity-date">
-                      <time dateTime={log.fecha}>
-                        {new Date(log.fecha).toLocaleString('es-CR')}
-                      </time>
-                    </p>
+            <div className="activity-list" role="list" aria-live="polite" aria-label="Lista de actividades recientes del sistema">
+                  {stats.actividadReciente.slice(0, 5).map((log) => (
+                  <div 
+                    key={log.logId} 
+                    className="activity-item" 
+                    role="listitem"
+                    tabIndex={0}  
+                    aria-label={`${log.descripcion}, registrado el ${new Date(log.fecha).toLocaleString('es-CR')}`}
+                  >
+                    <span className="activity-icon" aria-hidden="true">●</span>
+                    <div className="activity-content">
+                      <p className="activity-desc">{log.descripcion}</p>
+                      <p className="activity-date">
+                        <time dateTime={log.fecha}>
+                          {new Date(log.fecha).toLocaleString('es-CR')}
+                        </time>
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
           )}
           <Link to="/dashboard/admin/bitacora" className="view-all" tabIndex={0} aria-label="Ver toda la actividad del sistema en la bitácora">
             Ver toda la actividad →
