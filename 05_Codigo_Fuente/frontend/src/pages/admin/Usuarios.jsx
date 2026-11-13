@@ -1,4 +1,3 @@
-// src/pages/admin/Usuarios.jsx
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminService } from '../../services/adminService';
@@ -7,7 +6,6 @@ import Modal from '../../components/Modal';
 import UserForm from '../../components/UserForm';
 import '../../styles/usuarios.css';
 
-// Funciones dinámicas para roles
 const formatearNombreRol = (nombreRol) => {
   if (!nombreRol) return 'Sin rol asignado';
   return nombreRol
@@ -29,9 +27,7 @@ const generarColorRol = (nombreRol) => {
     'bg-yellow-100 text-yellow-800',
     'bg-red-100 text-red-700',
   ];
-
   if (!nombreRol) return 'bg-gray-100 text-gray-700';
-
   let hash = 0;
   for (let i = 0; i < nombreRol.length; i++) {
     hash = nombreRol.charCodeAt(i) + ((hash << 5) - hash);
@@ -50,14 +46,11 @@ export default function Usuarios() {
   const [pagina, setPagina] = useState(1);
   const [totalRegistros, setTotalRegistros] = useState(0);
   const [tamanoPagina] = useState(10);
-  
-  // Estados de modales
+
   const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
   const [modalEditarAbierto, setModalEditarAbierto] = useState(false);
   const [usuarioEditando, setUsuarioEditando] = useState(null);
   const [cargandoForm, setCargandoForm] = useState(false);
-  
-  // Toast
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
@@ -88,7 +81,6 @@ export default function Usuarios() {
     setCargando(true);
     try {
       const rolSeleccionado = filtroRol ? roles.find(r => r.nombreRol === filtroRol) : null;
-      
       const params = {
         pagina,
         tamanoPagina,
@@ -96,16 +88,13 @@ export default function Usuarios() {
         rolId: rolSeleccionado ? rolSeleccionado.rolId : undefined,
         incluirInactivos: true,
       };
-
       const response = await adminService.listarUsuarios(params);
       let usuariosFiltrados = response.data.items || [];
-      
       if (filtroEstado === 'activo') {
         usuariosFiltrados = usuariosFiltrados.filter(u => u.activo === true);
       } else if (filtroEstado === 'inactivo') {
         usuariosFiltrados = usuariosFiltrados.filter(u => u.activo === false);
       }
-      
       setUsuarios(usuariosFiltrados);
       setTotalRegistros(response.data.total || 0);
     } catch (error) {
@@ -121,69 +110,54 @@ export default function Usuarios() {
     setToast({ mensaje, tipo });
     setTimeout(() => setToast(null), 3000);
   };
+
   const handleCrear = async (formData) => {
     setCargandoForm(true);
     try {
       const { rolId, ...datosUsuario } = formData;
-      
-      // 👇 LIMPIEZA DE DATOS: Convertir strings vacíos a null para evitar error 422
       const datosLimpios = {
         ...datosUsuario,
         escuelaId: datosUsuario.escuelaId === '' ? null : parseInt(datosUsuario.escuelaId, 10),
         telefono: datosUsuario.telefono === '' ? null : datosUsuario.telefono,
         apellido2Usuario: datosUsuario.apellido2Usuario === '' ? null : datosUsuario.apellido2Usuario,
       };
-      
       const response = await adminService.crearUsuario(datosLimpios);
       const nuevoUsuario = response.data;
-      
       if (rolId) {
         await adminService.asignarRol(nuevoUsuario.usuarioId, { rolId: parseInt(rolId) });
       }
-      
       mostrarToast('Usuario creado exitosamente');
       setModalCrearAbierto(false);
       cargarDatos();
     } catch (error) {
       console.error('Error creando usuario:', error);
-      
       const detail = error.response?.data?.detail;
-      const mensajeError = Array.isArray(detail) 
-        ? detail[0]?.msg || 'Error de validación en los datos' 
+      const mensajeError = Array.isArray(detail)
+        ? detail[0]?.msg || 'Error de validación en los datos'
         : (typeof detail === 'string' ? detail : 'Error al crear el usuario');
-      
       mostrarToast(mensajeError, 'error');
     } finally {
       setCargandoForm(false);
     }
   };
 
-    const handleEditar = async (formData) => {
+  const handleEditar = async (formData) => {
     setCargandoForm(true);
     try {
       const { rolId, contrasena, ...datosUsuario } = formData;
-      
-      // 1. Limpieza de datos (evita el error 422 de strings vacíos)
       const datosLimpios = {
         ...datosUsuario,
         escuelaId: datosUsuario.escuelaId === '' ? null : parseInt(datosUsuario.escuelaId, 10),
         telefono: datosUsuario.telefono === '' ? null : datosUsuario.telefono,
         apellido2Usuario: datosUsuario.apellido2Usuario === '' ? null : datosUsuario.apellido2Usuario,
       };
-
       if (contrasena && contrasena.trim() !== '') {
         datosLimpios.contrasena = contrasena;
       }
-      
-      // 2. Actualizar datos básicos del usuario
       await adminService.actualizarUsuario(usuarioEditando.usuarioId, datosLimpios);
-      
-      // 3. Lógica blindada para el rol
       if (rolId) {
         const rolIdNumerico = parseInt(rolId, 10);
         const rolActual = usuarioEditando.roles?.[0]?.rolId;
-        
-        // Solo intentamos asignar si el rol es DIFERENTE al que ya tiene
         if (rolIdNumerico !== rolActual) {
           try {
             await adminService.asignarRol(usuarioEditando.usuarioId, { rolId: rolIdNumerico });
@@ -195,19 +169,16 @@ export default function Usuarios() {
           }
         }
       }
-      
       mostrarToast('Usuario actualizado exitosamente');
       setModalEditarAbierto(false);
       setUsuarioEditando(null);
       cargarDatos();
     } catch (error) {
       console.error('Error actualizando usuario:', error);
-      
       const detail = error.response?.data?.detail;
-      const mensajeError = Array.isArray(detail) 
-        ? detail[0]?.msg || 'Error de validación en los datos' 
+      const mensajeError = Array.isArray(detail)
+        ? detail[0]?.msg || 'Error de validación en los datos'
         : (typeof detail === 'string' ? detail : 'Error al actualizar el usuario');
-      
       mostrarToast(mensajeError, 'error');
     } finally {
       setCargandoForm(false);
@@ -218,7 +189,6 @@ export default function Usuarios() {
     if (!window.confirm(`¿Está seguro de ${usuario.activo ? 'desactivar' : 'activar'} este usuario?`)) {
       return;
     }
-
     try {
       await adminService.cambiarEstadoUsuario(usuario.usuarioId, { activo: !usuario.activo });
       mostrarToast(`Usuario ${usuario.activo ? 'desactivado' : 'activado'} exitosamente`);
@@ -253,7 +223,6 @@ export default function Usuarios() {
     const ahora = new Date();
     const acceso = new Date(fecha);
     const diffHoras = Math.floor((ahora - acceso) / (1000 * 60 * 60));
-    
     if (diffHoras < 1) return 'Ahora';
     if (diffHoras < 24) return `Hace ${diffHoras} hora${diffHoras > 1 ? 's' : ''}`;
     const diffDias = Math.floor(diffHoras / 24);
@@ -264,45 +233,64 @@ export default function Usuarios() {
   return (
     <div className="usuarios-container">
       {toast && (
-        <div className={`toast ${toast.tipo}`}>
-          <span className="toast-icon">{toast.tipo === 'success' ? '✓' : '✕'}</span>
+        <div className={`toast ${toast.tipo}`} role="status" aria-live="polite">
+          <span className="toast-icon" aria-hidden="true">{toast.tipo === 'success' ? '✓' : '✕'}</span>
           <span className="toast-message">{toast.mensaje}</span>
         </div>
       )}
 
-      <div className="breadcrumbs">
-        <Link to="/dashboard">Comité técnico</Link>
-        <span className="breadcrumb-separator">›</span>
-        <span>Gestión de Usuarios y Roles</span>
-      </div>
+      <nav className="breadcrumbs" aria-label="Ruta de navegación">
+        <ol className="breadcrumbs-list">
+          <li><Link to="/dashboard">Comité técnico</Link></li>
+          <li className="breadcrumb-separator" aria-hidden="true">›</li>
+          <li aria-current="page">Gestión de Usuarios y Roles</li>
+        </ol>
+      </nav>
 
-      <div className="usuarios-header">
-        <h1>Gestión de Usuarios y Roles</h1>
+      <header className="usuarios-header">
+        <h1 id="titulo-usuarios">Gestión de Usuarios y Roles</h1>
         <p>Crear, editar y asignar roles y permisos de acceso.</p>
-      </div>
+      </header>
 
       <div className="usuarios-filtros">
         <div className="filtro-busqueda">
-          <svg className="filtro-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <svg className="filtro-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
             <circle cx="11" cy="11" r="8"/>
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input
             type="text"
+            id="busqueda-usuarios"
+            className="filtro-input"
+            aria-label="Buscar usuarios por nombre o correo"
             placeholder="Buscar por nombre o correo..."
             value={busqueda}
             onChange={(e) => {
               setBusqueda(e.target.value);
               setPagina(1);
             }}
-            className="filtro-input"
           />
+          {busqueda && (
+            <button
+              type="button"
+              className="filtro-clear"
+              onClick={() => { setBusqueda(''); setPagina(1); }}
+              aria-label="Limpiar búsqueda de usuarios"
+              title="Limpiar búsqueda"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          )}
         </div>
 
         <select
           value={filtroRol}
           onChange={(e) => { setFiltroRol(e.target.value); setPagina(1); }}
           className="filtro-select"
+          aria-label="Filtrar usuarios por rol"
         >
           <option value="">Todos los roles</option>
           {roles.map(rol => (
@@ -316,66 +304,79 @@ export default function Usuarios() {
           value={filtroEstado}
           onChange={(e) => { setFiltroEstado(e.target.value); setPagina(1); }}
           className="filtro-select"
+          aria-label="Filtrar usuarios por estado"
         >
           <option value="">Todos los estados</option>
           <option value="activo">Activo</option>
           <option value="inactivo">Inactivo</option>
         </select>
 
-        <button className="btn-agregar" onClick={() => setModalCrearAbierto(true)}>
+        <button className="btn-agregar" onClick={() => setModalCrearAbierto(true)} aria-haspopup="dialog">
           + Agregar Usuario
         </button>
       </div>
 
       <div className="tabla-container">
         {cargando ? (
-          <div className="tabla-loading">
+          <div className="tabla-loading" role="status" aria-live="polite">
             <div className="spinner"></div>
             <p>Cargando usuarios...</p>
           </div>
         ) : usuarios.length === 0 ? (
-          <div className="tabla-vacia">
+          <div className="tabla-vacia" role="status">
             <p>No se encontraron usuarios</p>
           </div>
         ) : (
-          <table className="tabla-usuarios">
+          <table className="tabla-usuarios" aria-label="Listado de usuarios del sistema">
+            <caption className="sr-only">
+              Tabla de usuarios con su rol, estado, escuela y última fecha de acceso.
+            </caption>
             <thead>
               <tr>
-                <th className="col-checkbox"></th>
-                <th className="col-avatar"></th>
-                <th>Nombre Completo</th>
-                <th>Correo Institucional</th>
-                <th>Rol Asignado</th>
-                <th>Estado</th>
-                <th>Escuela/Dependencia</th>
-                <th>Último Acceso</th>
-                <th>Acciones</th>
+                <th className="col-checkbox" scope="col"><span className="sr-only">Seleccionar</span></th>
+                <th className="col-avatar" scope="col"><span className="sr-only">Avatar</span></th>
+                <th scope="col">Nombre Completo</th>
+                <th scope="col">Correo Institucional</th>
+                <th scope="col">Rol Asignado</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Escuela/Dependencia</th>
+                <th scope="col">Último Acceso</th>
+                <th scope="col">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {usuarios.map((usuario) => {
                 const infoRol = obtenerInfoRol(usuario);
+                const nombreCompleto = `${usuario.nombreUsuario} ${usuario.apellido1Usuario}`.trim();
                 return (
                   <tr key={usuario.usuarioId}>
                     <td className="col-checkbox">
-                      <input type="checkbox" className="checkbox-row" />
+                      <input
+                        type="checkbox"
+                        className="checkbox-row"
+                        aria-label={`Seleccionar ${nombreCompleto}`}
+                      />
                     </td>
                     <td className="col-avatar">
-                      <div className="avatar-circle">
+                      <div className="avatar-circle" aria-hidden="true">
                         {obtenerIniciales(usuario.nombreUsuario, usuario.apellido1Usuario)}
                       </div>
                     </td>
                     <td className="nombre-completo">
                       {usuario.nombreUsuario} {usuario.apellido1Usuario} {usuario.apellido2Usuario}
                     </td>
-                    <td className="correo">{usuario.correoInstitucional}</td>
+                    <td className="correo">
+                      <a href={`mailto:${usuario.correoInstitucional}`} className="correo-link">
+                        {usuario.correoInstitucional}
+                      </a>
+                    </td>
                     <td>
-                      <span className={`rol-badge ${infoRol.color}`}>
+                      <span className={`rol-badge ${infoRol.color}`} aria-label={`Rol: ${infoRol.nombre}`}>
                         {infoRol.nombre}
                       </span>
                     </td>
                     <td>
-                      <span className={`estado-badge ${usuario.activo ? 'activo' : 'inactivo'}`}>
+                      <span className={`estado-badge ${usuario.activo ? 'activo' : 'inactivo'}`} aria-label={`Estado: ${usuario.activo ? 'Activo' : 'Inactivo'}`}>
                         {usuario.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
@@ -387,25 +388,25 @@ export default function Usuarios() {
                     </td>
                     <td>
                       <div className="acciones-celda">
-                        <button 
-                          className="btn-accion" 
-                          title="Editar"
+                        <button
+                          className="btn-accion"
+                          aria-label={`Editar ${nombreCompleto}`}
                           onClick={() => {
                             setUsuarioEditando(usuario);
                             setModalEditarAbierto(true);
                           }}
                         >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                           </svg>
                         </button>
-                        <button 
-                          className="btn-accion" 
-                          title={usuario.activo ? 'Desactivar' : 'Activar'}
+                        <button
+                          className="btn-accion"
+                          aria-label={`${usuario.activo ? 'Desactivar' : 'Activar'} ${nombreCompleto}`}
                           onClick={() => handleCambiarEstado(usuario)}
                         >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
                             {usuario.activo ? (
                               <>
                                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -430,7 +431,7 @@ export default function Usuarios() {
         )}
       </div>
 
-      <div className="paginacion">
+      <div className="paginacion" role="navigation" aria-label="Paginación de usuarios">
         <div className="paginacion-info">
           Mostrando {usuarios.length > 0 ? ((pagina - 1) * tamanoPagina + 1) : 0}-
           {Math.min(pagina * tamanoPagina, totalRegistros)} de {totalRegistros} usuarios
@@ -440,6 +441,7 @@ export default function Usuarios() {
             className="btn-paginacion"
             disabled={pagina === 1}
             onClick={() => setPagina(pagina - 1)}
+            aria-label="Ir a la página anterior"
           >
             ← Anterior
           </button>
@@ -448,6 +450,8 @@ export default function Usuarios() {
               key={num}
               className={`btn-paginacion ${pagina === num ? 'active' : ''}`}
               onClick={() => setPagina(num)}
+              aria-label={`Ir a la página ${num}`}
+              aria-current={pagina === num ? 'page' : undefined}
             >
               {num}
             </button>
@@ -456,6 +460,7 @@ export default function Usuarios() {
             className="btn-paginacion"
             disabled={pagina >= totalPaginas}
             onClick={() => setPagina(pagina + 1)}
+            aria-label="Ir a la página siguiente"
           >
             Siguiente →
           </button>

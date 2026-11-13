@@ -13,6 +13,21 @@
   margin-bottom: 16px;
 }
 
+.breadcrumbs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.breadcrumbs-list li {
+  display: inline-flex;
+  align-items: center;
+}
+
 .breadcrumbs a {
   color: #003366;
   text-decoration: none;
@@ -54,32 +69,77 @@
   flex-wrap: wrap;
 }
 
+/* ✅ Buscador en FLEX (borde en el contenedor, no en el input) */
 .filtro-busqueda {
-  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   flex: 1;
   min-width: 300px;
+  background-color: #ffffff;
+  border: 1.5px solid #94a3b8;
+  border-radius: 8px;
+  padding: 0 14px;
+  height: 44px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.filtro-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9ca3af;
+.filtro-busqueda:hover {
+  border-color: #64748b;
 }
 
-.filtro-input {
-  width: 100%;
-  padding: 10px 12px 10px 40px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.2s ease;
-}
-
-.filtro-input:focus {
+.filtro-busqueda:focus-within {
   border-color: #003366;
+  box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.18);
+}
+
+/* ✅ Lupa con contraste AA (7.5:1) */
+.filtro-icon {
+  flex-shrink: 0;
+  color: #475569;
+}
+
+/* ✅ Input con color explícito (no hereda blanco) */
+.filtro-input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1e293b;
+  padding: 0;
+  line-height: 1.5;
+}
+
+.filtro-input::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+/* Botón limpiar */
+.filtro-clear {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.filtro-clear:hover {
+  background: #dc2626;
+  color: #ffffff;
 }
 
 .filtro-select {
@@ -87,14 +147,17 @@
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 14px;
+  color: #334155;
   background: white;
   cursor: pointer;
   outline: none;
   min-width: 150px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .filtro-select:focus {
   border-color: #003366;
+  box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.18);
 }
 
 .btn-agregar {
@@ -190,6 +253,7 @@
   width: 16px;
   height: 16px;
   cursor: pointer;
+  accent-color: #003366;
 }
 
 .avatar-circle {
@@ -213,6 +277,15 @@
 .correo {
   color: #6b7280;
   font-size: 13px;
+}
+
+.correo-link {
+  color: #003366;
+  text-decoration: none;
+}
+
+.correo-link:hover {
+  text-decoration: underline;
 }
 
 .rol-badge {
@@ -326,7 +399,6 @@
   .tabla-usuarios {
     font-size: 13px;
   }
-  
   .tabla-usuarios th,
   .tabla-usuarios td {
     padding: 10px 12px;
@@ -338,11 +410,9 @@
     flex-direction: column;
     align-items: stretch;
   }
-  
   .filtro-busqueda {
     min-width: 100%;
   }
-  
   .paginacion {
     flex-direction: column;
     gap: 12px;
@@ -353,8 +423,6 @@
 /* ==========================================================================
    PARCHE DE ALTO CONTRASTE - MÓDULO ADMINISTRACIÓN
    (Usuarios, Asignación de Gestoras, Convocatoria, Catálogos)
-   Solo se activa cuando <body> tiene la clase 'high-contrast-mode'.
-   No afecta el modo normal. Gana sobre estilos inline con !important.
    ========================================================================== */
 
 /* 1. CONTENEDORES Y TARJETAS → fondo negro */
@@ -450,36 +518,48 @@
   background: #1a1a1a !important;
 }
 
-/* 5. INPUTS Y SELECTS → fondo negro, borde blanco, texto blanco */
-.high-contrast-mode .filtro-input,
-.high-contrast-mode .filtro-select,
-.high-contrast-mode .buscador-input,
-.high-contrast-mode .search-input,
-.high-contrast-mode .form-input,
-.high-contrast-mode .selector-card .form-select {
+/* 5. BUSCADOR Y SELECTS (especificidad alta con .usuarios-container para ganar al global) */
+.high-contrast-mode .usuarios-container .filtro-busqueda {
+  background: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+.high-contrast-mode .usuarios-container .filtro-busqueda:focus-within {
+  border-color: #FFFF00 !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.35) !important;
+}
+.high-contrast-mode .usuarios-container .filtro-input {
+  background: transparent !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.high-contrast-mode .usuarios-container .filtro-input::placeholder {
+  color: #B0B0B0 !important;
+  opacity: 1;
+}
+.high-contrast-mode .usuarios-container .filtro-icon {
+  color: #FFFF00 !important;
+}
+.high-contrast-mode .usuarios-container .filtro-clear {
+  background: #333333 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #FFFFFF !important;
+}
+.high-contrast-mode .usuarios-container .filtro-clear:hover {
+  background: #FF3333 !important;
+  color: #FFFFFF !important;
+}
+.high-contrast-mode .usuarios-container .filtro-select {
   background: #000000 !important;
   color: #FFFFFF !important;
   border: 2px solid #FFFFFF !important;
 }
-.high-contrast-mode .filtro-input:focus,
-.high-contrast-mode .filtro-select:focus,
-.high-contrast-mode .buscador-input:focus,
-.high-contrast-mode .search-input:focus,
-.high-contrast-mode .form-input:focus,
-.high-contrast-mode .selector-card .form-select:focus {
+.high-contrast-mode .usuarios-container .filtro-select:focus {
   border-color: #FFFF00 !important;
   box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.3) !important;
 }
 
-/* Iconos dentro de inputs (lupa, etc.) → amarillo */
-.high-contrast-mode .filtro-icon,
-.high-contrast-mode .buscador-icon,
-.high-contrast-mode .input-icon,
-.high-contrast-mode .search-icon {
-  color: #FFFF00 !important;
-}
-
-/* 6. BOTONES PRIMARIOS (Agregar, Guardar, Mover) → amarillo con texto negro */
+/* 6. BOTONES PRIMARIOS → amarillo con texto negro */
 .high-contrast-mode .btn-agregar,
 .high-contrast-mode .btn-primary,
 .high-contrast-mode .btn-small,
@@ -497,7 +577,7 @@
   background: #CCCC00 !important;
 }
 
-/* 7. BOTONES SECUNDARIOS (Cancelar) → negro con borde amarillo */
+/* 7. BOTONES SECUNDARIOS */
 .high-contrast-mode .btn-cancel {
   background: #000000 !important;
   color: #FFFF00 !important;
@@ -508,7 +588,7 @@
   color: #000000 !important;
 }
 
-/* 8. BOTONES DE ACCIÓN (editar, eliminar en tablas) */
+/* 8. BOTONES DE ACCIÓN */
 .high-contrast-mode .btn-accion,
 .high-contrast-mode .btn-icon {
   background: #000000 !important;
@@ -520,12 +600,15 @@
   background: #FFFF00 !important;
   color: #000000 !important;
 }
+.high-contrast-mode .btn-accion:hover svg,
+.high-contrast-mode .btn-icon:hover svg {
+  stroke: #000000 !important;
+}
 .high-contrast-mode .btn-icon.danger:hover {
   background: #FF3333 !important;
   color: #FFFFFF !important;
   border-color: #FF3333 !important;
 }
-
 .high-contrast-mode .btn-quitar {
   color: #FF3333 !important;
 }
@@ -533,7 +616,7 @@
   background: #330000 !important;
 }
 
-/* 9. BADGES DE ESTADO (Activo/Inactivo, roles, etc.) */
+/* 9. BADGES DE ESTADO */
 .high-contrast-mode .rol-badge,
 .high-contrast-mode .estado-badge,
 .high-contrast-mode .estado-badge.activo,
@@ -549,6 +632,7 @@
 .high-contrast-mode .etapa-badge.bloqueante,
 .high-contrast-mode .badge-bloqueante {
   background: #000000 !important;
+  background-color: #000000 !important;
   color: #FFFF00 !important;
   border: 1px solid #FFFF00 !important;
 }
@@ -568,7 +652,7 @@
   border-color: #FFFFFF !important;
 }
 
-/* 12. LISTA DE ESCUELAS (Asignación de Gestoras) */
+/* 12. LISTA DE ESCUELAS */
 .high-contrast-mode .lista-escuelas {
   background: #000000 !important;
   border-color: #FFFFFF !important;
@@ -591,7 +675,7 @@
   color: #FFFF00 !important;
 }
 
-/* 13. TIMELINE (Convocatoria) */
+/* 13. TIMELINE */
 .high-contrast-mode .timeline::before {
   background: #555555 !important;
 }
@@ -678,7 +762,7 @@
   border-bottom-color: #FFFF00 !important;
 }
 
-/* 16. TOGGLE SWITCHES (Bloqueo de Convocatoria) */
+/* 16. TOGGLE SWITCHES */
 .high-contrast-mode .toggle-slider {
   background: #555555 !important;
 }
@@ -695,7 +779,7 @@
   color: #FFFFFF !important;
 }
 
-/* 17. ETAPAS (Convocatoria) */
+/* 17. ETAPAS */
 .high-contrast-mode .etapa-item {
   background: #000000 !important;
   border-color: #FFFFFF !important;
@@ -733,14 +817,14 @@
   border-color: #FFFF00 !important;
 }
 
-/* 20. SPINNER (carga) */
+/* 20. SPINNER */
 .high-contrast-mode .spinner,
 .high-contrast-mode .spinner-small {
   border-color: #555555 !important;
   border-top-color: #FFFF00 !important;
 }
 
-/* 21. TOAST (notificaciones) */
+/* 21. TOAST */
 .high-contrast-mode .toast {
   background: #000000 !important;
   color: #FFFFFF !important;
@@ -750,7 +834,7 @@
   color: #FFFFFF !important;
 }
 
-/* 22. CLAVE BADGE (Catálogos) */
+/* 22. CLAVE BADGE */
 .high-contrast-mode .clave-badge {
   background: #000000 !important;
   color: #FFFF00 !important;
@@ -760,4 +844,9 @@
 /* 23. FORM CHECKBOX LABEL */
 .high-contrast-mode .form-checkbox {
   color: #FFFFFF !important;
+}
+
+/* 24. CORREO LINK */
+.high-contrast-mode .correo-link {
+  color: #FFFF00 !important;
 }
