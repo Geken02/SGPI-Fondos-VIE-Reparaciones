@@ -310,31 +310,37 @@ export default function AdminPanel() {
         <section className="card proposals-section" aria-labelledby="titulo-estado-propuestas">
           <h2 id="titulo-estado-propuestas">Estado de Propuestas por Módulo</h2>
           <div className="progress-list" role="list" aria-label="Distribución de propuestas por estado">
-            {stats.propuestasPorEstado.map((item, index) => (
-              <div key={index} className="progress-item" role="listitem">
-                <div className="progress-header">
-                  <span className="progress-label">{item.estado}</span>
-                  <span className="progress-stats">{getPorcentaje(item.cantidad)}% ({item.cantidad})</span>
-                </div>
-                <div 
-                  className="progress-bar"
-                  role="progressbar"
-                  aria-valuenow={getPorcentaje(item.cantidad)}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label={`${item.estado}: ${item.cantidad} propuestas, ${getPorcentaje(item.cantidad)} por ciento`}
-                >
-                  <div 
-                    className="progress-fill" 
-                    style={{ 
-                      width: `${getPorcentaje(item.cantidad)}%`,
-                      background: coloresEstado[item.estado] || 'var(--color-primario, #002855)'
-                    }}
-                  ></div>
-                </div>
+          {stats.propuestasPorEstado.map((item, index) => (
+            <div 
+              key={index} 
+              className="progress-item" 
+              role="listitem"
+              tabIndex={0}  {/* ✅ NUEVO: hace que el foco se detenga aquí */}
+              aria-label={`${item.estado}: ${item.cantidad} propuestas, ${getPorcentaje(item.cantidad)} por ciento del total`}
+            >
+              <div className="progress-header">
+                <span className="progress-label">{item.estado}</span>
+                <span className="progress-stats">{getPorcentaje(item.cantidad)}% ({item.cantidad})</span>
               </div>
-            ))}
-          </div>
+              <div 
+                className="progress-bar"
+                role="progressbar"
+                aria-valuenow={getPorcentaje(item.cantidad)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`${item.estado}: ${getPorcentaje(item.cantidad)} por ciento completado`}
+              >
+                <div 
+                  className="progress-fill" 
+                  style={{ 
+                    width: `${getPorcentaje(item.cantidad)}%`,
+                    background: coloresEstado[item.estado] || 'var(--color-primario, #002855)'
+                  }}
+                ></div>
+              </div>
+            </div>
+          ))}
+        </div>
         </section>
 
         <section className="card activity-section" aria-labelledby="titulo-actividad-reciente">
