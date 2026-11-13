@@ -284,3 +284,156 @@
   font-weight: 500;
   color: #1a1a1a;
 }
+
+/* ==========================================================================
+   PARCHE DE ALTO CONTRASTE - MODALES Y TOASTS
+   Solo se activa cuando <body> tiene la clase 'high-contrast-mode'.
+   No afecta el modo normal. Gana sobre estilos inline con !important.
+   ========================================================================== */
+
+/* 1. OVERLAY DEL MODAL → más oscuro para mejor contraste */
+.high-contrast-mode .modal-overlay {
+  background: rgba(0, 0, 0, 0.85) !important;
+}
+
+/* 2. CONTENEDOR DEL MODAL → fondo negro, borde blanco */
+.high-contrast-mode .modal-container {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+/* 3. HEADER DEL MODAL → fondo negro, texto blanco, borde blanco */
+.high-contrast-mode .modal-header {
+  background: #000000 !important;
+  border-bottom-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .modal-header h2 {
+  color: #FFFFFF !important;
+}
+
+/* 4. BOTÓN CERRAR MODAL → amarillo sobre negro */
+.high-contrast-mode .modal-close {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .modal-close:hover {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* 5. BODY DEL MODAL → fondo negro */
+.high-contrast-mode .modal-body {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+/* 6. FORMULARIOS DENTRO DEL MODAL */
+.high-contrast-mode .form-label {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .form-hint,
+.high-contrast-mode .form-error {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .form-error {
+  color: #FF5555 !important;
+}
+
+/* 7. INPUTS, SELECTS, TEXTAREAS → fondo negro, borde blanco, texto blanco */
+.high-contrast-mode .form-input,
+.high-contrast-mode .form-select,
+.high-contrast-mode .form-textarea {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .form-input:focus,
+.high-contrast-mode .form-select:focus,
+.high-contrast-mode .form-textarea:focus {
+  border-color: #FFFF00 !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.3) !important;
+}
+
+.high-contrast-mode .form-input.error,
+.high-contrast-mode .form-select.error,
+.high-contrast-mode .form-textarea.error {
+  border-color: #FF3333 !important;
+}
+
+/* 8. CHECKBOXES → amarillo */
+.high-contrast-mode .form-checkbox input[type="checkbox"] {
+  accent-color: #FFFF00 !important;
+  border-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .form-checkbox {
+  color: #FFFFFF !important;
+}
+
+/* 9. ACCIONES DEL FORMULARIO (botones) */
+.high-contrast-mode .form-actions {
+  border-top-color: #FFFFFF !important;
+}
+
+/* 10. BOTÓN CANCELAR → negro con borde amarillo */
+.high-contrast-mode .btn-cancel {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-cancel:hover {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* 11. BOTÓN ENVIAR/GUARDAR → amarillo con texto negro */
+.high-contrast-mode .btn-submit {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-submit:hover:not(:disabled) {
+  background: #CCCC00 !important;
+}
+
+/* 12. SPINNER DENTRO DE BOTONES → amarillo */
+.high-contrast-mode .spinner-small {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  border-top-color: #FFFF00 !important;
+}
+
+/* 13. TOAST DE NOTIFICACIONES → fondo negro, borde amarillo */
+.high-contrast-mode .toast {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border-left-color: #FFFF00 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .toast.success {
+  border-left-color: #00FF00 !important;
+}
+
+.high-contrast-mode .toast.error {
+  border-left-color: #FF3333 !important;
+}
+
+.high-contrast-mode .toast-message {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .toast-icon {
+  color: #FFFF00 !important;
+}
