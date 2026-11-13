@@ -1,10 +1,10 @@
-// src/pages/comiteTecnico/DictamenFinal.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { comiteTecnicoService } from '../../services/comiteTecnicoService';
+import '../../styles/DictamenFinal.css';
 
 const Icon = ({ path, size = 18, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
     {path}
   </svg>
 );
@@ -78,9 +78,9 @@ export default function DictamenFinal() {
 
   if (cargando) {
     return (
-      <div style={styles.container}>
-        <div style={styles.loading}>
-          <div style={styles.spinner}></div>
+      <div className="dictamen-container">
+        <div className="dictamen-loading">
+          <div className="dictamen-spinner"></div>
           <p>Cargando consolidación de evaluaciones...</p>
         </div>
       </div>
@@ -89,10 +89,10 @@ export default function DictamenFinal() {
 
   if (!datos) {
     return (
-      <div style={styles.container}>
-        <div style={styles.error}>
-          <h2 style={{color: '#ef4444'}}>No se pudo cargar la consolidación</h2>
-          <button onClick={() => navigate('/comite-tecnico/propuestas-asignadas')} style={styles.btnBack}>
+      <div className="dictamen-container">
+        <div className="dictamen-error">
+          <h2>No se pudo cargar la consolidación</h2>
+          <button onClick={() => navigate('/comite-tecnico/propuestas-asignadas')} className="dictamen-btn-back">
             ← Volver
           </button>
         </div>
@@ -105,95 +105,78 @@ export default function DictamenFinal() {
   const esRecomendable = calificacionFinal >= 0.70;
 
   return (
-    <div style={styles.container}>
+    <div className="dictamen-container">
       {/* HEADER */}
-      <div style={styles.header}>
-        <button onClick={() => navigate(-1)} style={styles.backBtn}>
+      <div className="dictamen-header">
+        <button onClick={() => navigate(-1)} className="dictamen-back-btn">
           <Icon path={ICONS.flecha} size={16} />
           <span>Volver</span>
         </button>
-        <div style={styles.headerContent}>
-          <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap'}}>
-            <h1 style={styles.title}>Dictamen Final: {datos.codigoPropuesta}</h1>
-            <span style={{
-              ...styles.badge,
-              backgroundColor: esRecomendable ? '#d1fae5' : '#fee2e2',
-              color: esRecomendable ? '#065f46' : '#991b1b'
-            }}>
+        <div className="dictamen-header-content">
+          <div className="dictamen-title-row">
+            <h1 className="dictamen-title">Dictamen Final: {datos.codigoPropuesta}</h1>
+            <span className={`dictamen-badge ${esRecomendable ? 'recomendable' : 'no-recomendable'}`}>
               {esRecomendable ? 'Recomendable' : 'No Recomendable'}
             </span>
           </div>
-          <p style={styles.subtitle}>{datos.titulo}</p>
+          <p className="dictamen-subtitle">{datos.titulo}</p>
         </div>
       </div>
 
       {/* RESUMEN DE EVALUACIONES */}
-      <div style={styles.card}>
-        <h2 style={styles.cardTitle}>
+      <div className="dictamen-card">
+        <h2 className="dictamen-card-title">
           <Icon path={ICONS.documento} size={20} color="#002855" />
           Consolidación de Evaluaciones
         </h2>
 
-        {/* Tarjetas de resumen */}
-        <div style={styles.summaryGrid}>
-          <div style={styles.summaryCard}>
-            <div style={styles.summaryValue}>{datos.totalEvaluadores || 0}</div>
-            <div style={styles.summaryLabel}>Evaluadores</div>
+        <div className="dictamen-summary-grid">
+          <div className="dictamen-summary-card">
+            <div className="dictamen-summary-value">{datos.totalEvaluadores || 0}</div>
+            <div className="dictamen-summary-label">Evaluadores</div>
           </div>
-          <div style={styles.summaryCard}>
-            <div style={{
-              ...styles.summaryValue,
-              color: calificacionFinal >= 0.70 ? '#10b981' : '#ef4444'
-            }}>
+          <div className="dictamen-summary-card">
+            <div className="dictamen-summary-value" style={{ color: calificacionFinal >= 0.70 ? '#10b981' : '#ef4444' }}>
               {calificacionPorcentaje}%
             </div>
-            <div style={styles.summaryLabel}>Calificación Final</div>
+            <div className="dictamen-summary-label">Calificación Final</div>
           </div>
-          <div style={styles.summaryCard}>
-            <div style={{
-              ...styles.summaryValue,
-              fontSize: '18px',
-              color: esRecomendable ? '#10b981' : '#ef4444'
-            }}>
+          <div className="dictamen-summary-card">
+            <div className="dictamen-summary-value" style={{ fontSize: '18px', color: esRecomendable ? '#10b981' : '#ef4444' }}>
               {esRecomendable ? '≥ 70%' : '< 70%'}
             </div>
-            <div style={styles.summaryLabel}>Umbral de aprobación</div>
+            <div className="dictamen-summary-label">Umbral de aprobación</div>
           </div>
         </div>
 
-        {/* Tabla de evaluadores */}
         {datos.evaluaciones && datos.evaluaciones.length > 0 && (
           <div style={{marginTop: '24px'}}>
-            <h3 style={styles.subTitle}>Evaluaciones individuales</h3>
-            <table style={styles.table}>
+            <h3 className="dictamen-subtitle-text">Evaluaciones individuales</h3>
+            <table className="dictamen-table">
               <thead>
                 <tr>
-                  <th style={styles.th}>Evaluador</th>
-                  <th style={{...styles.th, textAlign: 'center'}}>Calificación</th>
-                  <th style={styles.th}>Fecha</th>
+                  <th>Evaluador</th>
+                  <th style={{textAlign: 'center'}}>Calificación</th>
+                  <th>Fecha</th>
                 </tr>
               </thead>
               <tbody>
                 {datos.evaluaciones.map((ev, idx) => (
                   <tr key={idx}>
-                    <td style={styles.td}>
+                    <td>
                       <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                        <div style={styles.avatarIcon}>
+                        <div className="dictamen-avatar-icon">
                           <Icon path={ICONS.usuario} size={14} />
                         </div>
                         {ev.evaluador}
                       </div>
                     </td>
-                    <td style={{...styles.td, textAlign: 'center'}}>
-                      <span style={{
-                        ...styles.calificacionBadge,
-                        backgroundColor: ev.calificacion >= 0.70 ? '#d1fae5' : '#fee2e2',
-                        color: ev.calificacion >= 0.70 ? '#065f46' : '#991b1b'
-                      }}>
+                    <td style={{textAlign: 'center'}}>
+                      <span className={`dictamen-calificacion-badge ${ev.calificacion >= 0.70 ? 'aprobado' : 'rechazado'}`}>
                         {(ev.calificacion * 100).toFixed(1)}%
                       </span>
                     </td>
-                    <td style={styles.td}>
+                    <td>
                       {ev.fechaEvaluacion ? new Date(ev.fechaEvaluacion).toLocaleDateString('es-CR') : 'Pendiente'}
                     </td>
                   </tr>
@@ -205,25 +188,21 @@ export default function DictamenFinal() {
       </div>
 
       {/* FORMULARIO DE DICTAMEN */}
-      <div style={styles.card}>
-        <h2 style={styles.cardTitle}>
+      <div className="dictamen-card">
+        <h2 className="dictamen-card-title">
           <Icon path={ICONS.documento} size={20} color="#002855" />
           Emitir Dictamen del Comité Técnico
         </h2>
 
-        {/* Selección de recomendación */}
-        <div style={styles.formGroup}>
-          <label style={styles.label}>
+        <div className="dictamen-form-group">
+          <label className="dictamen-label">
             Recomendación del Comité Técnico <span style={{color: '#ef4444'}}>*</span>
           </label>
-          <div style={styles.radioGroup}>
+          <div className="dictamen-radio-group">
             <button
               type="button"
               onClick={() => setRecomendacion('RECOMIENDA')}
-              style={{
-                ...styles.radioBtn,
-                ...(recomendacion === 'RECOMIENDA' ? styles.radioBtnActiveGreen : {})
-              }}
+              className={`dictamen-radio-btn ${recomendacion === 'RECOMIENDA' ? 'active-green' : ''}`}
             >
               <Icon path={ICONS.check} size={20} color={recomendacion === 'RECOMIENDA' ? 'white' : '#10b981'} />
               <span>RECOMIENDA</span>
@@ -231,56 +210,50 @@ export default function DictamenFinal() {
             <button
               type="button"
               onClick={() => setRecomendacion('NO RECOMIENDA')}
-              style={{
-                ...styles.radioBtn,
-                ...(recomendacion === 'NO RECOMIENDA' ? styles.radioBtnActiveRed : {})
-              }}
+              className={`dictamen-radio-btn ${recomendacion === 'NO RECOMIENDA' ? 'active-red' : ''}`}
             >
               <Icon path={ICONS.x} size={20} color={recomendacion === 'NO RECOMIENDA' ? 'white' : '#ef4444'} />
               <span>NO RECOMIENDA</span>
             </button>
           </div>
-          <div style={styles.helperText}>
+          <div className="dictamen-helper-text">
             <Icon path={ICONS.info} size={14} color="#64748b" />
             <span>La calificación mínima para recomendar es 70% (0.70). Calificación actual: {calificacionPorcentaje}%</span>
           </div>
         </div>
 
-        {/* Contenido del dictamen */}
-        <div style={styles.formGroup}>
-          <label style={styles.label}>
+        <div className="dictamen-form-group">
+          <label className="dictamen-label">
             Contenido del Dictamen <span style={{color: '#ef4444'}}>*</span>
           </label>
           <textarea
             value={contenido}
             onChange={(e) => setContenido(e.target.value)}
             placeholder="Redacte el dictamen final del Comité Técnico, incluyendo los fundamentos de la decisión, aspectos destacados de la propuesta y recomendaciones..."
-            style={styles.textarea}
+            className="dictamen-textarea"
             rows={8}
           />
-          <div style={styles.charCount}>{contenido.length} caracteres</div>
+          <div className="dictamen-char-count">{contenido.length} caracteres</div>
         </div>
 
-        {/* Observaciones adicionales */}
-        <div style={styles.formGroup}>
-          <label style={styles.label}>
+        <div className="dictamen-form-group">
+          <label className="dictamen-label">
             Observaciones adicionales (opcional)
           </label>
           <textarea
             value={observaciones}
             onChange={(e) => setObservaciones(e.target.value)}
             placeholder="Observaciones adicionales para el CIE..."
-            style={styles.textarea}
+            className="dictamen-textarea"
             rows={4}
           />
         </div>
 
-        {/* Botones de acción */}
-        <div style={styles.actions}>
+        <div className="dictamen-actions">
           <button
             type="button"
             onClick={() => navigate('/comite-tecnico/propuestas-asignadas')}
-            style={styles.btnCancel}
+            className="dictamen-btn-cancel"
           >
             Cancelar
           </button>
@@ -288,11 +261,7 @@ export default function DictamenFinal() {
             type="button"
             onClick={handleEmitirDictamen}
             disabled={enviando || !contenido.trim() || !recomendacion}
-            style={{
-              ...styles.btnSubmit,
-              opacity: (enviando || !contenido.trim() || !recomendacion) ? 0.5 : 1,
-              cursor: (enviando || !contenido.trim() || !recomendacion) ? 'not-allowed' : 'pointer'
-            }}
+            className="dictamen-btn-submit"
           >
             {enviando ? 'Emitiendo...' : 'Emitir Dictamen'}
           </button>
@@ -300,48 +269,4 @@ export default function DictamenFinal() {
       </div>
     </div>
   );
-}
-
-const styles = {
-  container: { padding: '32px', maxWidth: '1200px', margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' },
-  header: { marginBottom: '24px', display: 'flex', alignItems: 'flex-start', gap: '16px' },
-  backBtn: { display: 'flex', alignItems: 'center', gap: '6px', background: 'white', border: '1px solid #e2e8f0', color: '#002855', cursor: 'pointer', fontSize: '13px', fontWeight: '500', padding: '8px 14px', borderRadius: '6px' },
-  headerContent: { flex: 1 },
-  title: { fontSize: '22px', color: '#0f172a', margin: '0', fontWeight: '600' },
-  badge: { padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  subtitle: { color: '#64748b', margin: '6px 0 0 0', fontSize: '14px', lineHeight: '1.5' },
-  card: { backgroundColor: 'white', borderRadius: '8px', padding: '24px', boxShadow: '0 1px 2px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0', marginBottom: '24px' },
-  cardTitle: { display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', color: '#002855', margin: '0 0 20px 0', fontWeight: '600', paddingBottom: '12px', borderBottom: '2px solid #e2e8f0' },
-  summaryGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' },
-  summaryCard: { padding: '20px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' },
-  summaryValue: { fontSize: '32px', fontWeight: '700', color: '#002855', marginBottom: '4px' },
-  summaryLabel: { fontSize: '12px', color: '#64748b', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.5px' },
-  subTitle: { fontSize: '14px', color: '#0f172a', fontWeight: '600', marginBottom: '12px' },
-  table: { width: '100%', borderCollapse: 'collapse' },
-  th: { textAlign: 'left', padding: '10px 12px', backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0', fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: '700' },
-  td: { padding: '12px', borderBottom: '1px solid #f1f5f9', fontSize: '14px', color: '#334155' },
-  avatarIcon: { width: '28px', height: '28px', backgroundColor: '#e6f0ff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#002855' },
-  calificacionBadge: { padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '600' },
-  formGroup: { marginBottom: '20px' },
-  label: { display: 'block', fontSize: '13px', color: '#334155', fontWeight: '600', marginBottom: '8px' },
-  radioGroup: { display: 'flex', gap: '12px', marginBottom: '8px' },
-  radioBtn: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', backgroundColor: 'white', border: '2px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#475569', transition: 'all 0.2s' },
-  radioBtnActiveGreen: { backgroundColor: '#10b981', borderColor: '#10b981', color: 'white' },
-  radioBtnActiveRed: { backgroundColor: '#ef4444', borderColor: '#ef4444', color: 'white' },
-  helperText: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#64748b', marginTop: '8px' },
-  textarea: { width: '100%', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '14px', fontFamily: 'inherit', resize: 'vertical', backgroundColor: 'white', boxSizing: 'border-box' },
-  charCount: { fontSize: '12px', color: '#64748b', textAlign: 'right', marginTop: '4px' },
-  actions: { display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #e2e8f0' },
-  btnCancel: { padding: '10px 20px', backgroundColor: 'white', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '14px' },
-  btnSubmit: { padding: '10px 24px', backgroundColor: '#002855', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', fontSize: '14px', transition: 'opacity 0.2s' },
-  loading: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', color: '#64748b' },
-  spinner: { border: '3px solid #f3f4f6', borderTop: '3px solid #002855', borderRadius: '50%', width: '40px', height: '40px', animation: 'spin 0.8s linear infinite', marginBottom: '16px' },
-  error: { textAlign: 'center', padding: '60px 20px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' },
-  btnBack: { marginTop: '16px', padding: '10px 20px', backgroundColor: '#002855', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }
-};
-
-if (typeof document !== 'undefined') {
-  const style = document.createElement('style');
-  style.textContent = `@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`;
-  document.head.appendChild(style);
 }
