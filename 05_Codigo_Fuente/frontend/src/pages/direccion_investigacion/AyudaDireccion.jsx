@@ -36,10 +36,10 @@ const AyudaDireccion = () => {
 
       <section className="dir-accesos" aria-label="Flujo de trabajo">
         {PASOS.map((p) => (
-          <Link key={p.ruta} className="gv-card cie-inicio-acceso" to={`${RUTA_BASE}/${p.ruta}`}>
-            <span className="cie-inicio-acceso-icono"><Icono nombre={p.icono} size={24} /></span>
+          <Link key={p.ruta} className="gv-card cie-inicio-acceso" to={`${RUTA_BASE}/${p.ruta}`} aria-label={`${p.titulo}: ${p.texto}`}>
+            <span className="cie-inicio-acceso-icono" aria-hidden="true"><Icono nombre={p.icono} size={24} /></span>
             <span className="cie-inicio-acceso-texto"><strong>{p.titulo}</strong><span>{p.texto}</span></span>
-            <Icono nombre="arrowRight" size={19} />
+            <Icono nombre="arrowRight" size={19} aria-hidden="true" />
           </Link>
         ))}
       </section>
@@ -62,7 +62,7 @@ const AyudaDireccion = () => {
             </dl>
           </div>
           <div className="cie-nota">
-            <Icono nombre="help" size={16} />
+            <Icono nombre="help" size={16} aria-hidden="true" />
             <div><strong>¿Necesitas más ayuda?</strong><p>Si el problema persiste, comunícate con la persona administradora del sistema indicando el código de la propuesta.</p></div>
           </div>
         </div>

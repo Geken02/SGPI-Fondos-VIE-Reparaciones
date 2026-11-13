@@ -98,3 +98,90 @@
   .dir-resumen-dictamen, .dir-fila-2 { grid-template-columns: 1fr; }
   .dir-panel { padding: 14px; }
 }
+
+/* ============================================================
+   MODO DE ALTO CONTRASTE — DIRECCIÓN DE INVESTIGACIÓN
+   ============================================================ */
+.high-contrast-mode .dir-subcard,
+.high-contrast-mode .dir-panel,
+.high-contrast-mode .dir-panel .dir-subcard,
+.high-contrast-mode .dir-resumen-dictamen,
+.high-contrast-mode .dir-vista-previa,
+.high-contrast-mode .dir-campo,
+.high-contrast-mode .dir-docs li,
+.high-contrast-mode .dir-chips li {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .dir-subcard:hover {
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .dir-resumen-codigo,
+.high-contrast-mode .dir-resumen-dato > span,
+.high-contrast-mode .dir-ayuda-campo,
+.high-contrast-mode .dir-canales,
+.high-contrast-mode .dir-campo label,
+.high-contrast-mode .dir-check small,
+.high-contrast-mode .dir-opcion p,
+.high-contrast-mode .dir-faq p,
+.high-contrast-mode .dir-docs li span {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .dir-resumen-titulo,
+.high-contrast-mode .dir-asunto,
+.high-contrast-mode .dir-docs li div strong {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .dir-campo input,
+.high-contrast-mode .dir-campo select,
+.high-contrast-mode .dir-selector select {
+  background: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .dir-campo input:focus,
+.high-contrast-mode .dir-campo select:focus,
+.high-contrast-mode .dir-selector select:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .dir-badge {
+  background: #000000 !important;
+  border: 1px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .dir-chips li {
+  background: #000000 !important;
+  border: 1px solid #FFFFFF !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .dir-nota-estado {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .dir-faq summary {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .dir-faq details {
+  border-bottom: 1px solid #444444 !important;
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .dir-subcard,
+  .dir-panel,
+  .dir-resumen-dictamen,
+  .dir-vista-previa {
+    border: 2px solid ButtonText !important;
+  }
+}

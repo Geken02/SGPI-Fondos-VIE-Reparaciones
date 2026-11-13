@@ -100,7 +100,7 @@ const ResolucionCie = () => {
               <ul className="cie-resumen-criterios">
                 {rubrica.criterios.map((c) => (
                   <li key={c.criterioId}>
-                    <span><Icono nombre="check" size={12} />{c.nombre}</span>
+                    <span><Icono nombre="check" size={12} aria-hidden="true" />{c.nombre}</span>
                     <b>{Number(puntajePor[c.criterioId] ?? 0).toFixed(1)}</b>
                   </li>
                 ))}
@@ -109,7 +109,7 @@ const ResolucionCie = () => {
           </div>
 
           <div className="gv-subcard cie-consideraciones">
-            <h3 className="gv-subcard-titulo"><Icono nombre="info" size={16} /> Observaciones de la rúbrica</h3>
+            <h3 className="gv-subcard-titulo"><Icono nombre="info" size={16} aria-hidden="true" /> Observaciones de la rúbrica</h3>
             <p className="cie-obs">{evaluacion.observaciones || 'No registraste observaciones en la rúbrica.'}</p>
             <p className="cie-obs cie-obs-nota">La resolución será recibida por la Dirección de Investigación, que notificará a los investigadores.</p>
           </div>
@@ -119,7 +119,7 @@ const ResolucionCie = () => {
           <div className="gv-subcard">
             <h3 className="gv-subcard-titulo">Decisión del CIE</h3>
             <div className="cie-cuerpo">
-              <div className="cie-radios">
+              <div className="cie-radios" role="radiogroup" aria-label="Decisión del CIE">
                 {DECISIONES.map((r) => (
                   <Radio key={r} name="decision" value={r} checked={decision === r} onChange={setDecision}>{r}</Radio>
                 ))}
@@ -131,7 +131,7 @@ const ResolucionCie = () => {
             <h3 className="gv-subcard-titulo">Justificación de la decisión</h3>
             <div className="cie-cuerpo">
               <AreaTexto value={justificacion} onChange={setJustificacion} invalido={intento && faltaJustificacion} max={4000}
-                placeholder="Ingrese la justificación de la decisión del comité..." />
+                placeholder="Ingrese la justificación de la decisión del comité..." aria-label="Justificación de la decisión del comité" />
               {intento && faltaJustificacion && <p className="cie-error" role="alert">Ingresa la justificación para emitir la resolución.</p>}
             </div>
           </div>
@@ -141,11 +141,11 @@ const ResolucionCie = () => {
       {errorEmitir && <p className="cie-error cie-error-pagina" role="alert">{errorEmitir}</p>}
 
       <div className="cie-acciones">
-        <button type="button" className="cie-btn-outline" onClick={() => navigate(`/cie/expedientes/${codigo}/rubrica`)}>
-          <Icono nombre="arrowLeft" size={15} />Volver a la rúbrica
+        <button type="button" className="cie-btn-outline" onClick={() => navigate(`/cie/expedientes/${codigo}/rubrica`)} aria-label="Volver a la rúbrica de evaluación">
+          <Icono nombre="arrowLeft" size={15} aria-hidden="true" />Volver a la rúbrica
         </button>
-        <button type="button" className="gv-btn-primario" onClick={emitir} disabled={emitiendo}>
-          {emitiendo ? 'Emitiendo...' : 'Emitir resolución'} <Icono nombre="arrowRight" size={16} />
+        <button type="button" className="gv-btn-primario" onClick={emitir} disabled={emitiendo} aria-label="Emitir y enviar resolución oficial">
+          {emitiendo ? 'Emitiendo...' : 'Emitir resolución'} <Icono nombre="arrowRight" size={16} aria-hidden="true" />
         </button>
       </div>
     </>
