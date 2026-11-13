@@ -478,28 +478,45 @@
   border: 2px solid #FFFFFF !important;
 }
 
-/* ✅ Placeholder visible en alto contraste */
-.high-contrast-mode .search-input::placeholder {
-  color: #AAAAAA !important;
+/* ✅ Buscador de catálogos en alto contraste */
+.high-contrast-mode .cat-search-box {
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
 }
 
-.high-contrast-mode .filtro-input:focus,
-.high-contrast-mode .filtro-select:focus,
-.high-contrast-mode .buscador-input:focus,
-.high-contrast-mode .search-input:focus,
-.high-contrast-mode .form-input:focus,
-.high-contrast-mode .selector-card .form-select:focus {
+.high-contrast-mode .cat-search-box:hover {
+  border-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cat-search-box:focus-within {
   border-color: #FFFF00 !important;
-  box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.3) !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.35) !important;
 }
 
-.high-contrast-mode .filtro-icon,
-.high-contrast-mode .buscador-icon,
-.high-contrast-mode .input-icon,
-.high-contrast-mode .search-icon {
+.high-contrast-mode .cat-search-icon {
   color: #FFFF00 !important;
 }
 
+.high-contrast-mode .cat-search-input {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cat-search-input::placeholder {
+  color: #B0B0B0 !important;
+  opacity: 1;
+}
+
+.high-contrast-mode .cat-search-clear {
+  background: #333333 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .cat-search-clear:hover {
+  background: #FF3333 !important;
+  color: #FFFFFF !important;
+}
 .high-contrast-mode .btn-agregar,
 .high-contrast-mode .btn-primary,
 .high-contrast-mode .btn-small,
