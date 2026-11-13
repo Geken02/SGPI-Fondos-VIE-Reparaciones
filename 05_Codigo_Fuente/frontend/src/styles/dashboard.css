@@ -3858,3 +3858,123 @@ input:checked + .slider:before { transform: translateX(20px); }
   stroke: #000000 !important;
   color: #000000 !important;
 }
+
+/* ==========================================================================
+   PARCHE GLOBAL V3 - RÚBRICA + EXPEDIENTE + HOVER + SVG INLINE
+   Se pega en dashboard.css porque es el único que carga en TODAS las vistas.
+   Gana sobre atributos stroke="" inline gracias a !important.
+   ========================================================================== */
+
+/* ---------- RÚBRICA: sidebar de secciones ---------- */
+
+/* Hover sobre item INACTIVO: gris oscuro (NO amarillo) para no perder el texto */
+.high-contrast-mode .rubrica-container .nav-item:hover:not(.active) {
+  background-color: #1a1a1a !important;
+}
+.high-contrast-mode .rubrica-container .nav-item:hover:not(.active) .nav-nombre,
+.high-contrast-mode .rubrica-container .nav-item:hover:not(.active) .nav-peso {
+  color: #FFFF00 !important;
+}
+
+/* Item ACTIVO: fondo amarillo + TODO el texto NEGRO (nombre y peso) */
+.high-contrast-mode .rubrica-container .nav-item.active {
+  background-color: #FFFF00 !important;
+  border-left-color: #000000 !important;
+}
+.high-contrast-mode .rubrica-container .nav-item.active .nav-nombre,
+.high-contrast-mode .rubrica-container .nav-item.active .nav-peso,
+.high-contrast-mode .rubrica-container .nav-item.active .nav-text span {
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+/* El círculo del ícono del item activo: fondo negro + número amarillo */
+.high-contrast-mode .rubrica-container .nav-item.active .nav-icon {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #000000 !important;
+}
+
+/* Items inactivos: nombre amarillo, peso gris */
+.high-contrast-mode .rubrica-container .nav-item .nav-nombre { color: #FFFF00 !important; }
+.high-contrast-mode .rubrica-container .nav-item .nav-peso { color: #CCCCCC !important; }
+.high-contrast-mode .rubrica-container .nav-item .nav-icon {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+/* Item completado (done): verde */
+.high-contrast-mode .rubrica-container .nav-item.done .nav-nombre { color: #00FF00 !important; }
+.high-contrast-mode .rubrica-container .nav-item.done .nav-icon {
+  background-color: #00FF00 !important;
+  color: #000000 !important;
+}
+
+/* ---------- RÚBRICA: botón IA y badges ---------- */
+.high-contrast-mode .rubrica-container .btn-analizar-ia,
+.high-contrast-mode .rubrica-container .sugerencia-ia button {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+.high-contrast-mode .rubrica-container .obligatorio-badge {
+  background-color: #000000 !important;
+  color: #FF3333 !important;
+  border: 2px solid #FF3333 !important;
+}
+
+/* ---------- EXPEDIENTE: menú lateral de secciones ---------- */
+
+/* Hover inactivo: gris oscuro, texto amarillo */
+.high-contrast-mode .exp-nav-item:hover:not(.active) {
+  background-color: #1a1a1a !important;
+}
+.high-contrast-mode .exp-nav-item:hover:not(.active) svg { stroke: #FFFF00 !important; }
+.high-contrast-mode .exp-nav-item:hover:not(.active) .exp-nav-label { color: #FFFF00 !important; }
+
+/* Item ACTIVO: fondo amarillo + texto NEGRO + ícono NEGRO */
+.high-contrast-mode .exp-nav-item.active {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+.high-contrast-mode .exp-nav-item.active .exp-nav-label,
+.high-contrast-mode .exp-nav-item.active span {
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+.high-contrast-mode .exp-nav-item.active svg {
+  stroke: #000000 !important;   /* mata el stroke="#002855" inline */
+}
+
+/* Items inactivos: texto amarillo, ícono amarillo */
+.high-contrast-mode .exp-nav-item svg { stroke: #FFFF00 !important; }
+.high-contrast-mode .exp-nav-item .exp-nav-label { color: #FFFF00 !important; }
+
+/* ---------- EXPEDIENTE: botón "Registrar Evaluación" ---------- */
+.high-contrast-mode .exp-btn-evaluar {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+.high-contrast-mode .exp-btn-evaluar svg { stroke: #000000 !important; }  /* mata color="white" inline */
+
+/* ---------- EXPEDIENTE: ícono del header de sección (caja amarilla) ---------- */
+.high-contrast-mode .exp-doc-header-icon {
+  background-color: #FFFF00 !important;
+  border: 1px solid #FFFFFF !important;
+}
+.high-contrast-mode .exp-doc-header-icon svg { stroke: #000000 !important; }
+
+/* ---------- EXPEDIENTE: íconos de metadata y botones pequeños ---------- */
+.high-contrast-mode .exp-meta-icon svg,
+.high-contrast-mode .exp-icon-btn svg,
+.high-contrast-mode .exp-back-btn svg,
+.high-contrast-mode .exp-doc-icon-box svg,
+.high-contrast-mode .exp-doc-download svg,
+.high-contrast-mode .exp-info-box svg,
+.high-contrast-mode .exp-alert-box svg,
+.high-contrast-mode .exp-notas-title svg {
+  stroke: #FFFF00 !important;   /* todos los SVG decorativos → amarillo sobre negro */
+}

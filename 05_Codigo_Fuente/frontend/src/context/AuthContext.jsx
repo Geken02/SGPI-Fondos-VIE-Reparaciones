@@ -207,13 +207,22 @@ export const AuthProvider = ({ children }) => {
   const esAdministrador = rolActivoStr === 'SuperAdministrador' || rolActivoStr === 'Administrador';
   const esInvestigador = rolActivoStr.includes('Investigador');
   const esVinculacion = rolActivoStr.includes('Vinculacion');
+  
+  // ✅ CORRECCIÓN: Definir las variables individuales PRIMERO para evitar ReferenceError
+  const esDirectorEscuela = rolActivoStr === 'DirectorEscuela';
+  const esAsistenteConsejo = rolActivoStr === 'AsistenteConsejoEscuela';
+  const esMiembroConsejo = rolActivoStr === 'MiembroConsejoEscuela';
+  const esConsejoProfesores = rolActivoStr === 'ConsejoProfesores';
+  
+  // Ahora sí podemos usar esDirectorEscuela de forma segura
   const esComiteTecnico = rolActivoStr.includes('ComiteTecnico') || esDirectorEscuela;
   const esCIE = rolActivoStr.includes('CIE');
   const esGestora = rolActivoStr.includes('Gestora');
   const esDireccion = rolActivoStr.includes('Direccion') || rolActivoStr.includes('Investigacion');
   const estaAutenticado = !!token;
 
-  return (
+
+    return (
     <AuthContext.Provider
       value={{
         usuario,
@@ -225,6 +234,7 @@ export const AuthProvider = ({ children }) => {
         rolActivo: rolActivo || (rolesUsuario.length > 0 ? rolesUsuario[0] : null),
         cambiarRol,
         rolesUsuario,
+        // Roles booleanos para el Sidebar/App
         esAdministrador,
         esInvestigador,
         esVinculacion,
@@ -232,15 +242,17 @@ export const AuthProvider = ({ children }) => {
         esCIE,
         esGestora,
         esDireccion,
-        esAsistenteConsejo,    // <-- Agregado para el Sidebar/App
-        esConsejoProfesores,   // <-- Agregado para el Sidebar/App
-        esDirectorEscuela,     // <-- Agregado para el Sidebar/App
+        esDirectorEscuela,       // ✅ Ahora sí está definida
+        esAsistenteConsejo,      // ✅ Ahora sí está definida
+        esMiembroConsejo,        // ✅ Agregado por consistencia
+        esConsejoProfesores,     // ✅ Ahora sí está definida
         formatearNombreRol,
         cargarPerfil
       }}
     >
       {children}
     </AuthContext.Provider>
+
   );
 };
 
