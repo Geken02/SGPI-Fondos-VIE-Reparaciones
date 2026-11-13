@@ -74,10 +74,9 @@ export default function AdminPanel() {
   const totalPropuestas = stats.propuestasPorEstado.reduce((sum, item) => sum + (item.cantidad || 0), 0);
   const getPorcentaje = (cantidad) => totalPropuestas === 0 ? 0 : Math.round((cantidad / totalPropuestas) * 100);
 
-  // ✅ NUEVO: Máximos reales para calcular porcentajes honestos (no hardcodeados)
-  const MAX_PROPUESTAS = 12;   // capacidad del sistema en la convocatoria actual
-  const MAX_ESCUELAS = 11;     // escuelas activas del TEC
-  const MAX_USUARIOS = 30;     // cupo de usuarios del sistema
+  const MAX_PROPUESTAS = 12;
+  const MAX_ESCUELAS = 11;
+  const MAX_USUARIOS = 30;
   const calcPct = (valor, max) => Math.min(100, Math.round((valor / max) * 100));
 
   const coloresEstado = {
@@ -123,7 +122,13 @@ export default function AdminPanel() {
       <section className="stats-row" aria-labelledby="titulo-estadisticas">
         <h2 id="titulo-estadisticas" className="sr-only">Estadísticas Generales del Sistema</h2>
         
-        <div className="stat-card" aria-label={`Propuestas activas: ${stats.propuestasActivas} de ${MAX_PROPUESTAS}`}>
+        {/* ✅ CORRECCIÓN: tabIndex={0} y role="group" para que el foco se detenga aquí con Tab */}
+        <div 
+          className="stat-card" 
+          tabIndex={0} 
+          role="group"
+          aria-label={`Tarjeta de estadísticas: ${stats.propuestasActivas} Propuestas Activas`}
+        >
           <div className="stat-top">
             <div className="stat-icon-wrapper">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
@@ -140,20 +145,24 @@ export default function AdminPanel() {
           </div>
           <div className="stat-number">{stats.propuestasActivas}</div>
           <div className="stat-label">Propuestas Activas</div>
-          {/* ✅ NUEVO: porcentaje calculado, no hardcodeado */}
           <div 
             className="stat-progress"
             role="progressbar"
             aria-valuenow={calcPct(stats.propuestasActivas, MAX_PROPUESTAS)}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label={`${stats.propuestasActivas} propuestas activas de ${MAX_PROPUESTAS} posibles: ${calcPct(stats.propuestasActivas, MAX_PROPUESTAS)}%`}
+            aria-label={`${stats.propuestasActivas} propuestas activas de ${MAX_PROPUESTAS} posibles: ${calcPct(stats.propuestasActivas, MAX_PROPUESTAS)} por ciento`}
           >
             <div className="stat-progress-fill" style={{ width: `${calcPct(stats.propuestasActivas, MAX_PROPUESTAS)}%`, background: 'var(--color-primario, #002855)' }}></div>
           </div>
         </div>
 
-        <div className="stat-card" aria-label={`Escuelas activas: ${stats.escuelasActivas} de ${MAX_ESCUELAS}`}>
+        <div 
+          className="stat-card" 
+          tabIndex={0} 
+          role="group"
+          aria-label={`Tarjeta de estadísticas: ${stats.escuelasActivas} Escuelas Activas`}
+        >
           <div className="stat-top">
             <div className="stat-icon-wrapper">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
@@ -171,13 +180,18 @@ export default function AdminPanel() {
             aria-valuenow={calcPct(stats.escuelasActivas, MAX_ESCUELAS)}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label={`${stats.escuelasActivas} escuelas activas de ${MAX_ESCUELAS}: ${calcPct(stats.escuelasActivas, MAX_ESCUELAS)}%`}
+            aria-label={`${stats.escuelasActivas} escuelas activas de ${MAX_ESCUELAS}: ${calcPct(stats.escuelasActivas, MAX_ESCUELAS)} por ciento`}
           >
             <div className="stat-progress-fill gray" style={{ width: `${calcPct(stats.escuelasActivas, MAX_ESCUELAS)}%` }}></div>
           </div>
         </div>
 
-        <div className="stat-card" aria-label={`Usuarios del sistema: ${stats.usuariosActivos} de ${MAX_USUARIOS}`}>
+        <div 
+          className="stat-card" 
+          tabIndex={0} 
+          role="group"
+          aria-label={`Tarjeta de estadísticas: ${stats.usuariosActivos} Usuarios del Sistema`}
+        >
           <div className="stat-top">
             <div className="stat-icon-wrapper">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
@@ -197,13 +211,18 @@ export default function AdminPanel() {
             aria-valuenow={calcPct(stats.usuariosActivos, MAX_USUARIOS)}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label={`${stats.usuariosActivos} usuarios de ${MAX_USUARIOS} cupos: ${calcPct(stats.usuariosActivos, MAX_USUARIOS)}%`}
+            aria-label={`${stats.usuariosActivos} usuarios de ${MAX_USUARIOS} cupos: ${calcPct(stats.usuariosActivos, MAX_USUARIOS)} por ciento`}
           >
             <div className="stat-progress-fill blue" style={{ width: `${calcPct(stats.usuariosActivos, MAX_USUARIOS)}%` }}></div>
           </div>
         </div>
 
-        <div className="stat-card">
+        <div 
+          className="stat-card" 
+          tabIndex={0} 
+          role="group"
+          aria-label={`Tarjeta de estadísticas: Convocatoria Activa ${stats.convocatoriaActiva.anio}`}
+        >
           <div className="stat-top">
             <div className="stat-icon-wrapper">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
@@ -213,7 +232,6 @@ export default function AdminPanel() {
                 <line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
             </div>
-            {/* ✅ NUEVO: badge con contexto completo */}
             <span className="stat-badge" aria-label="Estado de la convocatoria: Aprobada">Aprobado</span>
           </div>
           <div className="stat-number">{stats.convocatoriaActiva.anio}</div>
@@ -225,9 +243,11 @@ export default function AdminPanel() {
       <section className="quick-access-row" aria-labelledby="titulo-accesos">
         <h2 id="titulo-accesos" className="sr-only">Accesos Rápidos a Módulos de Administración</h2>
         
+        {/* ✅ CORRECCIÓN: tabIndex={0} explícito para garantizar que el enlace sea focusable */}
         <Link 
           to="/dashboard/admin/catalogos" 
           className="quick-card"
+          tabIndex={0}
           aria-label="Acceder a Gestión de Catálogos: administrar Escuelas, Líneas de Investigación, Tipos de Hora y niveles TRL"
         >
           <div className="quick-icon">
@@ -245,6 +265,7 @@ export default function AdminPanel() {
         <Link 
           to="/dashboard/admin/convocatoria" 
           className="quick-card"
+          tabIndex={0}
           aria-label="Acceder a Configuración de Convocatoria: definir fechas límite, plazos de evaluación y bloqueo automático en Orión"
         >
           <div className="quick-icon">
@@ -268,6 +289,7 @@ export default function AdminPanel() {
         <Link 
           to="/dashboard/admin/gestoras" 
           className="quick-card"
+          tabIndex={0}
           aria-label="Acceder a Asignación de Escuelas: asignar escuelas específicas a cada Persona Gestora de la VIE"
         >
           <div className="quick-icon">
@@ -287,7 +309,6 @@ export default function AdminPanel() {
       <div className="bottom-row">
         <section className="card proposals-section" aria-labelledby="titulo-estado-propuestas">
           <h2 id="titulo-estado-propuestas">Estado de Propuestas por Módulo</h2>
-          {/* ✅ NUEVO: role="list" para que el lector entienda que es un conjunto */}
           <div className="progress-list" role="list" aria-label="Distribución de propuestas por estado">
             {stats.propuestasPorEstado.map((item, index) => (
               <div key={index} className="progress-item" role="listitem">
@@ -321,7 +342,6 @@ export default function AdminPanel() {
           {stats.actividadReciente.length === 0 ? (
             <p className="no-activity">Sin actividad reciente</p>
           ) : (
-            // ✅ NUEVO: aria-live para anunciar eventos nuevos
             <div className="activity-list" role="list" aria-live="polite">
               {stats.actividadReciente.slice(0, 5).map((log) => (
                 <div key={log.logId} className="activity-item" role="listitem">
@@ -338,7 +358,7 @@ export default function AdminPanel() {
               ))}
             </div>
           )}
-          <Link to="/dashboard/admin/bitacora" className="view-all" aria-label="Ver toda la actividad del sistema en la bitácora">
+          <Link to="/dashboard/admin/bitacora" className="view-all" tabIndex={0} aria-label="Ver toda la actividad del sistema en la bitácora">
             Ver toda la actividad →
           </Link>
         </section>
@@ -360,7 +380,7 @@ export default function AdminPanel() {
             <p>Crear, editar y asignar roles y permisos</p>
           </div>
         </div>
-        <Link to="/dashboard/admin/usuarios" className="btn-outline" aria-label="Acceder a la gestión de usuarios y roles">
+        <Link to="/dashboard/admin/usuarios" className="btn-outline" tabIndex={0} aria-label="Acceder a la gestión de usuarios y roles">
           Acceder →
         </Link>
       </section>
@@ -393,6 +413,7 @@ export default function AdminPanel() {
         </div>
       </section>
 
+      {/* RoleSwitcher Modal */}
       <div id="modal-role-switcher">
         <RoleSwitcher 
           isOpen={modalAbierto}
