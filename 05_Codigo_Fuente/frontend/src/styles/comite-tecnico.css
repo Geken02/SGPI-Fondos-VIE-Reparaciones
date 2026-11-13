@@ -1388,3 +1388,680 @@
 .secciones-lista li.error {
   color: #dc2626;
 }
+
+/* ==========================================================================
+   PARCHE DE ALTO CONTRASTE - COMITÉ TÉCNICO
+   (Bandeja de Completitud, Propuestas Asignadas, Rúbrica Digital, Documentos, IA)
+   Solo se activa cuando <body> tiene la clase 'high-contrast-mode'.
+   No afecta el modo normal. Gana sobre estilos inline con !important.
+   ========================================================================== */
+
+/* 1. CONTENEDORES PRINCIPALES → fondo negro */
+.high-contrast-mode .bandeja-completitud,
+.high-contrast-mode .propuestas-asignadas,
+.high-contrast-mode .rubrica-container,
+.high-contrast-mode .stat-card,
+.high-contrast-mode .tabla-container,
+.high-contrast-mode .content-card,
+.high-contrast-mode .criterio-card,
+.high-contrast-mode .panel-documentos,
+.high-contrast-mode .documento-item,
+.high-contrast-mode .sugerencia-seccion,
+.high-contrast-mode .analisis-ia-container,
+.high-contrast-mode .progreso-ia,
+.high-contrast-mode .sugerencia-ia,
+.high-contrast-mode .tabla-resumen {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+}
+
+/* 2. HEADER DE LA RÚBRICA (barra superior azul) */
+.high-contrast-mode .rubrica-header {
+  background: #000000 !important;
+  border-bottom: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .header-title,
+.high-contrast-mode .header-subtitle {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tag {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .calificacion-box {
+  background: #000000 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .cal-label {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .cal-valor,
+.high-contrast-mode .cal-valor.ok,
+.high-contrast-mode .cal-valor.mal {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-volver-header {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-volver-header:hover {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* 3. BARRA DE PROGRESO */
+.high-contrast-mode .progress-container {
+  background: #000000 !important;
+  border-bottom-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .progress-text {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .progress-percent {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .progress-bar {
+  background: #333333 !important;
+  border: 1px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .progress-fill {
+  background: #FFFF00 !important;
+}
+
+/* 4. SIDEBAR DE LA RÚBRICA */
+.high-contrast-mode .sidebar {
+  background: #000000 !important;
+  border-right-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .nav-item {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border-left-color: transparent !important;
+}
+
+.high-contrast-mode .nav-item:hover {
+  background: #1a1a1a !important;
+}
+
+.high-contrast-mode .nav-item.active {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+  border-left-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .nav-item.done {
+  background: #1a1a1a !important;
+}
+
+.high-contrast-mode .nav-icon {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .nav-item.active .nav-icon {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .nav-item.done .nav-icon {
+  background: #00FF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .nav-nombre {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .nav-peso {
+  color: #CCCCCC !important;
+}
+
+/* 5. CONTENIDO PRINCIPAL */
+.high-contrast-mode .main-content {
+  background: #000000 !important;
+}
+
+.high-contrast-mode .seccion-header {
+  border-bottom-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .seccion-titulo {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .seccion-peso-badge {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+/* 6. CRITERIOS */
+.high-contrast-mode .criterio-nombre {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .peso-badge {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .obligatorio-badge {
+  background: #000000 !important;
+  color: #FF3333 !important;
+  border: 1px solid #FF3333 !important;
+}
+
+/* 7. PREGUNTA CLAVE */
+.high-contrast-mode .pregunta-box {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border-left-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .pregunta-box strong {
+  color: #FFFF00 !important;
+}
+
+/* 8. NIVELES DE EVALUACIÓN */
+.high-contrast-mode .nivel-card {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .nivel-card:hover {
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .nivel-card.selected {
+  border-color: #FFFF00 !important;
+  background: #1a1a1a !important;
+}
+
+.high-contrast-mode .nivel-card.selected.nivel-deficiente,
+.high-contrast-mode .nivel-card.selected.nivel-regular,
+.high-contrast-mode .nivel-card.selected.nivel-bueno,
+.high-contrast-mode .nivel-card.selected.nivel-excelente {
+  border-color: #FFFF00 !important;
+  background: #1a1a1a !important;
+}
+
+.high-contrast-mode .nivel-nombre {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .nivel-puntaje {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .nivel-descripcion {
+  color: #CCCCCC !important;
+}
+
+/* 9. JUSTIFICACIÓN */
+.high-contrast-mode .justificacion-label {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .required-mark {
+  color: #FF3333 !important;
+}
+
+.high-contrast-mode .justificacion-textarea {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .justificacion-textarea:focus {
+  border-color: #FFFF00 !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.3) !important;
+}
+
+/* 10. PRODUCTOS ACADÉMICOS */
+.high-contrast-mode .alerta-productos {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border-left-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .alerta-productos strong {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .producto-label {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .producto-input {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .producto-input:focus {
+  border-color: #FFFF00 !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.3) !important;
+}
+
+.high-contrast-mode .producto-help {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .producto-valor-display {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .tipos-titulo {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tipos-instruccion {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .tipo-producto-checkbox {
+  background: #000000 !important;
+  border-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tipo-producto-checkbox:hover {
+  background: #1a1a1a !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .checkbox-label {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tipo-producto-checkbox input[type="checkbox"] {
+  accent-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cumplimiento-productos {
+  background: #000000 !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cumplimiento-productos.cumple {
+  background: #000000 !important;
+  border-color: #00FF00 !important;
+}
+
+.high-contrast-mode .cumplimiento-productos.no-cumple {
+  background: #000000 !important;
+  border-color: #FF3333 !important;
+}
+
+.high-contrast-mode .cumplimiento-productos strong {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cumplimiento-productos.cumple p {
+  color: #00FF00 !important;
+}
+
+.high-contrast-mode .cumplimiento-productos.no-cumple p {
+  color: #FF3333 !important;
+}
+
+/* 11. RESUMEN */
+.high-contrast-mode .resumen-titulo,
+.high-contrast-mode .verificacion-titulo {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tabla-resumen th {
+  background: #1a1a1a !important;
+  color: #FFFFFF !important;
+  border-bottom-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tabla-resumen td {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border-bottom-color: #333333 !important;
+}
+
+.high-contrast-mode .nota-celda {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .calificacion-final-box {
+  background: #000000 !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .calificacion-final-box.recomienda {
+  background: #000000 !important;
+  border-color: #00FF00 !important;
+}
+
+.high-contrast-mode .calificacion-final-box.no-recomienda {
+  background: #000000 !important;
+  border-color: #FF3333 !important;
+}
+
+.high-contrast-mode .calificacion-final-label {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .calificacion-final-valor {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .calificacion-final-box.recomienda .calificacion-final-valor {
+  color: #00FF00 !important;
+}
+
+.high-contrast-mode .calificacion-final-box.no-recomienda .calificacion-final-valor {
+  color: #FF3333 !important;
+}
+
+.high-contrast-mode .calificacion-final-estado {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .calificacion-final-box.recomienda .calificacion-final-estado {
+  color: #00FF00 !important;
+}
+
+.high-contrast-mode .calificacion-final-box.no-recomienda .calificacion-final-estado {
+  color: #FF3333 !important;
+}
+
+.high-contrast-mode .lista-requisitos-verificacion li {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .lista-requisitos-verificacion li.cumple {
+  background: #000000 !important;
+  color: #00FF00 !important;
+  border-color: #00FF00 !important;
+}
+
+.high-contrast-mode .lista-requisitos-verificacion li.no-cumple {
+  background: #000000 !important;
+  color: #FF3333 !important;
+  border-color: #FF3333 !important;
+}
+
+/* 12. NAVEGACIÓN INFERIOR */
+.high-contrast-mode .navegacion-inferior {
+  border-top-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-nav,
+.high-contrast-mode .btn-siguiente {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-nav:hover:not(:disabled),
+.high-contrast-mode .btn-siguiente:hover {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .btn-enviar {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-enviar:hover {
+  background: #CCCC00 !important;
+}
+
+.high-contrast-mode .nav-counter {
+  color: #CCCCCC !important;
+}
+
+/* 13. PANEL DE DOCUMENTOS */
+.high-contrast-mode .panel-derecho {
+  background: #000000 !important;
+  border-left-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .panel-titulo {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .documento-nombre {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .documento-fecha {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .btn-descargar {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .btn-descargar:hover {
+  background: #CCCC00 !important;
+}
+
+.high-contrast-mode .panel-cargando,
+.high-contrast-mode .sin-documentos {
+  color: #CCCCCC !important;
+}
+
+/* 14. SUGERENCIAS IA */
+.high-contrast-mode .sugerencia-ia {
+  background: #000000 !important;
+  border-color: #FFFF00 !important;
+  border-left-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .sugerencia-titulo {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .sugerencia-cargando {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .sugerencia-texto {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-analizar-ia,
+.high-contrast-mode .btn-aplicar-todas {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-analizar-ia:hover,
+.high-contrast-mode .btn-aplicar-todas:hover {
+  background: #CCCC00 !important;
+}
+
+.high-contrast-mode .error-ia {
+  background: #000000 !important;
+  color: #FF3333 !important;
+  border-color: #FF3333 !important;
+}
+
+.high-contrast-mode .instruccion-ia {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .secciones-lista li.ok {
+  color: #00FF00 !important;
+}
+
+.high-contrast-mode .secciones-lista li.error {
+  color: #FF3333 !important;
+}
+
+/* 15. TABLAS (Bandeja de Completitud y Propuestas Asignadas) */
+.high-contrast-mode .tabla-moderna {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tabla-moderna thead {
+  background: #1a1a1a !important;
+}
+
+.high-contrast-mode .tabla-moderna th {
+  background: #1a1a1a !important;
+  color: #FFFFFF !important;
+  border-bottom-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tabla-moderna td {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border-bottom-color: #333333 !important;
+}
+
+.high-contrast-mode .tabla-moderna tbody tr:hover {
+  background: #1a1a1a !important;
+}
+
+.high-contrast-mode .codigo-badge {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .titulo-celda {
+  color: #FFFFFF !important;
+}
+
+/* 16. BOTONES */
+.high-contrast-mode .btn-primary-sm,
+.high-contrast-mode .btn-primary {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-primary-sm:hover,
+.high-contrast-mode .btn-primary:hover:not(:disabled) {
+  background: #CCCC00 !important;
+}
+
+.high-contrast-mode .btn-outline-sm,
+.high-contrast-mode .btn-cancel {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-outline-sm:hover,
+.high-contrast-mode .btn-cancel:hover {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* 17. ESTADÍSTICAS */
+.high-contrast-mode .stat-icon-wrapper {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .stat-card.stat-warning .stat-icon-wrapper {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .stat-card.stat-success .stat-icon-wrapper {
+  background: #000000 !important;
+  color: #00FF00 !important;
+}
+
+.high-contrast-mode .stat-number {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .stat-label {
+  color: #CCCCCC !important;
+}
+
+/* 18. HEADER DE PÁGINA */
+.high-contrast-mode .header-content h1 {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .header-content p {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .header-alert {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .header-alert svg {
+  color: #FFFF00 !important;
+}
+
+/* 19. TABLA HEADER */
+.high-contrast-mode .tabla-header {
+  border-bottom-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tabla-header h2 {
+  color: #FFFFFF !important;
+}
+
+/* 20. LOADING Y ERROR */
+.high-contrast-mode .rubrica-loading,
+.high-contrast-mode .rubrica-error {
+  background: #000000 !important;
+}
+
+.high-contrast-mode .spinner {
+  border-color: #555555 !important;
+  border-top-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .rubrica-loading p,
+.high-contrast-mode .rubrica-error p {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-volver {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-volver:hover {
+  background: #CCCC00 !important;
+}
