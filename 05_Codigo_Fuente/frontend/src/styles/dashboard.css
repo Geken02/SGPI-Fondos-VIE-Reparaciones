@@ -4467,3 +4467,404 @@ input:checked + .slider:before { transform: translateX(20px); }
 .high-contrast-mode .btn-enviar span {
   color: #000000 !important;
 }
+
+
+/* ==========================================================================
+   ALTO CONTRASTE INTEGRAL: SUBSANACIONES, BADGES DE ESTADO Y BANNERS
+   Resuelve fondos blancos remanentes y etiquetas de estado ilegibles
+   ========================================================================== */
+
+/* 1. MÓDULO DE SUBSANACIONES (Sección 2 de Propuestas) */
+.high-contrast-mode .subsanacion-section-highlight,
+.high-contrast-mode .expediente-section.subsanacion-section-highlight {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  box-shadow: none !important;
+}
+
+.high-contrast-mode .subsanacion-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-header-meta {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border-bottom: 2px solid #333333 !important;
+}
+
+.high-contrast-mode .subsanacion-meta-label {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .subsanacion-meta-value {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+/* Badge de Estado de Subsanación (ej: PENDIENTE) */
+.high-contrast-mode .subsanacion-badge-status {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .subsanacion-observaciones-box {
+  background: #0d0d0d !important;
+  background-color: #0d0d0d !important;
+  border: 2px solid #FFFF00 !important;
+  border-left: 6px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .subsanacion-obs-title {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .subsanacion-obs-text {
+  color: #FFFFFF !important;
+  font-style: italic !important;
+}
+
+.high-contrast-mode .subsanacion-action-panel {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-step-title {
+  color: #FFFF00 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .subsanacion-quick-links {
+  background: transparent !important;
+}
+
+.high-contrast-mode .btn-sub-edit {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .btn-sub-edit:hover {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .subsanacion-file-upload-box {
+  background: #000000 !important;
+}
+
+.high-contrast-mode .btn-sub-upload {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px dashed #FFFF00 !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .btn-sub-upload:hover {
+  background: #1a1a1a !important;
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .subsanacion-files-list {
+  background: transparent !important;
+}
+
+.high-contrast-mode .subsanacion-file-tag {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .subsanacion-file-tag button {
+  color: #FF3333 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .modal-form-input,
+.high-contrast-mode textarea.modal-form-input {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .modal-form-input:focus,
+.high-contrast-mode textarea.modal-form-input:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .modal-form-input::placeholder,
+.high-contrast-mode textarea.modal-form-input::placeholder {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .btn-reenviar-propuesta {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-reenviar-propuesta:hover {
+  background: #CCCC00 !important;
+  background-color: #CCCC00 !important;
+}
+
+.high-contrast-mode .subsanacion-banner-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-banner-title {
+  color: #FFFF00 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .subsanacion-banner-sub {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-respondida-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #00FF66 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-resp-badge {
+  color: #00FF66 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .subsanacion-resp-date {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .subsanacion-resp-content {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-resp-footnote {
+  color: #00FF66 !important;
+}
+
+/* 2. BANNERS INFORMATIVOS Y DE ESTADO EN PROPUESTAS */
+.high-contrast-mode .banner-propuesta-cancelada {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #CCCCCC !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .banner-propuesta-cancelada * {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .banner-envio-vinculacion {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #00FF66 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .banner-envio-vinculacion div,
+.high-contrast-mode .banner-envio-vinculacion strong,
+.high-contrast-mode .banner-envio-vinculacion span {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .banner-solo-coordinador {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .banner-subsanacion-rechazada {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FF3333 !important;
+  color: #FF3333 !important;
+}
+
+.high-contrast-mode .banner-subsanacion-rechazada * {
+  color: #FF3333 !important;
+}
+
+/* 3. ETIQUETAS DE ESTADO Y BADGES VISIBLES EN TODO EL SISTEMA */
+.high-contrast-mode .badge-status {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .badge-status.info,
+.high-contrast-mode .badge-info,
+.high-contrast-mode .badge-status.borrador {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #00FFFF !important;
+  border: 1.5px solid #00FFFF !important;
+}
+
+.high-contrast-mode .badge-status.warning,
+.high-contrast-mode .badge-warning,
+.high-contrast-mode .estado-badge.warning {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-status.success,
+.high-contrast-mode .badge-success,
+.high-contrast-mode .estado-badge.success,
+.high-contrast-mode .badge-aprobado {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #00FF66 !important;
+  border: 1.5px solid #00FF66 !important;
+}
+
+.high-contrast-mode .badge-subsanacion,
+.high-contrast-mode .subsanacion-badge-status {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-cancelada,
+.high-contrast-mode .estado-badge.gray {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #CCCCCC !important;
+  border: 1.5px solid #CCCCCC !important;
+}
+
+.high-contrast-mode .eval-badge,
+.high-contrast-mode .eval-badge.badge-proximo {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #CCCCCC !important;
+  border: 1.5px solid #CCCCCC !important;
+}
+
+.high-contrast-mode .badge-coordinador-bloqueo {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #CCCCCC !important;
+  border: 1px solid #CCCCCC !important;
+}
+
+.high-contrast-mode .badge-equipo-miembro {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-nota {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-pendiente {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFCC00 !important;
+  border: 1.5px solid #FFCC00 !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion.pendiente {
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion.en-curso {
+  border-color: #00FFFF !important;
+  color: #00FFFF !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion.completada {
+  border-color: #00FF66 !important;
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .conv-status-badge {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .conv-status-badge.status-open {
+  border-color: #00FF66 !important;
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .conv-status-badge.status-warning {
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .conv-status-badge.status-closed {
+  border-color: #CCCCCC !important;
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .gv-badge,
+.high-contrast-mode .dir-badge,
+.high-contrast-mode .cie-badge {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .gv-badge-punto,
+.high-contrast-mode .dir-badge-punto {
+  background-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-cancelar-propuesta-mini {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FF3333 !important;
+  border: 1.5px solid #FF3333 !important;
+}
+
+.high-contrast-mode .btn-cancelar-propuesta-mini:hover {
+  background: #FF3333 !important;
+  background-color: #FF3333 !important;
+  color: #000000 !important;
+}

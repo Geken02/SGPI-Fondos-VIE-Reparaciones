@@ -415,9 +415,9 @@ const InvestigadorPropuestas = () => {
 
               const badgeClass = esSubsanacion ? 'badge-subsanacion'
                                 : esCancelada ? 'badge-cancelada'
-                                : estado.toLowerCase().includes('eval') ? 'badge-warning'
-                                : estado.toLowerCase().includes('aprob') ? 'badge-success'
-                                : 'badge-info';
+                                : estado.toLowerCase().includes('eval') ? 'badge-warning warning'
+                                : estado.toLowerCase().includes('aprob') ? 'badge-success success'
+                                : 'badge-info info';
 
               return (
                 <div key={itemKey} id={`propuesta-card-${itemKey}`} className={`propuesta-accordion-card ${estaAbierto ? 'is-expanded' : ''} ${esSubsanacion ? 'is-subsanacion' : ''} ${esCancelada ? 'is-cancelada' : ''}`}
@@ -455,6 +455,7 @@ const InvestigadorPropuestas = () => {
                           </button>
                         ) : (
                           <span 
+                            className="badge-coordinador-bloqueo"
                             style={{ fontSize: '11px', color: '#64748b', backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
                             title="Solo la persona coordinadora puede enviar la propuesta"
                           >
@@ -503,7 +504,7 @@ const InvestigadorPropuestas = () => {
                     <div className="accordion-propuesta-subtitle">
                       Investigador: <strong>{prop.propietario || nombreInvestigador}</strong> 
                       {prop.esPropietario === false && (
-                        <span style={{
+                        <span className="badge-equipo-miembro" style={{
                           marginLeft: '8px',
                           backgroundColor: '#e0f2fe',
                           color: '#0369a1',
@@ -541,7 +542,7 @@ const InvestigadorPropuestas = () => {
                     <div className="accordion-card-body">
                                             {/* Banner llamativo si la propuesta está cancelada */}
                       {esCancelada && (
-                        <div style={{
+                        <div className="banner-propuesta-cancelada" style={{
                           margin: '14px 0 20px 0',
                           padding: '14px 18px',
                           backgroundColor: '#f8fafc',
@@ -581,7 +582,7 @@ const InvestigadorPropuestas = () => {
 
                       {/* Banner de Envío Oficial a la Unidad de Vinculación */}
                       {esBorrador && (
-                        <div style={{
+                        <div className="banner-envio-vinculacion" style={{
                           margin: '14px 0 20px 0',
                           padding: '16px 20px',
                           backgroundColor: '#f0fdf4',
@@ -612,7 +613,7 @@ const InvestigadorPropuestas = () => {
                               {enviandoRevision[prop.propuestaId] ? 'Enviando a Vinculación...' : '📤 Enviar Propuesta a Vinculación'}
                             </button>
                           ) : (
-                            <div style={{
+                            <div className="banner-solo-coordinador" style={{
                               backgroundColor: '#eff6ff',
                               border: '1px solid #bfdbfe',
                               borderRadius: '6px',
@@ -854,7 +855,7 @@ const InvestigadorPropuestas = () => {
 
                             {/* Aviso si la respuesta anterior fue rechazada */}
                             {subRechazada && subActiva?.comentarioResolucion && (
-                              <div style={{ margin: '12px 0', padding: '10px 14px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '6px', color: '#991b1b', fontSize: '13px' }}>
+                              <div className="banner-subsanacion-rechazada" style={{ margin: '12px 0', padding: '10px 14px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '6px', color: '#991b1b', fontSize: '13px' }}>
                                 <strong>⚠️ Respuesta rechazada por la Gestoría VIE:</strong>
                                 <div style={{ marginTop: '6px' }}>"{subActiva.comentarioResolucion}"</div>
                                 <div style={{ marginTop: '6px', color: '#7f1d1d', fontSize: '12px' }}>Debe corregir nuevamente y reenviar la propuesta.</div>
@@ -944,7 +945,7 @@ const InvestigadorPropuestas = () => {
                                     {reenviando[prop.propuestaId] ? 'Reenviando...' : '📤 Reenviar Propuesta Subsanada (Nueva Revisión)'}
                                   </button>
                                 ) : (
-                                  <div style={{
+                                  <div className="banner-solo-coordinador" style={{
                                     backgroundColor: '#eff6ff',
                                     border: '1px solid #bfdbfe',
                                     borderRadius: '6px',
