@@ -1526,6 +1526,31 @@ const FormularioProyecto = () => {
                   >
                     + Agregar Objetivo Específico
                   </button>
+
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '12px 16px',
+                    backgroundColor: '#f0fdf4',
+                    border: '1px solid #bbf7d0',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '10px'
+                  }}>
+                    <span style={{ fontSize: '13px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🔗</span> Los objetivos específicos definidos aquí están vinculados directamente con el <strong>Paso 12 (Plan de Acción y Cronograma)</strong>.
+                    </span>
+                    <button
+                      type="button"
+                      className="btn-link-action"
+                      style={{ fontSize: '12px', color: '#15803d', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                      onClick={() => setPasoActual(12)}
+                    >
+                      Ir a Paso 12 (Cronograma) →
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -1591,11 +1616,75 @@ const FormularioProyecto = () => {
                 <h3 style={{ fontSize: '15px', color: '#002855', marginBottom: '8px', fontWeight: 700 }}>
                   1. Matriz de Actividades y Cronograma
                 </h3>
+
+                {/* Panel de Objetivos Específicos Vinculados desde Paso 9 */}
+                <div style={{
+                  marginBottom: '16px',
+                  padding: '14px 18px',
+                  backgroundColor: '#f0f9ff',
+                  border: '1px solid #bae6fd',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ fontWeight: 700, fontSize: '14px', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🎯</span> Objetivos Específicos Vinculados (Paso 9)
+                    </div>
+                    <button 
+                      type="button" 
+                      className="btn-link-action"
+                      style={{ fontSize: '12px', color: '#0284c7', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontWeight: 600 }}
+                      onClick={() => setPasoActual(9)}
+                      title="Ir a Paso 9 para agregar o editar los objetivos específicos"
+                    >
+                      ✏️ Editar objetivos en Paso 9
+                    </button>
+                  </div>
+                  {objetivosEspecificos.filter(o => o && o.trim()).length === 0 ? (
+                    <div style={{ fontSize: '13px', color: '#64748b', fontStyle: 'italic', padding: '6px 0' }}>
+                      ⚠️ Aún no se han redactado objetivos específicos en el <strong>Paso 9</strong>. Haga clic en <em>"Editar objetivos en Paso 9"</em> para agregarlos y vincularlos a cada actividad del cronograma.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
+                      {objetivosEspecificos.map((oe, idx) => {
+                        const texto = (oe || '').trim();
+                        if (!texto) return null;
+                        const clave = `OE ${idx + 1}`;
+                        const cant = actividadesCronograma.filter(a => a.obj === clave || a.obj === `Objetivo ${idx + 1}`).length;
+                        return (
+                          <div key={idx} style={{
+                            backgroundColor: '#ffffff',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '6px',
+                            padding: '10px 12px',
+                            fontSize: '12px',
+                            lineHeight: 1.45,
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                              <strong style={{ color: '#002855', fontSize: '13px' }}>{clave}</strong>
+                              <span style={{
+                                fontSize: '11px',
+                                backgroundColor: cant > 0 ? '#dcfce7' : '#fef3c7',
+                                color: cant > 0 ? '#166534' : '#92400e',
+                                padding: '2px 8px',
+                                borderRadius: '12px',
+                                fontWeight: 600
+                              }}>
+                                {cant} {cant === 1 ? 'actividad' : 'actividades'}
+                              </span>
+                            </div>
+                            <div style={{ color: '#334155' }}>{texto}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
                 <div className="table-responsive-container">
                   <table className="institucional-data-table">
                     <thead>
                       <tr>
-                        <th style={{ width: '10%' }}>Obj. Esp.</th>
+                        <th style={{ width: '16%' }}>Obj. Esp. (Paso 9)</th>
                         <th>Actividad principal</th>
                         <th>Meta / Entregable</th>
                         <th style={{ width: '18%' }}>Responsable (Equipo)</th>
@@ -1616,19 +1705,48 @@ const FormularioProyecto = () => {
                         actividadesCronograma.map((act, i) => (
                           <tr key={act.id || i}>
                             <td>
-                              <LimitedInput 
-                                type="text" 
-                                className="form-table-input"
-                                value={act.obj}
-                                maxLength={30}
-                                showCounter={false}
-                                placeholder="OE 1"
-                                onChange={(e) => {
-                                  const copia = [...actividadesCronograma];
-                                  copia[i].obj = e.target.value;
-                                  setActividadesCronograma(copia);
-                                }}
-                              />
+                              {objetivosEspecificos.filter(o => o && o.trim()).length > 0 ? (
+                                <select 
+                                  className="form-table-input"
+                                  value={act.obj || ''}
+                                  style={{ background: '#ffffff', cursor: 'pointer', fontSize: '12px', width: '100%', fontWeight: 500 }}
+                                  onChange={(e) => {
+                                    const copia = [...actividadesCronograma];
+                                    copia[i].obj = e.target.value;
+                                    setActividadesCronograma(copia);
+                                  }}
+                                >
+                                  <option value="">— Seleccionar OE —</option>
+                                  {objetivosEspecificos.map((oe, idx) => {
+                                    const tLimpio = (oe || '').trim();
+                                    if (!tLimpio) return null;
+                                    const clave = `OE ${idx + 1}`;
+                                    const tCorto = tLimpio.length > 45 ? `${tLimpio.substring(0, 45)}...` : tLimpio;
+                                    return (
+                                      <option key={idx} value={clave} title={`${clave}: ${tLimpio}`}>
+                                        {clave}: {tCorto}
+                                      </option>
+                                    );
+                                  })}
+                                  {act.obj && !objetivosEspecificos.some((_, idx) => `OE ${idx + 1}` === act.obj) && (
+                                    <option value={act.obj}>{act.obj}</option>
+                                  )}
+                                </select>
+                              ) : (
+                                <LimitedInput 
+                                  type="text" 
+                                  className="form-table-input"
+                                  value={act.obj || ''}
+                                  maxLength={30}
+                                  showCounter={false}
+                                  placeholder="OE 1"
+                                  onChange={(e) => {
+                                    const copia = [...actividadesCronograma];
+                                    copia[i].obj = e.target.value;
+                                    setActividadesCronograma(copia);
+                                  }}
+                                />
+                              )}
                             </td>
                             <td>
                               <LimitedInput 
@@ -1736,10 +1854,13 @@ const FormularioProyecto = () => {
                 <button 
                   type="button" 
                   className="btn-add-table-row"
-                  onClick={() => setActividadesCronograma([
-                    ...actividadesCronograma,
-                    { id: Date.now(), obj: '', actividad: '', entregable: '', a1: false, a2: false, a3: false }
-                  ])}
+                  onClick={() => {
+                    const primerOE = objetivosEspecificos.find(o => o && o.trim()) ? 'OE 1' : '';
+                    setActividadesCronograma([
+                      ...actividadesCronograma,
+                      { id: Date.now(), obj: primerOE, actividad: '', entregable: '', a1: false, a2: false, a3: false }
+                    ]);
+                  }}
                 >
                   + Agregar Actividad al Cronograma
                 </button>

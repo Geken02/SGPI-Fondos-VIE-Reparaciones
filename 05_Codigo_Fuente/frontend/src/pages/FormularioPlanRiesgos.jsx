@@ -108,6 +108,7 @@ const FormularioPlanRiesgos = () => {
 
   // Plan de Acción y Matriz de Riesgos
   const [actividades, setActividades] = useState([]);
+  const [objetivosEspecificos, setObjetivosEspecificos] = useState([]);
 
   const [guardadoMsg, setGuardadoMsg] = useState('Borrador listo para formulación');
   const [guardando, setGuardando] = useState(false);
@@ -179,6 +180,13 @@ const FormularioPlanRiesgos = () => {
         if (prop) {
           if (prop.titulo) setNombrePropuesta(prop.titulo);
           if (prop.modalidad) setTipoIniciativa(prop.modalidad);
+        }
+
+        if (form04Data?.objetivosEspecificos && Array.isArray(form04Data.objetivosEspecificos)) {
+          setObjetivosEspecificos(form04Data.objetivosEspecificos.filter(Boolean));
+        } else if (prop?.contenido?.objetivosEspecificos) {
+          const objs = prop.contenido.objetivosEspecificos.split(';\n').filter(Boolean);
+          if (objs.length > 0) setObjetivosEspecificos(objs);
         }
 
         const miembrosCompletos = construirIntegrantesDeEquipo(prop, form04Data, usuario);
@@ -543,17 +551,44 @@ const FormularioPlanRiesgos = () => {
                   actividades.map((act, i) => (
                   <tr key={act.id}>
                     <td>
-                      <LimitedInput 
-                        value={act.objetivo}
-                        maxLength={20}
-                        showCounter={false}
-                        className="form-table-input"
-                        onChange={(e) => {
-                          const copia = [...actividades];
-                          copia[i].objetivo = e.target.value;
-                          setActividades(copia);
-                        }}
-                      />
+                      {objetivosEspecificos.length > 0 ? (
+                        <select
+                          value={act.objetivo || ''}
+                          className="form-table-input"
+                          style={{ background: '#ffffff', cursor: 'pointer', fontSize: '12px' }}
+                          onChange={(e) => {
+                            const copia = [...actividades];
+                            copia[i].objetivo = e.target.value;
+                            setActividades(copia);
+                          }}
+                        >
+                          <option value="">— OE —</option>
+                          {objetivosEspecificos.map((oe, idx) => {
+                            const tLimpio = (oe || '').trim();
+                            const clave = `OE ${idx + 1}`;
+                            return (
+                              <option key={idx} value={clave} title={`${clave}: ${tLimpio}`}>
+                                {clave}
+                              </option>
+                            );
+                          })}
+                          {act.objetivo && !objetivosEspecificos.some((_, idx) => `OE ${idx + 1}` === act.objetivo) && (
+                            <option value={act.objetivo}>{act.objetivo}</option>
+                          )}
+                        </select>
+                      ) : (
+                        <LimitedInput 
+                          value={act.objetivo}
+                          maxLength={20}
+                          showCounter={false}
+                          className="form-table-input"
+                          onChange={(e) => {
+                            const copia = [...actividades];
+                            copia[i].objetivo = e.target.value;
+                            setActividades(copia);
+                          }}
+                        />
+                      )}
                     </td>
                     <td>
                       <LimitedInput 

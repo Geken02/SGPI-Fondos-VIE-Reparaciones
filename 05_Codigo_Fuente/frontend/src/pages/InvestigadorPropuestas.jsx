@@ -15,6 +15,7 @@ const InvestigadorPropuestas = () => {
   const [propuestas, setPropuestas] = useState([]);
   const [enviandoRevision, setEnviandoRevision] = useState({});
   const [subiendoFormulario, setSubiendoFormulario] = useState({});
+  const [cancelando, setCancelando] = useState({});
 
   const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codigoForm, e) => {
     const file = e.target.files?.[0];
@@ -57,6 +58,28 @@ const InvestigadorPropuestas = () => {
     } finally {
       setSubiendoFormulario(prev => ({ ...prev, [key]: false }));
       e.target.value = '';
+    }
+  };
+
+  const handleCancelarPropuesta = async (propuestaId) => {
+    const prop = propuestas.find(p => p.propuestaId === propuestaId);
+    if (prop && prop.esPropietario === false) {
+      alert('Solo la persona coordinadora puede cancelar esta propuesta.');
+      return;
+    }
+    if (!window.confirm('Esta accion cancelara definitivamente la propuesta. Confirmar?')) {
+      return;
+    }
+    setCancelando(prev => ({ ...prev, [propuestaId]: true }));
+    try {
+      await propuestaService.cancelarPropuesta(propuestaId);
+      alert('La propuesta ha sido cancelada.');
+      cargarPropuestas();
+    } catch (err) {
+      console.warn('Error al cancelar propuesta:', err);
+      alert('Error al cancelar: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setCancelando(prev => ({ ...prev, [propuestaId]: false }));
     }
   };
 
@@ -358,25 +381,33 @@ const InvestigadorPropuestas = () => {
 
               // Evaluación de estado de subsanación real de la base de datos
               const subActiva = prop.subsanacionActiva;
+              // esSubsanacion: pendiente (1) o rechazada (3) — el investigador debe actuar
               const esSubsanacion = (
-                prop.estadoId === 10 || 
+                prop.estadoId === 10 ||
                 (prop.nombreEstado && prop.nombreEstado.toLowerCase().includes('subsan')) ||
-                (subActiva && subActiva.estadoSubsanacionId === 1)
+                (subActiva && (subActiva.estadoSubsanacionId === 1 || subActiva.estadoSubsanacionId === 3))
               );
+              // subRespondida: el investigador ya respondió (2), esperando que la gestora revise
               const subRespondida = subActiva && subActiva.estadoSubsanacionId === 2;
+              // subRechazada: la gestora rechazó la respuesta — mostrar motivo
+              const subRechazada = subActiva && subActiva.estadoSubsanacionId === 3;
 
-              const estado = esSubsanacion
+              const estado = esCancelada
+                ? 'Cancelada'
+                : esSubsanacion
                 ? 'En Subsanación'
                 : (prop.nombreEstado || prop.estadoBadge || (prop.estadoId === 3 ? 'En Evaluación de Vinculación' : prop.estadoId === 2 ? 'Enviada a VIE' : 'Borrador'));
               const esBorrador = (prop.estadoId === 1 || estado.toLowerCase().includes('borrador')) && !esSubsanacion;
+              const esCancelada = prop.estadoId === 9 || (prop.nombreEstado || '').toLowerCase().includes('cancelad');
 
               const badgeClass = esSubsanacion ? 'badge-subsanacion'
+                                : esCancelada ? 'badge-cancelada'
                                 : estado.toLowerCase().includes('eval') ? 'badge-warning'
                                 : estado.toLowerCase().includes('aprob') ? 'badge-success'
                                 : 'badge-info';
 
               return (
-                <div key={itemKey} id={`propuesta-card-${itemKey}`} className={`propuesta-accordion-card ${estaAbierto ? 'is-expanded' : ''} ${esSubsanacion ? 'is-subsanacion' : ''}`}
+                <div key={itemKey} id={`propuesta-card-${itemKey}`} className={`propuesta-accordion-card ${estaAbierto ? 'is-expanded' : ''} ${esSubsanacion ? 'is-subsanacion' : ''} ${esCancelada ? 'is-cancelada' : ''}`}
                 >
                   {/* Encabezado del Acordeón */}
                   <div className="accordion-card-header" onClick={() => toggleAcordeon(itemKey)}>
@@ -417,6 +448,23 @@ const InvestigadorPropuestas = () => {
                             🔒 Envío por Coordinador
                           </span>
                         )
+                      )}
+                      {prop.esPropietario !== false && !esCancelada && (
+                        <button
+                          type="button"
+                          title="Cancelar propuesta"
+                          onClick={(e) => { e.stopPropagation(); handleCancelarPropuesta(prop.propuestaId); }}
+                          disabled={cancelando[prop.propuestaId]}
+                          style={{
+                            width: '24px', height: '24px', borderRadius: '50%',
+                            border: '1px solid #fca5a5', backgroundColor: '#fef2f2',
+                            color: '#dc2626', fontSize: '14px', fontWeight: 700,
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', lineHeight: 1, padding: 0
+                          }}
+                        >
+                          {cancelando[prop.propuestaId] ? '...' : 'x'}
+                        </button>
                       )}
                       <button 
                         type="button" 
@@ -473,6 +521,31 @@ const InvestigadorPropuestas = () => {
 
                     return (
                     <div className="accordion-card-body">
+                                            {/* Banner llamativo si la propuesta está cancelada */}
+                      {esCancelada && (
+                        <div style={{
+                          margin: '14px 0 20px 0',
+                          padding: '14px 18px',
+                          backgroundColor: '#f8fafc',
+                          border: '1.5px solid #cbd5e1',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          color: '#475569'
+                        }}>
+                          <span style={{ fontSize: '22px' }}>🚫</span>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '14px', color: '#1e293b' }}>
+                              PROPUESTA CANCELADA (ESTADO 9)
+                            </div>
+                            <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
+                              Esta propuesta ha sido retirada/cancelada. La edición de formularios, subida de documentos y reenvíos han sido deshabilitados.
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Banner llamativo si la propuesta está devuelta en Subsanación */}
                       {esSubsanacion && (
                         <div className="subsanacion-banner-box">
@@ -555,8 +628,9 @@ const InvestigadorPropuestas = () => {
                               <button 
                                 type="button" 
                                 className="btn-doc-action"
-                                style={{ backgroundColor: '#0369A1', color: '#ffffff', borderColor: '#0369A1' }}
-                                onClick={() => { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/form4?propuestaId=${prop.propuestaId || ''}`); }}
+                                disabled={esCancelada}
+                                style={{ backgroundColor: '#0369A1', color: '#ffffff', borderColor: '#0369A1', opacity: esCancelada ? 0.5 : 1, cursor: esCancelada ? 'not-allowed' : 'pointer' }}
+                                onClick={() => { if (!esCancelada) { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/form4?propuestaId=${prop.propuestaId || ''}`); } }}
                               >
                                 {esSubsanacion ? 'Corregir' : 'Editar / Llenar'}
                               </button>
@@ -573,13 +647,25 @@ const InvestigadorPropuestas = () => {
                                   margin: 0
                                 }}
                                 title="Subir formulario en PDF/Word directamente a SeaweedFS si no desea llenarlo en línea"
+                                style={{
+                                  backgroundColor: '#10b981',
+                                  color: '#ffffff',
+                                  borderColor: '#10b981',
+                                  cursor: esCancelada ? 'not-allowed' : 'pointer',
+                                  opacity: esCancelada ? 0.5 : 1,
+                                  pointerEvents: esCancelada ? 'none' : 'auto',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  margin: 0
+                                }}
                               >
                                 {subiendoFormulario[`${prop.propuestaId}_1`] ? 'Subiendo...' : '📤 Subir Doc'}
                                 <input
                                   type="file"
                                   accept=".pdf,.doc,.docx"
                                   style={{ display: 'none' }}
-                                  disabled={subiendoFormulario[`${prop.propuestaId}_1`]}
+                                  disabled={esCancelada || subiendoFormulario[`${prop.propuestaId}_1`]}
                                   onChange={(e) => handleSubirDocumentoFormulario(prop.propuestaId, 1, 'F-01 Formulario de Proyecto', e)}
                                 />
                               </label>
@@ -607,8 +693,9 @@ const InvestigadorPropuestas = () => {
                               <button 
                                 type="button" 
                                 className="btn-doc-action"
-                                style={{ backgroundColor: '#0369A1', color: '#ffffff', borderColor: '#0369A1' }}
-                                onClick={() => { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/form5?propuestaId=${prop.propuestaId || ''}`); }}
+                                disabled={esCancelada}
+                                style={{ backgroundColor: '#0369A1', color: '#ffffff', borderColor: '#0369A1', opacity: esCancelada ? 0.5 : 1, cursor: esCancelada ? 'not-allowed' : 'pointer' }}
+                                onClick={() => { if (!esCancelada) { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/form5?propuestaId=${prop.propuestaId || ''}`); } }}
                               >
                                 {esSubsanacion ? 'Corregir' : 'Editar / Llenar'}
                               </button>
@@ -625,13 +712,25 @@ const InvestigadorPropuestas = () => {
                                   margin: 0
                                 }}
                                 title="Subir archivo Excel o documento de Plan y Riesgos directamente a SeaweedFS"
+                                style={{
+                                  backgroundColor: '#10b981',
+                                  color: '#ffffff',
+                                  borderColor: '#10b981',
+                                  cursor: esCancelada ? 'not-allowed' : 'pointer',
+                                  opacity: esCancelada ? 0.5 : 1,
+                                  pointerEvents: esCancelada ? 'none' : 'auto',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  margin: 0
+                                }}
                               >
                                 {subiendoFormulario[`${prop.propuestaId}_2`] ? 'Subiendo...' : '📤 Subir Doc'}
                                 <input
                                   type="file"
                                   accept=".xlsx,.xls,.pdf,.doc,.docx"
                                   style={{ display: 'none' }}
-                                  disabled={subiendoFormulario[`${prop.propuestaId}_2`]}
+                                  disabled={esCancelada || subiendoFormulario[`${prop.propuestaId}_2`]}
                                   onChange={(e) => handleSubirDocumentoFormulario(prop.propuestaId, 2, 'F-02 Plan y Riesgos', e)}
                                 />
                               </label>
@@ -659,7 +758,9 @@ const InvestigadorPropuestas = () => {
                               <button 
                                 type="button" 
                                 className="btn-doc-action btn-add-files"
-                                onClick={() => { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/presupuesto?propuestaId=${prop.propuestaId || ''}`); }}
+                                disabled={esCancelada}
+                                style={{ opacity: esCancelada ? 0.5 : 1, cursor: esCancelada ? 'not-allowed' : 'pointer' }}
+                                onClick={() => { if (!esCancelada) { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/presupuesto?propuestaId=${prop.propuestaId || ''}`); } }}
                               >
                                 {esSubsanacion ? 'Corregir' : 'Abrir Módulo'}
                               </button>
@@ -732,6 +833,15 @@ const InvestigadorPropuestas = () => {
                                 "{subActiva?.comentarioGestora || 'Favor revisar y corregir los siguientes puntos: 1. En F-02 Plan y Riesgos, aclarar las medidas de mitigación para el riesgo R2. 2. En F-03 Presupuesto, adjuntar las cotizaciones formales para las partidas de equipo y reactivos solicitados.'}"
                               </div>
                             </div>
+
+                            {/* Aviso si la respuesta anterior fue rechazada */}
+                            {subRechazada && subActiva?.comentarioResolucion && (
+                              <div style={{ margin: '12px 0', padding: '10px 14px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '6px', color: '#991b1b', fontSize: '13px' }}>
+                                <strong>⚠️ Respuesta rechazada por la Gestoría VIE:</strong>
+                                <div style={{ marginTop: '6px' }}>"{subActiva.comentarioResolucion}"</div>
+                                <div style={{ marginTop: '6px', color: '#7f1d1d', fontSize: '12px' }}>Debe corregir nuevamente y reenviar la propuesta.</div>
+                              </div>
+                            )}
 
                             {/* Panel de Acción para el Investigador */}
                             <div className="subsanacion-action-panel">
