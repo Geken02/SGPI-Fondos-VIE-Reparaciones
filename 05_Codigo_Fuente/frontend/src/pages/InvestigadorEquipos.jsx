@@ -280,7 +280,7 @@ const InvestigadorEquipos = () => {
             {/* Filtros de Miembros */}
             <div className="propuestas-filters-bar" style={{ marginBottom: '20px' }}>
               <div className="filter-search-box" style={{ flex: 2 }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <circle cx="11" cy="11" r="8"></circle>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
@@ -577,7 +577,7 @@ const InvestigadorEquipos = () => {
                     justifyContent: 'center',
                     backdropFilter: 'blur(4px)'
                   }}>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                       <circle cx="9" cy="7" r="4" />
                       <line x1="19" y1="8" x2="19" y2="14" />
@@ -663,7 +663,7 @@ const InvestigadorEquipos = () => {
                         fill="none" 
                         stroke="currentColor" 
                         strokeWidth="2"
-                      >
+                       aria-hidden="true">
                         <circle cx="11" cy="11" r="8" />
                         <line x1="21" y1="21" x2="16.65" y2="16.65" />
                       </svg>
@@ -911,7 +911,7 @@ const InvestigadorEquipos = () => {
                       fontWeight: 600
                     }}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                     Guardar Integrante

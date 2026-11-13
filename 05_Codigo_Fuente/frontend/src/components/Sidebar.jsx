@@ -1,4 +1,5 @@
-﻿import { NavLink, useLocation } from 'react-router-dom';
+// src/components/Sidebar.jsx
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useModal } from '../context/ModalContext';
 
