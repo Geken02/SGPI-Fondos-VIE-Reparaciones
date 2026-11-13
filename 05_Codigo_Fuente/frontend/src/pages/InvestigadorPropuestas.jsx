@@ -392,13 +392,20 @@ const InvestigadorPropuestas = () => {
               // subRechazada: la gestora rechazó la respuesta — mostrar motivo
               const subRechazada = subActiva && subActiva.estadoSubsanacionId === 3;
 
+              // 1. Declarar esCancelada primero para evitar Temporal Dead Zone (TDZ)
+              const esCancelada = Boolean(
+                prop.estadoId === 9 || (prop.nombreEstado || '').toLowerCase().includes('cancelad')
+              );
+
+              // 2. Calcular nombre/texto del estado
               const estado = esCancelada
                 ? 'Cancelada'
                 : esSubsanacion
                 ? 'En Subsanación'
                 : (prop.nombreEstado || prop.estadoBadge || (prop.estadoId === 3 ? 'En Evaluación de Vinculación' : prop.estadoId === 2 ? 'Enviada a VIE' : 'Borrador'));
-              const esBorrador = (prop.estadoId === 1 || estado.toLowerCase().includes('borrador')) && !esSubsanacion;
-              const esCancelada = prop.estadoId === 9 || (prop.nombreEstado || '').toLowerCase().includes('cancelad');
+
+              // 3. Evaluar si es borrador (desactivado si está cancelada o en subsanación)
+              const esBorrador = !esCancelada && !esSubsanacion && (prop.estadoId === 1 || estado.toLowerCase().includes('borrador'));
 
               const badgeClass = esSubsanacion ? 'badge-subsanacion'
                                 : esCancelada ? 'badge-cancelada'

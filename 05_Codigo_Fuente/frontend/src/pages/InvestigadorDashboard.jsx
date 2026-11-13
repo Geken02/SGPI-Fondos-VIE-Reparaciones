@@ -199,19 +199,19 @@ const InvestigadorDashboard = () => {
               {/* Leyenda */}
               <div className="kpi-legend">
                 <div className="kpi-legend-row">
-                  <span className="dot dot-cyan"></span>
+                  <span className="dot dot-cyan" style={{ background: '#0284c7', backgroundColor: '#0284c7' }}></span>
                   <span className="legend-text"><strong>{enProceso}</strong> En proceso</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-dark"></span>
+                  <span className="dot dot-dark" style={{ background: '#002855', backgroundColor: '#002855' }}></span>
                   <span className="legend-text"><strong>{aprobadas}</strong> Aprobadas</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-coral"></span>
+                  <span className="dot dot-coral" style={{ background: '#EF3340', backgroundColor: '#EF3340' }}></span>
                   <span className="legend-text"><strong>{rechazadas}</strong> Rechazadas</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-gray"></span>
+                  <span className="dot dot-gray" style={{ background: '#94a3b8', backgroundColor: '#94a3b8' }}></span>
                   <span className="legend-text"><strong>{canceladas}</strong> Canceladas</span>
                 </div>
               </div>

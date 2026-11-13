@@ -261,7 +261,7 @@
   gap: 8px;
 }
 
-.dot {
+.pagination-dots .dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
@@ -272,12 +272,12 @@
   padding: 0;
 }
 
-.dot:hover {
+.pagination-dots .dot:hover {
   background: #94a3b8;
   transform: scale(1.2);
 }
 
-.dot.active {
+.pagination-dots .dot.active {
   background: #003366;
   width: 24px;
   border-radius: 5px;
