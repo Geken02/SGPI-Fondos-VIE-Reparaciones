@@ -220,3 +220,85 @@
 .btn-danger:hover:not(:disabled) {
   background-color: #fee2e2;
 }
+/* ==========================================================
+   MODO DE ALTO CONTRASTE - ASIGNACIÓN DE MIEMBROS
+   ========================================================== */
+
+body.high-contrast-mode .asignaciones-container,
+body.high-contrast-mode .asignaciones-container h1,
+body.high-contrast-mode .asignaciones-container h2,
+body.high-contrast-mode .asignaciones-container p,
+body.high-contrast-mode .asignaciones-container label,
+body.high-contrast-mode .asignaciones-container .miembro-nombre,
+body.high-contrast-mode .asignaciones-container .miembro-correo,
+body.high-contrast-mode .asignaciones-container .miembro-estado {
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .asignaciones-container .card,
+body.high-contrast-mode .asignaciones-container .miembros-lista,
+body.high-contrast-mode .asignaciones-container .miembro-item {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+  box-shadow: none !important;
+}
+
+body.high-contrast-mode .asignaciones-container .miembro-item:hover {
+  background: #242424 !important;
+}
+
+body.high-contrast-mode .asignaciones-container .form-select,
+body.high-contrast-mode .asignaciones-container input {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+  color-scheme: dark;
+}
+
+body.high-contrast-mode .asignaciones-container input::placeholder {
+  color: #cccccc !important;
+  opacity: 1;
+}
+
+body.high-contrast-mode .asignaciones-container .tabla-asignaciones,
+body.high-contrast-mode .asignaciones-container .tabla-asignaciones tbody,
+body.high-contrast-mode .asignaciones-container .tabla-asignaciones tbody tr,
+body.high-contrast-mode .asignaciones-container .tabla-asignaciones td {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-color: #555555 !important;
+}
+
+body.high-contrast-mode .asignaciones-container .tabla-asignaciones th {
+  background: #1a1a1a !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+body.high-contrast-mode .asignaciones-container .btn-primary,
+body.high-contrast-mode .asignaciones-container .btn-danger {
+  background: #ffff00 !important;
+  color: #000000 !important;
+  border: 2px solid #ffffff !important;
+  font-weight: 700 !important;
+}
+
+body.high-contrast-mode .asignaciones-container .alert-error {
+  background: #4a0000 !important;
+  color: #ffffff !important;
+  border: 1px solid #ff7777 !important;
+}
+
+body.high-contrast-mode .asignaciones-container .alert-success {
+  background: #003b16 !important;
+  color: #ffffff !important;
+  border: 1px solid #00ff66 !important;
+}
+
+body.high-contrast-mode .asignaciones-container button:focus-visible,
+body.high-contrast-mode .asignaciones-container input:focus-visible,
+body.high-contrast-mode .asignaciones-container select:focus-visible {
+  outline: 3px solid #00ff00 !important;
+  outline-offset: 3px;
+}
