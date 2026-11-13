@@ -239,78 +239,115 @@ export default function RubricaDigital() {
     );
   };
 
-  // Renderizar sección de productos (paso 8)
-  const renderizarProductos = () => (
-    <div className="seccion-productos">
-      <div className="seccion-header">
-        <h2 className="seccion-titulo">9. PRODUCTOS ACADÉMICOS</h2>
-        <span className="seccion-peso-badge">Sección no sumativa</span>
-      </div>
+    // Renderizar sección de productos (paso 8)
+  const renderizarProductos = () => {
+    const seccionProductos = rubricaData?.estructuraRubrica?.seccion_productos;
+    if (!seccionProductos) return <p>No se encontró la configuración de productos.</p>;
 
-      <div className="alerta-productos">
-        <strong>⚠ ATENCIÓN:</strong> Esta sección NO agrega puntos a la calificación final. Verifica que los productos comprometidos cumplan con las disposiciones de la Convocatoria. Si el equipo NO cumple, el Comité Técnico DEBE no recomendar la propuesta independientemente de la calificación final obtenida.
-      </div>
+    const esDesarrolloTecnologico = rubricaData.tipoRubrica === 'desarrollo_tecnologico';
 
-      <div className="productos-info-grid">
-        <div className="producto-info-item">
-          <label className="producto-label">Total de horas semanales asignadas al equipo</label>
-          <input
-            type="number"
-            value={productos.horasSemanales}
-            onChange={(e) => setProductos(prev => ({ ...prev, horasSemanales: parseFloat(e.target.value) || 0 }))}
-            className="producto-input"
-          />
-          <small className="producto-help">Indique la suma total de horas semanales (VIE + VIE-Centros + REC + CONS + DOC + VIESA)</small>
+    return (
+      <div className="seccion-productos">
+        <div className="seccion-header">
+          <h2 className="seccion-titulo">9. {seccionProductos.nombre}</h2>
+          <span className="seccion-peso-badge">Sección no sumativa</span>
         </div>
 
-        <div className="producto-info-item">
-          <label className="producto-label">Mínimo de productos requeridos</label>
-          <div className="producto-valor-display">
-            {rubricaData.minimoProductosRequeridos} producto(s)
+        <div className="alerta-productos">
+          <strong>⚠ ATENCIÓN:</strong> {seccionProductos.advertencia}
+        </div>
+
+        <div className="productos-info-grid">
+          <div className="producto-info-item">
+            <label className="producto-label">Total de horas semanales asignadas al equipo</label>
+            <input
+              type="number"
+              value={productos.horasSemanales}
+              onChange={(e) => setProductos(prev => ({ ...prev, horasSemanales: parseFloat(e.target.value) || 0 }))}
+              className="producto-input"
+            />
+            <small className="producto-help">Indique la suma total de horas semanales (VIE + VIE-Centros + REC + CONS + DOC + VIESA)</small>
           </div>
-          <small className="producto-help">Según la Sección 2.4.1 de la Convocatoria</small>
+
+          <div className="producto-info-item">
+            <label className="producto-label">Mínimo de productos requeridos</label>
+            <div className="producto-valor-display">
+              {rubricaData.minimoProductosRequeridos} producto(s)
+            </div>
+            <small className="producto-help">Según la Convocatoria</small>
+          </div>
+
+          <div className="producto-info-item">
+            <label className="producto-label">Cantidad de productos propuestos por el equipo</label>
+            <input
+              type="number"
+              value={productos.cantidadPropuesta}
+              onChange={(e) => setProductos(prev => ({ ...prev, cantidadPropuesta: parseInt(e.target.value) || 0 }))}
+              className="producto-input"
+            />
+            <small className="producto-help">El equipo declara comprometer esta cantidad de productos</small>
+          </div>
         </div>
 
-        <div className="producto-info-item">
-          <label className="producto-label">Cantidad de productos propuestos por el equipo</label>
-          <input
-            type="number"
-            value={productos.cantidadPropuesta}
-            onChange={(e) => setProductos(prev => ({ ...prev, cantidadPropuesta: parseInt(e.target.value) || 0 }))}
-            className="producto-input"
-          />
-          <small className="producto-help">El equipo declara comprometer esta cantidad de productos académicos</small>
+        <div className="tipos-productos-container">
+          <h3 className="tipos-titulo">Tipo(s) de producto(s) comprometidos</h3>
+          <p className="tipos-instruccion">Marque el tipo declarado por el equipo:</p>
+          
+          <div className="tipos-productos-grid">
+            {/* ✅ Manejo seguro para Fortalecimiento y Básica/Aplicada */}
+            {seccionProductos.tipos_productos?.map((tipo) => (
+              <label key={tipo.id} className="tipo-producto-checkbox">
+                <input
+                  type="checkbox"
+                  checked={productos.tiposSeleccionados.includes(tipo.id)}
+                  onChange={() => handleTipoProducto(tipo.id)}
+                />
+                <span className="checkbox-label">Opción {tipo.id}: {tipo.nombre}</span>
+              </label>
+            ))}
+
+            {/* ✅ Manejo seguro y específico para Desarrollo Tecnológico */}
+            {esDesarrolloTecnologico && (
+              <>
+                <h4 className="subtipo-titulo" style={{marginTop: '20px', width: '100%'}}>① Producto de propiedad industrial OBLIGATORIO</h4>
+                {seccionProductos.activos_propiedad_industrial?.map((tipo) => (
+                  <label key={`pi-${tipo.id}`} className="tipo-producto-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={productos.tiposSeleccionados.includes(`pi-${tipo.id}`)}
+                      onChange={() => handleTipoProducto(`pi-${tipo.id}`)}
+                    />
+                    <span className="checkbox-label">Opción PI {tipo.id}: {tipo.nombre}</span>
+                  </label>
+                ))}
+                
+                <h4 className="subtipo-titulo" style={{marginTop: '20px', width: '100%'}}>② Productos académicos adicionales</h4>
+                {seccionProductos.productos_academicos?.map((tipo) => (
+                  <label key={`acad-${tipo.id}`} className="tipo-producto-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={productos.tiposSeleccionados.includes(`acad-${tipo.id}`)}
+                      onChange={() => handleTipoProducto(`acad-${tipo.id}`)}
+                    />
+                    <span className="checkbox-label">Opción Acad {tipo.id}: {tipo.nombre}</span>
+                  </label>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className={`cumplimiento-productos ${productosCumple ? 'cumple' : 'no-cumple'}`}>
+          <strong>¿Cumple con el mínimo según las horas asignadas?</strong>
+          {productosCumple ? (
+            <p>✓ CUMPLE con los requisitos mínimos de productos → La propuesta puede continuar su revisión</p>
+          ) : (
+            <p>✗ NO CUMPLE con los requisitos mínimos → La propuesta debe ser RECHAZADA por el Comité Técnico</p>
+          )}
         </div>
       </div>
-
-      <div className="tipos-productos-container">
-        <h3 className="tipos-titulo">Tipo(s) de producto(s) comprometidos</h3>
-        <p className="tipos-instruccion">Marque el tipo declarado por el equipo (uno por cada producto comprometido):</p>
-        
-        <div className="tipos-productos-grid">
-          {rubricaData.estructuraRubrica.seccion_productos.tipos_productos.map((tipo) => (
-            <label key={tipo.id} className="tipo-producto-checkbox">
-              <input
-                type="checkbox"
-                checked={productos.tiposSeleccionados.includes(tipo.id)}
-                onChange={() => handleTipoProducto(tipo.id)}
-              />
-              <span className="checkbox-label">Opción {tipo.id}: {tipo.nombre}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div className={`cumplimiento-productos ${productosCumple ? 'cumple' : 'no-cumple'}`}>
-        <strong>¿Cumple con el mínimo según las horas asignadas?</strong>
-        {productosCumple ? (
-          <p>✓ CUMPLE con los requisitos mínimos de productos académicos → La propuesta puede continuar su revisión</p>
-        ) : (
-          <p>✗ NO CUMPLE con los requisitos mínimos → La propuesta debe ser RECHAZADA por el Comité Técnico</p>
-        )}
-      </div>
-    </div>
-  );
+    );
+  };
 
   // Renderizar resumen (paso 9)
   const renderizarResumen = () => (

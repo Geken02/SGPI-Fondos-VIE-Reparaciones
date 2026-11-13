@@ -654,7 +654,7 @@ def subir_y_guardar_en_bd(ruta_local):
         sesion = SessionLocal()
         try:
             nuevo_documento = PropuestaDocumentos(
-                propuestaId=13,               # La propuesta de prueba
+                propuestaId=2,               # La propuesta de prueba
                 tipoDocumentoId=1,            # 1 = Formulario 04
                 rutaArchivo=url_publica,      # URL pública del archivo
                 nombreArchivo="Form-04_Completo.docx",

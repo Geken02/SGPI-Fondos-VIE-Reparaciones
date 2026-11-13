@@ -755,7 +755,7 @@ def emitir_dictamen(
         )
         db.add(nuevo_dictamen)
         
-        # 7. ✅ CRÍTICO: Cambiar el estado de la propuesta a EN_CONSEJO
+       
         estado_consejo = db.query(EstadosPropuesta).filter(
             EstadosPropuesta.codigoEstadoPropuesta == "EN_CONSEJO"
         ).first()
