@@ -289,7 +289,7 @@ export function exportarForm04PDF(datos, codigo = '') {
 
   section('12. PLAN DE ACCIÓN Y GESTIÓN DE RIESGOS');
   if (datos.actividadesCronograma?.length > 0) {
-    renderTable({ startY: y, margin: { left: margin, right: margin }, head: [['Actividad', 'Responsable', 'Inicio', 'Fin']], body: datos.actividadesCronograma.map(a => [safe(a.actividad || a.nombre), safe(a.responsable), safe(a.inicio), safe(a.fin)]), styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] } });
+    renderTable({ startY: y, margin: { left: margin, right: margin }, head: [['Obj.', 'Actividad principal', 'Responsable', 'Periodo']], body: datos.actividadesCronograma.map(a => [safe(a.obj || a.objetivo || 'OE 1'), safe(a.actividad || a.nombre), safe(a.responsable || 'Equipo'), safe([a.a1 && 'Año 1', a.a2 && 'Año 2', a.a3 && 'Año 3'].filter(Boolean).join(', ') || [a.inicio, a.fin].filter(Boolean).join(' - ') || 'Periodo regular')]), styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] } });
     y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
   } else {
     field('Cronograma de Actividades', '');

@@ -101,6 +101,12 @@ export const propuestaService = {
     return response.data;
     },
 
+
+  cancelarPropuesta: async (propuestaId) => {
+    const response = await api.patch(`/investigador/propuestas/${propuestaId}/cancelar`);
+    return response.data;
+  },
+
   subirDocumentoFormulario: async (propuestaId, tipoDocumentoId, archivo) => {
     const formData = new FormData();
     formData.append('archivo', archivo);

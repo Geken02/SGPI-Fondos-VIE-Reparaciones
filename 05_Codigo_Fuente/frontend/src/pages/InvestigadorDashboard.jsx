@@ -49,15 +49,52 @@ const InvestigadorDashboard = () => {
     const texto = (p.titulo || '') + ' ' + (p.codigoPropuesta || '');
     const cumpleTexto = texto.toLowerCase().includes(filtroTexto.toLowerCase());
     const cumpleEscuela = filtroEscuela === 'Todas' || (p.escuela || p.nombreEscuela || '').includes(filtroEscuela);
-    const cumpleEstado = filtroEstado === 'Todos' || (p.estado || p.nombreEstado || p.estadoBadge || '').includes(filtroEstado);
+    const cumpleEstado = filtroEstado === 'Todos' || (() => {
+      const nom = (p.estado || p.nombreEstado || p.estadoBadge || '').toLowerCase();
+      if (filtroEstado === 'En proceso') {
+        return p.estadoId !== 7 && p.estadoId !== 8 && p.estadoId !== 9;
+      }
+      if (filtroEstado === 'Aprobada') {
+        return p.estadoId === 7 || nom.includes('aprob');
+      }
+      if (filtroEstado === 'Rechazada') {
+        return p.estadoId === 8 || nom.includes('rechaz');
+      }
+      if (filtroEstado === 'Cancelada') {
+        return p.estadoId === 9 || nom.includes('cancel');
+      }
+      return nom.includes(filtroEstado.toLowerCase());
+    })();
     return cumpleTexto && cumpleEscuela && cumpleEstado;
   });
 
-  // Métricas reales del usuario (en 0 para usuario nuevo)
+  // Métricas de estado para el gráfico y KPIs:
+  // - Cancelada: Estado 9 o nombre conteniendo "cancelad"
+  // - Aprobada: Estado 7 o nombre conteniendo "aprobad"
+  // - Rechazada: Estado 8 o nombre conteniendo "rechazad"
+  // - En proceso: Cualquier otro estado (Borrador, Enviada, Vinculación, En Comité, Subsanación, etc.)
   const totalPropuestas = listaPropuestas.length;
-  const enRevision = listaPropuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('revis') || (p.nombreEstado || '').toLowerCase().includes('vinculac') || p.estadoId === 2 || p.estadoId === 3).length;
-  const aprobadas = listaPropuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('aprob') || p.estadoId === 5).length;
-  const rechazadas = listaPropuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('rechaz')).length;
+
+  const canceladas = listaPropuestas.filter((p) =>
+    p.estadoId === 9 || (p.nombreEstado || '').toLowerCase().includes('cancelad')
+  ).length;
+
+  const aprobadas = listaPropuestas.filter((p) =>
+    (p.estadoId === 7 || (p.nombreEstado || '').toLowerCase().includes('aprobad')) &&
+    p.estadoId !== 9 && !(p.nombreEstado || '').toLowerCase().includes('cancelad')
+  ).length;
+
+  const rechazadas = listaPropuestas.filter((p) =>
+    (p.estadoId === 8 || (p.nombreEstado || '').toLowerCase().includes('rechazad')) &&
+    p.estadoId !== 9 && !(p.nombreEstado || '').toLowerCase().includes('cancelad')
+  ).length;
+
+  const enProceso = Math.max(0, totalPropuestas - (aprobadas + rechazadas + canceladas));
+
+  const pctProceso = totalPropuestas > 0 ? (enProceso / totalPropuestas) * 100 : 0;
+  const pctAprobadas = totalPropuestas > 0 ? (aprobadas / totalPropuestas) * 100 : 0;
+  const pctRechazadas = totalPropuestas > 0 ? (rechazadas / totalPropuestas) * 100 : 0;
+  const pctCanceladas = totalPropuestas > 0 ? (canceladas / totalPropuestas) * 100 : 0;
 
   const fondosAsignados = listaPropuestas.length > 0 
     ? `₡ ${listaPropuestas.reduce((acc, curr) => acc + (parseFloat(curr.montoTotal) || 0), 0).toLocaleString('es-CR')}` 
@@ -111,27 +148,42 @@ const InvestigadorDashboard = () => {
                   />
                   {totalPropuestas > 0 ? (
                     <>
-                      {/* Segmento 1: En revisión */}
-                      <path
-                        className="donut-segment segment-revision"
-                        strokeDasharray={`${(enRevision / totalPropuestas) * 100}, 100`}
-                        strokeDashoffset="25"
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
-                      {/* Segmento 2: Aprobadas */}
-                      <path
-                        className="donut-segment segment-aprobadas"
-                        strokeDasharray={`${(aprobadas / totalPropuestas) * 100}, 100`}
-                        strokeDashoffset={`${25 - (enRevision / totalPropuestas) * 100}`}
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
-                      {/* Segmento 3: Rechazadas */}
-                      <path
-                        className="donut-segment segment-rechazadas"
-                        strokeDasharray={`${(rechazadas / totalPropuestas) * 100}, 100`}
-                        strokeDashoffset={`${25 - ((enRevision + aprobadas) / totalPropuestas) * 100}`}
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
+                      {/* Segmento 1: En proceso (todo lo que no es 7, 8 ni 9) */}
+                      {enProceso > 0 && (
+                        <path
+                          className="donut-segment segment-revision"
+                          strokeDasharray={`${pctProceso}, 100`}
+                          strokeDashoffset="25"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      )}
+                      {/* Segmento 2: Aprobadas (Estado 7) */}
+                      {aprobadas > 0 && (
+                        <path
+                          className="donut-segment segment-aprobadas"
+                          strokeDasharray={`${pctAprobadas}, 100`}
+                          strokeDashoffset={`${25 - pctProceso}`}
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      )}
+                      {/* Segmento 3: Rechazadas (Estado 8) */}
+                      {rechazadas > 0 && (
+                        <path
+                          className="donut-segment segment-rechazadas"
+                          strokeDasharray={`${pctRechazadas}, 100`}
+                          strokeDashoffset={`${25 - (pctProceso + pctAprobadas)}`}
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      )}
+                      {/* Segmento 4: Canceladas (Estado 9) */}
+                      {canceladas > 0 && (
+                        <path
+                          className="donut-segment segment-canceladas"
+                          strokeDasharray={`${pctCanceladas}, 100`}
+                          strokeDashoffset={`${25 - (pctProceso + pctAprobadas + pctRechazadas)}`}
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      )}
                     </>
                   ) : (
                     <path
@@ -147,16 +199,20 @@ const InvestigadorDashboard = () => {
               {/* Leyenda */}
               <div className="kpi-legend">
                 <div className="kpi-legend-row">
-                  <span className="dot dot-cyan"></span>
-                  <span className="legend-text"><strong>{enRevision}</strong> En revisión</span>
+                  <span className="dot dot-cyan" style={{ background: '#0284c7', backgroundColor: '#0284c7' }}></span>
+                  <span className="legend-text"><strong>{enProceso}</strong> En proceso</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-dark"></span>
+                  <span className="dot dot-dark" style={{ background: '#002855', backgroundColor: '#002855' }}></span>
                   <span className="legend-text"><strong>{aprobadas}</strong> Aprobadas</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-coral"></span>
-                  <span className="legend-text"><strong>{rechazadas}</strong> Rechazadas/Corr.</span>
+                  <span className="dot dot-coral" style={{ background: '#EF3340', backgroundColor: '#EF3340' }}></span>
+                  <span className="legend-text"><strong>{rechazadas}</strong> Rechazadas</span>
+                </div>
+                <div className="kpi-legend-row">
+                  <span className="dot dot-gray" style={{ background: '#94a3b8', backgroundColor: '#94a3b8' }}></span>
+                  <span className="legend-text"><strong>{canceladas}</strong> Canceladas</span>
                 </div>
               </div>
             </div>
@@ -246,8 +302,10 @@ const InvestigadorDashboard = () => {
                 className="filter-select"
               >
                 <option value="Todos">Estado: Todos ▾</option>
-                <option value="En revisión">En revisión</option>
+                <option value="En proceso">En proceso</option>
                 <option value="Aprobada">Aprobada</option>
+                <option value="Rechazada">Rechazada</option>
+                <option value="Cancelada">Cancelada</option>
                 <option value="Borrador">Borrador</option>
               </select>
             </div>
