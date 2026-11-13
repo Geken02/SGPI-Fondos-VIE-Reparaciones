@@ -3978,3 +3978,45 @@ input:checked + .slider:before { transform: translateX(20px); }
 .high-contrast-mode .exp-notas-title svg {
   stroke: #FFFF00 !important;   /* todos los SVG decorativos → amarillo sobre negro */
 }
+
+/* ==========================================================================
+   FIX V4: SPANS INTERNOS DE BOTONES (la regla genérica .high-contrast-mode span
+   estaba pintando de blanco el texto sobre fondos amarillos)
+   ========================================================================== */
+
+/* Botón "Registrar Evaluación": fondo amarillo → texto NEGRO */
+.high-contrast-mode .exp-btn-evaluar,
+.high-contrast-mode .exp-btn-evaluar span {
+  color: #000000 !important;
+}
+
+/* Botón "Volver": fondo negro → texto AMARILLO */
+.high-contrast-mode .exp-back-btn,
+.high-contrast-mode .exp-back-btn span {
+  color: #FFFF00 !important;
+}
+
+/* Estado "Evaluación Completada": texto verde sobre negro */
+.high-contrast-mode .exp-status-box.completed,
+.high-contrast-mode .exp-status-box.completed span {
+  color: #00FF00 !important;
+}
+
+/* Estado "Solo lectura": texto blanco sobre negro */
+.high-contrast-mode .exp-status-box.readonly,
+.high-contrast-mode .exp-status-box.readonly span {
+  color: #FFFFFF !important;
+}
+
+/* Botón "Crear propuesta" activo del sidebar (por si su span cae en el mismo bug) */
+.high-contrast-mode button.sidebar-pill-btn.active,
+.high-contrast-mode button.sidebar-pill-btn.active span {
+  color: #000000 !important;
+}
+
+/* Botones de acciones en rúbrica/expediente con texto en span */
+.high-contrast-mode .asignar-btn-submit span,
+.high-contrast-mode .btn-modal-crear span,
+.high-contrast-mode .btn-enviar span {
+  color: #000000 !important;
+}
