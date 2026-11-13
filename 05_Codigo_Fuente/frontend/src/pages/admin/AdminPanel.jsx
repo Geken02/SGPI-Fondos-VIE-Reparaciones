@@ -74,6 +74,7 @@ export default function AdminPanel() {
   const totalPropuestas = stats.propuestasPorEstado.reduce((sum, item) => sum + (item.cantidad || 0), 0);
   const getPorcentaje = (cantidad) => totalPropuestas === 0 ? 0 : Math.round((cantidad / totalPropuestas) * 100);
 
+  // Máximos reales para calcular porcentajes honestos (ajusta a tu sistema)
   const MAX_PROPUESTAS = 12;
   const MAX_ESCUELAS = 11;
   const MAX_USUARIOS = 30;
@@ -122,7 +123,6 @@ export default function AdminPanel() {
       <section className="stats-row" aria-labelledby="titulo-estadisticas">
         <h2 id="titulo-estadisticas" className="sr-only">Estadísticas Generales del Sistema</h2>
         
-        {/* ✅ CORRECCIÓN: tabIndex={0} y role="group" para que el foco se detenga aquí con Tab */}
         <div 
           className="stat-card" 
           tabIndex={0} 
@@ -243,7 +243,6 @@ export default function AdminPanel() {
       <section className="quick-access-row" aria-labelledby="titulo-accesos">
         <h2 id="titulo-accesos" className="sr-only">Accesos Rápidos a Módulos de Administración</h2>
         
-        {/* ✅ CORRECCIÓN: tabIndex={0} explícito para garantizar que el enlace sea focusable */}
         <Link 
           to="/dashboard/admin/catalogos" 
           className="quick-card"
@@ -310,37 +309,37 @@ export default function AdminPanel() {
         <section className="card proposals-section" aria-labelledby="titulo-estado-propuestas">
           <h2 id="titulo-estado-propuestas">Estado de Propuestas por Módulo</h2>
           <div className="progress-list" role="list" aria-label="Distribución de propuestas por estado">
-          {stats.propuestasPorEstado.map((item, index) => (
-            <div 
-              key={index} 
-              className="progress-item" 
-              role="listitem"
-              tabIndex={0}  {/* ✅ NUEVO: hace que el foco se detenga aquí */}
-              aria-label={`${item.estado}: ${item.cantidad} propuestas, ${getPorcentaje(item.cantidad)} por ciento del total`}
-            >
-              <div className="progress-header">
-                <span className="progress-label">{item.estado}</span>
-                <span className="progress-stats">{getPorcentaje(item.cantidad)}% ({item.cantidad})</span>
-              </div>
+            {stats.propuestasPorEstado.map((item, index) => (
               <div 
-                className="progress-bar"
-                role="progressbar"
-                aria-valuenow={getPorcentaje(item.cantidad)}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label={`${item.estado}: ${getPorcentaje(item.cantidad)} por ciento completado`}
+                key={index} 
+                className="progress-item" 
+                role="listitem"
+                tabIndex={0}
+                aria-label={`${item.estado}: ${item.cantidad} propuestas, ${getPorcentaje(item.cantidad)} por ciento del total`}
               >
+                <div className="progress-header">
+                  <span className="progress-label">{item.estado}</span>
+                  <span className="progress-stats">{getPorcentaje(item.cantidad)}% ({item.cantidad})</span>
+                </div>
                 <div 
-                  className="progress-fill" 
-                  style={{ 
-                    width: `${getPorcentaje(item.cantidad)}%`,
-                    background: coloresEstado[item.estado] || 'var(--color-primario, #002855)'
-                  }}
-                ></div>
+                  className="progress-bar"
+                  role="progressbar"
+                  aria-valuenow={getPorcentaje(item.cantidad)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`${item.estado}: ${getPorcentaje(item.cantidad)} por ciento completado`}
+                >
+                  <div 
+                    className="progress-fill" 
+                    style={{ 
+                      width: `${getPorcentaje(item.cantidad)}%`,
+                      background: coloresEstado[item.estado] || 'var(--color-primario, #002855)'
+                    }}
+                  ></div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
         </section>
 
         <section className="card activity-section" aria-labelledby="titulo-actividad-reciente">
@@ -349,26 +348,26 @@ export default function AdminPanel() {
             <p className="no-activity">Sin actividad reciente</p>
           ) : (
             <div className="activity-list" role="list" aria-live="polite" aria-label="Lista de actividades recientes del sistema">
-                  {stats.actividadReciente.slice(0, 5).map((log) => (
-                  <div 
-                    key={log.logId} 
-                    className="activity-item" 
-                    role="listitem"
-                    tabIndex={0}  
-                    aria-label={`${log.descripcion}, registrado el ${new Date(log.fecha).toLocaleString('es-CR')}`}
-                  >
-                    <span className="activity-icon" aria-hidden="true">●</span>
-                    <div className="activity-content">
-                      <p className="activity-desc">{log.descripcion}</p>
-                      <p className="activity-date">
-                        <time dateTime={log.fecha}>
-                          {new Date(log.fecha).toLocaleString('es-CR')}
-                        </time>
-                      </p>
-                    </div>
+              {stats.actividadReciente.slice(0, 5).map((log) => (
+                <div 
+                  key={log.logId} 
+                  className="activity-item" 
+                  role="listitem"
+                  tabIndex={0}
+                  aria-label={`${log.descripcion}, registrado el ${new Date(log.fecha).toLocaleString('es-CR')}`}
+                >
+                  <span className="activity-icon" aria-hidden="true">●</span>
+                  <div className="activity-content">
+                    <p className="activity-desc">{log.descripcion}</p>
+                    <p className="activity-date">
+                      <time dateTime={log.fecha}>
+                        {new Date(log.fecha).toLocaleString('es-CR')}
+                      </time>
+                    </p>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
+            </div>
           )}
           <Link to="/dashboard/admin/bitacora" className="view-all" tabIndex={0} aria-label="Ver toda la actividad del sistema en la bitácora">
             Ver toda la actividad →
