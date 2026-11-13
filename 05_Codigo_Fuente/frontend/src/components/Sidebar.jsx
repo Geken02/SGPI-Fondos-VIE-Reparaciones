@@ -269,30 +269,25 @@ const Sidebar = () => {
     }
 
     // 6. CONSEJO DE PROFESORES
-    if (esConsejoProfesores) {
-      return (
-        <>
-          <div className="sidebar-group-title">Consejo de Profesores</div>
-          <NavLink to="/dashboard/asignaciones-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
-            <span className="sidebar-pill-icon">{IconoUsuarios}</span>
-            <span className="sidebar-pill-label">Asignación de Miembros</span>
-          </NavLink>
-          <NavLink to="/dashboard/propuestas-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
-            <span className="sidebar-pill-icon">{IconoDocumento}</span>
-            <span className="sidebar-pill-label">Propuestas y Rúbrica-02</span>
-          </NavLink>
-          <NavLink to="/dashboard/votaciones-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
-            <span className="sidebar-pill-icon">{IconoVotacion}</span>
-            <span className="sidebar-pill-label">Participar en Votaciones</span>
-          </NavLink>
-
-          <NavLink to="/dashboard/asignaciones-consejo" className={({ isActive }) =>`sidebar-pill ${isActive ? 'active' : ''}`}>
-            <span className="sidebar-pill-icon"> {IconoUsuarios} </span>
-            <span className="sidebar-pill-label"> Asignación de Miembros </span>
-          </NavLink>
-        </>
-      );
-    }
+if (esConsejoProfesores) {
+  return (
+    <>
+      <div className="sidebar-group-title">Consejo de Profesores</div>
+      <NavLink to="/dashboard/asignaciones-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
+        <span className="sidebar-pill-icon">{IconoUsuarios}</span>
+        <span className="sidebar-pill-label">Asignación de Miembros</span>
+      </NavLink>
+      <NavLink to="/dashboard/propuestas-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
+        <span className="sidebar-pill-icon">{IconoDocumento}</span>
+        <span className="sidebar-pill-label">Propuestas y Rúbrica-02</span>
+      </NavLink>
+      <NavLink to="/dashboard/votaciones-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
+        <span className="sidebar-pill-icon">{IconoVotacion}</span>
+        <span className="sidebar-pill-label">Participar en Votaciones</span>
+      </NavLink>
+    </>
+  );
+}
 
     // 7. DIRECCIÓN DE ESCUELA
     if (esDirectorEscuela) {
