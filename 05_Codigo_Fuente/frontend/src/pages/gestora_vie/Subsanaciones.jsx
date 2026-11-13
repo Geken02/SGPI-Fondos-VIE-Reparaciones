@@ -74,7 +74,7 @@ const Subsanaciones = () => {
       <h1 className="gv-titulo">Gestión de subsanaciones</h1>
       <p className="gv-subtitulo">Revisa las observaciones enviadas a los investigadores y gestiona sus respuestas.</p>
 
-      <div className="gv-tabs" role="tablist">
+      <div className="gv-tabs" role="tablist" aria-label="Pestañas de estado de subsanaciones">
         {PESTANAS.map((p) => (
           <button
             key={p.codigo}
@@ -89,35 +89,36 @@ const Subsanaciones = () => {
         ))}
       </div>
 
-      <section className="gv-filtros">
+      <section className="gv-filtros" aria-label="Filtros de búsqueda de subsanaciones">
         <label className="gv-campo gv-campo-busqueda">
-          <Icono nombre="search" tamano={17} />
+          <Icono nombre="search" tamano={17} aria-hidden="true" />
           <input
             type="text"
             placeholder="Buscar por código o título..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
+            aria-label="Buscar subsanación por código o título"
           />
         </label>
 
         <label className="gv-campo gv-campo-select">
-          <select value={escuela} onChange={(e) => setEscuela(e.target.value)}>
+          <select value={escuela} onChange={(e) => setEscuela(e.target.value)} aria-label="Filtrar por escuela">
             <option value="">Escuela: Todas</option>
             {escuelas.map((nombre) => (
               <option key={nombre} value={nombre}>{nombre}</option>
             ))}
           </select>
-          <Icono nombre="chevronDown" tamano={16} />
+          <Icono nombre="chevronDown" tamano={16} aria-hidden="true" />
         </label>
 
         <label className="gv-campo gv-campo-select">
-          <select value={estado} onChange={(e) => setEstado(e.target.value)}>
+          <select value={estado} onChange={(e) => setEstado(e.target.value)} aria-label="Filtrar por estado de subsanación">
             <option value="">Estado: Todos</option>
             {Object.entries(ESTADOS_SUBSANACION).map(([codigo, { etiqueta }]) => (
               <option key={codigo} value={codigo}>{etiqueta}</option>
             ))}
           </select>
-          <Icono nombre="chevronDown" tamano={16} />
+          <Icono nombre="chevronDown" tamano={16} aria-hidden="true" />
         </label>
       </section>
 
@@ -147,7 +148,7 @@ const Subsanaciones = () => {
                       <span className={`gv-badge ${est.clase}`}>{est.etiqueta}</span>
                     </td>
                     <td>
-                      <button type="button" className="gv-btn-ver" onClick={() => setDetalle(fila)}>
+                      <button type="button" className="gv-btn-ver" aria-label={`Ver detalle de subsanación para expediente ${fila.expedienteId}: ${fila.titulo}`} onClick={() => setDetalle(fila)}>
                         Ver
                       </button>
                     </td>

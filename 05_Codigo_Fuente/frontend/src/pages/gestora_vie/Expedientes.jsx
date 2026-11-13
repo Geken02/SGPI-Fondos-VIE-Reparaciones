@@ -17,8 +17,8 @@ const formatearFecha = (iso) => {
 };
 
 const TarjetaResumen = ({ icono, clase, valor, etiqueta }) => (
-  <div className="gv-card gv-tarjeta-resumen">
-    <div className={`gv-resumen-icono ${clase}`}>
+  <div className="gv-card gv-tarjeta-resumen" role="region" aria-label={`${etiqueta}: ${valor}`}>
+    <div className={`gv-resumen-icono ${clase}`} aria-hidden="true">
       <Icono nombre={icono} tamano={22} />
     </div>
     <div>
@@ -119,35 +119,36 @@ const Expedientes = () => {
         <TarjetaResumen icono="checkCircle" clase="verde" valor={valorTarjeta(resumen.listosCie)} etiqueta="Listos para CIE" />
       </section>
 
-      <section className="gv-filtros">
+      <section className="gv-filtros" aria-label="Filtros de búsqueda de expedientes">
         <label className="gv-campo gv-campo-busqueda">
-          <Icono nombre="search" tamano={17} />
+          <Icono nombre="search" tamano={17} aria-hidden="true" />
           <input
             type="text"
             placeholder="Buscar por código, título o investigador..."
             value={busqueda}
             onChange={cambiarFiltro(setBusqueda)}
+            aria-label="Buscar expediente por código, título o investigador"
           />
         </label>
 
         <label className="gv-campo gv-campo-select">
-          <select value={escuela} onChange={cambiarFiltro(setEscuela)}>
+          <select value={escuela} onChange={cambiarFiltro(setEscuela)} aria-label="Filtrar por escuela académica">
             <option value="">Escuela: Todas</option>
             {escuelas.map((nombre) => (
               <option key={nombre} value={nombre}>{nombre}</option>
             ))}
           </select>
-          <Icono nombre="chevronDown" tamano={16} />
+          <Icono nombre="chevronDown" tamano={16} aria-hidden="true" />
         </label>
 
         <label className="gv-campo gv-campo-select">
-          <select value={estado} onChange={cambiarFiltro(setEstado)}>
+          <select value={estado} onChange={cambiarFiltro(setEstado)} aria-label="Filtrar por estado del expediente">
             <option value="">Estado: Todos</option>
             {Object.entries(ESTADOS).map(([codigo, { etiqueta }]) => (
               <option key={codigo} value={codigo}>{etiqueta}</option>
             ))}
           </select>
-          <Icono nombre="chevronDown" tamano={16} />
+          <Icono nombre="chevronDown" tamano={16} aria-hidden="true" />
         </label>
       </section>
 
@@ -177,16 +178,16 @@ const Expedientes = () => {
                       className={`gv-badge ${(ESTADOS[exp.estado] ?? {}).clase ?? 'revision'}`}
                       title={exp.estadoDetalle}
                     >
-                      <span className="gv-badge-punto" />
+                      <span className="gv-badge-punto" aria-hidden="true" />
                       {(ESTADOS[exp.estado] ?? {}).etiqueta ?? exp.estadoDetalle}
                     </span>
                   </td>
                   <td>{formatearFecha(exp.fechaLimite)}</td>
                   <td>
                     <div className="gv-acciones-fila">
-                      <button type="button" className="gv-btn-ver" onClick={() => verExpediente(exp.id)}>Ver</button>
-                      <button type="button" className="gv-btn-kebab" aria-label="Más acciones">
-                        <Icono nombre="moreVertical" tamano={16} />
+                      <button type="button" className="gv-btn-ver" aria-label={`Ver expediente ${exp.id}: ${exp.titulo}`} onClick={() => verExpediente(exp.id)}>Ver</button>
+                      <button type="button" className="gv-btn-kebab" aria-label={`Más acciones para expediente ${exp.id}`}>
+                        <Icono nombre="moreVertical" tamano={16} aria-hidden="true" />
                       </button>
                     </div>
                   </td>
@@ -238,6 +239,8 @@ const Expedientes = () => {
                 type="button"
                 className={`gv-pagina ${n === paginaActual ? 'activa' : ''}`}
                 onClick={() => setPagina(n)}
+                aria-label={`Página ${n}`}
+                aria-current={n === paginaActual ? 'page' : undefined}
               >
                 {n}
               </button>

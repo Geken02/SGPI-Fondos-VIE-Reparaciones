@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --gv-azul: #1d4ed8;
   --gv-gris: #64748b;
   --gv-texto: #1e293b;
@@ -493,5 +493,227 @@
 
   .gv-paso {
     min-width: 40%;
+  }
+}
+
+/* ============================================================
+   MODO DE ALTO CONTRASTE — GESTORA VIE
+   ============================================================ */
+.high-contrast-mode .gv-card,
+.high-contrast-mode .gv-tarjeta-resumen,
+.high-contrast-mode .gv-expediente-info,
+.high-contrast-mode .gv-panel-revision,
+.high-contrast-mode .gv-verificacion,
+.high-contrast-mode .gv-lateral-card,
+.high-contrast-mode .gv-en-construccion,
+.high-contrast-mode .gv-val-expediente,
+.high-contrast-mode .gv-subcard,
+.high-contrast-mode .gv-editor,
+.high-contrast-mode .gv-resolver,
+.high-contrast-mode .gv-modal,
+.high-contrast-mode .gv-selector-panel,
+.high-contrast-mode .gestora-bienvenida,
+.high-contrast-mode .gestora-acceso,
+.high-contrast-mode .gestora-config-card,
+.high-contrast-mode .gestora-nota-inicio,
+.high-contrast-mode .gestora-ayuda-banner,
+.high-contrast-mode .gestora-faq,
+.high-contrast-mode .gestora-ayuda-contacto,
+.high-contrast-mode .gestora-ayuda-vacia {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: none !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .gv-card:hover,
+.high-contrast-mode .gestora-acceso:hover,
+.high-contrast-mode .gv-subcard:hover,
+.high-contrast-mode .gv-selector-item:hover,
+.high-contrast-mode .gv-selector-item.actual {
+  border-color: #FFFF00 !important;
+  outline: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .gv-subcard-titulo,
+.high-contrast-mode .gv-modal-cabecera {
+  background: #0d0d0d !important;
+  color: #FFFFFF !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .gv-titulo,
+.high-contrast-mode .gv-expediente-titulo,
+.high-contrast-mode .gv-resumen-valor,
+.high-contrast-mode .gv-seccion-h2,
+.high-contrast-mode .gv-modal-titulo,
+.high-contrast-mode .gv-detalle-titulo,
+.high-contrast-mode .gestora-bienvenida h2,
+.high-contrast-mode .gestora-acceso h3,
+.high-contrast-mode .gestora-config-titulo h2,
+.high-contrast-mode .gestora-ayuda-banner h2,
+.high-contrast-mode .gestora-faq-pregunta strong {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .gv-subtitulo,
+.high-contrast-mode .gv-expediente-codigo,
+.high-contrast-mode .gv-expediente-meta,
+.high-contrast-mode .gv-expediente-fecha,
+.high-contrast-mode .gv-resumen-etiqueta,
+.high-contrast-mode .gv-seccion-sub,
+.high-contrast-mode .gv-doc-fecha,
+.high-contrast-mode .gestora-eyebrow,
+.high-contrast-mode .gestora-acceso p,
+.high-contrast-mode .gestora-acceso-numero,
+.high-contrast-mode .gestora-acceso-link,
+.high-contrast-mode .gestora-nota-inicio p,
+.high-contrast-mode .gestora-pie-nota,
+.high-contrast-mode .gestora-ayuda-campo,
+.high-contrast-mode .gestora-preferencia small,
+.high-contrast-mode .gestora-ayuda-banner p,
+.high-contrast-mode .gestora-faq-pregunta small,
+.high-contrast-mode .gestora-faq-respuesta {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .gv-buscador,
+.high-contrast-mode .gv-campo-busqueda input,
+.high-contrast-mode .gv-campo-select select,
+.high-contrast-mode .gv-textarea,
+.high-contrast-mode .gv-input-texto,
+.high-contrast-mode .gv-select-simple,
+.high-contrast-mode .gestora-campos input,
+.high-contrast-mode .gestora-campo-individual select,
+.high-contrast-mode .gestora-ayuda-busqueda,
+.high-contrast-mode .gestora-ayuda-busqueda input,
+.high-contrast-mode .gv-selector-busqueda input {
+  background: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .gv-buscador input:focus,
+.high-contrast-mode .gv-campo-busqueda input:focus,
+.high-contrast-mode .gv-campo-select select:focus,
+.high-contrast-mode .gv-textarea:focus,
+.high-contrast-mode .gv-input-texto:focus,
+.high-contrast-mode .gestora-ayuda-busqueda:focus-within {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .gv-badge,
+.high-contrast-mode .gv-chip,
+.high-contrast-mode .gv-chip-manual,
+.high-contrast-mode .gv-grupo-chip {
+  background: #000000 !important;
+  border: 1px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .gv-btn-primario {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .gv-btn-primario:hover:not(:disabled) {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .gv-btn-secundario,
+.high-contrast-mode .gv-btn-ver,
+.high-contrast-mode .gv-btn-kebab,
+.high-contrast-mode .gv-tab,
+.high-contrast-mode .gv-grupo-toggle,
+.high-contrast-mode .gv-pagina {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .gv-tab.activa,
+.high-contrast-mode .gv-pagina.activa,
+.high-contrast-mode .gv-btn-ver:hover {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+  border-color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .gv-paso {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .gv-paso-numero {
+  background: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .gv-paso.actual .gv-paso-numero,
+.high-contrast-mode .gv-paso.hecho .gv-paso-numero {
+  background: #FFFF00 !important;
+  border-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .gv-resumen-icono,
+.high-contrast-mode .gestora-bienvenida-icono,
+.high-contrast-mode .gestora-acceso-icono,
+.high-contrast-mode .gestora-config-icono,
+.high-contrast-mode .gestora-ayuda-banner-icono,
+.high-contrast-mode .gestora-nota-icono,
+.high-contrast-mode .gv-expediente-icono,
+.high-contrast-mode .gv-doc-icono {
+  background: #000000 !important;
+  border: 1px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .gv-tabla th {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .gv-tabla td {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border-bottom: 1px solid #444444 !important;
+}
+
+.high-contrast-mode .gv-tabla tr:hover td {
+  background: #111111 !important;
+}
+
+.high-contrast-mode .gv-donut-centro strong {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .gv-donut-centro span {
+  color: #FFFF00 !important;
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .gv-card,
+  .gv-tarjeta-resumen,
+  .gv-expediente-info,
+  .gv-panel-revision,
+  .gv-verificacion,
+  .gv-lateral-card,
+  .gv-en-construccion,
+  .gv-val-expediente,
+  .gv-subcard,
+  .gestora-bienvenida,
+  .gestora-acceso,
+  .gestora-config-card,
+  .gestora-nota-inicio,
+  .gestora-ayuda-banner,
+  .gestora-faq {
+    border: 2px solid ButtonText !important;
   }
 }

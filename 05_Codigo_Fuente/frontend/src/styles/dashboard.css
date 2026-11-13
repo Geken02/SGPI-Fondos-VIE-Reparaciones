@@ -3459,7 +3459,27 @@ input:checked + .slider:before { transform: translateX(20px); }
 .high-contrast-mode .form-paper-container,
 .high-contrast-mode .step-content-pane,
 .high-contrast-mode .new-expense-card-panel,
-.high-contrast-mode .proposals-empty-state {
+.high-contrast-mode .proposals-empty-state,
+.high-contrast-mode .crear-propuesta-modal-card,
+.high-contrast-mode .crear-propuesta-modal-body,
+.high-contrast-mode .investigador-propietario-box,
+.high-contrast-mode .filter-search-box,
+.high-contrast-mode .filter-select,
+.high-contrast-mode .proposal-progress-pill,
+.high-contrast-mode .convocatorias-filters-bar,
+.high-contrast-mode .propuestas-filters-bar,
+.high-contrast-mode .filtros-row,
+.high-contrast-mode .filtro-search-wrapper,
+.high-contrast-mode .doc-item-pill,
+.high-contrast-mode .auto-calc-box,
+.high-contrast-mode .presupuesto-summary-footer-box,
+.high-contrast-mode .compromiso-horas-bar,
+.high-contrast-mode .adicionales-container,
+.high-contrast-mode .ayuda-search-box,
+.high-contrast-mode .ayuda-guia-card,
+.high-contrast-mode .plantilla-item-card,
+.high-contrast-mode .crear-propuesta-success-body,
+.high-contrast-mode .success-propuesta-code-box {
   background: #000000 !important;
   background-color: #000000 !important;
   color: #FFFFFF !important;
@@ -3978,6 +3998,433 @@ input:checked + .slider:before { transform: translateX(20px); }
 .high-contrast-mode .exp-notas-title svg {
   stroke: #FFFF00 !important;   /* todos los SVG decorativos → amarillo sobre negro */
 }
+/* ==========================================================================
+   PARCHE GLOBAL - MODAL CREAR PROPUESTA, FILTROS, SELECTS Y ELEMENTOS BLANCOS
+   Evita que queden contenedores en blanco y asegura alto contraste estricto
+   ========================================================================== */
+
+/* 1. Modal Crear Propuesta */
+.high-contrast-mode .crear-propuesta-modal-overlay {
+  background: rgba(0, 0, 0, 0.88) !important;
+  background-color: rgba(0, 0, 0, 0.88) !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: 0 0 0 1px #000000 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-header {
+  background: #0d0d0d !important;
+  background-color: #0d0d0d !important;
+  color: #FFFFFF !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-header .modal-header-title {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-header .btn-modal-close {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-body {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-footer {
+  background: #0d0d0d !important;
+  background-color: #0d0d0d !important;
+  color: #FFFFFF !important;
+  border-top: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .modal-instructions {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .form-label-modal {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .form-input-modal,
+.high-contrast-mode select.form-input-modal {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .form-input-modal:focus,
+.high-contrast-mode select.form-input-modal:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 0, 0.4) !important;
+}
+
+.high-contrast-mode .form-input-modal option,
+.high-contrast-mode select.form-input-modal option {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode select.form-input-modal option:disabled {
+  color: #777777 !important;
+}
+
+.high-contrast-mode .investigador-propietario-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .propietario-avatar-circle {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .propietario-nombre {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .propietario-rol {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .link-incorporar-equipo {
+  color: #FFFF00 !important;
+  text-decoration: underline !important;
+}
+
+.high-contrast-mode .alert-error-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FF3333 !important;
+  color: #FF3333 !important;
+}
+
+/* 2. Filtros y Búsqueda en Dashboards (Investigador y Vinculación) */
+.high-contrast-mode .filter-search-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .filter-search-box:focus-within {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .filter-search-input,
+.high-contrast-mode .filter-search-box input {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .filter-search-input::placeholder,
+.high-contrast-mode .filter-search-box input::placeholder {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .filter-search-box svg {
+  stroke: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .filter-select,
+.high-contrast-mode select.filter-select,
+.high-contrast-mode .filtro-select,
+.high-contrast-mode select.filtro-select,
+.high-contrast-mode .filter-date-input,
+.high-contrast-mode select {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .filter-select:focus,
+.high-contrast-mode select.filter-select:focus,
+.high-contrast-mode .filtro-select:focus,
+.high-contrast-mode select.filtro-select:focus,
+.high-contrast-mode .filter-date-input:focus,
+.high-contrast-mode select:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .filter-select option,
+.high-contrast-mode select.filter-select option,
+.high-contrast-mode .filtro-select option,
+.high-contrast-mode select.filtro-select option,
+.high-contrast-mode select option {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .convocatorias-filters-bar,
+.high-contrast-mode .propuestas-filters-bar,
+.high-contrast-mode .filtros-row {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-limpiar-filtros {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-limpiar-filtros:hover {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* 3. Píldoras de Progreso y Estados en Tarjetas */
+.high-contrast-mode .proposal-progress-pill {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .proposal-progress-pill * {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .propuesta-codigo-pill,
+.high-contrast-mode .propuestas-codigo-badge {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .propuesta-escuela-text {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-status.warning,
+.high-contrast-mode .badge-status.info,
+.high-contrast-mode .badge-status-vinculacion.pendiente,
+.high-contrast-mode .badge-status-vinculacion.en-curso,
+.high-contrast-mode .badge-status-vinculacion.completada {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+/* 4. LimitedInput y Contadores */
+.high-contrast-mode .limited-field-container label,
+.high-contrast-mode .limited-field-label {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .limited-counter {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .limited-counter.at-limit {
+  color: #FF3333 !important;
+}
+
+.high-contrast-mode .limit-error-msg {
+  color: #FF3333 !important;
+}
+
+/* 5. Vista de Éxito al Crear Propuesta */
+.high-contrast-mode .crear-propuesta-success-body {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .success-icon-badge {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #00FF66 !important;
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .success-modal-title {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .success-modal-subtitle {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .success-propuesta-code-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .success-propuesta-code-box .code-label {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .success-propuesta-code-box .code-value {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .success-meta-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .success-meta-card .meta-title {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .success-meta-card .meta-val {
+  color: #FFFFFF !important;
+}
+
+/* 6. Documentos y Evaluaciones en Mis Propuestas */
+.high-contrast-mode .doc-item-pill,
+.high-contrast-mode .doc-item-pill.doc-completed,
+.high-contrast-mode .doc-item-pill.doc-pending {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .doc-item-pill.doc-completed {
+  border-color: #00FF66 !important;
+}
+
+.high-contrast-mode .doc-item-pill.doc-completed .doc-status-text {
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .doc-item-pill.doc-pending {
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .doc-item-pill.doc-pending .doc-status-text {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-aprobado {
+  background: #000000 !important;
+  border: 1.5px solid #00FF66 !important;
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .badge-nota {
+  background: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-pendiente {
+  background: #000000 !important;
+  border: 1.5px solid #FFCC00 !important;
+  color: #FFCC00 !important;
+}
+
+.high-contrast-mode .btn-ver-dictamen {
+  background: #000000 !important;
+  border: 1px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-ver-dictamen:hover {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* 7. Presupuesto, Tabs y Tablas */
+.high-contrast-mode .tab-year-btn {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tab-year-btn.active {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  border-color: #FFFF00 !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-dashed-add-row {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px dashed #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-dashed-add-row:hover {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .auto-calc-box,
+.high-contrast-mode .presupuesto-summary-footer-box,
+.high-contrast-mode .compromiso-horas-bar,
+.high-contrast-mode .adicionales-container {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .compromiso-horas-pill {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .tabla-footer {
+  background: #0d0d0d !important;
+  background-color: #0d0d0d !important;
+  border-top: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-page {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-page.active {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border-color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
 
 /* ==========================================================================
    FIX V4: SPANS INTERNOS DE BOTONES (la regla genérica .high-contrast-mode span
@@ -4018,5 +4465,406 @@ input:checked + .slider:before { transform: translateX(20px); }
 .high-contrast-mode .asignar-btn-submit span,
 .high-contrast-mode .btn-modal-crear span,
 .high-contrast-mode .btn-enviar span {
+  color: #000000 !important;
+}
+
+
+/* ==========================================================================
+   ALTO CONTRASTE INTEGRAL: SUBSANACIONES, BADGES DE ESTADO Y BANNERS
+   Resuelve fondos blancos remanentes y etiquetas de estado ilegibles
+   ========================================================================== */
+
+/* 1. MÓDULO DE SUBSANACIONES (Sección 2 de Propuestas) */
+.high-contrast-mode .subsanacion-section-highlight,
+.high-contrast-mode .expediente-section.subsanacion-section-highlight {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  box-shadow: none !important;
+}
+
+.high-contrast-mode .subsanacion-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-header-meta {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border-bottom: 2px solid #333333 !important;
+}
+
+.high-contrast-mode .subsanacion-meta-label {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .subsanacion-meta-value {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+/* Badge de Estado de Subsanación (ej: PENDIENTE) */
+.high-contrast-mode .subsanacion-badge-status {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .subsanacion-observaciones-box {
+  background: #0d0d0d !important;
+  background-color: #0d0d0d !important;
+  border: 2px solid #FFFF00 !important;
+  border-left: 6px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .subsanacion-obs-title {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .subsanacion-obs-text {
+  color: #FFFFFF !important;
+  font-style: italic !important;
+}
+
+.high-contrast-mode .subsanacion-action-panel {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-step-title {
+  color: #FFFF00 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .subsanacion-quick-links {
+  background: transparent !important;
+}
+
+.high-contrast-mode .btn-sub-edit {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .btn-sub-edit:hover {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .subsanacion-file-upload-box {
+  background: #000000 !important;
+}
+
+.high-contrast-mode .btn-sub-upload {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px dashed #FFFF00 !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .btn-sub-upload:hover {
+  background: #1a1a1a !important;
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .subsanacion-files-list {
+  background: transparent !important;
+}
+
+.high-contrast-mode .subsanacion-file-tag {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .subsanacion-file-tag button {
+  color: #FF3333 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .modal-form-input,
+.high-contrast-mode textarea.modal-form-input {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .modal-form-input:focus,
+.high-contrast-mode textarea.modal-form-input:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .modal-form-input::placeholder,
+.high-contrast-mode textarea.modal-form-input::placeholder {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .btn-reenviar-propuesta {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-reenviar-propuesta:hover {
+  background: #CCCC00 !important;
+  background-color: #CCCC00 !important;
+}
+
+.high-contrast-mode .subsanacion-banner-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-banner-title {
+  color: #FFFF00 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .subsanacion-banner-sub {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-respondida-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #00FF66 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-resp-badge {
+  color: #00FF66 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .subsanacion-resp-date {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .subsanacion-resp-content {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-resp-footnote {
+  color: #00FF66 !important;
+}
+
+/* 2. BANNERS INFORMATIVOS Y DE ESTADO EN PROPUESTAS */
+.high-contrast-mode .banner-propuesta-cancelada {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #CCCCCC !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .banner-propuesta-cancelada * {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .banner-envio-vinculacion {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #00FF66 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .banner-envio-vinculacion div,
+.high-contrast-mode .banner-envio-vinculacion strong,
+.high-contrast-mode .banner-envio-vinculacion span {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .banner-solo-coordinador {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .banner-subsanacion-rechazada {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FF3333 !important;
+  color: #FF3333 !important;
+}
+
+.high-contrast-mode .banner-subsanacion-rechazada * {
+  color: #FF3333 !important;
+}
+
+/* 3. ETIQUETAS DE ESTADO Y BADGES VISIBLES EN TODO EL SISTEMA */
+.high-contrast-mode .badge-status {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .badge-status.info,
+.high-contrast-mode .badge-info,
+.high-contrast-mode .badge-status.borrador {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #00FFFF !important;
+  border: 1.5px solid #00FFFF !important;
+}
+
+.high-contrast-mode .badge-status.warning,
+.high-contrast-mode .badge-warning,
+.high-contrast-mode .estado-badge.warning {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-status.success,
+.high-contrast-mode .badge-success,
+.high-contrast-mode .estado-badge.success,
+.high-contrast-mode .badge-aprobado {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #00FF66 !important;
+  border: 1.5px solid #00FF66 !important;
+}
+
+.high-contrast-mode .badge-subsanacion,
+.high-contrast-mode .subsanacion-badge-status {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-cancelada,
+.high-contrast-mode .estado-badge.gray {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #CCCCCC !important;
+  border: 1.5px solid #CCCCCC !important;
+}
+
+.high-contrast-mode .eval-badge,
+.high-contrast-mode .eval-badge.badge-proximo {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #CCCCCC !important;
+  border: 1.5px solid #CCCCCC !important;
+}
+
+.high-contrast-mode .badge-coordinador-bloqueo {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #CCCCCC !important;
+  border: 1px solid #CCCCCC !important;
+}
+
+.high-contrast-mode .badge-equipo-miembro {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-nota {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-pendiente {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFCC00 !important;
+  border: 1.5px solid #FFCC00 !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion.pendiente {
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion.en-curso {
+  border-color: #00FFFF !important;
+  color: #00FFFF !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion.completada {
+  border-color: #00FF66 !important;
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .conv-status-badge {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .conv-status-badge.status-open {
+  border-color: #00FF66 !important;
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .conv-status-badge.status-warning {
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .conv-status-badge.status-closed {
+  border-color: #CCCCCC !important;
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .gv-badge,
+.high-contrast-mode .dir-badge,
+.high-contrast-mode .cie-badge {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .gv-badge-punto,
+.high-contrast-mode .dir-badge-punto {
+  background-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-cancelar-propuesta-mini {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FF3333 !important;
+  border: 1.5px solid #FF3333 !important;
+}
+
+.high-contrast-mode .btn-cancelar-propuesta-mini:hover {
+  background: #FF3333 !important;
+  background-color: #FF3333 !important;
   color: #000000 !important;
 }

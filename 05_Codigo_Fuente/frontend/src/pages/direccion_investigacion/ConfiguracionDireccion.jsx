@@ -39,12 +39,13 @@ const Formulario = ({ inicial }) => {
             <h3 className="gv-subcard-titulo">Firma y numeración de oficios</h3>
             <div className="cie-cuerpo dir-formulario">
               <label className="dir-campo">Firmante por defecto
-                <select value={config.firmante} onChange={(e) => cambiar('firmante', e.target.value)}>
+                <select value={config.firmante} onChange={(e) => cambiar('firmante', e.target.value)} aria-label="Firmante por defecto">
                   {FIRMANTES.map((f) => <option key={f} value={f}>{f}</option>)}
                 </select>
               </label>
               <label className="dir-campo">Prefijo del número de oficio
                 <input type="text" value={config.prefijoOficio} maxLength={12} aria-invalid={intento && prefijoInvalido}
+                  aria-label="Prefijo del número de oficio"
                   onChange={(e) => cambiar('prefijoOficio', e.target.value.toUpperCase())} />
               </label>
               {intento && prefijoInvalido && <p className="cie-error" role="alert">Usa entre 2 y 12 letras, números o guiones.</p>}
@@ -68,18 +69,18 @@ const Formulario = ({ inicial }) => {
 
       {MODO_DEMO && (
         <div className="cie-nota">
-          <Icono nombre="info" size={16} />
+          <Icono nombre="info" size={16} aria-hidden="true" />
           <div><strong>Modo de demostración</strong><p>Estas preferencias se guardan solo en este navegador hasta que el backend de la Dirección esté disponible.</p></div>
         </div>
       )}
       {errorGuardar && <p className="cie-error cie-error-pagina" role="alert">{errorGuardar}</p>}
 
       <div className="cie-acciones">
-        <button type="button" className="cie-btn-outline" onClick={() => { setConfig(inicial); setExito(''); setIntento(false); }}>
+        <button type="button" className="cie-btn-outline" onClick={() => { setConfig(inicial); setExito(''); setIntento(false); }} aria-label="Restablecer cambios a valores iniciales">
           Restablecer cambios
         </button>
-        <button type="button" className="gv-btn-primario" onClick={guardar} disabled={guardando}>
-          {guardando ? 'Guardando...' : 'Guardar configuración'} <Icono nombre="check" size={16} />
+        <button type="button" className="gv-btn-primario" onClick={guardar} disabled={guardando} aria-label="Guardar configuración">
+          {guardando ? 'Guardando...' : 'Guardar configuración'} <Icono nombre="check" size={16} aria-hidden="true" />
         </button>
       </div>
     </>

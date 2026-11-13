@@ -28,8 +28,8 @@ const mensajeDeError = (error) => {
 };
 
 const VolverALaBandeja = () => (
-  <Link to={RUTA_BANDEJA} className="gv-volver">
-    <Icono nombre="arrowLeft" tamano={14} />
+  <Link to={RUTA_BANDEJA} className="gv-volver" aria-label="Volver a la bandeja principal de expedientes">
+    <Icono nombre="arrowLeft" tamano={14} aria-hidden="true" />
     Volver a la bandeja
   </Link>
 );
@@ -37,7 +37,7 @@ const VolverALaBandeja = () => (
 const MensajeEstado = ({ titulo, texto }) => (
   <>
     <VolverALaBandeja />
-    <div className="gv-card gv-en-construccion">
+    <div className="gv-card gv-en-construccion" role="status">
       <h1 className="gv-titulo">{titulo}</h1>
       <p className="gv-subtitulo">{texto}</p>
     </div>
@@ -48,7 +48,7 @@ const InsigniaEstado = ({ estado }) => {
   const est = ESTADOS_VALIDACION[estado];
   return (
     <span className={`gv-badge ${est.clase}`}>
-      <span className="gv-estado-ico">
+      <span className="gv-estado-ico" aria-hidden="true">
         <Icono nombre={est.icono} tamano={10} />
       </span>
       {est.etiqueta}
@@ -61,7 +61,7 @@ const Donut = ({ porcentaje }) => {
   const circunferencia = 2 * Math.PI * radio;
   const trazo = (porcentaje / 100) * circunferencia;
   return (
-    <div className="gv-donut">
+    <div className="gv-donut" role="img" aria-label={`Gráfico de cumplimiento general: ${porcentaje}%`}>
       <svg viewBox="0 0 120 120" width="130" height="130" aria-hidden="true">
         <circle cx="60" cy="60" r={radio} fill="none" stroke="#e1e8f5" strokeWidth="12" />
         {porcentaje > 0 && (

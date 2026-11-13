@@ -59,7 +59,7 @@ export const LimitedInput = ({
       {(label || (maxLength && showCounter)) && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
           {label && (
-            <label style={{ fontSize: '13px', fontWeight: 600, color: '#002855' }}>
+            <label className="limited-field-label" style={{ fontSize: '13px', fontWeight: 600, color: '#002855' }}>
               {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
             </label>
           )}
@@ -150,7 +150,7 @@ export const LimitedTextarea = ({
       {(label || (maxLength && showCounter)) && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
           {label && (
-            <label style={{ fontSize: '13px', fontWeight: 600, color: '#002855' }}>
+            <label className="limited-field-label" style={{ fontSize: '13px', fontWeight: 600, color: '#002855' }}>
               {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
             </label>
           )}

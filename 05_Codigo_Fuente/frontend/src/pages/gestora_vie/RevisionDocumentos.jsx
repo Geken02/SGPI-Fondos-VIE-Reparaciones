@@ -21,8 +21,8 @@ const mensajeDeError = (error) =>
     : 'No se pudo cargar el expediente. Verifica que el servidor esté en ejecución e intenta de nuevo.';
 
 const VolverALaBandeja = () => (
-  <Link to={RUTA_BANDEJA} className="gv-volver">
-    <Icono nombre="arrowLeft" tamano={14} />
+  <Link to={RUTA_BANDEJA} className="gv-volver" aria-label="Volver a la bandeja principal de expedientes">
+    <Icono nombre="arrowLeft" tamano={14} aria-hidden="true" />
     Volver a la bandeja
   </Link>
 );
@@ -145,8 +145,8 @@ const DetalleDocumentos = ({ codigo }) => {
       <p className="gv-subtitulo">Revisa cada documento del expediente y marca si está correcto, incompleto o le falta la firma.</p>
 
       {/* Datos del expediente */}
-      <section className="gv-card gv-expediente-info">
-        <div className="gv-expediente-icono">
+      <section className="gv-card gv-expediente-info" aria-label="Información del expediente">
+        <div className="gv-expediente-icono" aria-hidden="true">
           <Icono nombre="fileText" tamano={26} />
         </div>
 
@@ -160,7 +160,7 @@ const DetalleDocumentos = ({ codigo }) => {
 
         <div className="gv-expediente-lateral">
           <span className={`gv-badge ${estado.clase}`} title={expediente.estadoDetalle}>
-            <span className="gv-badge-punto" />
+            <span className="gv-badge-punto" aria-hidden="true" />
             {estado.etiqueta}
           </span>
           <span className="gv-expediente-fecha">
@@ -169,9 +169,9 @@ const DetalleDocumentos = ({ codigo }) => {
         </div>
       </section>
 
-      <section className="gv-card gv-panel-revision">
+      <section className="gv-card gv-panel-revision" aria-label="Panel de revisión de documentos">
         {/* Pasos */}
-        <ol className="gv-pasos">
+        <ol className="gv-pasos" aria-label="Pasos de revisión">
           {PASOS.map((nombre, i) => {
             const numero = i + 1;
             const clase = numero === pasoActual ? 'actual' : numero < pasoActual ? 'hecho' : '';

@@ -60,9 +60,9 @@ const ResolucionesCie = () => {
 
       {!cargando && !error && (
         <>
-          <div className="gv-resumen">
-            <div className="gv-card gv-tarjeta-resumen">
-              <div className="gv-resumen-icono azul">
+          <div className="gv-resumen" role="region" aria-label="Resumen de resoluciones">
+            <div className="gv-card gv-tarjeta-resumen" role="region" aria-label={`Resoluciones registradas: ${historial.length}`}>
+              <div className="gv-resumen-icono azul" aria-hidden="true">
                 <Icono nombre="fileText" size={24} />
               </div>
               <div>
@@ -72,26 +72,28 @@ const ResolucionesCie = () => {
             </div>
           </div>
 
-          <div className="gv-filtros">
+          <div className="gv-filtros" role="search" aria-label="Búsqueda de resoluciones">
             <label className="gv-campo gv-campo-busqueda">
-              <Icono nombre="search" size={16} />
+              <Icono nombre="search" size={16} aria-hidden="true" />
               <input
                 type="text"
                 placeholder="Buscar por código, título, oficio o contenido..."
                 value={busqueda}
                 onChange={cambiarBusqueda}
+                aria-label="Buscar resolución por código, título, oficio o contenido"
               />
             </label>
             <button
               type="button"
               className="cie-btn-outline"
+              aria-label="Limpiar término de búsqueda de resoluciones"
               onClick={() => {
                 setBusqueda('');
                 setPagina(1);
                 setAbierta(null);
               }}
             >
-              <Icono nombre="sliders" size={15} />
+              <Icono nombre="sliders" size={15} aria-hidden="true" />
               Limpiar búsqueda
             </button>
           </div>
@@ -124,6 +126,7 @@ const ResolucionesCie = () => {
                             <button
                               type="button"
                               className="gv-btn-ver"
+                              aria-label={`${expandida ? 'Ocultar' : 'Ver'} detalle de resolución para propuesta ${r.codigo}`}
                               aria-expanded={expandida}
                               onClick={() => setAbierta(expandida ? null : id)}
                             >
@@ -147,6 +150,7 @@ const ResolucionesCie = () => {
                                 <Link
                                   to={`/cie/expedientes/${r.codigo}`}
                                   className="cie-enlace"
+                                  aria-label={`Ver expediente consolidado de ${r.codigo}`}
                                 >
                                   Ver expediente consolidado
                                 </Link>
@@ -185,7 +189,7 @@ const ResolucionesCie = () => {
                   onClick={() => irA(paginaActual - 1)}
                   aria-label="Página anterior"
                 >
-                  <Icono nombre="chevronLeft" size={14} />
+                  <Icono nombre="chevronLeft" size={14} aria-hidden="true" />
                 </button>
                 {Array.from({ length: totalPaginas }, (_, i) => (
                   <button
@@ -193,6 +197,8 @@ const ResolucionesCie = () => {
                     type="button"
                     className={`gv-pagina ${paginaActual === i + 1 ? 'activa' : ''}`}
                     onClick={() => irA(i + 1)}
+                    aria-label={`Página ${i + 1}`}
+                    aria-current={paginaActual === i + 1 ? 'page' : undefined}
                   >
                     {i + 1}
                   </button>
@@ -204,7 +210,7 @@ const ResolucionesCie = () => {
                   onClick={() => irA(paginaActual + 1)}
                   aria-label="Página siguiente"
                 >
-                  <Icono nombre="chevronRight" size={14} />
+                  <Icono nombre="chevronRight" size={14} aria-hidden="true" />
                 </button>
               </div>
             </div>
