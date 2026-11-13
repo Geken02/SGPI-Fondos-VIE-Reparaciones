@@ -221,7 +221,8 @@ export const AuthProvider = ({ children }) => {
   const esDireccion = rolActivoStr.includes('Direccion') || rolActivoStr.includes('Investigacion');
   const estaAutenticado = !!token;
 
-  return (
+
+    return (
     <AuthContext.Provider
       value={{
         usuario,
@@ -233,6 +234,7 @@ export const AuthProvider = ({ children }) => {
         rolActivo: rolActivo || (rolesUsuario.length > 0 ? rolesUsuario[0] : null),
         cambiarRol,
         rolesUsuario,
+        // Roles booleanos para el Sidebar/App
         esAdministrador,
         esInvestigador,
         esVinculacion,
@@ -240,15 +242,17 @@ export const AuthProvider = ({ children }) => {
         esCIE,
         esGestora,
         esDireccion,
-        esAsistenteConsejo,    // <-- Agregado para el Sidebar/App
-        esConsejoProfesores,   // <-- Agregado para el Sidebar/App
-        esDirectorEscuela,     // <-- Agregado para el Sidebar/App
+        esDirectorEscuela,       // ✅ Ahora sí está definida
+        esAsistenteConsejo,      // ✅ Ahora sí está definida
+        esMiembroConsejo,        // ✅ Agregado por consistencia
+        esConsejoProfesores,     // ✅ Ahora sí está definida
         formatearNombreRol,
         cargarPerfil
       }}
     >
       {children}
     </AuthContext.Provider>
+
   );
 };
 
