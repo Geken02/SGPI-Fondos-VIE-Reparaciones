@@ -1,17 +1,31 @@
 # src/services/comite_tecnico/ia_service.py
-import requests
 import io
 import time
 import json
 import re
+import os
+import requests
 from src.utils.s3_client import s3_client, S3_BUCKET_NAME
 from src.services.comite_tecnico.rubricas_data import (
     RUBRICA_FORTALECIMIENTO, RUBRICA_BASICA_APLICADA, RUBRICA_DESARROLLO_TECNOLOGICO
 )
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODELO = "qwen2.5:7b-instruct"  # <-- CAMBIO CLAVE
-TIMEOUT_SECCION = 150  # Qwen es mucho más rápido, 60s es suficiente
+# ============================================================================
+# CONFIGURACIÓN DE CLOUDFLARE WORKERS AI (100% Gratis, Sin Tarjeta, Cloud)
+# ============================================================================
+CF_ACCOUNT_ID = os.getenv("CF_ACCOUNT_ID")
+CF_API_TOKEN = os.getenv("CF_API_TOKEN")
+
+if not CF_ACCOUNT_ID or not CF_API_TOKEN:
+    raise ValueError("⚠️ Faltan las variables CF_ACCOUNT_ID o CF_API_TOKEN en Render.")
+
+MODELO_ACTIVO = "@cf/meta/llama-3.1-8b-instruct"
+CF_API_URL = f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/ai/run/{MODELO_ACTIVO}"
+
+HEADERS = {
+    "Authorization": f"Bearer {CF_API_TOKEN}",
+    "Content-Type": "application/json"
+}
 
 RUBRICAS_POR_MODALIDAD = {
     "fortalecimiento": RUBRICA_FORTALECIMIENTO,
@@ -70,24 +84,28 @@ def extraer_texto_docx(docx_bytes: bytes) -> str:
 def extraer_texto_documento(ruta_archivo: str) -> str:
     archivo_bytes = descargar_archivo(ruta_archivo)
     ruta_lower = ruta_archivo.lower()
-    if ruta_lower.endswith('.pdf'): return extraer_texto_pdf(archivo_bytes)
-    elif ruta_lower.endswith('.docx'): return extraer_texto_docx(archivo_bytes)
+    if ruta_lower.endswith('.pdf'): 
+        return extraer_texto_pdf(archivo_bytes)
+    elif ruta_lower.endswith('.docx'): 
+        return extraer_texto_docx(archivo_bytes)
     raise ValueError(f"Formato no soportado: {ruta_archivo}")
 
 def extraer_seccion_del_texto(texto_completo: str, nombre_seccion: str) -> str:
     palabras = MAPEO_SECCIONES_FORMULARIO.get(nombre_seccion.upper(), [])
-    if not palabras: return texto_completo[:300]
+    if not palabras: return texto_completo[:1000]
     
     lineas = texto_completo.split('\n')
     seccion = []
     capturando = False
     for linea in lineas:
-        if any(p in linea for p in palabras): capturando = True
+        if any(p in linea for p in palabras): 
+            capturando = True
         if capturando:
             if linea.strip() and not re.match(r'^[\|\s\-]+$', linea):
                 seccion.append(linea)
-            if len('\n'.join(seccion)) > 350: break
-    return '\n'.join(seccion)[:400] if seccion else texto_completo[:400]
+            if len('\n'.join(seccion)) > 800: 
+                break
+    return '\n'.join(seccion)[:1000] if seccion else texto_completo[:1000]
 
 def obtener_rubrica_por_modalidad(tipo_modalidad: str) -> dict:
     if not tipo_modalidad: return RUBRICA_BASICA_APLICADA
@@ -97,22 +115,93 @@ def obtener_rubrica_por_modalidad(tipo_modalidad: str) -> dict:
         if clave.lower() in tipo_lower or tipo_lower in clave.lower(): return rubrica
     return RUBRICA_BASICA_APLICADA
 
-def extraer_json(respuesta_raw: str):
-    """Parser simple y robusto para Qwen 2.5"""
-    if not respuesta_raw: return None
-    # Quitar bloques markdown
-    texto = re.sub(r'^```(?:json)?\s*', '', respuesta_raw, flags=re.MULTILINE | re.IGNORECASE)
-    texto = re.sub(r'\s*```$', '', texto, flags=re.MULTILINE | re.IGNORECASE)
+def extraer_json_de_respuesta(respuesta) -> list:
+    """Extrae JSON robustamente, manejando respuestas truncadas."""
+    # 1. Si ya es una lista, devuélvela
+    if isinstance(respuesta, list):
+        return respuesta
     
-    inicio = texto.find('[')
-    fin = texto.rfind(']')
+    # 2. Si es un diccionario, busca la lista
+    if isinstance(respuesta, dict):
+        if "evaluaciones" in respuesta and isinstance(respuesta["evaluaciones"], list):
+            return respuesta["evaluaciones"]
+        for value in respuesta.values():
+            if isinstance(value, list):
+                return value
     
-    if inicio != -1 and fin != -1 and fin > inicio:
+    # 3. Si es un string, procesarlo
+    if isinstance(respuesta, str):
+        texto = respuesta.strip()
+        
+        # Intento 1: Buscar bloque markdown ```json ... ```
+        match = re.search(r'```json\s*(\[[\s\S]*?\])\s*```', texto, re.IGNORECASE)
+        if match:
+            try:
+                return json.loads(match.group(1))
+            except json.JSONDecodeError:
+                pass
+        
+        # Intento 2: Buscar el PRIMER '[' y el ÚLTIMO ']'
+        start_idx = texto.find('[')
+        end_idx = texto.rfind(']')
+        
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            json_str = texto[start_idx:end_idx+1]
+            try:
+                return json.loads(json_str)
+            except json.JSONDecodeError:
+                # Si falla, intentar reparar JSON truncado
+                # Buscar el último '}' completo antes del corte
+                last_complete_obj = json_str.rfind('}\n')
+                if last_complete_obj != -1:
+                    json_reparado = json_str[:last_complete_obj+1] + ']'
+                    try:
+                        return json.loads(json_reparado)
+                    except json.JSONDecodeError:
+                        pass
+        
+        # Intento 3: Parsear todo el string
         try:
-            return json.loads(texto[inicio:fin + 1])
+            parsed = json.loads(texto)
+            if isinstance(parsed, list):
+                return parsed
+            elif isinstance(parsed, dict):
+                for value in parsed.values():
+                    if isinstance(value, list):
+                        return value
         except json.JSONDecodeError:
-            return None
-    return None
+            pass
+    
+    print(f"⚠️ No se pudo extraer JSON de: {str(respuesta)[:200]}")
+    return []
+
+def llamar_a_ia(prompt: str) -> str:
+    """Llama a Cloudflare Workers AI."""
+    payload = {
+        "messages": [
+            {
+                "role": "system", 
+                "content": "Eres un evaluador experto de proyectos de investigación. Tu ÚNICA tarea es devolver un array JSON válido. NO incluyas texto adicional, NO uses markdown, NO expliques nada. Solo el array JSON."
+            },
+            {
+                "role": "user", 
+                "content": prompt
+            }
+        ],
+        "max_tokens": 4000,  # Aumentado de 2000 a 4000
+        "stream": False  # Forzar respuesta completa, no streaming
+    }
+    
+    response = requests.post(CF_API_URL, headers=HEADERS, json=payload, timeout=90)  # Timeout aumentado a 90s
+    
+    if response.status_code != 200:
+        raise Exception(f"Error de API {response.status_code}: {response.text}")
+        
+    data = response.json()
+    if data.get("success"):
+        return data["result"]["response"]
+    
+    raise Exception(f"Cloudflare falló: {data.get('errors')}")
 
 def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, criterios_reales_por_seccion: dict = None) -> dict:
     inicio_total = time.time()
@@ -120,17 +209,19 @@ def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, c
     total_evaluados = 0
     
     print(f"\n{'='*60}")
-    print(f"🤖 INICIANDO ANÁLISIS (Qwen 2.5) para propuesta {propuesta_id}")
+    print(f"🤖 INICIANDO ANÁLISIS (Cloudflare AI - Llama 3.1) para propuesta {propuesta_id}")
     
     rubrica = obtener_rubrica_por_modalidad(tipo_modalidad)
     print(f"📚 Rúbrica: {rubrica['nombre']}")
     
+    # 1. Extraer texto completo del documento
     try:
         texto_completo = extraer_texto_documento(f"propuestas/{propuesta_id}/Form-04.docx")
         print(f"📏 Texto extraído: {len(texto_completo)} caracteres")
     except Exception as e:
         return {"error": f"No se pudo leer el documento: {str(e)}"}
 
+    # 2. Iterar por cada sección de la rúbrica
     for seccion in rubrica["secciones"]:
         nombre = seccion["nombre"]
         seccion_id = seccion["id"]
@@ -147,73 +238,48 @@ def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, c
 
         criterios_lista = "\n".join([f"  - {c}" for c in criterios])
         
-        # Prompt optimizado para Qwen 2.5 Instruct
-        prompt = f"""SECCIÓN A EVALUAR: {nombre}
-
-CONTENIDO DEL FORMULARIO:
+        prompt = f"""SECCIÓN: {nombre}
+CONTENIDO:
 {texto_seccion}
 
-CRITERIOS A EVALUAR (Debes usar estos nombres EXACTOS en tu JSON):
+CRITERIOS (nombres exactos):
 {criterios_lista}
 
-INSTRUCCIONES CRÍTICAS:
-1. Analiza el contenido y asigna un puntaje (0, 6, 8, o 10) y nivel (Deficiente, Regular, Bueno, Excelente) a CADA criterio.
-2. Escribe una justificación breve (1-2 frases) basada en evidencia del texto.
-3. Responde SOLO con el array JSON.
-4. OBLIGATORIO: Debes generar exactamente {len(criterios)} objetos JSON, uno por cada criterio listado. No omitas ninguno.
+INSTRUCCIONES:
+1. Puntaje: 0, 6, 8, o 10
+2. Nivel: Deficiente, Regular, Bueno, o Excelente
+3. Justificación: MÁXIMO 15 palabras
+4. Responde SOLO con array JSON. Exactamente {len(criterios)} objetos.
 
-Formato JSON requerido:
-[
-  {{"criterio": "Nombre exacto del criterio", "puntaje": 8, "nivel": "Bueno", "justificacion": "Frase breve."}}
-]"""
+Formato:
+[{{"criterio": "nombre", "puntaje": 8, "nivel": "Bueno", "justificacion": "máx 15 palabras"}}]"""
 
         try:
-            response = requests.post(
-                OLLAMA_URL,
-                json={
-                    "model": MODELO,
-                    "prompt": prompt,
-                    "stream": False,
-                    "options": {"temperature": 0.2, "num_predict": 1000}
-                },
-                timeout=TIMEOUT_SECCION
-            )
+            respuesta_raw = llamar_a_ia(prompt)
+            evaluaciones = extraer_json_de_respuesta(respuesta_raw)
             
-            if response.status_code == 200:
-                respuesta_raw = response.json().get("response", "")
-                evaluaciones = extraer_json(respuesta_raw)
+            if isinstance(evaluaciones, list) and len(evaluaciones) > 0:
+                evaluaciones_validas = [
+                    ev for ev in evaluaciones 
+                    if isinstance(ev, dict) 
+                    and "criterio" in ev 
+                    and "puntaje" in ev
+                    and isinstance(ev.get("criterio"), str)
+                    and len(ev.get("criterio", "")) > 5
+                    and isinstance(ev.get("puntaje"), (int, float))
+                ]
                 
-                if evaluaciones and isinstance(evaluaciones, list):
-                    # Filtrar alucinaciones
-                                        # Filtrar solo datos corruptos, no nombres
-                    evaluaciones_validas = [
-                        ev for ev in evaluaciones 
-                        if isinstance(ev, dict) 
-                        and "criterio" in ev 
-                        and "puntaje" in ev
-                        and isinstance(ev.get("criterio"), str)
-                        and len(ev.get("criterio", "")) > 5  # Evita respuestas vacías
-                        and isinstance(ev.get("puntaje"), (int, float))
-                    ]
-                    
-                    if evaluaciones_validas:
-                        sugerencias[str(seccion_id)] = {
-                            "nombre": nombre,
-                            "criterios": evaluaciones_validas
-                        }
-                        total_evaluados += len(evaluaciones_validas)
-                        print(f"  ✅ {nombre}: {len(evaluaciones_validas)} criterios")
-                    else:
-                        print(f"  ⚠️ {nombre}: Evaluaciones inválidas")
+                if evaluaciones_validas:
+                    sugerencias[str(seccion_id)] = {"nombre": nombre, "criterios": evaluaciones_validas}
+                    total_evaluados += len(evaluaciones_validas)
+                    print(f"  ✅ {nombre}: {len(evaluaciones_validas)} criterios")
                 else:
-                    print(f"  ⚠️ {nombre}: No se pudo parsear JSON")
+                    print(f"  ⚠️ {nombre}: JSON vacío o inválido. Respuesta: {str(respuesta_raw)[:100]}")
             else:
-                print(f"  ❌ {nombre}: HTTP {response.status_code}")
+                print(f"  ⚠️ {nombre}: La respuesta no fue un array válido. Respuesta: {str(respuesta_raw)[:100]}")
                 
-        except requests.exceptions.Timeout:
-            print(f"  ⏱️ {nombre}: Timeout")
         except Exception as e:
-            print(f"  💥 {nombre}: {str(e)[:50]}")
+            print(f"  💥 {nombre}: Error inesperado: {str(e)[:100]}")
 
     tiempo_total = time.time() - inicio_total
     print(f"🏁 Finalizado en {tiempo_total:.1f}s. Total: {total_evaluados}")

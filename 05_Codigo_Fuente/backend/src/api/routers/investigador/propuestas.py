@@ -551,3 +551,37 @@ def devolver_en_subsanacion(
         datos=datos
     )
 
+
+@router.patch(
+    "/{propuesta_id}/cancelar",
+    summary="Cancelar propuesta",
+    description="Cancela una propuesta siempre que sea Borrador o del coordinador. Pasa al estado CANCELADA (9)."
+)
+def cancelar_propuesta(
+    propuesta_id: int,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_activo)
+):
+    from src.models.propuestas import Propuesta
+    from src.models.convocatorias import EstadosPropuesta
+
+    propuesta = db.query(Propuesta).filter(Propuesta.propuestaId == propuesta_id).first()
+    if not propuesta:
+        raise HTTPException(status_code=404, detail="Propuesta no encontrada")
+
+    if propuesta.getInvestigadorCoordId() != usuario_actual.usuarioId:
+        raise HTTPException(status_code=403, detail="Solo el investigador coordinador puede cancelar esta propuesta")
+
+    # Obtener estado CANCELADA
+    estado_cancelada = db.query(EstadosPropuesta).filter(
+        EstadosPropuesta.codigoEstadoPropuesta == "CANCELADA"
+    ).first()
+    nuevo_estado_id = estado_cancelada.estadoPropuestaId if estado_cancelada else 9
+
+    propuesta.estadoId = nuevo_estado_id
+    from datetime import datetime, timezone
+    propuesta.ultimaAuditoria = datetime.now(timezone.utc)
+    db.commit()
+
+    return {"message": "Propuesta cancelada exitosamente", "propuestaId": propuesta_id, "estadoId": nuevo_estado_id}
+

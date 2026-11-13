@@ -1,7 +1,7 @@
 # src/services/comite_tecnico/evaluacion_service.py
 from sqlalchemy.orm import Session
 from typing import List, Dict, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from src.models.evaluaciones import Evaluaciones, DetalleEvaluacion, EstadosEvaluacion
 from src.models.propuestas import Propuesta
@@ -11,9 +11,53 @@ from src.models.evaluaciones import CriteriosEvaluacion
 from src.models.usuarios import Usuario
 from src.models.propuesta_equipo import IntegrantesEquipoPropuesta
 
+# ⚠️ IMPORTANTE: Verifica en tu base de datos (Supabase) cuál es el ID real 
+# para "Evaluación de Comité" o "Evaluación Preliminar". Ajusta este valor si es necesario.
+DEFAULT_TIPO_EVALUACION_ID = 2  
+DEFAULT_ESTADO_BORRADOR_ID = 1  # Asumimos que 1 es "En Progreso" o "Borrador"
+
 
 class EvaluacionService:
     """Servicio para evaluación de propuestas (Profesor Evaluador)"""
+
+    @staticmethod
+    def iniciar_o_obtener_evaluacion(
+        db: Session,
+        propuesta_id: int,
+        evaluador_id: int,
+        tipo_evaluacion_id: int = DEFAULT_TIPO_EVALUACION_ID
+    ) -> Evaluaciones:
+        """
+        Verifica si ya existe una evaluación para esta propuesta y evaluador.
+        Si no existe, la crea con los campos obligatorios (incluyendo tipoEvaluacionId).
+        """
+        # 1. Buscar si ya existe
+        evaluacion_existente = db.query(Evaluaciones).filter(
+            Evaluaciones.propuestaId == propuesta_id,
+            Evaluaciones.evaluadorId == evaluador_id,
+            Evaluaciones.tipoEvaluacionId == tipo_evaluacion_id
+        ).first()
+
+        if evaluacion_existente:
+            return evaluacion_existente
+
+        # 2. Si no existe, crearla con TODOS los campos NOT NULL
+        nueva_evaluacion = Evaluaciones(
+            propuestaId=propuesta_id,
+            evaluadorId=evaluador_id,
+            tipoEvaluacionId=tipo_evaluacion_id,       # ✅ ESTO ARREGLA EL ERROR PRINCIPAL
+            estadoEvaluacionId=DEFAULT_ESTADO_BORRADOR_ID, # ✅ ESTO EVITA EL SIGUIENTE ERROR
+            fechaEvaluacion=datetime.now(timezone.utc),
+            calificacion=0.0,                         # Valor inicial seguro
+            usuarioAuditoriaId=evaluador_id,
+            ultimaAuditoria=datetime.now(timezone.utc)
+        )
+        
+        db.add(nueva_evaluacion)
+        db.commit()
+        db.refresh(nueva_evaluacion)
+        
+        return nueva_evaluacion
 
     @staticmethod
     def obtener_bandeja_evaluacion(
@@ -24,8 +68,7 @@ class EvaluacionService:
         Obtiene las propuestas asignadas a un evaluador
         """
         evaluaciones = db.query(Evaluaciones).filter(
-            Evaluaciones.evaluadorId == evaluador_id,
-            Evaluaciones.activo == True
+            Evaluaciones.evaluadorId == evaluador_id
         ).all()
 
         propuestas_data = []
@@ -36,7 +79,7 @@ class EvaluacionService:
 
             investigador = db.query(Usuario).filter(
                 Usuario.usuarioId == propuesta.investigadorCoordId
-            ).first()
+            ).first() if propuesta else None
 
             estado_eval = db.query(EstadosEvaluacion).filter(
                 EstadosEvaluacion.estadoEvaluacionId == ev.estadoEvaluacionId
@@ -44,13 +87,13 @@ class EvaluacionService:
 
             propuestas_data.append({
                 "evaluacionId": ev.evaluacionId,
-                "propuestaId": propuesta.propuestaId,
-                "codigoPropuesta": propuesta.codigoPropuesta,
-                "titulo": propuesta.titulo,
+                "propuestaId": ev.propuestaId,
+                "codigoPropuesta": propuesta.codigoPropuesta if propuesta else "N/A",
+                "titulo": propuesta.titulo if propuesta else "N/A",
                 "investigador": f"{investigador.nombreUsuario} {investigador.apellido1Usuario}" if investigador else "N/A",
-                "fechaAsignacion": ev.fechaEvaluacion.isoformat(),
+                "fechaAsignacion": ev.fechaEvaluacion.isoformat() if ev.fechaEvaluacion else None,
                 "estadoEvaluacion": estado_eval.nombreEstadoEvaluacion if estado_eval else "N/A",
-                "calificacion": ev.calificacion
+                "calificacion": float(ev.calificacion) if ev.calificacion else 0.0
             })
 
         return {
@@ -77,23 +120,21 @@ class EvaluacionService:
             Usuario.usuarioId == propuesta.investigadorCoordId
         ).first()
 
-        # Obtener contenido de la propuesta
         contenido = db.query(PropuestaContenido).filter(
             PropuestaContenido.propuestaId == propuesta_id
         ).first()
 
-        # Obtener integrantes del equipo
         integrantes = db.query(IntegrantesEquipoPropuesta).filter(
             IntegrantesEquipoPropuesta.propuestaId == propuesta_id,
-            IntegrantesEquipoPropuesta.activo == True
+            # IntegrantesEquipoPropuesta.activo == True # Descomentar si tu modelo tiene este campo
         ).all()
 
         integrantes_data = []
         for intg in integrantes:
             usuario = db.query(Usuario).filter(Usuario.usuarioId == intg.usuarioId).first()
             integrantes_data.append({
-                "usuarioId": usuario.usuarioId,
-                "nombre": f"{usuario.nombreUsuario} {usuario.apellido1Usuario}",
+                "usuarioId": usuario.usuarioId if usuario else None,
+                "nombre": f"{usuario.nombreUsuario} {usuario.apellido1Usuario}" if usuario else "N/A",
                 "rol": intg.rolEquipoId,
                 "horasSemanales": intg.horasSemanales
             })
@@ -106,7 +147,7 @@ class EvaluacionService:
                 "investigador": f"{investigador.nombreUsuario} {investigador.apellido1Usuario}" if investigador else "N/A",
                 "escuelaId": propuesta.escuelaId,
                 "modalidadId": propuesta.modalidadId,
-                "montoTotal": float(propuesta.montoTotal),
+                "montoTotal": float(propuesta.montoTotal) if propuesta.montoTotal else 0.0,
                 "contenido": {
                     "resumen": contenido.resumen if contenido else "",
                     "objetivoGeneral": contenido.objetivoGeneral if contenido else "",
@@ -147,17 +188,21 @@ class EvaluacionService:
                 puntajeObtenido=detalle["puntaje"],
                 justificacion=detalle.get("justificacion", ""),
                 esRequisitoObligatorioCumplido=detalle.get("esObligatorioCumplido", None),
-                usuarioAuditoriaId=evaluador_id
+                usuarioAuditoriaId=evaluador_id,
+                ultimaAuditoria=datetime.now(timezone.utc)
             )
             db.add(det)
 
         # Calcular calificación provisional
-        total_puntos = sum(d["puntaje"] for d in detalles)
+        total_puntos = sum(float(d["puntaje"]) for d in detalles)
         total_criterios = len(detalles)
-        calificacion = total_puntos / (total_criterios * 10) if total_criterios > 0 else 0
+        calificacion = total_puntos / (total_criterios * 10) if total_criterios > 0 else 0.0
 
         evaluacion.calificacion = calificacion
-        evaluacion.estadoEvaluacionId = 1  # Borrador
+        evaluacion.estadoEvaluacionId = DEFAULT_ESTADO_BORRADOR_ID  # Asegura que no sea null
+        evaluacion.ultimaAuditoria = datetime.now(timezone.utc)
+        evaluacion.usuarioAuditoriaId = evaluador_id
+        
         db.commit()
 
         return {
@@ -170,27 +215,37 @@ class EvaluacionService:
         db: Session,
         evaluacion_id: int,
         detalles: List[Dict],
-        evaluador_id: int
+        evaluador_id: int,
+        tipo_recomendacion_id: Optional[int] = None,
+        observaciones: Optional[str] = None
     ) -> Dict:
         """
         Envía la evaluación final (bloquea cambios)
         """
-        # Primero guardar como borrador
+        # 1. Primero guardar los detalles y calcular calificación
         resultado = EvaluacionService.guardar_evaluacion_borrador(
             db, evaluacion_id, detalles, evaluador_id
         )
 
-        # Cambiar estado a "Enviada"
+        # 2. Buscar el estado "Enviada" o "Finalizada"
         estado_enviada = db.query(EstadosEvaluacion).filter(
-            EstadosEvaluacion.nombreEstadoEvaluacion == "Enviada"
+            EstadosEvaluacion.nombreEstadoEvaluacion.ilike("%enviada%") # .ilike es más tolerante a mayúsculas
         ).first()
 
         evaluacion = db.query(Evaluaciones).filter(
             Evaluaciones.evaluacionId == evaluacion_id
         ).first()
 
-        evaluacion.estadoEvaluacionId = estado_enviada.estadoEvaluacionId if estado_enviada else 2
-        evaluacion.fechaEvaluacion = datetime.now()
+        if not estado_enviada:
+            raise ValueError("No se encontró el estado 'Enviada' en la base de datos. Configúralo primero.")
+
+        evaluacion.estadoEvaluacionId = estado_enviada.estadoEvaluacionId
+        evaluacion.fechaEvaluacion = datetime.now(timezone.utc)
+        evaluacion.tipoRecomendacionId = tipo_recomendacion_id
+        evaluacion.observaciones = observaciones
+        evaluacion.ultimaAuditoria = datetime.now(timezone.utc)
+        evaluacion.usuarioAuditoriaId = evaluador_id
+        
         db.commit()
 
         return {

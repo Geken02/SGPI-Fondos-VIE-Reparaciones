@@ -80,3 +80,36 @@ class Subsanaciones(Base):
 
     def setEstadoSubsanacionId(self, valor):
         self.estadoSubsanacionId = valor
+
+
+def obtener_o_crear_estado_subsanacion(db):
+    """
+    Garantiza la existencia del estado de propuesta 'EN_SUBSANACION' (ID 10)
+    en la tabla EstadosPropuesta, evitando fallos por llaves foraneas.
+    """
+    from src.models.convocatorias import EstadosPropuesta
+    est = db.query(EstadosPropuesta).filter(
+        EstadosPropuesta.codigoEstadoPropuesta.in_(["EN_SUBSANACION", "SUBSANACION"])
+    ).first()
+    if not est:
+        est = db.query(EstadosPropuesta).filter(EstadosPropuesta.estadoPropuestaId == 10).first()
+    if not est:
+        try:
+            est = EstadosPropuesta(
+                codigoEstadoPropuesta="EN_SUBSANACION",
+                nombreEstadoPropuesta="En Subsanación",
+                descripcion="Propuesta devuelta al investigador para correcciones o subsanación de observaciones",
+                esFinal=False,
+                orden=10,
+                activo=True
+            )
+            est.estadoPropuestaId = 10
+            db.add(est)
+            db.commit()
+            db.refresh(est)
+        except Exception:
+            db.rollback()
+            est = db.query(EstadosPropuesta).filter(
+                EstadosPropuesta.codigoEstadoPropuesta.in_(["EN_SUBSANACION", "SUBSANACION"])
+            ).first()
+    return est

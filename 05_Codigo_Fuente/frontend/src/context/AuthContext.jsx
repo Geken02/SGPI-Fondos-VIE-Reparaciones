@@ -201,22 +201,17 @@ export const AuthProvider = ({ children }) => {
   // Determinar roles disponibles para el usuario
   const rolesUsuario = Array.isArray(usuario?.roles) ? usuario.roles : [];
   const rolActivoStr = typeof rolActivo === 'string' ? rolActivo : '';
-  // Roles del Consejo de Escuela
-  const esAsistenteConsejo = rolActivoStr === 'AsistenteConsejoEscuela';
-  const esConsejoProfesores = rolActivoStr === 'ConsejoProfesores';
-  const esDirectorEscuela = rolActivoStr === 'DirectorEscuela';
 
 
   // GARANTÍA: Verificaciones de rol basadas SIEMPRE en el rolActivo (soporta suplantación)
   const esAdministrador = rolActivoStr === 'SuperAdministrador' || rolActivoStr === 'Administrador';
   const esInvestigador = rolActivoStr.includes('Investigador');
   const esVinculacion = rolActivoStr.includes('Vinculacion');
-  const esComiteTecnico = rolActivoStr.includes('ComiteTecnico');
+  const esComiteTecnico = rolActivoStr.includes('ComiteTecnico') || esDirectorEscuela;
   const esCIE = rolActivoStr.includes('CIE');
   const esGestora = rolActivoStr.includes('Gestora');
   const esDireccion = rolActivoStr.includes('Direccion') || rolActivoStr.includes('Investigacion');
   const estaAutenticado = !!token;
-  
 
   return (
     <AuthContext.Provider
@@ -233,14 +228,13 @@ export const AuthProvider = ({ children }) => {
         esAdministrador,
         esInvestigador,
         esVinculacion,
-        esComiteTecnico,    // <-- Agregado para el Sidebar/App
-        esCIE,              // <-- Agregado para el Sidebar/App
-        esGestora,          // <-- Agregado para el Sidebar/App
+        esComiteTecnico,
+        esCIE,
+        esGestora,
         esDireccion,
-        esAsistenteConsejo,
-        esConsejoProfesores,
-        esDirectorEscuela,
-
+        esAsistenteConsejo,    // <-- Agregado para el Sidebar/App
+        esConsejoProfesores,   // <-- Agregado para el Sidebar/App
+        esDirectorEscuela,     // <-- Agregado para el Sidebar/App
         formatearNombreRol,
         cargarPerfil
       }}

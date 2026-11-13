@@ -1,4 +1,3 @@
-// src/pages/admin/AdminPanel.jsx
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom'; 
 import { useAuth } from '../../context/AuthContext';
@@ -7,9 +6,9 @@ import '../../styles/AdminPanel.css';
 import RoleSwitcher from '../../components/RoleSwitcher'; 
 
 export default function AdminPanel() {
-  // ... el resto de tu código sigue igual ...
   const navigate = useNavigate();
-  const { usuario } = useAuth();
+  // ✅ CORRECCIÓN: Extraemos también rolActivo para una validación más segura
+  const { usuario, rolActivo } = useAuth();
 
   const [stats, setStats] = useState({
     propuestasActivas: 0,
@@ -35,7 +34,6 @@ export default function AdminPanel() {
       setCargando(true);
       setError(null);
 
-      // Conectar con el endpoint del dashboard
       const response = await adminService.obtenerEstadisticasDashboard();
       const data = response.data;
 
@@ -50,20 +48,17 @@ export default function AdminPanel() {
       });
 
     } catch (err) {
-      // 🔹 AQUÍ ESTÁ LA SOLUCIÓN: Si el backend dice 403, redirigimos al usuario
+      // ✅ CORRECCIÓN: Validación segura usando rolActivo en lugar de mapear roles que pueden ser undefined
       if (err.response?.status === 403) {
         console.warn("Acceso denegado al panel de admin. Redirigiendo a tu panel...");
-        const roles = usuario?.roles?.map(r => r.nombreRol) || [];
+        const rolesComite = ['AsistenteComiteTecnico', 'CoordinadorComiteTecnico', 'MiembroComiteTecnico', 'DirectorEscuela'];
         
-        if (roles.includes('AsistenteComiteTecnico') || 
-            roles.includes('CoordinadorComiteTecnico') || 
-            roles.includes('MiembroComiteTecnico') || 
-            roles.includes('DirectorEscuela')) {
+        if (rolesComite.includes(rolActivo)) {
           navigate('/comite-tecnico/bandeja-completitud', { replace: true });
         } else {
           navigate('/dashboard', { replace: true });
         }
-        return; // Salimos de la función para no mostrar el error en pantalla
+        return;
       }
       
       console.error('Error cargando dashboard:', err);
@@ -78,55 +73,57 @@ export default function AdminPanel() {
     console.log(`🎭 Simulando acciones como: ${nuevoRol}`);
   };
 
-  // Calcular total para porcentajes
-  const totalPropuestas = stats.propuestasPorEstado.reduce((sum, item) => sum + item.cantidad, 0);
+  const totalPropuestas = stats.propuestasPorEstado.reduce((sum, item) => sum + (item.cantidad || 0), 0);
   const getPorcentaje = (cantidad) => totalPropuestas === 0 ? 0 : Math.round((cantidad / totalPropuestas) * 100);
 
-  // Colores para estados
   const coloresEstado = {
-    'Borrador': '#94a3b8',
-    'Enviada a VIE': '#002855',
-    'En Evaluación de Vinculación': '#ca8a04',
-    'En Comité Técnico': '#f97316',
-    'En Consejo de Escuela': '#a78bfa',
-    'En CIE': '#ec4899',
-    'Aprobada': '#16a34a',
-    'Rechazada': '#EF3340',
-    'Cancelada': '#64748b'
+    'Borrador': 'var(--color-gris, #94a3b8)',
+    'Enviada a VIE': 'var(--color-primario, #002855)',
+    'En Evaluación de Vinculación': 'var(--color-amarillo, #ca8a04)',
+    'En Comité Técnico': 'var(--color-naranja, #f97316)',
+    'En Consejo de Escuela': 'var(--color-morado, #a78bfa)',
+    'En CIE': 'var(--color-rosa, #ec4899)',
+    'Aprobada': 'var(--color-verde, #16a34a)',
+    'Rechazada': 'var(--color-rojo, #EF3340)',
+    'Cancelada': 'var(--color-gris-oscuro, #64748b)'
   };
 
   if (cargando) {
     return (
-      <div className="admin-loading">
-        <div className="loading-spinner"></div>
+      <main className="admin-loading" aria-live="polite">
+        <div className="loading-spinner" role="status">
+          <span className="sr-only">Cargando panel de administración...</span>
+        </div>
         <p>Cargando panel de administración...</p>
-      </div>
+      </main>
     );
   }
 
   if (error) {
     return (
-      <div className="admin-error">
+      <main className="admin-error" aria-live="assertive">
         <p>{error}</p>
         <button onClick={cargarDatos}>Reintentar</button>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="admin-container">
-      {/* Título */}
-      <div className="admin-header">
-        <h1>Panel de Administrador</h1>
+    <main className="admin-container">
+      {/* Encabezado Semántico */}
+      <header className="admin-header">
+        <h1 id="titulo-panel">Panel de Administrador</h1>
         <p>Sistema de Gestión de Propuestas de Investigación – Vicerrectoría de Investigación y Extensión (VIE)</p>
-      </div>
+      </header>
 
-      {/* TARJETAS DE ESTADÍSTICAS - MANTENER ESTRUCTURA ORIGINAL */}
-      <div className="stats-row">
+      {/* TARJETAS DE ESTADÍSTICAS */}
+      <section className="stats-row" aria-labelledby="titulo-estadisticas">
+        <h2 id="titulo-estadisticas" className="sr-only">Estadísticas Generales del Sistema</h2>
+        
         <div className="stat-card">
           <div className="stat-top">
             <div className="stat-icon-wrapper">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
                 <line x1="16" y1="13" x2="8" y2="13"/>
@@ -140,15 +137,22 @@ export default function AdminPanel() {
           </div>
           <div className="stat-number">{stats.propuestasActivas}</div>
           <div className="stat-label">Propuestas Activas</div>
-          <div className="stat-progress">
-            <div className="stat-progress-fill" style={{ width: '70%', background: '#002855' }}></div>
+          <div 
+            className="stat-progress"
+            role="progressbar"
+            aria-valuenow={70}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Progreso de propuestas activas: 70%"
+          >
+            <div className="stat-progress-fill" style={{ width: '70%', background: 'var(--color-primario, #002855)' }}></div>
           </div>
         </div>
 
         <div className="stat-card">
           <div className="stat-top">
             <div className="stat-icon-wrapper">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                 <polyline points="9 22 9 12 15 12 15 22"/>
               </svg>
@@ -157,7 +161,14 @@ export default function AdminPanel() {
           </div>
           <div className="stat-number">{stats.escuelasActivas}</div>
           <div className="stat-label">Escuelas Activas</div>
-          <div className="stat-progress">
+          <div 
+            className="stat-progress"
+            role="progressbar"
+            aria-valuenow={60}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Progreso de escuelas activas: 60%"
+          >
             <div className="stat-progress-fill gray" style={{ width: '60%' }}></div>
           </div>
         </div>
@@ -165,7 +176,7 @@ export default function AdminPanel() {
         <div className="stat-card">
           <div className="stat-top">
             <div className="stat-icon-wrapper">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                 <circle cx="9" cy="7" r="4"/>
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
@@ -176,7 +187,14 @@ export default function AdminPanel() {
           </div>
           <div className="stat-number">{stats.usuariosActivos}</div>
           <div className="stat-label">Usuarios del Sistema</div>
-          <div className="stat-progress">
+          <div 
+            className="stat-progress"
+            role="progressbar"
+            aria-valuenow={80}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Progreso de usuarios del sistema: 80%"
+          >
             <div className="stat-progress-fill blue" style={{ width: '80%' }}></div>
           </div>
         </div>
@@ -184,7 +202,7 @@ export default function AdminPanel() {
         <div className="stat-card">
           <div className="stat-top">
             <div className="stat-icon-wrapper">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                 <line x1="16" y1="2" x2="16" y2="6"/>
                 <line x1="8" y1="2" x2="8" y2="6"/>
@@ -196,13 +214,19 @@ export default function AdminPanel() {
           <div className="stat-number">{stats.convocatoriaActiva.anio}</div>
           <div className="stat-label">{stats.convocatoriaActiva.nombre}</div>
         </div>
-      </div>
+      </section>
 
       {/* ACCESOS RÁPIDOS */}
-      <div className="quick-access-row">
-        <Link to="/dashboard/admin/catalogos" className="quick-card">
+      <section className="quick-access-row" aria-labelledby="titulo-accesos">
+        <h2 id="titulo-accesos" className="sr-only">Accesos Rápidos a Módulos de Administración</h2>
+        
+        <Link 
+          to="/dashboard/admin/catalogos" 
+          className="quick-card"
+          aria-label="Acceder a Gestión de Catálogos: administrar Escuelas, Líneas de Investigación, Tipos de Hora y niveles TRL"
+        >
           <div className="quick-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" focusable="false">
               <ellipse cx="12" cy="5" rx="9" ry="3"/>
               <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
               <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
@@ -210,12 +234,16 @@ export default function AdminPanel() {
           </div>
           <h3>Gestión de Catálogos</h3>
           <p>Administrar Escuelas, Líneas de Investigación, Tipos de Hora y niveles TRL.</p>
-          <div className="btn-access">Acceder →</div>
+          <div className="btn-access" aria-hidden="true">Acceder →</div>
         </Link>
 
-        <Link to="/dashboard/admin/convocatoria" className="quick-card">
+        <Link 
+          to="/dashboard/admin/convocatoria" 
+          className="quick-card"
+          aria-label="Acceder a Configuración de Convocatoria: definir fechas límite, plazos de evaluación y bloqueo automático en Orión"
+        >
           <div className="quick-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" focusable="false">
               <line x1="4" y1="21" x2="4" y2="14"/>
               <line x1="4" y1="10" x2="4" y2="3"/>
               <line x1="12" y1="21" x2="12" y2="12"/>
@@ -229,12 +257,16 @@ export default function AdminPanel() {
           </div>
           <h3>Configuración de Convocatoria</h3>
           <p>Definir fechas límite, plazos de evaluación y bloqueo automático en Orión.</p>
-          <div className="btn-access">Acceder →</div>
+          <div className="btn-access" aria-hidden="true">Acceder →</div>
         </Link>
 
-        <Link to="/dashboard/admin/gestoras" className="quick-card">
+        <Link 
+          to="/dashboard/admin/gestoras" 
+          className="quick-card"
+          aria-label="Acceder a Asignación de Escuelas: asignar escuelas específicas a cada Persona Gestora de la VIE"
+        >
           <div className="quick-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" focusable="false">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
               <circle cx="12" cy="7" r="4"/>
               <path d="M16 11l2 2 4-4"/>
@@ -242,14 +274,14 @@ export default function AdminPanel() {
           </div>
           <h3>Asignación de Escuelas</h3>
           <p>Asignar escuelas específicas a cada Persona Gestora de la VIE.</p>
-          <div className="btn-access">Acceder →</div>
+          <div className="btn-access" aria-hidden="true">Acceder →</div>
         </Link>
-      </div>
+      </section>
 
       {/* ESTADO DE PROPUESTAS + ACTIVIDAD RECIENTE */}
       <div className="bottom-row">
-        <div className="card proposals-section">
-          <h2>Estado de Propuestas por Módulo</h2>
+        <section className="card proposals-section" aria-labelledby="titulo-estado-propuestas">
+          <h2 id="titulo-estado-propuestas">Estado de Propuestas por Módulo</h2>
           <div className="progress-list">
             {stats.propuestasPorEstado.map((item, index) => (
               <div key={index} className="progress-item">
@@ -257,48 +289,59 @@ export default function AdminPanel() {
                   <span className="progress-label">{item.estado}</span>
                   <span className="progress-stats">{getPorcentaje(item.cantidad)}% ({item.cantidad})</span>
                 </div>
-                <div className="progress-bar">
+                <div 
+                  className="progress-bar"
+                  role="progressbar"
+                  aria-valuenow={getPorcentaje(item.cantidad)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`${item.estado}: ${item.cantidad} propuestas, ${getPorcentaje(item.cantidad)} por ciento`}
+                >
                   <div 
                     className="progress-fill" 
                     style={{ 
                       width: `${getPorcentaje(item.cantidad)}%`,
-                      background: coloresEstado[item.estado] || '#002855'
+                      background: coloresEstado[item.estado] || 'var(--color-primario, #002855)'
                     }}
                   ></div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        <div className="card activity-section">
-          <h2>Actividad Reciente del Sistema</h2>
+        <section className="card activity-section" aria-labelledby="titulo-actividad-reciente">
+          <h2 id="titulo-actividad-reciente">Actividad Reciente del Sistema</h2>
           {stats.actividadReciente.length === 0 ? (
             <p className="no-activity">Sin actividad reciente</p>
           ) : (
             <div className="activity-list">
               {stats.actividadReciente.slice(0, 5).map((log) => (
                 <div key={log.logId} className="activity-item">
-                  <span className="activity-icon"></span>
+                  <span className="activity-icon" aria-hidden="true">●</span>
                   <div className="activity-content">
                     <p className="activity-desc">{log.descripcion}</p>
                     <p className="activity-date">
-                      {new Date(log.fecha).toLocaleString('es-CR')}
+                      <time dateTime={log.fecha}>
+                        {new Date(log.fecha).toLocaleString('es-CR')}
+                      </time>
                     </p>
                   </div>
                 </div>
               ))}
             </div>
           )}
-          <Link to="/dashboard/admin/bitacora" className="view-all">Ver toda la actividad →</Link>
-        </div>
+          <Link to="/dashboard/admin/bitacora" className="view-all" aria-label="Ver toda la actividad del sistema en la bitácora">
+            Ver toda la actividad →
+          </Link>
+        </section>
       </div>
 
       {/* Gestión de Usuarios */}
-      <div className="card users-section">
+      <section className="card users-section" aria-labelledby="titulo-gestion-usuarios">
         <div className="users-content">
           <div className="users-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" focusable="false">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
@@ -306,44 +349,50 @@ export default function AdminPanel() {
             </svg>
           </div>
           <div className="users-info">
-            <h3>Gestión de Usuarios y Roles</h3>
+            <h3 id="titulo-gestion-usuarios">Gestión de Usuarios y Roles</h3>
             <p>Crear, editar y asignar roles y permisos</p>
           </div>
         </div>
-        <Link to="/dashboard/admin/usuarios" className="btn-outline">Acceder →</Link>
-      </div>
+        <Link to="/dashboard/admin/usuarios" className="btn-outline" aria-label="Acceder a la gestión de usuarios y roles">
+          Acceder →
+        </Link>
+      </section>
 
       {/* Modo Global SuperAdmin */}
-      <div className="card modo-global-card">
+      <section className="card modo-global-card" aria-labelledby="titulo-modo-global">
         <div className="modo-global-content">
           <div className="modo-global-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
           </div>
           <div className="modo-global-info">
-            <h3>Modo de Acceso Global (SuperAdmin)</h3>
+            <h3 id="titulo-modo-global">Modo de Acceso Global (SuperAdmin)</h3>
             <p>Simular cualquier rol para pruebas y carga de datos</p>
           </div>
           
           <button 
             className="btn-activar"
             onClick={() => setModalAbierto(true)}
+            aria-expanded={modalAbierto}
+            aria-controls="modal-role-switcher"
           >
             {rolSimulado !== 'SuperAdministrador' 
               ? `Simulando: ${rolSimulado} (Cambiar)` 
               : 'Activar →'}
           </button>
         </div>
-      </div>
+      </section>
 
       {/* RoleSwitcher Modal */}
-      <RoleSwitcher 
-        isOpen={modalAbierto}
-        onClose={() => setModalAbierto(false)}
-        onRoleChange={handleSeleccionarRol}
-        usuarioActual={{ nombreUsuario: 'Sistema', apellido1Usuario: 'Administrador' }}
-      />
-    </div>
+      <div id="modal-role-switcher" hidden={!modalAbierto}>
+        <RoleSwitcher 
+          isOpen={modalAbierto}
+          onClose={() => setModalAbierto(false)}
+          onRoleChange={handleSeleccionarRol}
+          usuarioActual={{ nombreUsuario: 'Sistema', apellido1Usuario: 'Administrador' }}
+        />
+      </div>
+    </main>
   );
 }

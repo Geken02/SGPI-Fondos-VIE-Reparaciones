@@ -161,7 +161,7 @@ const VinculacionDictamenes = () => {
                     <td>
                       <span 
                         className="code-link" 
-                        onClick={() => navigate('/dashboard/detalle-dictamen')}
+                        onClick={() => navigate('/dashboard/detalle-dictamen', { state: { propuestaId: item.propuestaId, item } })}
                       >
                         {item.id}
                       </span>
@@ -183,7 +183,7 @@ const VinculacionDictamenes = () => {
                       <button
                         type="button"
                         className="btn-proposal-action btn-outline"
-                        onClick={() => navigate('/dashboard/detalle-dictamen')}
+                        onClick={() => navigate('/dashboard/detalle-dictamen', { state: { propuestaId: item.propuestaId, item } })}
                         style={{ padding: '6px 14px', fontSize: '13px' }}
                       >
                         Ver dictamen

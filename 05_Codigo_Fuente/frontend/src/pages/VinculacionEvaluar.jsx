@@ -60,8 +60,8 @@ const VinculacionEvaluar = () => {
   const handleEnviarDictamen = async (e) => {
     e.preventDefault();
 
-    if (esAutoEvaluacion) {
-      alert('No puede evaluar una propuesta de la cual usted es el investigador coordinador.');
+    if (esAutoEvaluacion && !window.confirm('Aviso: Usted figura como investigador coordinador de esta propuesta. ¿Desea continuar con la emisión del dictamen para fines de prueba?')) {
+
       return;
     }
 

@@ -16,8 +16,11 @@ export const comiteTecnicoService = {
   asignarEvaluadores: (propuestaId, data) => 
     api.post(`/api/comite-tecnico/asistente/${propuestaId}/asignar-evaluadores`, data),
 
-  obtenerPropuestasAsignadas: (params = {}) => 
-    api.get('/api/comite-tecnico/asistente/propuestas-asignadas', { params }),
+  obtenerPropuestasAsignadas: async (busqueda = '') => {
+    const params = busqueda ? `?busqueda=${encodeURIComponent(busqueda)}` : '';
+    const response = await api.get(`/api/comite-tecnico/propuestas-asignadas${params}`);
+    return response.data;
+  },
 
     // Aprobar completitud (Asistente)
   aprobarCompletitud: (propuestaId) => 
@@ -64,4 +67,18 @@ enviarEvaluacion: (propuestaId, data) =>
 
 analizarDocumentoIA: (propuestaId, data) => 
   api.post(`/api/comite-tecnico/ia/analizar-documento/${propuestaId}`, data),
+
+  obtenerEvaluadoresDisponibles: async () => {
+    const response = await api.get('/api/comite-tecnico/evaluadores-disponibles');
+    return response.data;
+  },
+
+  asignarEvaluador: async (propuestaId, evaluadorId, comentarios = '') => {
+    const response = await api.post('/api/comite-tecnico/asignar-evaluador', {
+      propuestaId,
+      evaluadorId,
+      comentarios
+    });
+    return response.data;
+  },
 };
