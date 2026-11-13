@@ -207,6 +207,14 @@ export const AuthProvider = ({ children }) => {
   const esAdministrador = rolActivoStr === 'SuperAdministrador' || rolActivoStr === 'Administrador';
   const esInvestigador = rolActivoStr.includes('Investigador');
   const esVinculacion = rolActivoStr.includes('Vinculacion');
+  
+  // ✅ CORRECCIÓN: Definir las variables individuales PRIMERO para evitar ReferenceError
+  const esDirectorEscuela = rolActivoStr === 'DirectorEscuela';
+  const esAsistenteConsejo = rolActivoStr === 'AsistenteConsejoEscuela';
+  const esMiembroConsejo = rolActivoStr === 'MiembroConsejoEscuela';
+  const esConsejoProfesores = rolActivoStr === 'ConsejoProfesores';
+  
+  // Ahora sí podemos usar esDirectorEscuela de forma segura
   const esComiteTecnico = rolActivoStr.includes('ComiteTecnico') || esDirectorEscuela;
   const esCIE = rolActivoStr.includes('CIE');
   const esGestora = rolActivoStr.includes('Gestora');
