@@ -435,17 +435,18 @@ const InvestigadorEquipos = () => {
                   className="filter-search-input"
                   containerStyle={{ flex: 1 }}
                   style={{ border: 'none', outline: 'none', background: 'transparent' }}
+                  aria-label="Buscar por equipo o proyecto de investigación"
                 />
               </div>
 
-              <select className="filter-select">
+              <select className="filter-select" aria-label="Filtrar por código de grupo">
                 <option value="All">Código Grupo: All ▾</option>
                 <option value="EQP-01">EQP-01</option>
                 <option value="EQP-02">EQP-02</option>
                 <option value="EQP-03">EQP-03</option>
               </select>
 
-              <select className="filter-select">
+              <select className="filter-select" aria-label="Ordenar por fecha">
                 <option value="reciente">Más reciente ▾</option>
                 <option value="antiguo">Más antiguo ▾</option>
               </select>
@@ -454,6 +455,7 @@ const InvestigadorEquipos = () => {
                 type="button" 
                 className="btn-limpiar-filtros"
                 onClick={() => setFiltroTexto('')}
+                aria-label="Limpiar filtro de búsqueda de equipos"
               >
                 Limpiar
               </button>
@@ -486,7 +488,7 @@ const InvestigadorEquipos = () => {
                         </td>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <div className="stacked-avatars">
+                            <div className="stacked-avatars" aria-hidden="true">
                               <span className="mini-avatar av-1"></span>
                               <span className="mini-avatar av-2"></span>
                               <span className="mini-avatar av-3"></span>
@@ -507,6 +509,7 @@ const InvestigadorEquipos = () => {
                             type="button" 
                             className="btn-conv-aplicar"
                             style={{ padding: '6px 14px', fontSize: '13px' }}
+                            aria-label={`Gestionar equipo ${eq.codigo}: ${eq.nombre}`}
                             onClick={() => handleGestionarEquipo(eq)}
                           >
                             Gestionar

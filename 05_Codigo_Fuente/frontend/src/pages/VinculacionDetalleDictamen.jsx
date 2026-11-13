@@ -38,6 +38,7 @@ const VinculacionDetalleDictamen = () => {
           <button 
             type="button" 
             className="btn-link-volver"
+            aria-label="Volver al listado de dictámenes emitidos"
             onClick={() => navigate('/dashboard/dictamenes')}
           >
             ← Volver a dictámenes emitidos
@@ -91,6 +92,7 @@ const VinculacionDetalleDictamen = () => {
               <button 
                 type="button" 
                 className="btn-proposal-action btn-outline"
+                aria-label="Descargar Form-04 completo en formato PDF"
                 style={{ width: '100%', marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 onClick={() => descargarPropuestaPDF(propuestaId, propuestaService)}
               >
@@ -142,16 +144,25 @@ const VinculacionDetalleDictamen = () => {
                 <h3 className="dictamen-item-title">Documento del Dictamen</h3>
                 <div 
                   className="documento-adjunto-card"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Descargar archivo de dictamen: ${dictamen?.rutaArchivo || 'Dictamen_Vinculacion.pdf'}`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (dictamen?.rutaArchivo) { alert(`El archivo '${dictamen.rutaArchivo}' se descargará del servidor.`); } else { alert('No hay archivo de dictamen adjunto.'); }
+                    }
+                  }}
                   onClick={() => { if (dictamen?.rutaArchivo) { alert(`El archivo '${dictamen.rutaArchivo}' se descargar\xe1 del servidor. Funcionalidad de almacenamiento de archivos pendiente.`); } else { alert('No hay archivo de dictamen adjunto.'); } }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '20px' }}>📄</span>
+                    <span style={{ fontSize: '20px' }} aria-hidden="true">📄</span>
                     <div>
                       <div className="doc-nombre">{dictamen?.rutaArchivo || 'Dictamen_Vinculacion_FVIE-2027-004_RobertaSanchez.pdf'}</div>
                       <div className="doc-peso">2.4 MB · Documento oficial firmado</div>
                     </div>
                   </div>
-                  <span className="doc-download-icon">📥</span>
+                  <span className="doc-download-icon" aria-hidden="true">📥</span>
                 </div>
               </div>
 

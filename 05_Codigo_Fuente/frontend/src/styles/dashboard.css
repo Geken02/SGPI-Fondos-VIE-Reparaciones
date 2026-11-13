@@ -3415,20 +3415,183 @@ input:checked + .slider:before { transform: translateX(20px); }
   --tec-celeste-suave: #000000;
 }
 
-/* Sobrescrituras específicas para garantizar legibilidad en alto contraste */
+/* Sobrescrituras completas de CARDS y PANELES para Investigador y Vinculación */
 .high-contrast-mode body,
 .high-contrast-mode .dashboard-layout,
 .high-contrast-mode .main-body,
+.high-contrast-mode .investigador-dashboard-container,
+.high-contrast-mode .vinculacion-dashboard-container,
+.high-contrast-mode .vinculacion-dictamenes-container,
+.high-contrast-mode .vinculacion-evaluar-container,
 .high-contrast-mode .dashboard-main-card,
+.high-contrast-mode .kpi-card,
+.high-contrast-mode .kpi-card-highlight,
 .high-contrast-mode .proposal-item-card,
-.high-contrast-mode .convocatoria-card,
 .high-contrast-mode .propuesta-accordion-card,
+.high-contrast-mode .accordion-card-header,
+.high-contrast-mode .accordion-card-body,
+.high-contrast-mode .convocatoria-card,
+.high-contrast-mode .conv-stat-card,
+.high-contrast-mode .convocatoria-card-header,
+.high-contrast-mode .historial-card,
+.high-contrast-mode .historial-card-header,
+.high-contrast-mode .evaluacion-card,
+.high-contrast-mode .eval-card-header,
+.high-contrast-mode .eval-card-obs,
+.high-contrast-mode .subsanacion-card,
+.high-contrast-mode .quick-card,
+.high-contrast-mode .modalidad-card-option,
+.high-contrast-mode .question-toggle-card,
+.high-contrast-mode .expediente-card-box,
+.high-contrast-mode .dictamen-emitido-box,
+.high-contrast-mode .documento-adjunto-card,
+.high-contrast-mode .archivo-firmado-box,
+.high-contrast-mode .dropzone-upload-box,
+.high-contrast-mode .search-result-card,
+.high-contrast-mode .success-meta-card,
+.high-contrast-mode .resumen-oe-card,
+.high-contrast-mode .compromiso-callout-card,
+.high-contrast-mode .compromiso-table-wrapper,
+.high-contrast-mode .donut-chart-wrapper,
+.high-contrast-mode .donut-card,
+.high-contrast-mode .chart-card,
 .high-contrast-mode .modal-content,
 .high-contrast-mode .form-paper-container,
-.high-contrast-mode .new-expense-card-panel {
+.high-contrast-mode .step-content-pane,
+.high-contrast-mode .new-expense-card-panel,
+.high-contrast-mode .proposals-empty-state {
+  background: #000000 !important;
   background-color: #000000 !important;
   color: #FFFFFF !important;
-  border-color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+/* Encabezados y pies interiores de tarjetas para evitar zonas claras o fondos desalineados */
+.high-contrast-mode .accordion-card-header,
+.high-contrast-mode .convocatoria-card-header,
+.high-contrast-mode .eval-card-header,
+.high-contrast-mode .historial-card-header,
+.high-contrast-mode .proposal-card-top,
+.high-contrast-mode .proposal-card-footer {
+  background: #0d0d0d !important;
+  background-color: #0d0d0d !important;
+  border-bottom: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+/* Tarjetas activas, seleccionadas o en hover */
+.high-contrast-mode .kpi-card:hover,
+.high-contrast-mode .kpi-card-highlight,
+.high-contrast-mode .proposal-item-card:hover,
+.high-contrast-mode .propuesta-accordion-card.open,
+.high-contrast-mode .convocatoria-card:hover,
+.high-contrast-mode .historial-card:hover,
+.high-contrast-mode .quick-card:hover,
+.high-contrast-mode .modalidad-card-option.is-selected,
+.high-contrast-mode .documento-adjunto-card:hover,
+.high-contrast-mode .evaluacion-card:hover {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+  outline-offset: -2px !important;
+  background-color: #000000 !important;
+}
+
+/* Círculo selector de modalidad */
+.high-contrast-mode .modalidad-radio-circle {
+  border: 2px solid #FFFFFF !important;
+  background-color: #000000 !important;
+}
+
+.high-contrast-mode .modalidad-card-option.is-selected .modalidad-radio-circle {
+  border-color: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+}
+
+/* Textos de títulos, etiquetas, métricas y detalles dentro de tarjetas */
+.high-contrast-mode .kpi-card-label,
+.high-contrast-mode .expediente-meta-label,
+.high-contrast-mode .quick-card-sub,
+.high-contrast-mode .proposal-card-meta,
+.high-contrast-mode .historial-card-meta,
+.high-contrast-mode .conv-card-desc,
+.high-contrast-mode .legend-text,
+.high-contrast-mode .proposal-code {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .kpi-big-number,
+.high-contrast-mode .cie-big-number,
+.high-contrast-mode .proposal-card-title,
+.high-contrast-mode .historial-card-title,
+.high-contrast-mode .quick-card-title,
+.high-contrast-mode .dashboard-main-title {
+  color: #FFFFFF !important;
+}
+
+/* Botón mini de cancelar propuesta (X) */
+.high-contrast-mode .btn-cancelar-propuesta-mini {
+  background-color: #000000 !important;
+  color: #FF3333 !important;
+  border: 2px solid #FF3333 !important;
+}
+
+.high-contrast-mode .btn-cancelar-propuesta-mini:hover {
+  background-color: #FF3333 !important;
+  color: #000000 !important;
+}
+
+/* Gráfico donut de estados de propuesta en alto contraste */
+.high-contrast-mode .donut-bg-track {
+  stroke: #333333 !important;
+}
+
+.high-contrast-mode .segment-revision {
+  stroke: #0284C7 !important;
+}
+
+.high-contrast-mode .segment-aprobadas {
+  stroke: #00FF66 !important;
+}
+
+.high-contrast-mode .segment-rechazadas {
+  stroke: #FF3333 !important;
+}
+
+.high-contrast-mode .segment-canceladas {
+  stroke: #FFFFFF !important;
+}
+
+.high-contrast-mode .donut-center-value {
+  fill: #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+/* Compatibilidad nativa con configuración de Alto Contraste del Sistema Operativo */
+@media (prefers-contrast: more), (forced-colors: active) {
+  .dashboard-main-card,
+  .kpi-card,
+  .proposal-item-card,
+  .propuesta-accordion-card,
+  .convocatoria-card,
+  .historial-card,
+  .evaluacion-card,
+  .quick-card,
+  .modalidad-card-option,
+  .expediente-card-box,
+  .documento-adjunto-card,
+  .resumen-oe-card,
+  .compromiso-callout-card {
+    border: 2px solid CanvasText !important;
+    box-shadow: none !important;
+  }
+
+  .kpi-card:hover,
+  .modalidad-card-option.is-selected,
+  .propuesta-accordion-card.open {
+    outline: 2px solid Highlight !important;
+    border-color: Highlight !important;
+  }
 }
 
 .high-contrast-mode .tec-sidebar {
