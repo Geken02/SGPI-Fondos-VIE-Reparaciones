@@ -655,3 +655,146 @@
 .gv-header-marca img {
   filter: brightness(0) invert(1);
 }
+
+/* ============================================================
+   MODO DE ALTO CONTRASTE — MIEMBRO DEL CIE
+   ============================================================ */
+.high-contrast-mode .cie-cuerpo,
+.high-contrast-mode .cie-criterios,
+.high-contrast-mode .cie-inicio-acceso,
+.high-contrast-mode .cie-inicio-recientes,
+.high-contrast-mode .cie-inicio-fila,
+.high-contrast-mode .cie-tarjeta,
+.high-contrast-mode .cie-estado,
+.high-contrast-mode .cie-detalle,
+.high-contrast-mode .cie-fila-detalle td {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-inicio-acceso {
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-inicio-acceso:hover,
+.high-contrast-mode .cie-inicio-fila:hover {
+  border-color: #FFFF00 !important;
+  outline: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-consideraciones,
+.high-contrast-mode .cie-nota,
+.high-contrast-mode .cie-aviso {
+  background: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-consideraciones .gv-subcard-titulo,
+.high-contrast-mode .cie-nota strong,
+.high-contrast-mode .cie-nota p,
+.high-contrast-mode .cie-obs {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-criterios-head {
+  background: #0d0d0d !important;
+  color: #FFFF00 !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-criterio {
+  border-top: 1px solid #444444 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-criterio select,
+.high-contrast-mode .cie-textarea-wrap textarea {
+  background: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-criterio select:focus,
+.high-contrast-mode .cie-textarea-wrap textarea:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-promedio {
+  background: #000000 !important;
+  border-top: 2px solid #FFFFFF !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-tabs button {
+  color: #FFFFFF !important;
+  border-bottom: 2px solid transparent !important;
+}
+
+.high-contrast-mode .cie-tabs button.activa {
+  color: #FFFF00 !important;
+  border-bottom-color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .cie-dl dt {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-dl dd {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-meta,
+.high-contrast-mode .cie-ayuda,
+.high-contrast-mode .cie-peso,
+.high-contrast-mode .cie-donut-centro span {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-donut-centro strong {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-resumen-criterios li {
+  border-bottom: 1px solid #444444 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-resumen-criterios b {
+  background: #000000 !important;
+  border: 1px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-btn-outline {
+  background: #000000 !important;
+  border: 1px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-btn-outline:hover {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-enlace {
+  color: #FFFF00 !important;
+  text-decoration: underline !important;
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .cie-cuerpo,
+  .cie-criterios,
+  .cie-inicio-acceso,
+  .cie-inicio-recientes,
+  .cie-tarjeta,
+  .cie-consideraciones,
+  .cie-nota {
+    border: 2px solid ButtonText !important;
+  }
+}

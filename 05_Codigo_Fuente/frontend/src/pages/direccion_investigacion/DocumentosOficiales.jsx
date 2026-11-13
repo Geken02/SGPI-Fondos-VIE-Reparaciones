@@ -84,7 +84,7 @@ const FormularioDocumento = ({ dictamen, config, cambiarDictamen, lista }) => {
       <ResumenDictamen dictamen={dictamen} />
       <div className="dir-selector">
         <label htmlFor="dir-propuesta">Propuesta de trabajo</label>
-        <select id="dir-propuesta" value={dictamen.codigo} onChange={(e) => cambiarDictamen(e.target.value)}>
+        <select id="dir-propuesta" value={dictamen.codigo} onChange={(e) => cambiarDictamen(e.target.value)} aria-label="Seleccionar propuesta de trabajo">
           {lista.map((d) => <option key={d.codigo} value={d.codigo}>{d.codigo} — {d.titulo}</option>)}
         </select>
       </div>
@@ -96,7 +96,7 @@ const FormularioDocumento = ({ dictamen, config, cambiarDictamen, lista }) => {
           <div className="dir-subcard">
             <h3 className="gv-subcard-titulo">Tipo de documento</h3>
             <div className="cie-cuerpo">
-              <div className="dir-opciones">
+              <div className="dir-opciones" role="radiogroup" aria-label="Tipo de documento oficial">
                 {TIPOS_DOCUMENTO.map((t) => (
                   <div key={t.id} className="dir-opcion">
                     <Radio name="tipoDocumento" value={t.id} checked={tipo === t.id} onChange={cambiarTipo}>
@@ -119,8 +119,8 @@ const FormularioDocumento = ({ dictamen, config, cambiarDictamen, lista }) => {
             <div className="cie-cuerpo">
               <pre className="dir-vista-previa" tabIndex={0} aria-label="Vista previa del oficio">{vista}</pre>
               {errorGenerar && <p className="cie-error" role="alert">{errorGenerar}</p>}
-              <button type="button" className="gv-btn-primario dir-btn-completo" onClick={generar} disabled={generando || incoherente}>
-                <Icono nombre="fileText" size={16} />{generando ? 'Generando...' : 'Generar documento'}
+              <button type="button" className="gv-btn-primario dir-btn-completo" onClick={generar} disabled={generando || incoherente} aria-label="Generar documento oficial">
+                <Icono nombre="fileText" size={16} aria-hidden="true" />{generando ? 'Generando...' : 'Generar documento'}
               </button>
             </div>
           </div>
@@ -132,19 +132,19 @@ const FormularioDocumento = ({ dictamen, config, cambiarDictamen, lista }) => {
             <div className="cie-cuerpo dir-formulario">
               <div className="dir-fila-2">
                 <label className="dir-campo">Fecha de emisión
-                  <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+                  <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} aria-label="Fecha de emisión del documento" />
                 </label>
                 <label className="dir-campo">Número de oficio
-                  <input type="text" value="Se asigna al generar" readOnly />
+                  <input type="text" value="Se asigna al generar" readOnly aria-label="Número de oficio asignado" />
                 </label>
               </div>
               <label className="dir-campo">Firmante
-                <select value={firmante} onChange={(e) => setFirmante(e.target.value)}>
+                <select value={firmante} onChange={(e) => setFirmante(e.target.value)} aria-label="Seleccionar firmante institucional">
                   {[...new Set([config.firmante, ...FIRMANTES])].map((f) => <option key={f} value={f}>{f}</option>)}
                 </select>
               </label>
               <label className="dir-campo">Plantilla
-                <select value={plantilla} onChange={(e) => setPlantilla(e.target.value)}>
+                <select value={plantilla} onChange={(e) => setPlantilla(e.target.value)} aria-label="Seleccionar plantilla de documento">
                   {PLANTILLAS.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                 </select>
               </label>
@@ -159,10 +159,10 @@ const FormularioDocumento = ({ dictamen, config, cambiarDictamen, lista }) => {
               <ul className="dir-docs">
                 {generados.map((g) => (
                   <li key={g.documentoId}>
-                    <Icono nombre="fileText" size={20} />
+                    <Icono nombre="fileText" size={20} aria-hidden="true" />
                     <div><strong>{g.nombre}</strong><span>{g.numeroOficio} · {formatearFechaHora(g.fecha)}</span></div>
                     <button type="button" className="gv-btn-ver" onClick={() => descargar(g)} aria-label={`Descargar ${g.nombre}`}>
-                      <Icono nombre="download" size={14} />
+                      <Icono nombre="download" size={14} aria-hidden="true" />
                     </button>
                   </li>
                 ))}
@@ -173,12 +173,12 @@ const FormularioDocumento = ({ dictamen, config, cambiarDictamen, lista }) => {
       </div>
 
       <div className="cie-acciones">
-        <button type="button" className="cie-btn-outline" onClick={() => navigate(`${RUTA_BASE}/dictamenes/${dictamen.codigo}`)}>
-          <Icono nombre="arrowLeft" size={15} />Volver al dictamen
+        <button type="button" className="cie-btn-outline" onClick={() => navigate(`${RUTA_BASE}/dictamenes/${dictamen.codigo}`)} aria-label="Volver a la revisión del dictamen">
+          <Icono nombre="arrowLeft" size={15} aria-hidden="true" />Volver al dictamen
         </button>
         <button type="button" className="gv-btn-primario" disabled={generados.length === 0}
-          onClick={() => navigate(`${RUTA_BASE}/notificacion/${dictamen.codigo}`)}>
-          Continuar a notificación <Icono nombre="arrowRight" size={16} />
+          onClick={() => navigate(`${RUTA_BASE}/notificacion/${dictamen.codigo}`)} aria-label="Continuar a notificación oficial">
+          Continuar a notificación <Icono nombre="arrowRight" size={16} aria-hidden="true" />
         </button>
       </div>
     </>
