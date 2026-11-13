@@ -104,50 +104,75 @@
   gap: 16px;
 }
 
-/* ✅ Buscador con FLEX (sin position:absolute): ícono e input en fila */
-.search-box {
+/* ✅ Buscador con clases PROPIAS (no colisiona con el header de dashboard.css) */
+.cat-search-box {
   display: flex;
   align-items: center;
   gap: 10px;
   flex: 1;
-  max-width: 400px;
+  max-width: 420px;
   background-color: #ffffff;
   border: 1.5px solid #94a3b8;
   border-radius: 8px;
   padding: 0 14px;
-  height: 42px;
+  height: 44px;
   box-sizing: border-box;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Anillo de foco cuando el input está activo (accesible con teclado) */
-.search-box:focus-within {
-  border-color: #003366;
-  box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.15);
+.cat-search-box:hover {
+  border-color: #64748b;
 }
 
-/* ✅ Ícono con contraste AA (7.5:1 sobre blanco) */
-.search-icon {
+.cat-search-box:focus-within {
+  border-color: #003366;
+  box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.18);
+}
+
+.cat-search-icon {
   flex-shrink: 0;
   color: #475569;
 }
 
-/* ✅ Input transparente, ocupa el resto del flex */
-.search-input {
+.cat-search-input {
   flex: 1;
+  min-width: 0;
   width: 100%;
   border: none;
   outline: none;
   background: transparent;
   font-size: 14px;
+  font-family: inherit;
   color: #1e293b;
   padding: 0;
   line-height: 1.5;
 }
 
-/* ✅ Placeholder con contraste AA (4.6:1 sobre blanco) */
-.search-input::placeholder {
+.cat-search-input::placeholder {
   color: #64748b;
+  opacity: 1;
+}
+
+/* Botón limpiar (aparece solo cuando hay texto) */
+.cat-search-clear {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cat-search-clear:hover {
+  background: #dc2626;
+  color: #ffffff;
 }
 
 .btn-agregar {
