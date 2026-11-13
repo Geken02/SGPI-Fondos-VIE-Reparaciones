@@ -238,3 +238,155 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* ==========================================================================
+   PARCHE DE ALTO CONTRASTE - BANDEJA DE COMPLETITUD
+   Solo se activa cuando <body> tiene la clase 'high-contrast-mode'.
+   No afecta el modo normal. Gana sobre estilos inline con !important.
+   ========================================================================== */
+
+/* 1. CONTENEDOR PRINCIPAL */
+.high-contrast-mode .bandeja-completitud {
+  color: #FFFFFF !important;
+}
+
+/* 2. HEADER */
+.high-contrast-mode .bandeja-header h1 {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .bandeja-header p {
+  color: #CCCCCC !important;
+}
+
+/* 3. ALERTA DE PLAZO */
+.high-contrast-mode .alerta-plazo {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border-color: #FFFF00 !important;
+}
+
+/* 4. TARJETAS DE ESTADÍSTICAS */
+.high-contrast-mode .stat-card {
+  background: #000000 !important;
+  border-left-color: #FFFF00 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .stat-card.warning {
+  border-left-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .stat-card.success {
+  border-left-color: #00FF00 !important;
+}
+
+.high-contrast-mode .stat-value {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .stat-label {
+  color: #CCCCCC !important;
+}
+
+/* 5. TABLA */
+.high-contrast-mode .tabla-container {
+  background: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .tabla-propuestas {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tabla-propuestas th {
+  background-color: #1a1a1a !important;
+  color: #FFFFFF !important;
+  border-bottom-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tabla-propuestas td {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border-bottom-color: #333333 !important;
+}
+
+.high-contrast-mode .tabla-propuestas tbody tr:hover {
+  background-color: #1a1a1a !important;
+}
+
+/* 6. ELEMENTOS DE LA TABLA */
+.high-contrast-mode .codigo-propuesta {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .titulo-truncado {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .doc-ok {
+  color: #00FF00 !important;
+}
+
+.high-contrast-mode .doc-falta {
+  color: #FF3333 !important;
+}
+
+/* 7. BADGES DE ESTADO */
+.high-contrast-mode .badge-estado {
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-estado.completa {
+  background-color: #000000 !important;
+  color: #00FF00 !important;
+  border-color: #00FF00 !important;
+}
+
+.high-contrast-mode .badge-estado.incompleta {
+  background-color: #000000 !important;
+  color: #FF3333 !important;
+  border-color: #FF3333 !important;
+}
+
+/* 8. BOTONES DE ACCIÓN */
+.high-contrast-mode .btn-accion {
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-aprobar {
+  background-color: #00FF00 !important;
+  color: #000000 !important;
+  border-color: #00FF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-aprobar:hover {
+  background-color: #00CC00 !important;
+}
+
+.high-contrast-mode .btn-subsanar {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border-color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-subsanar:hover {
+  background-color: #CCCC00 !important;
+}
+
+/* 9. ESTADOS DE CARGA Y VACÍO */
+.high-contrast-mode .loading,
+.high-contrast-mode .empty-state {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .spinner {
+  border-color: #555555 !important;
+  border-top-color: #FFFF00 !important;
+}
