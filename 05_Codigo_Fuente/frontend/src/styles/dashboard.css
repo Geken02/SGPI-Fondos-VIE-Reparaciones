@@ -1,6 +1,26 @@
 /* src/styles/dashboard.css */
+.skip-link {
+  position: absolute;
+  top: -100px; /* Lo esconde fuera de la pantalla */
+  left: 0;
+  background: #002855;
+  color: #ffffff;
+  padding: 8px 16px;
+  z-index: 10000;
+  text-decoration: none;
+  font-weight: 500;
+  transition: top 0.2s ease;
+}
 
-/* Ensure all table headers are uppercase across the app */
+/* Solo aparece cuando se usa la tecla Tab (navegación por teclado) */
+.skip-link:focus {
+  top: 0;
+}
+
+/* ============================================================
+   Ensure all table headers are uppercase across the app
+   (Lo que agregó tu compañera, déjalo aquí)
+   ============================================================ */
 th,
 .table th,
 .vinculacion-table th,
@@ -9,6 +29,7 @@ th,
   text-transform: uppercase !important;
   letter-spacing: 0.5px;
 }
+
 /* ============================================================
    SGPI - FONDOS VIE (TEC) - SISTEMA DE DISEÑO OFICIAL
    ============================================================ */
