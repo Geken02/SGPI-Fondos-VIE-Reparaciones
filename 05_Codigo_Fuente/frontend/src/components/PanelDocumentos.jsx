@@ -6,8 +6,6 @@ export default function PanelDocumentos({ propuestaId }) {
   const [documentos, setDocumentos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
-  
-  // Estado para controlar el visor universal
   const [docAbierto, setDocAbierto] = useState(null);
 
   useEffect(() => {
@@ -30,7 +28,6 @@ export default function PanelDocumentos({ propuestaId }) {
     }
   }, [propuestaId]);
 
-  // Mapeo de tipos de documento para mostrar nombres amigables
   const tiposMap = {
     1: 'Form-04 (Formulario de Proyecto)',
     2: 'Form-05 (Plan de Acción y Riesgos)',
@@ -39,9 +36,8 @@ export default function PanelDocumentos({ propuestaId }) {
     5: 'Aval de Comité Ético'
   };
 
-  // Detectar tipo de archivo por extensión
   const detectarTipoArchivo = (nombreArchivo, url) => {
-    const texto = (nombreArchivo || url || '').toLowerCase();
+    const texto = ((nombreArchivo || '') + ' ' + (url || '')).toLowerCase();
     if (texto.includes('.pdf')) return 'pdf';
     if (texto.includes('.docx') || texto.includes('.doc')) return 'docx';
     if (texto.includes('.xlsx') || texto.includes('.xls') || texto.includes('.csv')) return 'excel';
@@ -49,11 +45,14 @@ export default function PanelDocumentos({ propuestaId }) {
     return 'otro';
   };
 
-  // Obtener ícono según tipo de archivo
   const obtenerIconoDocumento = (tipo) => {
     const color = '#002855';
-    const baseProps = { width: "22", height: "22", viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" };
-    
+    const baseProps = {
+      width: "22", height: "22", viewBox: "0 0 24 24", fill: "none",
+      stroke: color, strokeWidth: "2", strokeLinecap: "round",
+      strokeLinejoin: "round", "aria-hidden": "true"
+    };
+
     switch (tipo) {
       case 'pdf':
         return (
@@ -92,18 +91,18 @@ export default function PanelDocumentos({ propuestaId }) {
     }
   };
 
-  // Abrir visor universal
+  // ✅ CORRECCIÓN: Solo usamos urlDescarga (la URL pública de Supabase)
+  // El proxy urlVerEnLinea ya no se usa porque no existe en el backend.
   const abrirVisor = (doc) => {
-   
-    const url = doc.urlDescarga; 
+    const url = doc.urlDescarga;
 
     if (!url) {
-      alert('Este documento no tiene una URL de descarga disponible.');
+      alert('Este documento no tiene un archivo asociado.');
       return;
     }
 
     const tipo = detectarTipoArchivo(doc.nombreArchivo, url);
-    
+
     setDocAbierto({
       url,
       titulo: doc.nombreArchivo || tiposMap[doc.tipoDocumentoId] || 'Documento',
@@ -114,17 +113,25 @@ export default function PanelDocumentos({ propuestaId }) {
   if (cargando) {
     return (
       <div className="panel-documentos" style={{ padding: '20px' }}>
-        <h3 className="panel-titulo" style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>Expediente de la Propuesta</h3>
-        <div style={{ textAlign: 'center', color: '#64748b' }}>Cargando documentos...</div>
+        <h3 className="panel-titulo" style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#002855' }}>
+          Expediente de la Propuesta
+        </h3>
+        <div style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>
+          Cargando documentos...
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="panel-documentos" style={{ padding: '20px', color: '#991b1b' }}>
-        <h3 className="panel-titulo" style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>Expediente de la Propuesta</h3>
-        <p>{error}</p>
+      <div className="panel-documentos" style={{ padding: '20px' }}>
+        <h3 className="panel-titulo" style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#002855' }}>
+          Expediente de la Propuesta
+        </h3>
+        <div style={{ background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b', padding: '16px', borderRadius: '8px' }}>
+          <p style={{ margin: 0 }}>{error}</p>
+        </div>
       </div>
     );
   }
@@ -145,18 +152,17 @@ export default function PanelDocumentos({ propuestaId }) {
             {documentos.map((doc) => {
               const nombreDocumento = tiposMap[doc.tipoDocumentoId] || `Documento tipo ${doc.tipoDocumentoId}`;
               const tipoArchivo = detectarTipoArchivo(doc.nombreArchivo, doc.urlDescarga);
-              const url = doc.urlVerEnLinea || doc.urlDescarga;
 
               return (
-                <div 
-                  key={doc.documentoId} 
-                  className="documento-item" 
-                  style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    gap: '10px', 
-                    padding: '14px', 
-                    border: '1px solid #e2e8f0', 
+                <div
+                  key={doc.documentoId}
+                  className="documento-item"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                    padding: '14px',
+                    border: '1px solid #e2e8f0',
                     borderRadius: '8px',
                     background: '#ffffff'
                   }}
@@ -174,15 +180,10 @@ export default function PanelDocumentos({ propuestaId }) {
                           {doc.nombreArchivo}
                         </span>
                       )}
-                      {doc.fechaSubida && (
-                        <span className="documento-fecha" style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
-                          Subido: {new Date(doc.fechaSubida).toLocaleDateString('es-CR')}
-                        </span>
-                      )}
                     </div>
                   </div>
 
-                  {url && (
+                  {doc.urlDescarga && (
                     <div className="documento-acciones" style={{ display: 'flex', gap: '8px' }}>
                       <button
                         className="btn-ver-doc"
@@ -206,9 +207,10 @@ export default function PanelDocumentos({ propuestaId }) {
                       >
                         👁️ Ver
                       </button>
+                      {/* ✅ CORRECCIÓN: href usa doc.urlDescarga directamente, no la variable url */}
                       <a
-                        href={url}
-                        download
+                        href={doc.urlDescarga}
+                        download={doc.nombreArchivo || true}
                         className="btn-descargar-directo"
                         aria-label={`Descargar ${nombreDocumento}`}
                         style={{
@@ -238,61 +240,55 @@ export default function PanelDocumentos({ propuestaId }) {
         )}
       </div>
 
-      {/* MODAL DEL VISOR UNIVERSAL */}
+      {/* Modal del Visor Universal */}
       {docAbierto && (
-        <div 
-          className="modal-overlay" 
-          onClick={() => setDocAbierto(null)} 
-          style={{ 
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-            background: 'rgba(0,0,0,0.85)', zIndex: 9999, 
-            display: 'flex', justifyContent: 'center', alignItems: 'center',
-            padding: '20px'
-          }}
+        <div
+          className="modal-overlay"
+          onClick={() => setDocAbierto(null)}
           role="dialog"
           aria-modal="true"
           aria-label={`Visor de documento: ${docAbierto.titulo}`}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.85)', zIndex: 9999,
+            display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px'
+          }}
         >
-          <div 
-            className="modal-content" 
-            onClick={(e) => e.stopPropagation()} 
-            style={{ 
-              background: 'white', width: '95%', maxWidth: '1000px', height: '90vh', 
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'white', width: '95%', maxWidth: '1000px', height: '90vh',
               borderRadius: '12px', display: 'flex', flexDirection: 'column',
               overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
             }}
           >
-            {/* Header del Modal */}
-            <div style={{ 
-              padding: '16px 24px', borderBottom: '1px solid #e2e8f0', 
+            <div style={{
+              padding: '16px 24px', borderBottom: '1px solid #e2e8f0',
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               background: '#f8fafc'
             }}>
               <h3 style={{ margin: 0, fontSize: '16px', color: '#002855', fontWeight: '600' }}>
                 {docAbierto.titulo}
               </h3>
-              <button 
-                onClick={() => setDocAbierto(null)} 
+              <button
+                onClick={() => setDocAbierto(null)}
                 aria-label="Cerrar visor"
-                style={{ 
-                  background: 'none', border: 'none', fontSize: '24px', 
+                style={{
+                  background: 'none', border: 'none', fontSize: '24px',
                   cursor: 'pointer', color: '#64748b', width: '36px', height: '36px',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   borderRadius: '50%'
                 }}
-                onMouseEnter={(e) => { e.target.style.background = '#fee2e2'; e.target.style.color = '#dc2626'; }}
-                onMouseLeave={(e) => { e.target.style.background = 'none'; e.target.style.color = '#64748b'; }}
               >
                 ✕
               </button>
             </div>
 
-            {/* Contenido del Visor */}
             <div style={{ flex: 1, overflow: 'auto', background: '#f1f5f9' }}>
-              <UniversalViewer 
-                url={docAbierto.url} 
-                titulo={docAbierto.titulo} 
-                tipoArchivo={docAbierto.tipo} 
+              <UniversalViewer
+                url={docAbierto.url}
+                tipoArchivo={docAbierto.tipo}
               />
             </div>
           </div>
