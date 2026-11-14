@@ -1,4 +1,4 @@
-import PdfViewer from './PdfViewer';
+import PdfViewer from './PDFViewer';
 import DocxViewer from './DocxViewer';
 import ExcelViewer from './ExcelViewer';
 
