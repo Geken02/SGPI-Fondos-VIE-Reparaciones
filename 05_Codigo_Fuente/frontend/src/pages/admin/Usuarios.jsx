@@ -241,7 +241,7 @@ export default function Usuarios() {
 
       <nav className="breadcrumbs" aria-label="Ruta de navegación">
         <ol className="breadcrumbs-list">
-          <li><Link to="/dashboard">Comité técnico</Link></li>
+          <li><Link to="/dashboard">Inicio</Link></li>
           <li className="breadcrumb-separator" aria-hidden="true">›</li>
           <li aria-current="page">Gestión de Usuarios y Roles</li>
         </ol>

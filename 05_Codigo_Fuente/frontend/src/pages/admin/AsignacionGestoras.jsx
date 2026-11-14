@@ -15,7 +15,6 @@ export default function AsignacionGestoras() {
   const [guardando, setGuardando] = useState(false);
   const [toast, setToast] = useState(null);
   const [todasEscuelas, setTodasEscuelas] = useState([]);
-  // ✅ NUEVO: mensaje de feedback para lectores de pantalla al mover escuelas
   const [anuncio, setAnuncio] = useState('');
 
   useEffect(() => {
@@ -107,7 +106,6 @@ export default function AsignacionGestoras() {
       prev.filter(e => !escuelasSeleccionadas.includes(e.escuelaId))
     );
     setEscuelasSeleccionadas([]);
-    // ✅ NUEVO: anuncia el movimiento al lector de pantalla
     setAnuncio(`Se movieron ${escuelasAMover.length} ${escuelasAMover.length === 1 ? 'escuela a' : 'escuelas a'} asignadas. Total de asignadas: ${escuelasAsignadas.length + escuelasAMover.length}.`);
   };
 
@@ -116,7 +114,6 @@ export default function AsignacionGestoras() {
     if (escuela) {
       setEscuelasDisponibles(prev => [...prev, escuela]);
       setEscuelasAsignadas(prev => prev.filter(e => e.escuelaId !== escuelaId));
-      // ✅ NUEVO: anuncia la remoción
       setAnuncio(`Se quitó ${escuela.nombreEscuela} de las asignadas. Total de asignadas: ${escuelasAsignadas.length - 1}.`);
     }
   };
@@ -194,14 +191,13 @@ export default function AsignacionGestoras() {
         </div>
       )}
 
-      {/* ✅ Región de anuncio silenciosa pero leída por el narrador */}
       <div className="sr-only" role="status" aria-live="polite">
         {anuncio}
       </div>
 
       <nav className="breadcrumbs" aria-label="Ruta de navegación">
         <ol className="breadcrumbs-list">
-          <li><Link to="/dashboard">Comité técnico</Link></li>
+          <li><Link to="/dashboard">Inicio</Link></li>
           <li className="breadcrumb-separator" aria-hidden="true">›</li>
           <li aria-current="page">Asignación de Escuelas a Gestoras VIE</li>
         </ol>

@@ -160,8 +160,11 @@
 
 .stat-label {
   font-size: 14px;
-  color: var(--color-texto-secundario);
-  margin-bottom: 12px;
+  color: #475569;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.4;
 }
 
 .stat-progress {

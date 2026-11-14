@@ -254,7 +254,7 @@ export default function Convocatoria() {
 
       <nav className="breadcrumbs" aria-label="Ruta de navegación">
         <ol className="breadcrumbs-list">
-          <li><Link to="/dashboard">Comité técnico</Link></li>
+         <li><Link to="/dashboard">Inicio</Link></li>
           <li className="breadcrumb-separator" aria-hidden="true">›</li>
           <li aria-current="page">Configuración de Convocatoria</li>
         </ol>
