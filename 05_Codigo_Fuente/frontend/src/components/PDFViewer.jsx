@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 
-// ✅ Importación corregida para evitar errores de Rolldown/Vite 6
+// ✅ Importaciones de CSS corregidas para Vite/Rolldown
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-// ✅ SOLUCIÓN DEFINITIVA: Versión fija y estable en el CDN
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js`;
+// ✅ SOLUCIÓN DEFINITIVA PARA VITE + VERCEL:
+// Le decimos a Vite que busque el worker en sus propios paquetes, 
+// eliminando por completo el riesgo de errores 404 de CDNs externos.
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 export default function PDFViewer({ url, titulo, onClose }) {
   const [numPages, setNumPages] = useState(null);
@@ -62,7 +67,7 @@ export default function PDFViewer({ url, titulo, onClose }) {
                 </div>
               }
               options={{
-                cMapUrl: `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/cmaps/`,
+                cMapUrl: `//unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
                 cMapPacked: true,
               }}
             >
