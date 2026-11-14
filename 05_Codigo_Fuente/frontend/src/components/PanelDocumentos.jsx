@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { comiteTecnicoService } from '../services/comiteTecnicoService';
-import PDFViewer from './PDFViewer'; // Asegúrate de que PDFViewer.jsx esté en la misma carpeta
+import PDFViewer from './PDFViewer';
 
 export default function PanelDocumentos({ propuestaId }) {
   const [documentos, setDocumentos] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [pdfAbierto, setPdfAbierto] = useState(null); // { url: string, titulo: string }
+  const [pdfAbierto, setPdfAbierto] = useState(null);
 
   useEffect(() => {
     const cargar = async () => {
@@ -24,7 +24,6 @@ export default function PanelDocumentos({ propuestaId }) {
     }
   }, [propuestaId]);
 
-  // Mapeo profesional sin emojis
   const tiposMap = {
     1: 'Form-04 (Formulario de Proyecto)',
     2: 'Form-05 (Plan de Acción y Riesgos)',
@@ -33,7 +32,6 @@ export default function PanelDocumentos({ propuestaId }) {
     5: 'Aval de Comité Ético'
   };
 
-  // Icono SVG profesional y limpio para documentos
   const DocumentIcon = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#002855' }} aria-hidden="true">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -80,58 +78,59 @@ export default function PanelDocumentos({ propuestaId }) {
                     </div>
                   </div>
                   
-                  {doc.urlDescarga && (
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                      {/* ✅ Botón para ver en línea (abre el modal) */}
-                      <button 
-                        className="btn-ver-pdf-inline"
-                        onClick={() => setPdfAbierto({ url: doc.urlDescarga, titulo: nombreDocumento })}
-                        aria-label={`Ver ${nombreDocumento} en línea`}
-                        style={{ 
-                          flex: 1, 
-                          padding: '6px 12px', 
-                          background: '#002855', 
-                          color: 'white', 
-                          border: 'none', 
-                          borderRadius: '6px', 
-                          cursor: 'pointer', 
-                          fontSize: '13px',
-                          fontWeight: '600',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '4px'
-                        }}
-                      >
-                        👁️ Ver
-                      </button>
-                      
-                      {/* ✅ Enlace para descargar directamente */}
-                      <a 
-                        href={doc.urlDescarga} 
-                        className="btn-descargar-directo"
-                        download
-                        aria-label={`Descargar ${nombreDocumento}`}
-                        style={{ 
-                          flex: 1,
-                          padding: '6px 12px', 
-                          background: '#f1f5f9', 
-                          color: '#334155', 
-                          borderRadius: '6px', 
-                          textDecoration: 'none', 
-                          fontSize: '13px',
-                          fontWeight: '600',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '4px',
-                          transition: 'background 0.2s'
-                        }}
-                      >
-                        ⬇️ Descargar
-                      </a>
-                    </div>
-                  )}
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                    {/* ✅ Botón para ver en línea (usa el proxy del backend) */}
+                    <button 
+                      className="btn-ver-pdf-inline"
+                      onClick={() => setPdfAbierto({ 
+                        url: doc.urlVerEnLinea,  // ← CAMBIADO: usa urlVerEnLinea
+                        titulo: nombreDocumento 
+                      })}
+                      aria-label={`Ver ${nombreDocumento} en línea`}
+                      style={{ 
+                        flex: 1, 
+                        padding: '6px 12px', 
+                        background: '#002855', 
+                        color: 'white', 
+                        border: 'none', 
+                        borderRadius: '6px', 
+                        cursor: 'pointer', 
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      👁️ Ver
+                    </button>
+                    
+                    {/* ✅ Enlace para descargar directamente (usa URL pública) */}
+                    <a 
+                      href={doc.urlDescarga}  // ← MANTIENE: usa urlDescarga para descargar
+                      className="btn-descargar-directo"
+                      download
+                      aria-label={`Descargar ${nombreDocumento}`}
+                      style={{ 
+                        flex: 1,
+                        padding: '6px 12px', 
+                        background: '#f1f5f9', 
+                        color: '#334155', 
+                        borderRadius: '6px', 
+                        textDecoration: 'none', 
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                        transition: 'background 0.2s'
+                      }}
+                    >
+                      ⬇️ Descargar
+                    </a>
+                  </div>
                 </div>
               );
             })}
@@ -139,7 +138,7 @@ export default function PanelDocumentos({ propuestaId }) {
         )}
       </div>
 
-      {/* ✅ Modal del Visor de PDF (se renderiza condicionalmente) */}
+      {/* Modal del Visor de PDF */}
       {pdfAbierto && (
         <PDFViewer 
           url={pdfAbierto.url} 
