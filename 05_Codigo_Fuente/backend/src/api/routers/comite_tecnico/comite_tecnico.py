@@ -426,9 +426,12 @@ def obtener_estructura_rubrica(propuesta_id: int, db: Session = Depends(get_db),
         print(f"ERROR en obtener_estructura_rubrica: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
-
 @router.get("/evaluador/{propuesta_id}/documentos")
-def obtener_documentos_propuesta(propuesta_id: int, db: Session = Depends(get_db), usuario: Usuario = Depends(obtener_usuario_actual)):
+def obtener_documentos_propuesta(
+    propuesta_id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obtener_usuario_actual)
+):
     try:
         # Verificar que el evaluador tenga asignada esta propuesta
         asignacion = db.query(AsignacionComite).filter(
@@ -440,15 +443,26 @@ def obtener_documentos_propuesta(propuesta_id: int, db: Session = Depends(get_db
         if not asignacion:
             raise HTTPException(status_code=403, detail="No tiene asignada esta propuesta")
         
-        documentos = db.query(PropuestaDocumentos).filter(PropuestaDocumentos.propuestaId == propuesta_id, PropuestaDocumentos.activo == True).all()
-        documentos_data = [{
-            "documentoId": doc.documentoId, 
-            "tipoDocumentoId": doc.tipoDocumentoId, 
-            "nombreArchivo": doc.nombreArchivo or f"Documento_{doc.tipoDocumentoId}", 
-            "urlDescarga": obtener_url_documento(doc.rutaArchivo)
-        } for doc in documentos]
+        documentos = db.query(PropuestaDocumentos).filter(
+            PropuestaDocumentos.propuestaId == propuesta_id,
+            PropuestaDocumentos.activo == True
+        ).all()
         
-        return {"propuestaId": propuesta_id, "documentos": documentos_data, "total": len(documentos_data)}
+        documentos_data = []
+        for doc in documentos:
+            documentos_data.append({
+                "documentoId": doc.documentoId,
+                "tipoDocumentoId": doc.tipoDocumentoId,
+                "nombreArchivo": doc.nombreArchivo or f"Documento_{doc.tipoDocumentoId}",
+                "urlDescarga": obtener_url_documento(doc.rutaArchivo),  # Para descargar
+                "urlVerEnLinea": f"/api/documentos/{doc.documentoId}/ver" 
+            })
+        
+        return {
+            "propuestaId": propuesta_id,
+            "documentos": documentos_data,
+            "total": len(documentos_data)
+        }
     except HTTPException:
         raise
     except Exception as e:
