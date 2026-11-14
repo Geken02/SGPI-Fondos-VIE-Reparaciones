@@ -1,50 +1,29 @@
-import PdfViewer from './PDFViewer';
+import PDFViewer from './PDFViewer';
 import DocxViewer from './DocxViewer';
 import ExcelViewer from './ExcelViewer';
 
-export default function UniversalViewer({ url, titulo, tipoArchivo }) {
-  // Detectar extensión si no se pasa el tipo explícitamente
+export default function UniversalViewer({ url, tipoArchivo }) {
   const extension = tipoArchivo || (url ? url.split('.').pop().toLowerCase().split('?')[0] : '');
 
   const renderizarVisor = () => {
-    // PDF
-    if (['pdf'].includes(extension)) {
-      return <PdfViewer url={url} titulo={titulo} />;
-    }
-    // Word
-    if (['doc', 'docx'].includes(extension)) {
-      return <DocxViewer url={url} titulo={titulo} />;
-    }
-    // Excel
-    if (['xls', 'xlsx', 'csv'].includes(extension)) {
-      return <ExcelViewer url={url} titulo={titulo} />;
-    }
-    // Imagen (Respaldo)
-    if (['png', 'jpg', 'jpeg', 'gif'].includes(extension)) {
-      return <img src={url} alt={titulo} style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }} />;
-    }
-    
+    if (extension === 'pdf') return <PDFViewer url={url} />;
+    if (['doc', 'docx'].includes(extension)) return <DocxViewer url={url} />;
+    if (['xls', 'xlsx', 'csv'].includes(extension)) return <ExcelViewer url={url} />;
+    if (['png', 'jpg', 'jpeg', 'gif'].includes(extension)) return <img src={url} alt="Imagen" style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain', display: 'block', margin: '0 auto' }} />;
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
-        <p>Vista previa no disponible para este tipo de archivo.</p>
-        <a href={url} download className="btn-descargar" style={{ color: 'blue', textDecoration: 'underline' }}>
-          Descargar archivo para verlo
-        </a>
+        <p>Vista previa no disponible para <strong>.{extension}</strong>.</p>
+        <a href={url} download style={{ color: '#002855', textDecoration: 'underline', fontWeight: 600 }}>⬇️ Descargar archivo</a>
       </div>
     );
   };
 
   return (
-    <div className="visor-universal-container" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div className="visor-header" style={{ padding: '10px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ margin: 0, fontSize: '16px', color: '#002855' }}>{titulo || 'Documento'}</h3>
-        <span className="badge-tipo" style={{ background: '#e2e8f0', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>
-          {extension.toUpperCase()}
-        </span>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{ padding: '8px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end' }}>
+        <span style={{ background: '#e2e8f0', padding: '3px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, color: '#334155', textTransform: 'uppercase' }}>{extension || 'DOC'}</span>
       </div>
-      <div className="visor-content" style={{ flex: 1, overflow: 'auto' }}>
-        {renderizarVisor()}
-      </div>
+      <div style={{ flex: 1, overflow: 'auto', background: '#f1f5f9' }}>{renderizarVisor()}</div>
     </div>
   );
 }
