@@ -14,8 +14,9 @@ const InvestigadorDashboard = () => {
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroEscuela, setFiltroEscuela] = useState('Todas');
   const [filtroEstado, setFiltroEstado] = useState('Todos');
+  const [convocatoriaCercana, setConvocatoriaCercana] = useState(null);
 
-  const formatearFechaCierre = (fechaStr) => {
+    const formatearFechaCierre = (fechaStr) => {
     if (!fechaStr) return 'Por definir';
     try {
       const [year, month, day] = fechaStr.split('-');
@@ -38,7 +39,6 @@ const InvestigadorDashboard = () => {
       const lista = dataCatalogos?.convocatorias || [];
       const ahora = new Date();
 
-      // Mapear y ordenar por fecha de cierre más próxima
       const ordenadas = lista
         .filter(c => c && c.nombreConvocatoria)
         .map(c => {
@@ -57,7 +57,6 @@ const InvestigadorDashboard = () => {
           };
         })
         .sort((a, b) => {
-          // Primero las abiertas ordenadas por fecha más cercana, luego las cerradas
           if (a.diffMs >= 0 && b.diffMs >= 0) return a.diffMs - b.diffMs;
           if (a.diffMs >= 0) return -1;
           if (b.diffMs >= 0) return 1;
@@ -67,19 +66,10 @@ const InvestigadorDashboard = () => {
       if (ordenadas.length > 0) {
         setConvocatoriaCercana(ordenadas[0]);
       } else {
-        // Fallback institucional en caso de no haber datos en BD
-        setConvocatoriaCercana({
-          id: 1,
-          nombre: 'Convocatoria Ordinaria VIE 2026',
-          fechaCierre: '2026-11-30'
-        });
+        setConvocatoriaCercana(null);
       }
     } catch (_err) {
-      setConvocatoriaCercana({
-        id: 1,
-        nombre: 'Convocatoria Ordinaria VIE 2026',
-        fechaCierre: '2026-11-30'
-      });
+      setConvocatoriaCercana(null);
     }
   };
 
@@ -98,6 +88,7 @@ const InvestigadorDashboard = () => {
 
   useEffect(() => {
     cargarPropuestas();
+    cargarConvocatoriaMasCercana();
 
     // Actualizar cuando se crea una nueva propuesta desde el modal flotante
     const handlePropuestaCreada = () => {
@@ -117,15 +108,52 @@ const InvestigadorDashboard = () => {
     const texto = (p.titulo || '') + ' ' + (p.codigoPropuesta || '');
     const cumpleTexto = texto.toLowerCase().includes(filtroTexto.toLowerCase());
     const cumpleEscuela = filtroEscuela === 'Todas' || (p.escuela || p.nombreEscuela || '').includes(filtroEscuela);
-    const cumpleEstado = filtroEstado === 'Todos' || (p.estado || p.nombreEstado || p.estadoBadge || '').includes(filtroEstado);
+    const cumpleEstado = filtroEstado === 'Todos' || (() => {
+      const nom = (p.estado || p.nombreEstado || p.estadoBadge || '').toLowerCase();
+      if (filtroEstado === 'En proceso') {
+        return p.estadoId !== 7 && p.estadoId !== 8 && p.estadoId !== 9;
+      }
+      if (filtroEstado === 'Aprobada') {
+        return p.estadoId === 7 || nom.includes('aprob');
+      }
+      if (filtroEstado === 'Rechazada') {
+        return p.estadoId === 8 || nom.includes('rechaz');
+      }
+      if (filtroEstado === 'Cancelada') {
+        return p.estadoId === 9 || nom.includes('cancel');
+      }
+      return nom.includes(filtroEstado.toLowerCase());
+    })();
     return cumpleTexto && cumpleEscuela && cumpleEstado;
   });
 
-  // Métricas reales del usuario (en 0 para usuario nuevo)
+  // Métricas de estado para el gráfico y KPIs:
+  // - Cancelada: Estado 9 o nombre conteniendo "cancelad"
+  // - Aprobada: Estado 7 o nombre conteniendo "aprobad"
+  // - Rechazada: Estado 8 o nombre conteniendo "rechazad"
+  // - En proceso: Cualquier otro estado (Borrador, Enviada, Vinculación, En Comité, Subsanación, etc.)
   const totalPropuestas = listaPropuestas.length;
-  const enRevision = listaPropuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('revis') || p.estadoId === 2).length;
-  const aprobadas = listaPropuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('aprob') || p.estadoId === 5).length;
-  const rechazadas = listaPropuestas.filter((p) => (p.nombreEstado || '').toLowerCase().includes('rechaz')).length;
+
+  const canceladas = listaPropuestas.filter((p) =>
+    p.estadoId === 9 || (p.nombreEstado || '').toLowerCase().includes('cancelad')
+  ).length;
+
+  const aprobadas = listaPropuestas.filter((p) =>
+    (p.estadoId === 7 || (p.nombreEstado || '').toLowerCase().includes('aprobad')) &&
+    p.estadoId !== 9 && !(p.nombreEstado || '').toLowerCase().includes('cancelad')
+  ).length;
+
+  const rechazadas = listaPropuestas.filter((p) =>
+    (p.estadoId === 8 || (p.nombreEstado || '').toLowerCase().includes('rechazad')) &&
+    p.estadoId !== 9 && !(p.nombreEstado || '').toLowerCase().includes('cancelad')
+  ).length;
+
+  const enProceso = Math.max(0, totalPropuestas - (aprobadas + rechazadas + canceladas));
+
+  const pctProceso = totalPropuestas > 0 ? (enProceso / totalPropuestas) * 100 : 0;
+  const pctAprobadas = totalPropuestas > 0 ? (aprobadas / totalPropuestas) * 100 : 0;
+  const pctRechazadas = totalPropuestas > 0 ? (rechazadas / totalPropuestas) * 100 : 0;
+  const pctCanceladas = totalPropuestas > 0 ? (canceladas / totalPropuestas) * 100 : 0;
 
   const fondosAsignados = listaPropuestas.length > 0 
     ? `₡ ${listaPropuestas.reduce((acc, curr) => acc + (parseFloat(curr.montoTotal) || 0), 0).toLocaleString('es-CR')}` 
@@ -171,7 +199,14 @@ const InvestigadorDashboard = () => {
             <div className="kpi-donut-layout">
               {/* Gráfico Donut SVG */}
               <div className="donut-chart-wrapper">
-                <svg viewBox="0 0 36 36" className="donut-svg">
+                <svg 
+                  viewBox="0 0 36 36" 
+                  className="donut-svg"
+                  role="img"
+                  aria-label={`Gráfico de estado de propuestas. Total: ${totalPropuestas}. En proceso: ${enProceso}, Aprobadas: ${aprobadas}, Rechazadas: ${rechazadas}, Canceladas: ${canceladas}`}
+                >
+                  <title>Distribución de estados de propuestas</title>
+                  <desc>{`Gráfico circular que muestra un total de ${totalPropuestas} propuestas: ${enProceso} en proceso, ${aprobadas} aprobadas, ${rechazadas} rechazadas y ${canceladas} canceladas.`}</desc>
                   {/* Pista circular de fondo */}
                   <path
                     className="donut-bg-track"
@@ -179,27 +214,42 @@ const InvestigadorDashboard = () => {
                   />
                   {totalPropuestas > 0 ? (
                     <>
-                      {/* Segmento 1: En revisión */}
-                      <path
-                        className="donut-segment segment-revision"
-                        strokeDasharray={`${(enRevision / totalPropuestas) * 100}, 100`}
-                        strokeDashoffset="25"
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
-                      {/* Segmento 2: Aprobadas */}
-                      <path
-                        className="donut-segment segment-aprobadas"
-                        strokeDasharray={`${(aprobadas / totalPropuestas) * 100}, 100`}
-                        strokeDashoffset={`${25 - (enRevision / totalPropuestas) * 100}`}
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
-                      {/* Segmento 3: Rechazadas */}
-                      <path
-                        className="donut-segment segment-rechazadas"
-                        strokeDasharray={`${(rechazadas / totalPropuestas) * 100}, 100`}
-                        strokeDashoffset={`${25 - ((enRevision + aprobadas) / totalPropuestas) * 100}`}
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
+                      {/* Segmento 1: En proceso (todo lo que no es 7, 8 ni 9) */}
+                      {enProceso > 0 && (
+                        <path
+                          className="donut-segment segment-revision"
+                          strokeDasharray={`${pctProceso}, 100`}
+                          strokeDashoffset="25"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      )}
+                      {/* Segmento 2: Aprobadas (Estado 7) */}
+                      {aprobadas > 0 && (
+                        <path
+                          className="donut-segment segment-aprobadas"
+                          strokeDasharray={`${pctAprobadas}, 100`}
+                          strokeDashoffset={`${25 - pctProceso}`}
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      )}
+                      {/* Segmento 3: Rechazadas (Estado 8) */}
+                      {rechazadas > 0 && (
+                        <path
+                          className="donut-segment segment-rechazadas"
+                          strokeDasharray={`${pctRechazadas}, 100`}
+                          strokeDashoffset={`${25 - (pctProceso + pctAprobadas)}`}
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      )}
+                      {/* Segmento 4: Canceladas (Estado 9) */}
+                      {canceladas > 0 && (
+                        <path
+                          className="donut-segment segment-canceladas"
+                          strokeDasharray={`${pctCanceladas}, 100`}
+                          strokeDashoffset={`${25 - (pctProceso + pctAprobadas + pctRechazadas)}`}
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      )}
                     </>
                   ) : (
                     <path
@@ -213,18 +263,22 @@ const InvestigadorDashboard = () => {
               </div>
 
               {/* Leyenda */}
-              <div className="kpi-legend">
+              <div className="kpi-legend" aria-label="Leyenda de estados">
                 <div className="kpi-legend-row">
-                  <span className="dot dot-cyan"></span>
-                  <span className="legend-text"><strong>{enRevision}</strong> En revisión</span>
+                  <span className="dot dot-cyan" aria-hidden="true" style={{ background: '#0284c7', backgroundColor: '#0284c7' }}></span>
+                  <span className="legend-text"><strong>{enProceso}</strong> En proceso</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-dark"></span>
+                  <span className="dot dot-dark" aria-hidden="true" style={{ background: '#002855', backgroundColor: '#002855' }}></span>
                   <span className="legend-text"><strong>{aprobadas}</strong> Aprobadas</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-coral"></span>
-                  <span className="legend-text"><strong>{rechazadas}</strong> Rechazadas/Corr.</span>
+                  <span className="dot dot-coral" aria-hidden="true" style={{ background: '#EF3340', backgroundColor: '#EF3340' }}></span>
+                  <span className="legend-text"><strong>{rechazadas}</strong> Rechazadas</span>
+                </div>
+                <div className="kpi-legend-row">
+                  <span className="dot dot-gray" aria-hidden="true" style={{ background: '#94a3b8', backgroundColor: '#94a3b8' }}></span>
+                  <span className="legend-text"><strong>{canceladas}</strong> Canceladas</span>
                 </div>
               </div>
             </div>
@@ -281,7 +335,7 @@ const InvestigadorDashboard = () => {
             {/* Barra de Filtros */}
             <div className="proposals-filters-bar">
               <div className="filter-search-box">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <circle cx="11" cy="11" r="8"></circle>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
@@ -301,6 +355,7 @@ const InvestigadorDashboard = () => {
                 value={filtroEscuela} 
                 onChange={(e) => setFiltroEscuela(e.target.value)}
                 className="filter-select"
+                aria-label="Filtrar propuestas por escuela"
               >
                 <option value="Todas">Escuela: Todas ▾</option>
                 <option value="Ingeniería Electrónica">Ingeniería Electrónica</option>
@@ -312,10 +367,13 @@ const InvestigadorDashboard = () => {
                 value={filtroEstado} 
                 onChange={(e) => setFiltroEstado(e.target.value)}
                 className="filter-select"
+                aria-label="Filtrar propuestas por estado"
               >
                 <option value="Todos">Estado: Todos ▾</option>
-                <option value="En revisión">En revisión</option>
+                <option value="En proceso">En proceso</option>
                 <option value="Aprobada">Aprobada</option>
+                <option value="Rechazada">Rechazada</option>
+                <option value="Cancelada">Cancelada</option>
                 <option value="Borrador">Borrador</option>
               </select>
             </div>
@@ -330,7 +388,7 @@ const InvestigadorDashboard = () => {
                     {/* Encabezado de la tarjeta con Badges */}
                     <div className="proposal-card-top">
                       <span className={`badge-status ${prop.tipoBadge || 'info'}`}>
-                        {prop.estadoBadge || prop.nombreEstado || 'BORRADOR'}
+                        {(prop.estadoId === 2 || prop.nombreEstado === 'Enviada a VIE' || prop.estadoBadge === 'Enviada a VIE') ? 'Enviada a Vinculación' : (prop.estadoBadge || prop.nombreEstado || 'BORRADOR')}
                       </span>
                       <span className="proposal-code">
                         {prop.codigoPropuesta}
@@ -387,7 +445,7 @@ const InvestigadorDashboard = () => {
                 /* Estado vacío para usuario nuevo sin propuestas */
                 <div className="proposals-empty-state">
                   <div className="empty-icon-circle">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0369A1" strokeWidth="1.5">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0369A1" strokeWidth="1.5" aria-hidden="true">
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                       <polyline points="14 2 14 8 20 8"></polyline>
                       <line x1="12" y1="18" x2="12" y2="12"></line>
@@ -420,24 +478,36 @@ const InvestigadorDashboard = () => {
             </div>
 
             <div className="quick-access-cards">
-              {/* Aviso 1: Convocatoria */}
-              <div 
-                className="quick-card"
-                onClick={() => alert('Información oficial de la Convocatoria Fondos VIE 2026. Cierre: 30 de Noviembre.')}
+              {/* Aviso 1: Convocatoria más cercana a cerrar */}
+              <button 
+                type="button"
+                className="quick-card quick-card-btn"
+                onClick={() => navigate('/dashboard/convocatorias')}
+                aria-label={convocatoriaCercana ? `${convocatoriaCercana.nombre}. Cierra el ${formatearFechaCierre(convocatoriaCercana.fechaCierre)}. Haga clic para consultar las bases.` : 'Ver convocatorias disponibles'}
               >
-                <div className="quick-card-icon">📅</div>
+                <div className="quick-card-icon" aria-hidden="true">📅</div>
                 <div className="quick-card-content">
-                  <div className="quick-card-title">Convocatoria VIE 2026</div>
-                  <div className="quick-card-sub">Cierra el 30 de Noviembre</div>
+                  <div className="quick-card-title">
+                    {convocatoriaCercana ? convocatoriaCercana.nombre : 'Convocatoria más cercana'}
+                  </div>
+                  <div className="quick-card-sub">
+                    {convocatoriaCercana?.fechaCierre 
+                      ? `Cierra el ${formatearFechaCierre(convocatoriaCercana.fechaCierre)}`
+                      : 'Sin fecha de cierre registrada'}
+                  </div>
                 </div>
-              </div>
+              </button>
 
               {/* Aviso 2: Plantillas */}
               <div 
                 className="quick-card"
+                role="button"
+                tabIndex={0}
+                aria-label="Plantillas de Presupuesto. Descargar formato oficial F02. Haga clic o presione Enter para descargar"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos VIE)...'); } }}
                 onClick={() => alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos VIE)...')}
               >
-                <div className="quick-card-icon">🧩</div>
+                <div className="quick-card-icon" aria-hidden="true">🧩</div>
                 <div className="quick-card-content">
                   <div className="quick-card-title">Plantillas de Presupuesto</div>
                   <div className="quick-card-sub">Descargar formato oficial F02</div>
@@ -447,9 +517,13 @@ const InvestigadorDashboard = () => {
               {/* Aviso 3: Reglamento */}
               <div 
                 className="quick-card"
+                role="button"
+                tabIndex={0}
+                aria-label="Reglamento de Investigación. Guía y normativa vigente. Haga clic o presione Enter para consultar"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alert('Abriendo Reglamento General de Investigación y Extensión del ITCR.'); } }}
                 onClick={() => alert('Abriendo Reglamento General de Investigación y Extensión del ITCR.')}
               >
-                <div className="quick-card-icon">📖</div>
+                <div className="quick-card-icon" aria-hidden="true">📖</div>
                 <div className="quick-card-content">
                   <div className="quick-card-title">Reglamento de Investigación</div>
                   <div className="quick-card-sub">Guía y normativa vigente</div>

@@ -131,7 +131,7 @@ const FormularioPresupuesto = () => {
 
   // Calcular subtotal de asistencia si aplica
   const ogActualObj = CATALOGO_OG.find(item => item.codigo === ogSeleccionado) || CATALOGO_OG[0];
-  const subtotalCalculado = ogActualObj.esAsistencia ? (numEstudiantes * horasMes * meses * 2400) : Number(String(montoManual || 0).replace(/\s+/g, ''));
+  const subtotalCalculado = ogActualObj.esAsistencia ? (numEstudiantes * horasMes * meses * 2400) : Number(montoManual || 0);
 
   // Filas del año activo
   const filasActuales = presupuestos[anoActivo] || [];
@@ -262,7 +262,7 @@ const FormularioPresupuesto = () => {
     window.dispatchEvent(new Event('propuestaCreada'));
 
     setTimeout(() => {
-      alert('¡Presupuesto Operativo (Formulario 06) enviado exitosamente a la VIE!');
+      alert('¡Presupuesto Operativo (Formulario 06) guardado exitosamente!');
       setGuardando(false);
       navigate('/dashboard/propuestas');
     }, 450);
@@ -476,13 +476,11 @@ Total Trienal Solicitado: ₡ ${Object.values(presupuestos).flat().reduce((a, b)
                 <div className="modal-form-group">
                   <LimitedInput 
                     label="Monto Estimado Solicitado (₡)"
-                    type="text"
-                    formatoMonto
-                    min="0"
+                    type="text" 
                     required
+                    formatoMonto={true}
                     showCounter={false}
                     className="modal-form-input"
-                    placeholder="0"
                     value={montoManual}
                     onChange={(e) => setMontoManual(e.target.value)}
                   />
@@ -511,7 +509,7 @@ Total Trienal Solicitado: ₡ ${Object.values(presupuestos).flat().reduce((a, b)
                   type="button" 
                   className="btn-proposal-action btn-outline"
                   onClick={() => {
-                    if (confirm('¿Está seguro de que desea cancelar? Los datos ingresados se perderán.')) {
+                    if (confirm('¿Está seguro de que desea cancelar? Se perderán los datos ingresados.')) {
                       setMostrarFormNuevaFila(false);
                     }
                   }}
