@@ -239,3 +239,89 @@
   outline-offset: 2px;
 }
 
+
+/* ==========================================================
+   MODO DE ALTO CONTRASTE - ACUERDOS DEL CONSEJO
+   ========================================================== */
+
+body.high-contrast-mode .acuerdos-consejo,
+body.high-contrast-mode .acuerdos-consejo h1,
+body.high-contrast-mode .acuerdos-consejo h2,
+body.high-contrast-mode .acuerdos-consejo h3,
+body.high-contrast-mode .acuerdos-consejo p,
+body.high-contrast-mode .acuerdos-consejo label,
+body.high-contrast-mode .acuerdos-consejo strong,
+body.high-contrast-mode .acuerdos-consejo .acuerdos-estado,
+body.high-contrast-mode .acuerdos-consejo .acuerdos-descripcion,
+body.high-contrast-mode .acuerdos-consejo .acuerdos-subtitulo {
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .acuerdos-consejo .acuerdos-panel,
+body.high-contrast-mode .acuerdos-consejo .acuerdos-tabla-contenedor {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+  box-shadow: none !important;
+}
+
+body.high-contrast-mode .acuerdos-consejo .acuerdos-tabla,
+body.high-contrast-mode .acuerdos-consejo .acuerdos-tabla tbody,
+body.high-contrast-mode .acuerdos-consejo .acuerdos-tabla tbody tr,
+body.high-contrast-mode .acuerdos-consejo .acuerdos-tabla td {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-color: #555555 !important;
+}
+
+body.high-contrast-mode .acuerdos-consejo .acuerdos-tabla th {
+  background: #1a1a1a !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+body.high-contrast-mode .acuerdos-consejo input,
+body.high-contrast-mode .acuerdos-consejo select,
+body.high-contrast-mode .acuerdos-consejo textarea {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+  color-scheme: dark;
+}
+
+body.high-contrast-mode .acuerdos-consejo input::placeholder,
+body.high-contrast-mode .acuerdos-consejo textarea::placeholder {
+  color: #cccccc !important;
+  opacity: 1;
+}
+
+body.high-contrast-mode .acuerdos-consejo .acuerdos-boton-principal,
+body.high-contrast-mode .acuerdos-consejo .acuerdos-boton-secundario {
+  background: #ffff00 !important;
+  color: #000000 !important;
+  border: 2px solid #ffffff !important;
+  font-weight: 700 !important;
+}
+
+body.high-contrast-mode .acuerdos-consejo .acuerdos-alerta-exito,
+body.high-contrast-mode .acuerdos-consejo .acuerdos-alerta.acuerdos-alerta-exito {
+  background: #003b16 !important;
+  color: #ffffff !important;
+  border-color: #00ff66 !important;
+}
+
+body.high-contrast-mode .acuerdos-consejo .acuerdos-alerta-error,
+body.high-contrast-mode .acuerdos-consejo .acuerdos-alerta.acuerdos-alerta-error {
+  background: #4a0000 !important;
+  color: #ffffff !important;
+  border-color: #ff7777 !important;
+}
+
+body.high-contrast-mode .acuerdos-consejo button:focus-visible,
+body.high-contrast-mode .acuerdos-consejo input:focus-visible,
+body.high-contrast-mode .acuerdos-consejo select:focus-visible,
+body.high-contrast-mode .acuerdos-consejo textarea:focus-visible {
+  outline: 3px solid #00ff00 !important;
+  outline-offset: 3px;
+}
+

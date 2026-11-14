@@ -253,3 +253,79 @@
   outline-offset: 3px;
 }
 
+body.high-contrast-mode .propuestas-consejo {
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .propuestas-consejo .pagina-encabezado h1,
+body.high-contrast-mode .propuestas-consejo .pagina-encabezado p {
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .propuestas-consejo .tabla-contenedor {
+  background: #000000 !important;
+  border: 1px solid #ffffff !important;
+}
+
+body.high-contrast-mode .propuestas-consejo .tabla-propuestas {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .propuestas-consejo .tabla-propuestas thead,
+body.high-contrast-mode .propuestas-consejo .tabla-propuestas th {
+  background: #1a1a1a !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+body.high-contrast-mode .propuestas-consejo .tabla-propuestas tbody tr,
+body.high-contrast-mode .propuestas-consejo .tabla-propuestas tbody td {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-color: #333333 !important;
+}
+
+body.high-contrast-mode .propuestas-consejo .tabla-propuestas tbody tr:hover {
+  background: #1a1a1a !important;
+}
+
+body.high-contrast-mode .propuestas-consejo .tabla-propuestas td button,
+body.high-contrast-mode .propuestas-consejo .pagina-encabezado button {
+  background: #ffff00 !important;
+  color: #000000 !important;
+  border: 2px solid #ffffff !important;
+  font-weight: 700 !important;
+}
+
+body.high-contrast-mode .propuestas-consejo .tabla-propuestas td button:hover,
+body.high-contrast-mode .propuestas-consejo .pagina-encabezado button:hover {
+  background: #cccc00 !important;
+}
+
+body.high-contrast-mode .propuestas-consejo .detalle-propuesta,
+body.high-contrast-mode .propuestas-consejo .mensaje-cargando,
+body.high-contrast-mode .propuestas-consejo .mensaje-vacio {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+}
+
+body.high-contrast-mode .propuestas-consejo .detalle-propuesta h2,
+body.high-contrast-mode .propuestas-consejo .detalle-propuesta p,
+body.high-contrast-mode .propuestas-consejo .detalle-propuesta strong,
+body.high-contrast-mode .propuestas-consejo .mensaje-vacio h3,
+body.high-contrast-mode .propuestas-consejo .mensaje-vacio p {
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .propuestas-consejo button:focus-visible {
+  outline: 3px solid #00ff00 !important;
+  outline-offset: 3px;
+}
+body.high-contrast-mode .propuestas-consejo .mensaje-error {
+  background: #4a0000 !important;
+  color: #ffffff !important;
+  border: 1px solid #ff7777 !important;
+}
+
