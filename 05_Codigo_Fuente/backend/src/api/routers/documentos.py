@@ -29,7 +29,7 @@ async def ver_documento_en_linea(
     try:
         response = s3_client.get_object(
             Bucket=S3_BUCKET_NAME,
-            Key=documento.rutaArchivo
+            Key=documento.rutaArchivo 
         )
         
         # Determinar Content-Type según la extensión

@@ -628,7 +628,7 @@ def crear_documento():
 
 def subir_y_guardar_en_bd(ruta_local):
     # Cambiado a la propuesta 13 para tus pruebas
-    ruta_s3 = "propuestas/13/Form-04.docx"
+    ruta_s3 = "propuestas/5/Form-04.docx"
     print(f"⬆ Subiendo a Supabase Storage: {ruta_s3} ...")
     
     try:
