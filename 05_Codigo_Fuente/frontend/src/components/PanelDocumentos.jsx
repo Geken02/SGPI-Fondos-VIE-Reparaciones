@@ -94,8 +94,16 @@ export default function PanelDocumentos({ propuestaId }) {
 
   // Abrir visor universal
   const abrirVisor = (doc) => {
-    const url = doc.urlVerEnLinea || doc.urlDescarga;
+   
+    const url = doc.urlDescarga; 
+
+    if (!url) {
+      alert('Este documento no tiene una URL de descarga disponible.');
+      return;
+    }
+
     const tipo = detectarTipoArchivo(doc.nombreArchivo, url);
+    
     setDocAbierto({
       url,
       titulo: doc.nombreArchivo || tiposMap[doc.tipoDocumentoId] || 'Documento',
