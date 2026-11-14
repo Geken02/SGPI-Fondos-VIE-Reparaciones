@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { renderAsync } from 'docx-preview';
+import { comiteTecnicoService } from '../services/comiteTecnicoService';
 
-export default function DocxViewer({ url, titulo, onClose }) {
-  const docContainerRef = useRef(null); // Contenedor interno donde se renderiza el Word
+export default function DocxViewer({ documentoId, titulo, onClose }) {
+  const docContainerRef = useRef(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -14,28 +15,19 @@ export default function DocxViewer({ url, titulo, onClose }) {
       setError(null);
 
       try {
-        const response = await fetch(url);
+        // ✅ 1. Usamos el servicio para obtener el Blob (incluye el token de auth automáticamente)
+        const blob = await comiteTecnicoService.obtenerArchivoDocumento(documentoId);
 
-        if (!response.ok) {
-          throw new Error(`El servidor respondió con error: ${response.status}`);
+        // ✅ 2. Verificar que realmente sea un archivo y no un error HTML disfrazado
+        if (blob.type && blob.type.includes('text/html')) {
+          throw new Error('El servidor devolvió una página de error en lugar del documento.');
         }
-
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('text/html')) {
-          throw new Error(
-            'El servidor devolvió HTML en lugar del documento. ' +
-            'Verifica que la ruta del archivo en la BD coincida con la de Supabase.'
-          );
-        }
-
-        const blob = await response.blob();
 
         if (blob.size === 0) {
           throw new Error('El archivo está vacío o no existe.');
         }
 
-        // ✅ CORRECCIÓN: Renderizar en el contenedor interno SIN limpiar manualmente
-        // renderAsync se encarga de reemplazar el contenido automáticamente
+        // ✅ 3. Renderizar el Blob directamente
         if (isMounted && docContainerRef.current) {
           await renderAsync(blob, docContainerRef.current, undefined, {
             className: "docx-wrapper",
@@ -45,13 +37,12 @@ export default function DocxViewer({ url, titulo, onClose }) {
             ignoreFonts: false,
             breakPages: true,
             trimXmlDeclaration: true,
-            useBase64URL: false,
           });
         }
       } catch (err) {
         console.error("Error cargando Word:", err);
         if (isMounted) {
-          setError(err.message);
+          setError(err.message || 'No se pudo cargar el documento.');
         }
       } finally {
         if (isMounted) {
@@ -60,18 +51,17 @@ export default function DocxViewer({ url, titulo, onClose }) {
       }
     };
 
-    if (url) {
+    if (documentoId) {
       cargarDocx();
     }
 
     return () => {
       isMounted = false;
-      // ✅ Limpieza segura: solo si el contenedor existe
       if (docContainerRef.current) {
         docContainerRef.current.innerHTML = '';
       }
     };
-  }, [url]);
+  }, [documentoId]);
 
   return (
     <div 
@@ -109,8 +99,7 @@ export default function DocxViewer({ url, titulo, onClose }) {
             style={{ 
               background: 'none', border: 'none', fontSize: '24px', 
               cursor: 'pointer', color: '#64748b', width: '36px', height: '36px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              borderRadius: '50%'
+              display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%'
             }}
           >
             ✕
@@ -133,52 +122,19 @@ export default function DocxViewer({ url, titulo, onClose }) {
                 <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '16px', wordBreak: 'break-word' }}>
                   {error}
                 </p>
-                <a 
-                  href={url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  download
-                  style={{ 
-                    display: 'inline-block', padding: '10px 20px', background: '#002855', 
-                    color: 'white', textDecoration: 'none', borderRadius: '6px', fontWeight: '600' 
-                  }}
-                >
-                  ⬇️ Intentar descargar directamente
-                </a>
               </div>
             </div>
           )}
 
-          {/* ✅ Contenedor interno dedicado para docx-preview */}
+          {/* Contenedor interno dedicado para docx-preview */}
           <div ref={docContainerRef} />
         </div>
       </div>
 
       <style>{`
         .docx-wrapper {
-          background: white;
-          padding: 40px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-          margin: 0 auto;
-          max-width: 800px;
-          min-height: 100%;
-          font-family: 'Calibri', 'Arial', sans-serif;
-        }
-        .high-contrast-mode .docx-modal-content {
-          background: #000000 !important;
-          border: 2px solid #ffffff !important;
-        }
-        .high-contrast-mode .docx-wrapper {
-          background: #000000 !important;
-          color: #ffffff !important;
-          border: 1px solid #ffffff !important;
-          box-shadow: none !important;
-        }
-        .high-contrast-mode .docx-wrapper p,
-        .high-contrast-mode .docx-wrapper h1,
-        .high-contrast-mode .docx-wrapper h2,
-        .high-contrast-mode .docx-wrapper span {
-          color: #ffffff !important;
+          background: white; padding: 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          margin: 0 auto; max-width: 800px; min-height: 100%; font-family: 'Calibri', 'Arial', sans-serif;
         }
       `}</style>
     </div>
