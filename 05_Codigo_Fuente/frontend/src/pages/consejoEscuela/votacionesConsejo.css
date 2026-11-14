@@ -253,3 +253,94 @@
   outline-offset: 2px;
 }
 
+
+/* ==========================================================
+   MODO DE ALTO CONTRASTE - VOTACIONES DEL CONSEJO
+   ========================================================== */
+
+body.high-contrast-mode .votaciones-consejo,
+body.high-contrast-mode .votaciones-consejo h1,
+body.high-contrast-mode .votaciones-consejo h2,
+body.high-contrast-mode .votaciones-consejo h3,
+body.high-contrast-mode .votaciones-consejo h4,
+body.high-contrast-mode .votaciones-consejo p,
+body.high-contrast-mode .votaciones-consejo li,
+body.high-contrast-mode .votaciones-consejo label,
+body.high-contrast-mode .votaciones-consejo .datos-votacion,
+body.high-contrast-mode .votaciones-consejo .observaciones-votacion,
+body.high-contrast-mode .votaciones-consejo .estado-votaciones {
+  color: #ffffff !important;
+}
+
+body.high-contrast-mode .votaciones-consejo .crear-votacion-card,
+body.high-contrast-mode .votaciones-consejo .votacion-card,
+body.high-contrast-mode .votaciones-consejo .accion-voto,
+body.high-contrast-mode .votaciones-consejo .resultado-votacion {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+  box-shadow: none !important;
+}
+
+body.high-contrast-mode .votaciones-consejo .acciones-votacion,
+body.high-contrast-mode .votaciones-consejo .votos-registrados {
+  border-color: #777777 !important;
+}
+
+body.high-contrast-mode .votaciones-consejo input,
+body.high-contrast-mode .votaciones-consejo select,
+body.high-contrast-mode .votaciones-consejo textarea {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+  color-scheme: dark;
+}
+
+body.high-contrast-mode .votaciones-consejo input::placeholder,
+body.high-contrast-mode .votaciones-consejo textarea::placeholder {
+  color: #cccccc !important;
+  opacity: 1;
+}
+
+body.high-contrast-mode .votaciones-consejo .btn-actualizar-votaciones,
+body.high-contrast-mode .votaciones-consejo .btn-crear-votacion,
+body.high-contrast-mode .votaciones-consejo .btn-registrar-voto,
+body.high-contrast-mode .votaciones-consejo .btn-cerrar-votacion {
+  background: #ffff00 !important;
+  color: #000000 !important;
+  border: 2px solid #ffffff !important;
+  font-weight: 700 !important;
+}
+
+body.high-contrast-mode .votaciones-consejo .estado-votacion.abierta {
+  background: #003b16 !important;
+  color: #ffffff !important;
+  border: 1px solid #00ff66 !important;
+}
+
+body.high-contrast-mode .votaciones-consejo .estado-votacion.cerrada {
+  background: #292929 !important;
+  color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+}
+
+body.high-contrast-mode .votaciones-consejo .alerta-votaciones.error {
+  background: #4a0000 !important;
+  color: #ffffff !important;
+  border: 1px solid #ff7777 !important;
+}
+
+body.high-contrast-mode .votaciones-consejo .alerta-votaciones.exito {
+  background: #003b16 !important;
+  color: #ffffff !important;
+  border: 1px solid #00ff66 !important;
+}
+
+body.high-contrast-mode .votaciones-consejo button:focus-visible,
+body.high-contrast-mode .votaciones-consejo input:focus-visible,
+body.high-contrast-mode .votaciones-consejo select:focus-visible,
+body.high-contrast-mode .votaciones-consejo textarea:focus-visible {
+  outline: 3px solid #00ff00 !important;
+  outline-offset: 3px;
+}
+
