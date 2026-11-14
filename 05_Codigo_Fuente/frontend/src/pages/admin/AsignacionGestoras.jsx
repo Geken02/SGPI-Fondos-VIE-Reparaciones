@@ -1,4 +1,3 @@
-// src/pages/admin/AsignacionGestoras.jsx
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminService, catalogoService } from '../../services';
@@ -16,20 +15,22 @@ export default function AsignacionGestoras() {
   const [guardando, setGuardando] = useState(false);
   const [toast, setToast] = useState(null);
   const [todasEscuelas, setTodasEscuelas] = useState([]);
+  // ✅ NUEVO: mensaje de feedback para lectores de pantalla al mover escuelas
+  const [anuncio, setAnuncio] = useState('');
 
-    useEffect(() => {
-  cargarGestoras();
-  cargarEscuelas();
-}, []);
+  useEffect(() => {
+    cargarGestoras();
+    cargarEscuelas();
+  }, []);
 
-useEffect(() => {
-  if (gestoraSeleccionada && todasEscuelas.length > 0) {
-    cargarAsignaciones(gestoraSeleccionada);
-  } else if (!gestoraSeleccionada) {
-    setEscuelasAsignadas([]);
-    setEscuelasDisponibles(todasEscuelas);  
-  }
-}, [gestoraSeleccionada, todasEscuelas]);
+  useEffect(() => {
+    if (gestoraSeleccionada && todasEscuelas.length > 0) {
+      cargarAsignaciones(gestoraSeleccionada);
+    } else if (!gestoraSeleccionada) {
+      setEscuelasAsignadas([]);
+      setEscuelasDisponibles(todasEscuelas);
+    }
+  }, [gestoraSeleccionada, todasEscuelas]);
 
   const cargarGestoras = async () => {
     try {
@@ -38,13 +39,10 @@ useEffect(() => {
         tamanoPagina: 100,
         incluirInactivos: false,
       });
-      
       const usuarios = response.data.items || [];
-      // Filtrar solo usuarios con rol GestoraVIE
-      const gestorasVIE = usuarios.filter(u => 
+      const gestorasVIE = usuarios.filter(u =>
         u.roles?.some(r => r.nombreRol === 'GestoraVIE')
       );
-      
       setGestoras(gestorasVIE);
     } catch (error) {
       console.error('Error cargando gestoras:', error);
@@ -52,42 +50,38 @@ useEffect(() => {
   };
 
   const cargarEscuelas = async () => {
-  try {
-    const response = await catalogoService.listar('escuelas', {
-      pagina: 1,
-      tamanoPagina: 100,
-    });
-    setTodasEscuelas(response.data.items || []);  
-  } catch (error) {
-    console.error('Error cargando escuelas:', error);
-  }
-};
+    try {
+      const response = await catalogoService.listar('escuelas', {
+        pagina: 1,
+        tamanoPagina: 100,
+      });
+      setTodasEscuelas(response.data.items || []);
+    } catch (error) {
+      console.error('Error cargando escuelas:', error);
+    }
+  };
 
-const cargarAsignaciones = async (gestoraId) => {
-  setCargando(true);
-  try {
-    const response = await adminService.listarAsignacionesGestora();
-    const todasAsignaciones = response.data || [];
-    
-    const asignacionesGestora = todasAsignaciones.filter(
-      a => a.gestoraVIEId === parseInt(gestoraId) && a.activo === true
-    );
-    
-    const escuelasAsignadasIds = asignacionesGestora.map(a => a.escuelaId);
-    
-    const asignadas = todasEscuelas.filter(e => escuelasAsignadasIds.includes(e.escuelaId));
-    const disponibles = todasEscuelas.filter(e => !escuelasAsignadasIds.includes(e.escuelaId));
-    
-    setEscuelasAsignadas(asignadas);
-    setEscuelasDisponibles(disponibles);
-  } catch (error) {
-    console.error('Error cargando asignaciones:', error);
-    setEscuelasAsignadas([]);
-    setEscuelasDisponibles(todasEscuelas);
-  } finally {
-    setCargando(false);
-  }
-};
+  const cargarAsignaciones = async (gestoraId) => {
+    setCargando(true);
+    try {
+      const response = await adminService.listarAsignacionesGestora();
+      const todasAsignaciones = response.data || [];
+      const asignacionesGestora = todasAsignaciones.filter(
+        a => a.gestoraVIEId === parseInt(gestoraId) && a.activo === true
+      );
+      const escuelasAsignadasIds = asignacionesGestora.map(a => a.escuelaId);
+      const asignadas = todasEscuelas.filter(e => escuelasAsignadasIds.includes(e.escuelaId));
+      const disponibles = todasEscuelas.filter(e => !escuelasAsignadasIds.includes(e.escuelaId));
+      setEscuelasAsignadas(asignadas);
+      setEscuelasDisponibles(disponibles);
+    } catch (error) {
+      console.error('Error cargando asignaciones:', error);
+      setEscuelasAsignadas([]);
+      setEscuelasDisponibles(todasEscuelas);
+    } finally {
+      setCargando(false);
+    }
+  };
 
   const mostrarToast = (mensaje, tipo = 'success') => {
     setToast({ mensaje, tipo });
@@ -95,93 +89,98 @@ const cargarAsignaciones = async (gestoraId) => {
   };
 
   const handleSeleccionarEscuela = (escuelaId) => {
-    setEscuelasSeleccionadas(prev => 
+    setEscuelasSeleccionadas(prev =>
       prev.includes(escuelaId)
         ? prev.filter(id => id !== escuelaId)
         : [...prev, escuelaId]
     );
   };
 
- const handleMoverADerecha = () => {
-  const escuelasAMover = escuelasDisponibles.filter(e => 
-    escuelasSeleccionadas.includes(e.escuelaId)
-  );
-  
-  setEscuelasAsignadas(prev => [...prev, ...escuelasAMover]);
-  setEscuelasDisponibles(prev => 
-    prev.filter(e => !escuelasSeleccionadas.includes(e.escuelaId))
-  );
-  setEscuelasSeleccionadas([]);
-};
+  const handleMoverADerecha = () => {
+    const escuelasAMover = escuelasDisponibles.filter(e =>
+      escuelasSeleccionadas.includes(e.escuelaId)
+    );
+    if (escuelasAMover.length === 0) return;
 
-const handleMoverAIzquierda = (escuelaId) => {
-  const escuela = escuelasAsignadas.find(e => e.escuelaId === escuelaId);
-  if (escuela) {
-    setEscuelasDisponibles(prev => [...prev, escuela]);
-    setEscuelasAsignadas(prev => prev.filter(e => e.escuelaId !== escuelaId));
-  }
-};
+    setEscuelasAsignadas(prev => [...prev, ...escuelasAMover]);
+    setEscuelasDisponibles(prev =>
+      prev.filter(e => !escuelasSeleccionadas.includes(e.escuelaId))
+    );
+    setEscuelasSeleccionadas([]);
+    // ✅ NUEVO: anuncia el movimiento al lector de pantalla
+    setAnuncio(`Se movieron ${escuelasAMover.length} ${escuelasAMover.length === 1 ? 'escuela a' : 'escuelas a'} asignadas. Total de asignadas: ${escuelasAsignadas.length + escuelasAMover.length}.`);
+  };
 
+  const handleMoverAIzquierda = (escuelaId) => {
+    const escuela = escuelasAsignadas.find(e => e.escuelaId === escuelaId);
+    if (escuela) {
+      setEscuelasDisponibles(prev => [...prev, escuela]);
+      setEscuelasAsignadas(prev => prev.filter(e => e.escuelaId !== escuelaId));
+      // ✅ NUEVO: anuncia la remoción
+      setAnuncio(`Se quitó ${escuela.nombreEscuela} de las asignadas. Total de asignadas: ${escuelasAsignadas.length - 1}.`);
+    }
+  };
+
+  const handleMoverTodasAIzquierda = () => {
+    if (escuelasAsignadas.length === 0) return;
+    const cantidad = escuelasAsignadas.length;
+    setEscuelasDisponibles(prev => [...prev, ...escuelasAsignadas]);
+    setEscuelasAsignadas([]);
+    setAnuncio(`Se quitaron las ${cantidad} escuelas asignadas. Total de asignadas: 0.`);
+  };
 
   const handleGuardar = async () => {
-  if (!gestoraSeleccionada) {
-    mostrarToast('Debe seleccionar una gestora', 'error');
-    return;
-  }
-
-  setGuardando(true);
-  try {
-    const response = await adminService.listarAsignacionesGestora();
-    const todasAsignaciones = response.data || [];
-    
-    const asignacionesActuales = todasAsignaciones.filter(
-      a => a.gestoraVIEId === parseInt(gestoraSeleccionada) && a.activo === true
-    );
-
-    for (const asignacion of asignacionesActuales) {
-      try {
-        await adminService.eliminarAsignacionGestora(asignacion.asignacionId);
-      } catch (error) {
-        console.warn(`No se pudo eliminar asignación ${asignacion.asignacionId}:`, error);
-      }
+    if (!gestoraSeleccionada) {
+      mostrarToast('Debe seleccionar una gestora', 'error');
+      return;
     }
-
-    for (const escuela of escuelasAsignadas) {
-      try {
-        await adminService.crearAsignacionGestora({
-          escuelaId: escuela.escuelaId,
-          gestoraVIEId: parseInt(gestoraSeleccionada),
-        });
-      } catch (error) {
-        console.warn(`No se pudo asignar escuela ${escuela.escuelaId}:`, error);
+    setGuardando(true);
+    try {
+      const response = await adminService.listarAsignacionesGestora();
+      const todasAsignaciones = response.data || [];
+      const asignacionesActuales = todasAsignaciones.filter(
+        a => a.gestoraVIEId === parseInt(gestoraSeleccionada) && a.activo === true
+      );
+      for (const asignacion of asignacionesActuales) {
+        try {
+          await adminService.eliminarAsignacionGestora(asignacion.asignacionId);
+        } catch (error) {
+          console.warn(`No se pudo eliminar asignación ${asignacion.asignacionId}:`, error);
+        }
       }
+      for (const escuela of escuelasAsignadas) {
+        try {
+          await adminService.crearAsignacionGestora({
+            escuelaId: escuela.escuelaId,
+            gestoraVIEId: parseInt(gestoraSeleccionada),
+          });
+        } catch (error) {
+          console.warn(`No se pudo asignar escuela ${escuela.escuelaId}:`, error);
+        }
+      }
+      mostrarToast('Asignaciones guardadas exitosamente');
+      setAnuncio(`Asignaciones guardadas. ${escuelasAsignadas.length} escuelas asignadas a la gestora seleccionada.`);
+      await cargarAsignaciones(gestoraSeleccionada);
+    } catch (error) {
+      console.error('Error guardando asignaciones:', error);
+      const detail = error.response?.data?.detail;
+      const mensajeError = typeof detail === 'string' ? detail : 'Error al guardar las asignaciones';
+      mostrarToast(mensajeError, 'error');
+    } finally {
+      setGuardando(false);
     }
-
-    mostrarToast('Asignaciones guardadas exitosamente');
-    
-    // 👇 Recargar desde la BD usando `todasEscuelas` como base
-    await cargarAsignaciones(gestoraSeleccionada);
-  } catch (error) {
-    console.error('Error guardando asignaciones:', error);
-    const detail = error.response?.data?.detail;
-    const mensajeError = typeof detail === 'string' ? detail : 'Error al guardar las asignaciones';
-    mostrarToast(mensajeError, 'error');
-  } finally {
-    setGuardando(false);
-  }
-};
+  };
 
   const handleCancelar = () => {
     setGestoraSeleccionada('');
     setEscuelasAsignadas([]);
     setEscuelasSeleccionadas([]);
+    setAnuncio('Formulario cancelado.');
   };
 
-  // Filtrar escuelas por búsqueda
   const escuelasDisponiblesFiltradas = escuelasDisponibles.filter(e =>
     e.nombreEscuela.toLowerCase().includes(busquedaDisponibles.toLowerCase())
   );
-
   const escuelasAsignadasFiltradas = escuelasAsignadas.filter(e =>
     e.nombreEscuela.toLowerCase().includes(busquedaAsignadas.toLowerCase())
   );
@@ -189,38 +188,52 @@ const handleMoverAIzquierda = (escuelaId) => {
   return (
     <div className="asignacion-container">
       {toast && (
-        <div className={`toast ${toast.tipo}`}>
-          <span className="toast-icon">{toast.tipo === 'success' ? '✓' : '✕'}</span>
+        <div className={`toast ${toast.tipo}`} role="status" aria-live="polite">
+          <span className="toast-icon" aria-hidden="true">{toast.tipo === 'success' ? '✓' : '✕'}</span>
           <span className="toast-message">{toast.mensaje}</span>
         </div>
       )}
 
-      {/* Breadcrumbs */}
-      <div className="breadcrumbs">
-        <Link to="/dashboard">Comité técnico</Link>
-        <span className="breadcrumb-separator">›</span>
-        <span>Asignación de Escuelas a Gestoras VIE</span>
+      {/* ✅ Región de anuncio silenciosa pero leída por el narrador */}
+      <div className="sr-only" role="status" aria-live="polite">
+        {anuncio}
       </div>
 
-      {/* Header */}
-      <div className="asignacion-header">
+      <nav className="breadcrumbs" aria-label="Ruta de navegación">
+        <ol className="breadcrumbs-list">
+          <li><Link to="/dashboard">Comité técnico</Link></li>
+          <li className="breadcrumb-separator" aria-hidden="true">›</li>
+          <li aria-current="page">Asignación de Escuelas a Gestoras VIE</li>
+        </ol>
+      </nav>
+
+      <header className="asignacion-header">
         <h1>Asignación de Escuelas a Gestoras VIE</h1>
         <p>Seleccione una gestora y asigne las escuelas correspondientes.</p>
-      </div>
+      </header>
 
-            {/* Selector de Gestora */}
+      {/* Selector de Gestora */}
       <div className="card selector-card">
-        <label className="form-label">
-          Seleccionar Gestora VIE: <span style={{ color: '#dc2626' }}>*</span>
+        <label className="form-label" htmlFor="select-gestora">
+          Seleccionar Gestora VIE: <span style={{ color: '#dc2626' }} aria-hidden="true">*</span>
         </label>
         <select
+          id="select-gestora"
           className={`form-select ${!gestoraSeleccionada && gestoras.length > 0 ? 'vacio' : ''}`}
           value={gestoraSeleccionada}
           onChange={(e) => setGestoraSeleccionada(e.target.value)}
+          aria-required="true"
+          aria-describedby={
+            !gestoraSeleccionada && gestoras.length > 0
+              ? 'aviso-gestora'
+              : gestoras.length === 0
+                ? 'error-gestoras'
+                : undefined
+          }
         >
           <option value="">
-            {gestoras.length === 0 
-              ? 'No hay gestoras VIE registradas en el sistema' 
+            {gestoras.length === 0
+              ? 'No hay gestoras VIE registradas en el sistema'
               : 'Seleccione una gestora...'}
           </option>
           {gestoras.map(gestora => (
@@ -230,49 +243,61 @@ const handleMoverAIzquierda = (escuelaId) => {
           ))}
         </select>
         {!gestoraSeleccionada && gestoras.length > 0 && (
-          <p className="selector-aviso">
+          <p id="aviso-gestora" className="selector-aviso">
             ⚠️ Debe seleccionar una gestora para poder asignar escuelas
           </p>
         )}
         {gestoras.length === 0 && (
-          <p className="selector-aviso error">
+          <p id="error-gestoras" className="selector-aviso error" role="alert">
             No existen usuarios con el rol "GestoraVIE". Cree un usuario con ese rol primero.
           </p>
         )}
       </div>
 
-      {/* Dos columnas */}
+      {/* Dos columnas con botones de transferencia centrados */}
       <div className="dos-columnas">
         {/* Escuelas Disponibles */}
         <div className="card columna-izquierda">
           <h2>Escuelas disponibles ({escuelasDisponiblesFiltradas.length})</h2>
-          
           <div className="buscador">
-            <svg className="buscador-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <svg className="buscador-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
               <circle cx="11" cy="11" r="8"/>
               <line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <input
               type="text"
+              id="busqueda-disponibles"
               placeholder="Buscar escuela..."
+              aria-label="Buscar en escuelas disponibles"
               value={busquedaDisponibles}
               onChange={(e) => setBusquedaDisponibles(e.target.value)}
               className="buscador-input"
             />
           </div>
 
-          <div className="lista-escuelas">
-            {escuelasDisponiblesFiltradas.map(escuela => (
-              <div key={escuela.escuelaId} className="escuela-item">
-                <input
-                  type="checkbox"
-                  checked={escuelasSeleccionadas.includes(escuela.escuelaId)}
-                  onChange={() => handleSeleccionarEscuela(escuela.escuelaId)}
-                  className="escuela-checkbox"
-                />
-                <span className="escuela-nombre">{escuela.nombreEscuela}</span>
-              </div>
-            ))}
+          <div className="lista-escuelas" role="list" aria-label="Escuelas disponibles">
+            {escuelasDisponiblesFiltradas.length === 0 ? (
+              <p className="lista-vacia">No hay escuelas disponibles</p>
+            ) : (
+              escuelasDisponiblesFiltradas.map(escuela => {
+                const seleccionada = escuelasSeleccionadas.includes(escuela.escuelaId);
+                return (
+                  <label
+                    key={escuela.escuelaId}
+                    className={`escuela-item ${seleccionada ? 'seleccionada' : ''}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={seleccionada}
+                      onChange={() => handleSeleccionarEscuela(escuela.escuelaId)}
+                      className="escuela-checkbox"
+                      aria-label={`Seleccionar ${escuela.nombreEscuela}`}
+                    />
+                    <span className="escuela-nombre">{escuela.nombreEscuela}</span>
+                  </label>
+                );
+              })
+            )}
           </div>
 
           <div className="lista-footer">
@@ -280,28 +305,28 @@ const handleMoverAIzquierda = (escuelaId) => {
           </div>
         </div>
 
-        {/* Botones de movimiento */}
+        {/* ✅ Botones de movimiento centrados verticalmente */}
         <div className="botones-movimiento">
-          <button 
-            className="btn-mover" 
+          <button
+            className="btn-mover"
             onClick={handleMoverADerecha}
             disabled={escuelasSeleccionadas.length === 0}
+            aria-label={`Mover ${escuelasSeleccionadas.length} escuelas seleccionadas a asignadas`}
             title="Mover seleccionadas a asignadas"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
               <line x1="5" y1="12" x2="19" y2="12"/>
               <polyline points="12 5 19 12 12 19"/>
             </svg>
           </button>
-          <button 
-            className="btn-mover" 
-            onClick={() => {
-              // Mover todas las asignadas de vuelta
-              escuelasAsignadas.forEach(e => handleMoverAIzquierda(e.escuelaId));
-            }}
+          <button
+            className="btn-mover"
+            onClick={handleMoverTodasAIzquierda}
+            disabled={escuelasAsignadas.length === 0}
+            aria-label="Quitar todas las escuelas asignadas"
             title="Mover todas a disponibles"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
               <line x1="19" y1="12" x2="5" y2="12"/>
               <polyline points="12 19 5 12 12 5"/>
             </svg>
@@ -311,41 +336,47 @@ const handleMoverAIzquierda = (escuelaId) => {
         {/* Escuelas Asignadas */}
         <div className="card columna-derecha">
           <h2>Escuelas asignadas ({escuelasAsignadasFiltradas.length})</h2>
-          
           <div className="buscador">
-            <svg className="buscador-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <svg className="buscador-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
               <circle cx="11" cy="11" r="8"/>
               <line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <input
               type="text"
+              id="busqueda-asignadas"
               placeholder="Buscar escuela..."
+              aria-label="Buscar en escuelas asignadas"
               value={busquedaAsignadas}
               onChange={(e) => setBusquedaAsignadas(e.target.value)}
               className="buscador-input"
             />
           </div>
 
-          <div className="lista-escuelas">
-            {escuelasAsignadasFiltradas.map(escuela => (
-              <div key={escuela.escuelaId} className="escuela-item asignada">
-                <svg className="check-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                  <polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
-                <span className="escuela-nombre">{escuela.nombreEscuela}</span>
-                <button 
-                  className="btn-quitar"
-                  onClick={() => handleMoverAIzquierda(escuela.escuelaId)}
-                  title="Quitar de asignadas"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
+          <div className="lista-escuelas" role="list" aria-label="Escuelas asignadas">
+            {escuelasAsignadasFiltradas.length === 0 ? (
+              <p className="lista-vacia">No hay escuelas asignadas</p>
+            ) : (
+              escuelasAsignadasFiltradas.map(escuela => (
+                <div key={escuela.escuelaId} className="escuela-item asignada" role="listitem">
+                  <svg className="check-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
                   </svg>
-                </button>
-              </div>
-            ))}
+                  <span className="escuela-nombre">{escuela.nombreEscuela}</span>
+                  <button
+                    className="btn-quitar"
+                    onClick={() => handleMoverAIzquierda(escuela.escuelaId)}
+                    aria-label={`Quitar ${escuela.nombreEscuela} de las asignadas`}
+                    title="Quitar de asignadas"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </div>
+              ))
+            )}
           </div>
 
           <div className="lista-footer">
@@ -354,13 +385,18 @@ const handleMoverAIzquierda = (escuelaId) => {
         </div>
       </div>
 
-      {/* Botones de acción */}
+      {/* ✅ Botones con jerarquía visual correcta (no full-width) */}
       <div className="form-actions">
         <button className="btn-cancel" onClick={handleCancelar} disabled={guardando}>
           Cancelar
         </button>
-        <button className="btn-primary" onClick={handleGuardar} disabled={guardando || !gestoraSeleccionada}>
-          {guardando && <div className="spinner-small"></div>}
+        <button
+          className="btn-primary"
+          onClick={handleGuardar}
+          disabled={guardando || !gestoraSeleccionada}
+          aria-busy={guardando}
+        >
+          {guardando && <div className="spinner-small" aria-hidden="true"></div>}
           Guardar Asignación
         </button>
       </div>
