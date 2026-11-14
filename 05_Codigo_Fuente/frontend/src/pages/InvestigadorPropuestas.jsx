@@ -15,7 +15,6 @@ const InvestigadorPropuestas = () => {
   const [propuestas, setPropuestas] = useState([]);
   const [enviandoRevision, setEnviandoRevision] = useState({});
   const [subiendoFormulario, setSubiendoFormulario] = useState({});
-  const [cancelando, setCancelando] = useState({});
 
   const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codigoForm, e) => {
     const file = e.target.files?.[0];
@@ -42,7 +41,7 @@ const InvestigadorPropuestas = () => {
       }
 
       alert(`¡Archivo "${file.name}" guardado exitosamente en SeaweedFS para ${codigoForm}!
-        El formulario ha quedado registrado y completado.`);
+El formulario ha quedado registrado y completado.`);
       cargarPropuestas();
     } catch (err) {
       console.warn('Error al subir documento a SeaweedFS:', err);
@@ -60,58 +59,6 @@ const InvestigadorPropuestas = () => {
       e.target.value = '';
     }
   };
-
-  const handleCancelarPropuesta = async (propuestaId) => {
-    const prop = propuestas.find(p => p.propuestaId === propuestaId);
-    if (prop && prop.esPropietario === false) {
-      alert('Solo la persona coordinadora puede cancelar esta propuesta.');
-      return;
-    }
-    if (!window.confirm('Esta accion cancelara definitivamente la propuesta. Confirmar?')) {
-      return;
-    }
-    setCancelando(prev => ({ ...prev, [propuestaId]: true }));
-    try {
-      await propuestaService.cancelarPropuesta(propuestaId);
-      alert('La propuesta ha sido cancelada.');
-      cargarPropuestas();
-    } catch (err) {
-      console.warn('Error al cancelar propuesta:', err);
-      alert('Error al cancelar: ' + (err.response?.data?.detail || err.message));
-    } finally {
-      setCancelando(prev => ({ ...prev, [propuestaId]: false }));
-    }
-  };
-
-  const handleEnviarPropuestaVinculacion = async (propuestaId) => {
-    const prop = propuestas.find(p => p.propuestaId === propuestaId);
-    if (prop && prop.esPropietario === false) {
-      alert('Solo la persona coordinadora (propietaria de la propuesta) puede enviar la propuesta a la Unidad de Vinculación.');
-      return;
-    }
-
-    if (!window.confirm('¿Está seguro de que desea enviar formalmente esta propuesta a la Unidad de Vinculación para su evaluación y dictamen?')) {
-      return;
-    }
-
-    try {
-      setEnviandoRevision(prev => ({ ...prev, [propuestaId]: true }));
-      await propuestaService.enviarRevision(propuestaId);
-
-      localStorage.setItem(`propuesta_${propuestaId}_enviada`, 'true');
-      localStorage.setItem(`propuesta_${propuestaId}_form04_enviado`, 'true');
-
-      alert('¡Propuesta enviada con éxito a la Unidad de Vinculación! El expediente ha pasado al proceso de evaluación temprana.');
-      window.dispatchEvent(new Event('propuestaCreada'));
-      await cargarPropuestas();
-    } catch (err) {
-      console.error('Error al enviar propuesta:', err);
-      const msg = err?.response?.data?.detail || err?.message || 'Error al enviar la propuesta';
-      alert(`No se pudo enviar la propuesta: ${msg}`);
-    } finally {
-      setEnviandoRevision(prev => ({ ...prev, [propuestaId]: false }));
-    }
-  };
   const [cargando, setCargando] = useState(true);
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroEscuela, setFiltroEscuela] = useState('Todas');
@@ -123,6 +70,34 @@ const InvestigadorPropuestas = () => {
   const [respuestasSubsanacion, setRespuestasSubsanacion] = useState({});
   const [archivosSubsanacion, setArchivosSubsanacion] = useState({});
   const [reenviando, setReenviando] = useState({});
+
+  // Estado para el envío explícito a la VIE
+  const [enviandoPropuesta, setEnviandoPropuesta] = useState({});
+
+  const handleEnviarPropuestaVIE = async (propuestaId) => {
+    if (!window.confirm('¿Está seguro de que desea enviar formalmente esta propuesta a la VIE para revisión institucional?')) {
+      return;
+    }
+
+    try {
+      setEnviandoPropuesta(prev => ({ ...prev, [propuestaId]: true }));
+      await propuestaService.enviarRevision(propuestaId);
+      
+      // Banderas de completitud local
+      localStorage.setItem(`propuesta_${propuestaId}_enviada`, 'true');
+      localStorage.setItem(`propuesta_${propuestaId}_form04_enviado`, 'true');
+      
+      alert('¡Propuesta enviada con éxito a la VIE! El expediente ha pasado a revisión institucional.');
+      window.dispatchEvent(new Event('propuestaCreada'));
+      await cargarPropuestas();
+    } catch (err) {
+      console.error('Error al enviar propuesta:', err);
+      const msg = err?.response?.data?.detail || err?.message || 'Error al enviar la propuesta';
+      alert(`No se pudo enviar la propuesta: ${msg}`);
+    } finally {
+      setEnviandoPropuesta(prev => ({ ...prev, [propuestaId]: false }));
+    }
+  };
 
   const cargarPropuestas = async () => {
     try {
@@ -213,6 +188,7 @@ const InvestigadorPropuestas = () => {
   };
 
   const handleEliminarArchivoSubsanacion = (propuestaId, index) => {
+    if (!confirm('¿Está seguro de que desea quitar este archivo adjunto?')) return;
     setArchivosSubsanacion(prev => ({
       ...prev,
       [propuestaId]: (prev[propuestaId] || []).filter((_, i) => i !== index)
@@ -221,12 +197,6 @@ const InvestigadorPropuestas = () => {
 
   // Flujo: Corrección por el solicitante -> Reenvío -> Nueva revisión
   const handleReenviarSubsanacion = async (propuestaId, subsanacionId) => {
-    const prop = propuestas.find(p => p.propuestaId === propuestaId);
-    if (prop && prop.esPropietario === false) {
-      alert('Solo la persona coordinadora (propietaria de la propuesta) puede reenviar la propuesta subsanada a la Unidad de Vinculación.');
-      return;
-    }
-
     const resp = (respuestasSubsanacion[propuestaId] || '').trim();
     if (!resp) {
       alert('Por favor ingrese una explicación o detalle de las correcciones realizadas antes de reenviar la propuesta.');
@@ -248,22 +218,17 @@ const InvestigadorPropuestas = () => {
       localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respuesta_fecha`, new Date().toISOString());
       localStorage.removeItem(`propuesta_${propuestaId}_subsanacion_activa`);
 
-      alert('¡Propuesta subsanada y reenviada exitosamente a la Unidad de Vinculación!\n\nLa propuesta ha retornado al flujo de revisión por parte de la instancia evaluadora.');
+      alert('¡Propuesta subsanada y reenviada exitosamente a la VIE!\n\nLa propuesta ha retornado al flujo de revisión por parte de la instancia evaluadora.');
       setRespuestasSubsanacion(prev => ({ ...prev, [propuestaId]: '' }));
       cargarPropuestas();
     } catch (err) {
       console.warn('Error al responder subsanación:', err);
-      const detalle = err.response?.data?.detail || err.message;
-      if (err.response?.status === 403) {
-        alert(`Permiso denegado: ${detalle}`);
-      } else {
-        localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respondida`, 'true');
-        localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respuesta_texto`, resp);
-        localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respuesta_fecha`, new Date().toISOString());
-        localStorage.removeItem(`propuesta_${propuestaId}_subsanacion_activa`);
-        alert('¡Propuesta subsanada y reenviada con éxito a la Unidad de Vinculación!');
-        cargarPropuestas();
-      }
+      localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respondida`, 'true');
+      localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respuesta_texto`, resp);
+      localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respuesta_fecha`, new Date().toISOString());
+      localStorage.removeItem(`propuesta_${propuestaId}_subsanacion_activa`);
+      alert('¡Propuesta subsanada y reenviada con éxito a la VIE!');
+      cargarPropuestas();
     } finally {
       setReenviando(prev => ({ ...prev, [propuestaId]: false }));
     }
@@ -273,16 +238,7 @@ const InvestigadorPropuestas = () => {
     const texto = ((p.titulo || '') + ' ' + (p.codigoPropuesta || '')).toLowerCase();
     const coincideTexto = texto.includes(filtroTexto.toLowerCase());
     const coincideEscuela = filtroEscuela === 'Todas' || (p.escuela || p.nombreEscuela || '').includes(filtroEscuela);
-    const coincideEstado = filtroEstado === 'Todos' || (() => {
-      const nom = (p.nombreEstado || p.estadoBadge || '').toLowerCase();
-      if (filtroEstado === 'Enviada') {
-        return p.estadoId === 2 || p.estadoId === 3 || nom.includes('enviad') || nom.includes('vinculac');
-      }
-      if (filtroEstado === 'Evaluación') {
-        return p.estadoId === 3 || nom.includes('eval');
-      }
-      return nom.includes(filtroEstado.toLowerCase());
-    })();
+    const coincideEstado = filtroEstado === 'Todos' || (p.nombreEstado || p.estadoBadge || '').toLowerCase().includes(filtroEstado.toLowerCase());
     return coincideTexto && coincideEscuela && coincideEstado;
   });
 
@@ -315,7 +271,7 @@ const InvestigadorPropuestas = () => {
         {/* Barra de Filtros */}
         <div className="propuestas-filters-bar">
           <div className="filter-search-box" style={{ flex: 1.5 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
@@ -327,18 +283,15 @@ const InvestigadorPropuestas = () => {
               maxLength={100}
               showCounter={false}
               className="filter-search-input"
-              aria-label="Buscar por código FVIE o título del proyecto"
             />
           </div>
 
           <div className="filter-select-group">
-            <label className="filter-select-label" htmlFor="filtro-escuela-select">Escuela:</label>
+            <label className="filter-select-label">Escuela:</label>
             <select 
-              id="filtro-escuela-select"
               className="filter-select"
               value={filtroEscuela}
               onChange={(e) => setFiltroEscuela(e.target.value)}
-              aria-label="Filtrar propuestas por escuela"
             >
               <option value="Todas">Todas las Escuelas</option>
               <option value="Electrónica">Ing. Electrónica</option>
@@ -349,18 +302,16 @@ const InvestigadorPropuestas = () => {
           </div>
 
           <div className="filter-select-group">
-            <label className="filter-select-label" htmlFor="filtro-estado-select">Estado:</label>
+            <label className="filter-select-label">Estado:</label>
             <select 
-              id="filtro-estado-select"
               className="filter-select"
               value={filtroEstado}
               onChange={(e) => setFiltroEstado(e.target.value)}
-              aria-label="Filtrar propuestas por estado"
             >
               <option value="Todos">Todos los Estados</option>
               <option value="Borrador">Borrador</option>
               <option value="Subsanación">En Subsanación</option>
-              <option value="Enviada">Enviada a Vinculación</option>
+              <option value="Enviada">Enviada a VIE</option>
               <option value="Evaluación">En Evaluación</option>
               <option value="Aprobada">Aprobada</option>
             </select>
@@ -370,7 +321,6 @@ const InvestigadorPropuestas = () => {
             type="button" 
             className="btn-limpiar-filtros"
             onClick={limpiarFiltros}
-            aria-label="Restablecer y limpiar filtros de búsqueda"
           >
             Limpiar
           </button>
@@ -387,40 +337,25 @@ const InvestigadorPropuestas = () => {
 
               // Evaluación de estado de subsanación real de la base de datos
               const subActiva = prop.subsanacionActiva;
-              // esSubsanacion: pendiente (1) o rechazada (3) — el investigador debe actuar
               const esSubsanacion = (
-                prop.estadoId === 10 ||
+                prop.estadoId === 10 || 
                 (prop.nombreEstado && prop.nombreEstado.toLowerCase().includes('subsan')) ||
-                (subActiva && (subActiva.estadoSubsanacionId === 1 || subActiva.estadoSubsanacionId === 3))
+                (subActiva && subActiva.estadoSubsanacionId === 1)
               );
-              // subRespondida: el investigador ya respondió (2), esperando que la gestora revise
               const subRespondida = subActiva && subActiva.estadoSubsanacionId === 2;
-              // subRechazada: la gestora rechazó la respuesta — mostrar motivo
-              const subRechazada = subActiva && subActiva.estadoSubsanacionId === 3;
 
-              // 1. Declarar esCancelada primero para evitar Temporal Dead Zone (TDZ)
-              const esCancelada = Boolean(
-                prop.estadoId === 9 || (prop.nombreEstado || '').toLowerCase().includes('cancelad')
-              );
-
-              // 2. Calcular nombre/texto del estado
-              const estado = esCancelada
-                ? 'Cancelada'
-                : esSubsanacion
+              const estado = esSubsanacion
                 ? 'En Subsanación'
-                : (prop.nombreEstado || prop.estadoBadge || (prop.estadoId === 3 ? 'En Evaluación de Vinculación' : prop.estadoId === 2 ? 'Enviada a VIE' : 'Borrador'));
-
-              // 3. Evaluar si es borrador (desactivado si está cancelada o en subsanación)
-              const esBorrador = !esCancelada && !esSubsanacion && (prop.estadoId === 1 || estado.toLowerCase().includes('borrador'));
+                : (prop.nombreEstado || prop.estadoBadge || 'Borrador');
+              const esBorrador = (prop.estadoId === 1 || !prop.estadoId || estado.toLowerCase().includes('borrador')) && !esSubsanacion;
 
               const badgeClass = esSubsanacion ? 'badge-subsanacion'
-                                : esCancelada ? 'badge-cancelada'
-                                : estado.toLowerCase().includes('eval') ? 'badge-warning warning'
-                                : estado.toLowerCase().includes('aprob') ? 'badge-success success'
-                                : 'badge-info info';
+                                : estado.toLowerCase().includes('eval') ? 'badge-warning'
+                                : estado.toLowerCase().includes('aprob') ? 'badge-success'
+                                : 'badge-info';
 
               return (
-                <div key={itemKey} id={`propuesta-card-${itemKey}`} className={`propuesta-accordion-card ${estaAbierto ? 'is-expanded' : ''} ${esSubsanacion ? 'is-subsanacion' : ''} ${esCancelada ? 'is-cancelada' : ''}`}
+                <div key={itemKey} id={`propuesta-card-${itemKey}`} className={`propuesta-accordion-card ${estaAbierto ? 'is-expanded' : ''} ${esSubsanacion ? 'is-subsanacion' : ''}`}
                 >
                   {/* Encabezado del Acordeón */}
                   <div className="accordion-card-header" onClick={() => toggleAcordeon(itemKey)}>
@@ -439,55 +374,23 @@ const InvestigadorPropuestas = () => {
 
                     <div className="header-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {esBorrador && (
-                        prop.esPropietario !== false ? (
-                          <button 
-                            type="button" 
-                            className="btn-proposal-action btn-solid"
-                            style={{ backgroundColor: '#16a34a', borderColor: '#16a34a', color: '#ffffff', padding: '5px 14px', fontSize: '13px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEnviarPropuestaVinculacion(prop.propuestaId);
-                            }}
-                            disabled={enviandoRevision[prop.propuestaId]}
-                            title="Enviar propuesta completa a la Unidad de Vinculación para revisión"
-                          >
-                            {enviandoRevision[prop.propuestaId] ? 'Enviando...' : '📤 Enviar a Vinculación'}
-                          </button>
-                        ) : (
-                          <span 
-                            className="badge-coordinador-bloqueo"
-                            style={{ fontSize: '11px', color: '#64748b', backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-                            title="Solo la persona coordinadora puede enviar la propuesta"
-                          >
-                            🔒 Envío por Coordinador
-                          </span>
-                        )
-                      )}
-                      {prop.esPropietario !== false && !esCancelada && (
-                        <button
-                          type="button"
-                          className="btn-cancelar-propuesta-mini"
-                          title="Cancelar propuesta"
-                          aria-label={`Cancelar propuesta: ${prop.titulo || prop.codigoPropuesta}`}
-                          onClick={(e) => { e.stopPropagation(); handleCancelarPropuesta(prop.propuestaId); }}
-                          disabled={cancelando[prop.propuestaId]}
-                          style={{
-                            width: '24px', height: '24px', borderRadius: '50%',
-                            border: '1px solid #fca5a5', backgroundColor: '#fef2f2',
-                            color: '#dc2626', fontSize: '14px', fontWeight: 700,
-                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', lineHeight: 1, padding: 0
+                        <button 
+                          type="button" 
+                          className="btn-proposal-action btn-solid"
+                          style={{ backgroundColor: '#16a34a', borderColor: '#16a34a', color: '#ffffff', padding: '5px 14px', fontSize: '13px', fontWeight: 600 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEnviarPropuestaVIE(prop.propuestaId);
                           }}
+                          disabled={enviandoPropuesta[prop.propuestaId]}
+                          title="Enviar propuesta completa a la VIE para revisión"
                         >
-                          <span aria-hidden="true">{cancelando[prop.propuestaId] ? '...' : '✕'}</span>
-                          <span className="sr-only">Cancelar propuesta</span>
+                          {enviandoPropuesta[prop.propuestaId] ? 'Enviando...' : '📤 Enviar a la VIE'}
                         </button>
                       )}
                       <button 
                         type="button" 
                         className="btn-accordion-toggle"
-                        aria-expanded={estaAbierto}
-                        aria-label={estaAbierto ? `Ocultar datos de propuesta ${prop.codigoPropuesta}: ${prop.titulo}` : `Ver datos de propuesta ${prop.codigoPropuesta}: ${prop.titulo}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleAcordeon(itemKey);
@@ -503,19 +406,6 @@ const InvestigadorPropuestas = () => {
                     <h2 className="accordion-propuesta-title">{prop.titulo}</h2>
                     <div className="accordion-propuesta-subtitle">
                       Investigador: <strong>{prop.propietario || nombreInvestigador}</strong> 
-                      {prop.esPropietario === false && (
-                        <span className="badge-equipo-miembro" style={{
-                          marginLeft: '8px',
-                          backgroundColor: '#e0f2fe',
-                          color: '#0369a1',
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          fontSize: '11px',
-                          fontWeight: '600'
-                        }}>
-                          Miembro del Equipo
-                        </span>
-                      )} 
                       <span className="meta-separator">|</span> 
                       Monto: <strong>₡ {Number(prop.montoTotal || 0).toLocaleString('es-CR')}</strong> 
                       <span className="meta-separator">|</span> 
@@ -540,31 +430,6 @@ const InvestigadorPropuestas = () => {
 
                     return (
                     <div className="accordion-card-body">
-                                            {/* Banner llamativo si la propuesta está cancelada */}
-                      {esCancelada && (
-                        <div className="banner-propuesta-cancelada" style={{
-                          margin: '14px 0 20px 0',
-                          padding: '14px 18px',
-                          backgroundColor: '#f8fafc',
-                          border: '1.5px solid #cbd5e1',
-                          borderRadius: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          color: '#475569'
-                        }}>
-                          <span style={{ fontSize: '22px' }}>🚫</span>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: '14px', color: '#1e293b' }}>
-                              PROPUESTA CANCELADA (ESTADO 9)
-                            </div>
-                            <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
-                              Esta propuesta ha sido retirada/cancelada. La edición de formularios, subida de documentos y reenvíos han sido deshabilitados.
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
                       {/* Banner llamativo si la propuesta está devuelta en Subsanación */}
                       {esSubsanacion && (
                         <div className="subsanacion-banner-box">
@@ -577,53 +442,6 @@ const InvestigadorPropuestas = () => {
                               La instancia revisora de la VIE ha devuelto esta propuesta con observaciones. Corrija los formularios o adjunte los documentos faltantes indicados a continuación y reenvíe la propuesta para una nueva revisión.
                             </div>
                           </div>
-                        </div>
-                      )}
-
-                      {/* Banner de Envío Oficial a la Unidad de Vinculación */}
-                      {esBorrador && (
-                        <div className="banner-envio-vinculacion" style={{
-                          margin: '14px 0 20px 0',
-                          padding: '16px 20px',
-                          backgroundColor: '#f0fdf4',
-                          border: '1.5px solid #86efac',
-                          borderRadius: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          flexWrap: 'wrap',
-                          gap: '12px'
-                        }}>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: '15px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span>🚀</span> Enviar Propuesta a la Unidad de Vinculación
-                            </div>
-                            <div style={{ fontSize: '13px', color: '#15803d', marginTop: '3px' }}>
-                              Al presionar este botón, la propuesta cambiará formalmente de <strong>Borrador</strong> a <strong>Enviada a Vinculación</strong> para que el Centro de Vinculación inicie el proceso de evaluación y dictamen.
-                            </div>
-                          </div>
-                          {prop.esPropietario !== false ? (
-                            <button
-                              type="button"
-                              className="btn-proposal-action btn-solid"
-                              style={{ backgroundColor: '#16a34a', borderColor: '#16a34a', color: '#ffffff', padding: '10px 22px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
-                              onClick={() => handleEnviarPropuestaVinculacion(prop.propuestaId)}
-                              disabled={enviandoRevision[prop.propuestaId]}
-                            >
-                              {enviandoRevision[prop.propuestaId] ? 'Enviando a Vinculación...' : '📤 Enviar Propuesta a Vinculación'}
-                            </button>
-                          ) : (
-                            <div className="banner-solo-coordinador" style={{
-                              backgroundColor: '#eff6ff',
-                              border: '1px solid #bfdbfe',
-                              borderRadius: '6px',
-                              padding: '8px 12px',
-                              color: '#1e40af',
-                              fontSize: '12px'
-                            }}>
-                              🔒 Solo la persona coordinadora del proyecto puede enviar la propuesta a la Unidad de Vinculación.
-                            </div>
-                          )}
                         </div>
                       )}
 
@@ -647,9 +465,8 @@ const InvestigadorPropuestas = () => {
                               <button 
                                 type="button" 
                                 className="btn-doc-action"
-                                disabled={esCancelada}
-                                style={{ backgroundColor: '#0369A1', color: '#ffffff', borderColor: '#0369A1', opacity: esCancelada ? 0.5 : 1, cursor: esCancelada ? 'not-allowed' : 'pointer' }}
-                                onClick={() => { if (!esCancelada) { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/form4?propuestaId=${prop.propuestaId || ''}`); } }}
+                                style={{ backgroundColor: '#0369A1', color: '#ffffff', borderColor: '#0369A1' }}
+                                onClick={() => { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/form4?propuestaId=${prop.propuestaId || ''}`); }}
                               >
                                 {esSubsanacion ? 'Corregir' : 'Editar / Llenar'}
                               </button>
@@ -666,25 +483,13 @@ const InvestigadorPropuestas = () => {
                                   margin: 0
                                 }}
                                 title="Subir formulario en PDF/Word directamente a SeaweedFS si no desea llenarlo en línea"
-                                style={{
-                                  backgroundColor: '#10b981',
-                                  color: '#ffffff',
-                                  borderColor: '#10b981',
-                                  cursor: esCancelada ? 'not-allowed' : 'pointer',
-                                  opacity: esCancelada ? 0.5 : 1,
-                                  pointerEvents: esCancelada ? 'none' : 'auto',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  margin: 0
-                                }}
                               >
                                 {subiendoFormulario[`${prop.propuestaId}_1`] ? 'Subiendo...' : '📤 Subir Doc'}
                                 <input
                                   type="file"
                                   accept=".pdf,.doc,.docx"
                                   style={{ display: 'none' }}
-                                  disabled={esCancelada || subiendoFormulario[`${prop.propuestaId}_1`]}
+                                  disabled={subiendoFormulario[`${prop.propuestaId}_1`]}
                                   onChange={(e) => handleSubirDocumentoFormulario(prop.propuestaId, 1, 'F-01 Formulario de Proyecto', e)}
                                 />
                               </label>
@@ -712,9 +517,8 @@ const InvestigadorPropuestas = () => {
                               <button 
                                 type="button" 
                                 className="btn-doc-action"
-                                disabled={esCancelada}
-                                style={{ backgroundColor: '#0369A1', color: '#ffffff', borderColor: '#0369A1', opacity: esCancelada ? 0.5 : 1, cursor: esCancelada ? 'not-allowed' : 'pointer' }}
-                                onClick={() => { if (!esCancelada) { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/form5?propuestaId=${prop.propuestaId || ''}`); } }}
+                                style={{ backgroundColor: '#0369A1', color: '#ffffff', borderColor: '#0369A1' }}
+                                onClick={() => { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/form5?propuestaId=${prop.propuestaId || ''}`); }}
                               >
                                 {esSubsanacion ? 'Corregir' : 'Editar / Llenar'}
                               </button>
@@ -731,25 +535,13 @@ const InvestigadorPropuestas = () => {
                                   margin: 0
                                 }}
                                 title="Subir archivo Excel o documento de Plan y Riesgos directamente a SeaweedFS"
-                                style={{
-                                  backgroundColor: '#10b981',
-                                  color: '#ffffff',
-                                  borderColor: '#10b981',
-                                  cursor: esCancelada ? 'not-allowed' : 'pointer',
-                                  opacity: esCancelada ? 0.5 : 1,
-                                  pointerEvents: esCancelada ? 'none' : 'auto',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  margin: 0
-                                }}
                               >
                                 {subiendoFormulario[`${prop.propuestaId}_2`] ? 'Subiendo...' : '📤 Subir Doc'}
                                 <input
                                   type="file"
                                   accept=".xlsx,.xls,.pdf,.doc,.docx"
                                   style={{ display: 'none' }}
-                                  disabled={esCancelada || subiendoFormulario[`${prop.propuestaId}_2`]}
+                                  disabled={subiendoFormulario[`${prop.propuestaId}_2`]}
                                   onChange={(e) => handleSubirDocumentoFormulario(prop.propuestaId, 2, 'F-02 Plan y Riesgos', e)}
                                 />
                               </label>
@@ -777,9 +569,7 @@ const InvestigadorPropuestas = () => {
                               <button 
                                 type="button" 
                                 className="btn-doc-action btn-add-files"
-                                disabled={esCancelada}
-                                style={{ opacity: esCancelada ? 0.5 : 1, cursor: esCancelada ? 'not-allowed' : 'pointer' }}
-                                onClick={() => { if (!esCancelada) { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/presupuesto?propuestaId=${prop.propuestaId || ''}`); } }}
+                                onClick={() => { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/presupuesto?propuestaId=${prop.propuestaId || ''}`); }}
                               >
                                 {esSubsanacion ? 'Corregir' : 'Abrir Módulo'}
                               </button>
@@ -818,6 +608,40 @@ const InvestigadorPropuestas = () => {
                         </div>
                       </div>
 
+                      {/* BANNER / BOTÓN DE ENVÍO EXPLÍCITO DE PROPUESTA A LA VIE */}
+                      {esBorrador && (
+                        <div style={{
+                          margin: '18px 0',
+                          padding: '16px 20px',
+                          backgroundColor: '#f0fdf4',
+                          border: '1.5px solid #86efac',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '12px'
+                        }}>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '15px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span>🚀</span> Enviar Propuesta para Revisión Oficial (VIE)
+                            </div>
+                            <div style={{ fontSize: '13px', color: '#15803d', marginTop: '3px' }}>
+                              Al presionar este botón, la propuesta cambiará de <strong>Borrador</strong> a <strong>Enviada a VIE</strong> para que los comités y gestoras inicien formalmente el proceso de revisión.
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn-proposal-action btn-solid"
+                            style={{ backgroundColor: '#16a34a', borderColor: '#16a34a', color: '#ffffff', padding: '10px 22px', fontSize: '14px', fontWeight: 600 }}
+                            onClick={() => handleEnviarPropuestaVIE(prop.propuestaId)}
+                            disabled={enviandoPropuesta[prop.propuestaId]}
+                          >
+                            {enviandoPropuesta[prop.propuestaId] ? 'Enviando a la VIE...' : '📤 Enviar Propuesta a la VIE'}
+                          </button>
+                        </div>
+                      )}
+
                       {/* 2. ESPACIO DE SUBSANACIONES Y OBSERVACIONES DE REVISIÓN */}
                       <div className={`expediente-section ${esSubsanacion ? 'subsanacion-section-highlight' : ''}`}>
                         <div className="section-header-title" style={{ color: esSubsanacion ? '#b45309' : undefined }}>
@@ -852,15 +676,6 @@ const InvestigadorPropuestas = () => {
                                 "{subActiva?.comentarioGestora || 'Favor revisar y corregir los siguientes puntos: 1. En F-02 Plan y Riesgos, aclarar las medidas de mitigación para el riesgo R2. 2. En F-03 Presupuesto, adjuntar las cotizaciones formales para las partidas de equipo y reactivos solicitados.'}"
                               </div>
                             </div>
-
-                            {/* Aviso si la respuesta anterior fue rechazada */}
-                            {subRechazada && subActiva?.comentarioResolucion && (
-                              <div className="banner-subsanacion-rechazada" style={{ margin: '12px 0', padding: '10px 14px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '6px', color: '#991b1b', fontSize: '13px' }}>
-                                <strong>⚠️ Respuesta rechazada por la Gestoría VIE:</strong>
-                                <div style={{ marginTop: '6px' }}>"{subActiva.comentarioResolucion}"</div>
-                                <div style={{ marginTop: '6px', color: '#7f1d1d', fontSize: '12px' }}>Debe corregir nuevamente y reenviar la propuesta.</div>
-                              </div>
-                            )}
 
                             {/* Panel de Acción para el Investigador */}
                             <div className="subsanacion-action-panel">
@@ -935,27 +750,14 @@ const InvestigadorPropuestas = () => {
                               />
 
                               <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                                {prop.esPropietario !== false ? (
-                                  <button 
-                                    type="button" 
-                                    className="btn-reenviar-propuesta"
-                                    onClick={() => handleReenviarSubsanacion(prop.propuestaId, subActiva?.subsanacionId)}
-                                    disabled={reenviando[prop.propuestaId]}
-                                  >
-                                    {reenviando[prop.propuestaId] ? 'Reenviando...' : '📤 Reenviar Propuesta Subsanada (Nueva Revisión)'}
-                                  </button>
-                                ) : (
-                                  <div className="banner-solo-coordinador" style={{
-                                    backgroundColor: '#eff6ff',
-                                    border: '1px solid #bfdbfe',
-                                    borderRadius: '6px',
-                                    padding: '8px 12px',
-                                    color: '#1e40af',
-                                    fontSize: '12px'
-                                  }}>
-                                    🔒 Solo la persona coordinadora del proyecto puede reenviar la propuesta subsanada a la Unidad de Vinculación.
-                                  </div>
-                                )}
+                                <button 
+                                  type="button" 
+                                  className="btn-reenviar-propuesta"
+                                  onClick={() => handleReenviarSubsanacion(prop.propuestaId, subActiva?.subsanacionId)}
+                                  disabled={reenviando[prop.propuestaId]}
+                                >
+                                  {reenviando[prop.propuestaId] ? 'Reenviando...' : '📤 Reenviar Propuesta Subsanada (Nueva Revisión)'}
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -1075,7 +877,7 @@ const InvestigadorPropuestas = () => {
           /* Estado Vacío Institucional */
           <div className="proposals-empty-state">
             <div className="empty-icon-circle">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0369A1" strokeWidth="1.5" aria-hidden="true">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0369A1" strokeWidth="1.5">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
                 <line x1="12" y1="18" x2="12" y2="12"></line>

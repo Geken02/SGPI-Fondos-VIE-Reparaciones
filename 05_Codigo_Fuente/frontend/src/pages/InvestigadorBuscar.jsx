@@ -130,9 +130,9 @@ const InvestigadorBuscar = () => {
         </div>
 
         {/* Buscador Principal */}
-        <form onSubmit={handleBuscar} className="search-main-bar" style={{ display: 'flex', gap: '10px', marginBottom: '16px' }} role="search" aria-label="Búsqueda institucional">
+        <form onSubmit={handleBuscar} className="search-main-bar" style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
           <div className="filter-search-box" style={{ flex: 1, padding: '10px 16px' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
@@ -145,7 +145,6 @@ const InvestigadorBuscar = () => {
               className="filter-search-input"
               containerStyle={{ flex: 1 }}
               style={{ fontSize: '15px', border: 'none', outline: 'none', background: 'transparent' }}
-              aria-label="Término de búsqueda de expedientes y convocatorias"
             />
             {terminoBusqueda && (
               <button 
@@ -153,25 +152,22 @@ const InvestigadorBuscar = () => {
                 onClick={() => { setTerminoBusqueda(''); setQueryActivo(''); }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '16px' }}
                 title="Limpiar campo"
-                aria-label="Limpiar término de búsqueda"
               >
-                <span aria-hidden="true">✕</span>
-                <span className="sr-only">Limpiar término de búsqueda</span>
+                ✕
               </button>
             )}
           </div>
-          <button type="submit" className="btn-nueva-propuesta" style={{ padding: '0 28px' }} aria-label="Ejecutar búsqueda">
+          <button type="submit" className="btn-nueva-propuesta" style={{ padding: '0 28px' }}>
             Buscar
           </button>
         </form>
 
         {/* Filtros secundarios */}
-        <div className="propuestas-filters-bar" style={{ marginBottom: '24px' }} role="group" aria-label="Filtros de búsqueda">
+        <div className="propuestas-filters-bar" style={{ marginBottom: '24px' }}>
           <select 
             value={filtroTipo} 
             onChange={(e) => setFiltroTipo(e.target.value)}
             className="filter-select"
-            aria-label="Filtrar por tipo de registro"
           >
             <option value="Todos">Filtro tipo: Todos ▾</option>
             <option value="Propuestas">Propuestas</option>
@@ -182,7 +178,6 @@ const InvestigadorBuscar = () => {
             value={filtroEstado} 
             onChange={(e) => setFiltroEstado(e.target.value)}
             className="filter-select"
-            aria-label="Filtrar por estado del proyecto"
           >
             <option value="Todos">Filtro estado: Todos ▾</option>
             <option value="Borrador">Borrador / En formulación</option>
@@ -195,7 +190,6 @@ const InvestigadorBuscar = () => {
             value={filtroConvocatoria} 
             onChange={(e) => setFiltroConvocatoria(e.target.value)}
             className="filter-select"
-            aria-label="Filtrar por convocatoria institucional"
           >
             <option value="Todas">Convocatoria: Todas ▾</option>
             <option value="Ordinaria">Convocatoria Ordinaria VIE</option>
@@ -208,7 +202,6 @@ const InvestigadorBuscar = () => {
             value={filtroSede} 
             onChange={(e) => setFiltroSede(e.target.value)}
             className="filter-select"
-            aria-label="Filtrar por sede o ubicación"
           >
             <option value="Todas">Ubicación / Sede: Todas ▾</option>
             <option value="Cartago">Sede Central Cartago</option>
@@ -222,7 +215,6 @@ const InvestigadorBuscar = () => {
               className="btn-limpiar-filtros"
               onClick={handleLimpiarBusqueda}
               style={{ padding: '6px 12px', fontSize: '13px' }}
-              aria-label="Limpiar todos los filtros y restaurar búsqueda inicial"
             >
               Limpiar Filtros
             </button>
@@ -282,7 +274,6 @@ const InvestigadorBuscar = () => {
                       type="button" 
                       className="btn-nueva-propuesta" 
                       style={{ padding: '6px 14px', fontSize: '13px' }}
-                      aria-label={`${item.tipoItem === 'Propuesta' ? 'Ver expediente de' : 'Ver convocatoria'} ${item.codigo}: ${item.titulo}`}
                       onClick={() => navigate(item.ruta)}
                     >
                       {item.tipoItem === 'Propuesta' ? 'Ver Expediente →' : 'Ver Convocatoria →'}
@@ -292,7 +283,7 @@ const InvestigadorBuscar = () => {
               ))
             ) : (
               <div className="proposals-empty-state">
-                <div className="empty-icon-circle" aria-hidden="true">🔍</div>
+                <div className="empty-icon-circle">🔍</div>
                 <h3 className="empty-title">No se encontraron resultados</h3>
                 <p className="empty-description">
                   {queryActivo.trim() 

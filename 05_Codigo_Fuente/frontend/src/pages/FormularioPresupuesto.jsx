@@ -131,7 +131,7 @@ const FormularioPresupuesto = () => {
 
   // Calcular subtotal de asistencia si aplica
   const ogActualObj = CATALOGO_OG.find(item => item.codigo === ogSeleccionado) || CATALOGO_OG[0];
-  const subtotalCalculado = ogActualObj.esAsistencia ? (numEstudiantes * horasMes * meses * 2400) : Number(montoManual || 0);
+  const subtotalCalculado = ogActualObj.esAsistencia ? (numEstudiantes * horasMes * meses * 2400) : Number(String(montoManual || 0).replace(/\s+/g, ''));
 
   // Filas del año activo
   const filasActuales = presupuestos[anoActivo] || [];
@@ -178,6 +178,7 @@ const FormularioPresupuesto = () => {
   };
 
   const handleEliminarFila = (id) => {
+    if (!confirm('¿Está seguro de que desea eliminar esta fila del presupuesto?')) return;
     const updated = {
       ...presupuestos,
       [anoActivo]: filasActuales.filter(f => f.id !== id)
@@ -261,7 +262,7 @@ const FormularioPresupuesto = () => {
     window.dispatchEvent(new Event('propuestaCreada'));
 
     setTimeout(() => {
-      alert('¡Presupuesto Operativo (Formulario 06) guardado exitosamente!');
+      alert('¡Presupuesto Operativo (Formulario 06) enviado exitosamente a la VIE!');
       setGuardando(false);
       navigate('/dashboard/propuestas');
     }, 450);
@@ -475,14 +476,15 @@ Total Trienal Solicitado: ₡ ${Object.values(presupuestos).flat().reduce((a, b)
                 <div className="modal-form-group">
                   <LimitedInput 
                     label="Monto Estimado Solicitado (₡)"
-                    type="number" 
-                    step="50000"
+                    type="text"
+                    formatoMonto
                     min="0"
                     required
                     showCounter={false}
                     className="modal-form-input"
+                    placeholder="0"
                     value={montoManual}
-                    onChange={(e) => setMontoManual(Math.max(0, Number(e.target.value) || 0))}
+                    onChange={(e) => setMontoManual(e.target.value)}
                   />
                 </div>
               )}
@@ -508,7 +510,11 @@ Total Trienal Solicitado: ₡ ${Object.values(presupuestos).flat().reduce((a, b)
                 <button 
                   type="button" 
                   className="btn-proposal-action btn-outline"
-                  onClick={() => setMostrarFormNuevaFila(false)}
+                  onClick={() => {
+                    if (confirm('¿Está seguro de que desea cancelar? Los datos ingresados se perderán.')) {
+                      setMostrarFormNuevaFila(false);
+                    }
+                  }}
                 >
                   ✖ Cancelar
                 </button>
