@@ -1,10 +1,11 @@
-// src/components/PanelDocumentos.jsx
 import { useState, useEffect } from 'react';
 import { comiteTecnicoService } from '../services/comiteTecnicoService';
+import PDFViewer from './PDFViewer'; // Asegúrate de que PDFViewer.jsx esté en la misma carpeta
 
 export default function PanelDocumentos({ propuestaId }) {
   const [documentos, setDocumentos] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [pdfAbierto, setPdfAbierto] = useState(null); // { url: string, titulo: string }
 
   useEffect(() => {
     const cargar = async () => {
@@ -52,47 +53,100 @@ export default function PanelDocumentos({ propuestaId }) {
   }
 
   return (
-    <div className="panel-documentos">
-      <h3 className="panel-titulo">Expediente de la Propuesta</h3>
-      
-      {documentos.length === 0 ? (
-        <p className="sin-documentos">No hay documentos adjuntos a esta propuesta.</p>
-      ) : (
-        <div className="lista-documentos">
-          {documentos.map((doc) => {
-            const nombreDocumento = tiposMap[doc.tipoDocumentoId] || `Documento tipo ${doc.tipoDocumentoId}`;
-            
-            return (
-              <div key={doc.documentoId} className="documento-item">
-                <div className="documento-info">
-                  <div className="documento-icono-wrapper">
-                    <DocumentIcon />
+    <>
+      <div className="panel-documentos">
+        <h3 className="panel-titulo">Expediente de la Propuesta</h3>
+        
+        {documentos.length === 0 ? (
+          <p className="sin-documentos">No hay documentos adjuntos a esta propuesta.</p>
+        ) : (
+          <div className="lista-documentos">
+            {documentos.map((doc) => {
+              const nombreDocumento = tiposMap[doc.tipoDocumentoId] || `Documento tipo ${doc.tipoDocumentoId}`;
+              
+              return (
+                <div key={doc.documentoId} className="documento-item">
+                  <div className="documento-info">
+                    <div className="documento-icono-wrapper">
+                      <DocumentIcon />
+                    </div>
+                    <div className="documento-detalles">
+                      <span className="documento-nombre">{nombreDocumento}</span>
+                      {doc.fechaSubida && (
+                        <span className="documento-fecha">
+                          Subido: {new Date(doc.fechaSubida).toLocaleDateString('es-CR')}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="documento-detalles">
-                    <span className="documento-nombre">{nombreDocumento}</span>
-                    {doc.fechaSubida && (
-                      <span className="documento-fecha">
-                        Subido: {new Date(doc.fechaSubida).toLocaleDateString('es-CR')}
-                      </span>
-                    )}
-                  </div>
+                  
+                  {doc.urlDescarga && (
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                      {/* ✅ Botón para ver en línea (abre el modal) */}
+                      <button 
+                        className="btn-ver-pdf-inline"
+                        onClick={() => setPdfAbierto({ url: doc.urlDescarga, titulo: nombreDocumento })}
+                        aria-label={`Ver ${nombreDocumento} en línea`}
+                        style={{ 
+                          flex: 1, 
+                          padding: '6px 12px', 
+                          background: '#002855', 
+                          color: 'white', 
+                          border: 'none', 
+                          borderRadius: '6px', 
+                          cursor: 'pointer', 
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        👁️ Ver
+                      </button>
+                      
+                      {/* ✅ Enlace para descargar directamente */}
+                      <a 
+                        href={doc.urlDescarga} 
+                        className="btn-descargar-directo"
+                        download
+                        aria-label={`Descargar ${nombreDocumento}`}
+                        style={{ 
+                          flex: 1,
+                          padding: '6px 12px', 
+                          background: '#f1f5f9', 
+                          color: '#334155', 
+                          borderRadius: '6px', 
+                          textDecoration: 'none', 
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '4px',
+                          transition: 'background 0.2s'
+                        }}
+                      >
+                        ⬇️ Descargar
+                      </a>
+                    </div>
+                  )}
                 </div>
-                
-                {doc.urlDescarga && (
-                  <a 
-                    href={doc.urlDescarga} 
-                    className="btn-descargar" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    Consultar
-                  </a>
-                )}
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ✅ Modal del Visor de PDF (se renderiza condicionalmente) */}
+      {pdfAbierto && (
+        <PDFViewer 
+          url={pdfAbierto.url} 
+          titulo={pdfAbierto.titulo} 
+          onClose={() => setPdfAbierto(null)} 
+        />
       )}
-    </div>
+    </>
   );
 }

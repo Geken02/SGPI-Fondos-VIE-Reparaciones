@@ -365,11 +365,7 @@ export default function Usuarios() {
                     <td className="nombre-completo">
                       {usuario.nombreUsuario} {usuario.apellido1Usuario} {usuario.apellido2Usuario}
                     </td>
-                    <td className="correo">
-                      <a href={`mailto:${usuario.correoInstitucional}`} className="correo-link">
-                        {usuario.correoInstitucional}
-                      </a>
-                    </td>
+                    <td className="correo">{usuario.correoInstitucional}</td>
                     <td>
                       <span className={`rol-badge ${infoRol.color}`} aria-label={`Rol: ${infoRol.nombre}`}>
                         {infoRol.nombre}

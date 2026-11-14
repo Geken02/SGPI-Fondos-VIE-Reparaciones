@@ -1,9 +1,9 @@
-// src/pages/comiteTecnico/RubricaDigital.jsx
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { comiteTecnicoService } from '../../services/comiteTecnicoService';
 import PanelDocumentos from '../../components/PanelDocumentos';
 import AnalisisIA from '../../components/AnalisisIA';
+import PDFViewer from '../../components/PDFViewer'; // ✅ 1. Importar el visor de PDF
 
 export default function RubricaDigital() {
   const { propuestaId } = useParams();
@@ -18,6 +18,9 @@ export default function RubricaDigital() {
     tiposSeleccionados: []
   });
   const [cargando, setCargando] = useState(true);
+  
+  // ✅ 2. Estado para controlar qué PDF está abierto en el modal
+  const [pdfAbierto, setPdfAbierto] = useState(null); 
 
   useEffect(() => {
     const cargar = async () => {
@@ -89,47 +92,44 @@ export default function RubricaDigital() {
   };
 
   const enviarEvaluacion = async () => {
-  // Validación básica de MVP
-  const criteriosObligatorios = rubricaData.estructuraRubrica.secciones
-    .flatMap(s => s.criterios)
-    .filter(c => c.es_requisito_obligatorio);
-  
-  const criteriosSinEvaluar = criteriosObligatorios.filter(c => !evaluaciones[c.id]);
-  
-  if (criteriosSinEvaluar.length > 0) {
-    alert(`⚠️ Faltan ${criteriosSinEvaluar.length} criterios obligatorios por evaluar.`);
-    return;
-  }
-
-  if (!confirm('¿Enviar evaluación final? Esta acción no se puede deshacer.')) return;
-
-  try {
-    const detalles = Object.keys(evaluaciones).map(cid => ({
-      criterioId: parseInt(cid),
-      puntaje: parseFloat(evaluaciones[cid].puntaje),
-      justificacion: evaluaciones[cid].justificacion || 'Sin justificación adicional.'
-    }));
-
-    // ✅ CORRECCIÓN: La calificación ya está en escala 0-1 (no multipliques por 100)
-    const payload = {
-      detalles,
-      calificacionFinal: parseFloat(calificacion.toFixed(2)), // ← Ya está en 0-1
-      recomienda: calificacion >= 0.70 && productosCumple,
-      observaciones: ''
-    };
-
-    console.log('📤 Enviando evaluación:', payload);
+    const criteriosObligatorios = rubricaData.estructuraRubrica.secciones
+      .flatMap(s => s.criterios)
+      .filter(c => c.es_requisito_obligatorio);
     
-    await comiteTecnicoService.enviarEvaluacion(propuestaId, payload);
+    const criteriosSinEvaluar = criteriosObligatorios.filter(c => !evaluaciones[c.id]);
+    
+    if (criteriosSinEvaluar.length > 0) {
+      alert(`⚠️ Faltan ${criteriosSinEvaluar.length} criterios obligatorios por evaluar.`);
+      return;
+    }
 
-    alert('✅ Evaluación enviada y guardada correctamente.');
-    navigate('/comite-tecnico/bandeja-evaluacion');
-  } catch (err) {
-    console.error('Error al enviar evaluación:', err);
-    const msg = err.response?.data?.detail || 'Error desconocido';
-    alert(`❌ Error al enviar evaluación: ${msg}`);
-  }
-};
+    if (!confirm('¿Enviar evaluación final? Esta acción no se puede deshacer.')) return;
+
+    try {
+      const detalles = Object.keys(evaluaciones).map(cid => ({
+        criterioId: parseInt(cid),
+        puntaje: parseFloat(evaluaciones[cid].puntaje),
+        justificacion: evaluaciones[cid].justificacion || 'Sin justificación adicional.'
+      }));
+
+      const payload = {
+        detalles,
+        calificacionFinal: parseFloat(calificacion.toFixed(2)),
+        recomienda: calificacion >= 0.70 && productosCumple,
+        observaciones: ''
+      };
+
+      console.log('📤 Enviando evaluación:', payload);
+      await comiteTecnicoService.enviarEvaluacion(propuestaId, payload);
+
+      alert('✅ Evaluación enviada y guardada correctamente.');
+      navigate('/comite-tecnico/bandeja-evaluacion');
+    } catch (err) {
+      console.error('Error al enviar evaluación:', err);
+      const msg = err.response?.data?.detail || 'Error desconocido';
+      alert(`❌ Error al enviar evaluación: ${msg}`);
+    }
+  };
 
   const irAnterior = () => {
     if (pasoActual > 0) setPasoActual(pasoActual - 1);
@@ -163,7 +163,6 @@ export default function RubricaDigital() {
   const progresoTotal = ((pasoActual + 1) / totalPasos) * 100;
   const seccionActual = rubricaData.estructuraRubrica.secciones[pasoActual];
 
-  // Renderizar sección de evaluación (pasos 0 a 7)
   const renderizarSeccionEvaluacion = () => {
     if (!seccionActual) return null;
     
@@ -229,7 +228,6 @@ export default function RubricaDigital() {
                     placeholder="Explique por qué asignó este puntaje basándose en la evidencia del documento..."
                     rows={3}
                   />
-                 
                 </div>
               )}
             </div>
@@ -239,7 +237,6 @@ export default function RubricaDigital() {
     );
   };
 
-    // Renderizar sección de productos (paso 8)
   const renderizarProductos = () => {
     const seccionProductos = rubricaData?.estructuraRubrica?.seccion_productos;
     if (!seccionProductos) return <p>No se encontró la configuración de productos.</p>;
@@ -294,7 +291,6 @@ export default function RubricaDigital() {
           <p className="tipos-instruccion">Marque el tipo declarado por el equipo:</p>
           
           <div className="tipos-productos-grid">
-            {/* ✅ Manejo seguro para Fortalecimiento y Básica/Aplicada */}
             {seccionProductos.tipos_productos?.map((tipo) => (
               <label key={tipo.id} className="tipo-producto-checkbox">
                 <input
@@ -306,7 +302,6 @@ export default function RubricaDigital() {
               </label>
             ))}
 
-            {/* ✅ Manejo seguro y específico para Desarrollo Tecnológico */}
             {esDesarrolloTecnologico && (
               <>
                 <h4 className="subtipo-titulo" style={{marginTop: '20px', width: '100%'}}>① Producto de propiedad industrial OBLIGATORIO</h4>
@@ -349,7 +344,6 @@ export default function RubricaDigital() {
     );
   };
 
-  // Renderizar resumen (paso 9)
   const renderizarResumen = () => (
     <div className="seccion-resumen">
       <div className="seccion-header">
@@ -510,92 +504,86 @@ export default function RubricaDigital() {
         <main className="main-content">
           <div className="content-card">
             <AnalisisIA 
-  propuestaId={propuestaId}
-  rubricaData={rubricaData}
-  onAplicarSugerencias={(sugerencias) => {
-  console.log('🔍 Aplicando sugerencias:', sugerencias);
-  
-  const normalizar = (str) => {
-    if (!str || typeof str !== 'string') return '';
-    return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-  };
+              propuestaId={propuestaId}
+              rubricaData={rubricaData}
+              onAplicarSugerencias={(sugerencias) => {
+                console.log('🔍 Aplicando sugerencias:', sugerencias);
+                
+                const normalizar = (str) => {
+                  if (!str || typeof str !== 'string') return '';
+                  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+                };
 
-  // Función para encontrar el mejor criterio por overlap de palabras clave
-  const encontrarMejorCriterio = (nombreIA, criteriosSeccion) => {
-    const palabrasIA = normalizar(nombreIA).split(/\s+/).filter(p => p.length > 2);
-    const palabrasIgnorar = ['de', 'la', 'el', 'las', 'los', 'un', 'una', 'y', 'o', 'a', 'con', 'por', 'para', 'en', 'del', 'al', 'se', 'su', 'es', 'son'];
-    
-    let mejorCriterio = null;
-    let maxOverlap = 0;
+                const encontrarMejorCriterio = (nombreIA, criteriosSeccion) => {
+                  const palabrasIA = normalizar(nombreIA).split(/\s+/).filter(p => p.length > 2);
+                  const palabrasIgnorar = ['de', 'la', 'el', 'las', 'los', 'un', 'una', 'y', 'o', 'a', 'con', 'por', 'para', 'en', 'del', 'al', 'se', 'su', 'es', 'son'];
+                  
+                  let mejorCriterio = null;
+                  let maxOverlap = 0;
 
-    for (const c of criteriosSeccion) {
-      const nombreBD = normalizar(c.nombre);
-      const palabrasBD = nombreBD.split(/\s+/).filter(p => p.length > 2 && !palabrasIgnorar.includes(p));
-      
-      // Calcular cuántas palabras clave de la IA están en la BD
-      const overlap = palabrasIA.filter(p => !palabrasIgnorar.includes(p) && palabrasBD.includes(p)).length;
-      
-      // Criterios de match:
-      // 1. Coincidencia exacta o substring directo
-      // 2. Al menos 2 palabras clave en común (ej: "Coherencia actividades" vs "Coherencia entre objetivos y actividades")
-      if (nombreBD.includes(normalizar(nombreIA)) || 
-          normalizar(nombreIA).includes(nombreBD) || 
-          overlap >= 2) {
-        
-        if (overlap > maxOverlap) {
-          maxOverlap = overlap;
-          mejorCriterio = c;
-        }
-      }
-    }
-    return mejorCriterio;
-  };
+                  for (const c of criteriosSeccion) {
+                    const nombreBD = normalizar(c.nombre);
+                    const palabrasBD = nombreBD.split(/\s+/).filter(p => p.length > 2 && !palabrasIgnorar.includes(p));
+                    
+                    const overlap = palabrasIA.filter(p => !palabrasIgnorar.includes(p) && palabrasBD.includes(p)).length;
+                    
+                    if (nombreBD.includes(normalizar(nombreIA)) || 
+                        normalizar(nombreIA).includes(nombreBD) || 
+                        overlap >= 2) {
+                      if (overlap > maxOverlap) {
+                        maxOverlap = overlap;
+                        mejorCriterio = c;
+                      }
+                    }
+                  }
+                  return mejorCriterio;
+                };
 
-  let aplicados = 0;
-  let omitidos = 0;
+                let aplicados = 0;
+                let omitidos = 0;
 
-  Object.entries(sugerencias).forEach(([seccionId, seccionData]) => {
-    const seccionRubrica = rubricaData.estructuraRubrica.secciones.find(
-      s => s.id === parseInt(seccionId)
-    );
-    
-    if (!seccionRubrica) return;
+                Object.entries(sugerencias).forEach(([seccionId, seccionData]) => {
+                  const seccionRubrica = rubricaData.estructuraRubrica.secciones.find(
+                    s => s.id === parseInt(seccionId)
+                  );
+                  
+                  if (!seccionRubrica) return;
 
-    seccionData.criterios.forEach((criterioEval) => {
-      if (!criterioEval.criterio || !criterioEval.puntaje) {
-        omitidos++;
-        return;
-      }
+                  seccionData.criterios.forEach((criterioEval) => {
+                    if (!criterioEval.criterio || !criterioEval.puntaje) {
+                      omitidos++;
+                      return;
+                    }
 
-      // Usar el nuevo algoritmo de mejor coincidencia
-      const criterioRubrica = encontrarMejorCriterio(criterioEval.criterio, seccionRubrica.criterios);
-      
-      if (criterioRubrica) {
-        console.log(`✅ "${criterioEval.criterio}" → "${criterioRubrica.nombre}" (Puntaje: ${criterioEval.puntaje})`);
-        
-        handleSeleccionar(
-          criterioRubrica.id,
-          criterioEval.nivel || 'Bueno',
-          criterioEval.puntaje
-        );
-        
-        handleJustificacion(
-          criterioRubrica.id,
-          criterioEval.justificacion || "Justificación generada por IA."
-        );
-        
-        aplicados++;
-      } else {
-        console.warn(`❌ No mapeado: "${criterioEval.criterio}"`);
-        omitidos++;
-      }
-    });
-  });
-  
-  alert(`✅ Aplicados: ${aplicados} | Omitidos: ${omitidos}\nRevisa los campos.`);
-}}
-/>
-        {pasoActual < 8 && renderizarSeccionEvaluacion()}
+                    const criterioRubrica = encontrarMejorCriterio(criterioEval.criterio, seccionRubrica.criterios);
+                    
+                    if (criterioRubrica) {
+                      console.log(`✅ "${criterioEval.criterio}" → "${criterioRubrica.nombre}" (Puntaje: ${criterioEval.puntaje})`);
+                      
+                      handleSeleccionar(
+                        criterioRubrica.id,
+                        criterioEval.nivel || 'Bueno',
+                        criterioEval.puntaje
+                      );
+                      
+                      handleJustificacion(
+                        criterioRubrica.id,
+                        criterioEval.justificacion || "Justificación generada por IA."
+                      );
+                      
+                      aplicados++;
+                    } else {
+                      console.warn(`❌ No mapeado: "${criterioEval.criterio}"`);
+                      omitidos++;
+                    }
+                  });
+                });
+                
+                alert(`✅ Aplicados: ${aplicados} | Omitidos: ${omitidos}\nRevisa los campos.`);
+              }}
+            />
+            
+            {pasoActual < 8 && renderizarSeccionEvaluacion()}
             {pasoActual === 8 && renderizarProductos()}
             {pasoActual === 9 && renderizarResumen()}
 
@@ -627,10 +615,23 @@ export default function RubricaDigital() {
 
         {/* COLUMNA 3: PANEL DE DOCUMENTOS */}
         <aside className="panel-derecho">
-          <PanelDocumentos propuestaId={propuestaId} />
+          {/* ✅ 3. Pasamos la función onVerPdf para que el panel avise a la rúbrica qué PDF abrir */}
+          <PanelDocumentos 
+            propuestaId={propuestaId} 
+            onVerPdf={(url, titulo) => setPdfAbierto({ url, titulo })} 
+          />
         </aside>
 
       </div>
+
+      {/* ✅ 4. Renderizamos el Modal del Visor de PDF condicionalmente al final del componente */}
+      {pdfAbierto && (
+        <PDFViewer 
+          url={pdfAbierto.url} 
+          titulo={pdfAbierto.titulo} 
+          onClose={() => setPdfAbierto(null)} 
+        />
+      )}
     </div>
   );
 }
