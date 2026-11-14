@@ -1,106 +1,28 @@
 import { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-
-// ✅ Importaciones de CSS corregidas para Vite/Rolldown
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-// ✅ SOLUCIÓN DEFINITIVA PARA VITE + VERCEL:
-// Le decimos a Vite que busque el worker en sus propios paquetes, 
-// eliminando por completo el riesgo de errores 404 de CDNs externos.
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
+// Configuración del worker (Versión estable)
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js`;
 
-export default function PDFViewer({ url, titulo, onClose }) {
+export default function PdfViewer({ url, titulo }) {
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
-  const [error, setError] = useState(null);
-
-  const onDocumentLoadSuccess = ({ numPages }) => {
-    setNumPages(numPages);
-    setError(null);
-  };
-
-  const onDocumentLoadError = (err) => {
-    console.error('Error cargando PDF:', err);
-    setError('No se pudo cargar el documento. Verifique que la URL sea accesible y sea un PDF válido.');
-  };
 
   return (
-    <div 
-      className="pdf-modal-overlay" 
-      onClick={onClose} 
-      role="dialog" 
-      aria-modal="true" 
-      aria-label={`Visor de documento: ${titulo}`}
-    >
-      <div className="pdf-modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="pdf-modal-header">
-          <h3 id="pdf-modal-title">{titulo || 'Visor de Documento'}</h3>
-          <button 
-            onClick={onClose} 
-            className="pdf-close-btn" 
-            aria-label="Cerrar visor de documento"
-          >
-            ✕
-          </button>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#525659', padding: '20px', minHeight: '500px' }}>
+      <Document file={url} onLoadSuccess={({ numPages }) => setNumPages(numPages)} loading={<p style={{color:'white'}}>Cargando PDF...</p>}>
+        <Page pageNumber={pageNumber} width={Math.min(800, typeof window !== 'undefined' ? window.innerWidth - 100 : 800)} />
+      </Document>
+      
+      {numPages && (
+        <div style={{ marginTop: '15px', display: 'flex', gap: '15px', color: 'white', alignItems: 'center' }}>
+          <button onClick={() => setPageNumber(p => Math.max(1, p - 1))} disabled={pageNumber <= 1} style={{padding: '5px 10px'}}>← Anterior</button>
+          <span>Página {pageNumber} de {numPages}</span>
+          <button onClick={() => setPageNumber(p => Math.min(numPages, p + 1))} disabled={pageNumber >= numPages} style={{padding: '5px 10px'}}>Siguiente →</button>
         </div>
-        
-        <div className="pdf-viewer-container">
-          {error ? (
-            <div className="pdf-error" role="alert">
-              <p>{error}</p>
-              <a href={url} target="_blank" rel="noopener noreferrer" className="pdf-link-fallback">
-                Descargar o abrir PDF directamente
-              </a>
-            </div>
-          ) : (
-            <Document
-              file={url}
-              onLoadSuccess={onDocumentLoadSuccess}
-              onLoadError={onDocumentLoadError}
-              loading={
-                <div className="pdf-loading" role="status">
-                  <p>Cargando documento...</p>
-                </div>
-              }
-              options={{
-                cMapUrl: `//unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
-                cMapPacked: true,
-              }}
-            >
-              <Page 
-                pageNumber={pageNumber} 
-                width={Math.min(800, typeof window !== 'undefined' ? window.innerWidth - 100 : 800)} 
-                renderTextLayer={true}
-                renderAnnotationLayer={true}
-              />
-            </Document>
-          )}
-        </div>
-
-        {numPages && !error && (
-          <div className="pdf-controls">
-            <button 
-              onClick={() => setPageNumber(p => Math.max(1, p - 1))} 
-              disabled={pageNumber <= 1}
-              aria-label="Página anterior"
-            >
-              ← Anterior
-            </button>
-            <span aria-live="polite">Página {pageNumber} de {numPages}</span>
-            <button 
-              onClick={() => setPageNumber(p => Math.min(numPages, p + 1))} 
-              disabled={pageNumber >= numPages}
-              aria-label="Página siguiente"
-            >
-              Siguiente →
-            </button>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
