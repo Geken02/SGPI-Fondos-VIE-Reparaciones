@@ -1,5 +1,4 @@
-﻿
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import consejoEscuelaService from "../../services/consejoEscuelaService";
 import "./votacionesConsejo.css";
@@ -17,6 +16,8 @@ export default function VotacionesConsejo() {
 
   const [propuestaId, setPropuestaId] = useState("");
   const [observacionesNueva, setObservacionesNueva] = useState("");
+  const [propuestas, setPropuestas] = useState([]);
+  const [cargandoPropuestas, setCargandoPropuestas] = useState(false);
 
   const [votos, setVotos] = useState({});
   const [resultados, setResultados] = useState({});
@@ -28,6 +29,7 @@ export default function VotacionesConsejo() {
     return [];
   };
 
+  // Cargar votaciones registradas
   const cargarVotaciones = async () => {
     try {
       setCargando(true);
@@ -46,17 +48,54 @@ export default function VotacionesConsejo() {
     }
   };
 
+  // Cargar propuestas disponibles para el Consejo de Escuela
+  const cargarPropuestas = async () => {
+    try {
+      setCargandoPropuestas(true);
+
+      const respuesta = await consejoEscuelaService.listarPropuestas();
+      setPropuestas(obtenerLista(respuesta));
+    } catch (err) {
+      setError(
+        err?.response?.data?.detail ||
+          err?.message ||
+          "No fue posible cargar las propuestas disponibles."
+      );
+    } finally {
+      setCargandoPropuestas(false);
+    }
+  };
+
+  // Actualizar las votaciones y las propuestas
+  const actualizarInformacion = async () => {
+    await cargarVotaciones();
+
+    if (esAsistenteConsejo) {
+      await cargarPropuestas();
+    }
+  };
+
   useEffect(() => {
-    cargarVotaciones();
+    actualizarInformacion();
   }, []);
 
+  // Excluir propuestas que ya tienen una votación registrada
+  const propuestasDisponibles = propuestas.filter(
+    (propuesta) =>
+      !votaciones.some(
+        (votacion) =>
+          Number(votacion.propuestaId) === Number(propuesta.propuestaId)
+      )
+  );
+
+  // Crear una nueva votación
   const crear = async (e) => {
     e.preventDefault();
     setError("");
     setMensaje("");
 
     if (!propuestaId || Number(propuestaId) <= 0) {
-      setError("Ingresá un ID de propuesta válido.");
+      setError("Seleccioná una propuesta válida.");
       return;
     }
 
@@ -70,7 +109,7 @@ export default function VotacionesConsejo() {
       setObservacionesNueva("");
       setMensaje("La votación se creó correctamente.");
 
-      await cargarVotaciones();
+      await actualizarInformacion();
     } catch (err) {
       setError(
         err?.response?.data?.detail ||
@@ -80,6 +119,7 @@ export default function VotacionesConsejo() {
     }
   };
 
+  // Registrar el voto de un miembro del Consejo
   const votar = async (votacionId) => {
     const formulario = votos[votacionId];
 
@@ -114,6 +154,7 @@ export default function VotacionesConsejo() {
     }
   };
 
+  // Registrar el resultado y cerrar una votación
   const cerrarVotacion = async (votacionId) => {
     const formulario = resultados[votacionId];
 
@@ -148,6 +189,7 @@ export default function VotacionesConsejo() {
     }
   };
 
+  // Actualizar los campos del formulario de voto
   const actualizarVoto = (id, campo, valor) => {
     setVotos((actual) => ({
       ...actual,
@@ -158,6 +200,7 @@ export default function VotacionesConsejo() {
     }));
   };
 
+  // Actualizar los campos del formulario de resultado
   const actualizarResultado = (id, campo, valor) => {
     setResultados((actual) => ({
       ...actual,
@@ -182,7 +225,7 @@ export default function VotacionesConsejo() {
         <button
           type="button"
           className="btn-actualizar-votaciones"
-          onClick={cargarVotaciones}
+          onClick={actualizarInformacion}
         >
           Actualizar
         </button>
@@ -197,15 +240,33 @@ export default function VotacionesConsejo() {
 
           <form onSubmit={crear} className="crear-votacion-form">
             <label>
-              ID de la propuesta
-              <input
-                type="number"
-                min="1"
+              Propuesta
+
+              <select
                 value={propuestaId}
                 onChange={(e) => setPropuestaId(e.target.value)}
-                placeholder="Ej. 12"
                 required
-              />
+                disabled={
+                  cargandoPropuestas || propuestasDisponibles.length === 0
+                }
+              >
+                <option value="">
+                  {cargandoPropuestas
+                    ? "Cargando propuestas..."
+                    : propuestasDisponibles.length === 0
+                      ? "No hay propuestas disponibles"
+                      : "Seleccione una propuesta"}
+                </option>
+
+                {propuestasDisponibles.map((propuesta) => (
+                  <option
+                    key={propuesta.propuestaId}
+                    value={propuesta.propuestaId}
+                  >
+                    {propuesta.codigoPropuesta} - {propuesta.titulo}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label>
@@ -218,7 +279,15 @@ export default function VotacionesConsejo() {
               />
             </label>
 
-            <button type="submit" className="btn-crear-votacion">
+            <button
+              type="submit"
+              className="btn-crear-votacion"
+              disabled={
+                cargandoPropuestas ||
+                !propuestaId ||
+                propuestasDisponibles.length === 0
+              }
+            >
               Crear votación
             </button>
           </form>

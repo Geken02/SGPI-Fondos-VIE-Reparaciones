@@ -329,3 +329,7 @@ body.high-contrast-mode .propuestas-consejo .mensaje-error {
   border: 1px solid #ff7777 !important;
 }
 
+
+.tabla-propuestas th {
+  text-transform: uppercase;
+}
