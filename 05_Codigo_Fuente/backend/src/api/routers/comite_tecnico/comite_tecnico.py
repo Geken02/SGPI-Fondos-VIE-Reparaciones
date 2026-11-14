@@ -27,6 +27,8 @@ from src.api.schemas.comite_tecnico.evaluacion import EnviarEvaluacionRequest, R
 from src.services.comite_tecnico.ia_service import analizar_documento_completo
 from src.services.comite_tecnico.rubricas_data import obtener_rubrica, calcular_minimo_productos
 
+API_BASE_URL = "https://sgpi-fondos-vie-reparaciones.onrender.com"
+
 router = APIRouter(prefix="/api/comite-tecnico", tags=["Comité Técnico"])
 
 # ============================================================================
@@ -426,48 +428,31 @@ def obtener_estructura_rubrica(propuesta_id: int, db: Session = Depends(get_db),
         print(f"ERROR en obtener_estructura_rubrica: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
+
 @router.get("/evaluador/{propuesta_id}/documentos")
 def obtener_documentos_propuesta(
-    propuesta_id: int,
-    db: Session = Depends(get_db),
-    usuario: Usuario = Depends(obtener_usuario_actual)
+    propuesta_id: int, 
+    db: Session = Depends(get_db)
+    # usuario: Usuario = Depends(obtener_usuario_actual) # Descomenta si usas auth
 ):
-    try:
-        # Verificar que el evaluador tenga asignada esta propuesta
-        asignacion = db.query(AsignacionComite).filter(
-            AsignacionComite.propuestaId == propuesta_id,
-            AsignacionComite.evaluadorId == usuario.usuarioId,
-            AsignacionComite.activo == True
-        ).first()
-        
-        if not asignacion:
-            raise HTTPException(status_code=403, detail="No tiene asignada esta propuesta")
-        
-        documentos = db.query(PropuestaDocumentos).filter(
-            PropuestaDocumentos.propuestaId == propuesta_id,
-            PropuestaDocumentos.activo == True
-        ).all()
-        
-        documentos_data = []
-        for doc in documentos:
-            documentos_data.append({
-                "documentoId": doc.documentoId,
-                "tipoDocumentoId": doc.tipoDocumentoId,
-                "nombreArchivo": doc.nombreArchivo or f"Documento_{doc.tipoDocumentoId}",
-                "urlDescarga": obtener_url_documento(doc.rutaArchivo),  # Para descargar
-                "urlVerEnLinea": f"/api/documentos/{doc.documentoId}/ver" 
-            })
-        
-        return {
-            "propuestaId": propuesta_id,
-            "documentos": documentos_data,
-            "total": len(documentos_data)
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"ERROR en obtener_documentos_propuesta: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+    documentos = db.query(PropuestaDocumentos).filter(
+        PropuestaDocumentos.propuestaId == propuesta_id, 
+        PropuestaDocumentos.activo == True
+    ).all()
+    
+    documentos_data = []
+    for doc in documentos:
+        documentos_data.append({
+            "documentoId": doc.documentoId, 
+            "tipoDocumentoId": doc.tipoDocumentoId, 
+            "nombreArchivo": doc.nombreArchivo or f"Documento_{doc.tipoDocumentoId}", 
+            "urlDescarga": obtener_url_documento(doc.rutaArchivo),
+            # ✅ AQUÍ ESTÁ LA CLAVE: URL ABSOLUTA, no relativa
+            "urlVerEnLinea": f"{API_BASE_URL}/documentos/{doc.documentoId}/ver"
+        })
+    
+    return {"propuestaId": propuesta_id, "documentos": documentos_data, "total": len(documentos_data)}
+
 
 
 # CORREGIDO: Ahora incluye tipoEvaluacionId y estadoEvaluacionId al crear

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { renderAsync } from 'docx-preview';
 
 export default function DocxViewer({ url, titulo, onClose }) {
-  const containerRef = useRef(null);
+  const docContainerRef = useRef(null); // Contenedor interno donde se renderiza el Word
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -13,36 +13,31 @@ export default function DocxViewer({ url, titulo, onClose }) {
       setLoading(true);
       setError(null);
 
-      if (!containerRef.current) return;
-
       try {
-        // 1. Obtener el archivo desde la URL
         const response = await fetch(url);
 
-        // 2. Verificar que la respuesta del servidor sea exitosa (200 OK)
         if (!response.ok) {
-          throw new Error(`El servidor respondió con error: ${response.status} ${response.statusText}`);
+          throw new Error(`El servidor respondió con error: ${response.status}`);
         }
 
-        // 3. Verificar que el servidor no esté devolviendo una página HTML (error 404/500 en HTML)
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('text/html')) {
-          throw new Error('El servidor devolvió una página web (HTML) en lugar del documento Word. Verifica la ruta del archivo en el backend.');
+          throw new Error(
+            'El servidor devolvió HTML en lugar del documento. ' +
+            'Verifica que la ruta del archivo en la BD coincida con la de Supabase.'
+          );
         }
 
-        // 4. Convertir la respuesta a Blob (formato binario)
         const blob = await response.blob();
 
-        // 5. Verificar que el archivo no esté vacío
         if (blob.size === 0) {
-          throw new Error('El archivo está vacío o no existe en el almacenamiento.');
+          throw new Error('El archivo está vacío o no existe.');
         }
 
-        // 6. Renderizar el documento Word en el contenedor
-        if (isMounted && containerRef.current) {
-          containerRef.current.innerHTML = ''; // Limpiar contenido previo
-          
-          await renderAsync(blob, containerRef.current, undefined, {
+        // ✅ CORRECCIÓN: Renderizar en el contenedor interno SIN limpiar manualmente
+        // renderAsync se encarga de reemplazar el contenido automáticamente
+        if (isMounted && docContainerRef.current) {
+          await renderAsync(blob, docContainerRef.current, undefined, {
             className: "docx-wrapper",
             inWrapper: true,
             ignoreWidth: false,
@@ -56,23 +51,7 @@ export default function DocxViewer({ url, titulo, onClose }) {
       } catch (err) {
         console.error("Error cargando Word:", err);
         if (isMounted) {
-          setError(err.message || 'No se pudo leer el archivo Word.');
-          
-          // Mostrar mensaje de error amigable en la interfaz
-          if (containerRef.current) {
-            containerRef.current.innerHTML = `
-              <div style="text-align: center; padding: 40px; color: #991b1b;">
-                <p style="font-weight: bold; font-size: 16px; margin-bottom: 10px;">⚠️ No se pudo cargar el documento</p>
-                <p style="font-size: 14px; color: #64748b; margin-bottom: 20px; max-width: 400px; margin-left: auto; margin-right: auto;">
-                  ${err.message}
-                </p>
-                <a href="${url}" target="_blank" rel="noopener noreferrer" 
-                   style="display: inline-block; padding: 10px 20px; background: #002855; color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">
-                  ⬇️ Intentar descargar directamente
-                </a>
-              </div>
-            `;
-          }
+          setError(err.message);
         }
       } finally {
         if (isMounted) {
@@ -85,9 +64,12 @@ export default function DocxViewer({ url, titulo, onClose }) {
       cargarDocx();
     }
 
-    // Función de limpieza al desmontar el componente
     return () => {
       isMounted = false;
+      // ✅ Limpieza segura: solo si el contenedor existe
+      if (docContainerRef.current) {
+        docContainerRef.current.innerHTML = '';
+      }
     };
   }, [url]);
 
@@ -113,7 +95,6 @@ export default function DocxViewer({ url, titulo, onClose }) {
           overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
         }}
       >
-        {/* Header del Modal */}
         <div style={{ 
           padding: '16px 24px', borderBottom: '1px solid #e2e8f0', 
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -124,37 +105,55 @@ export default function DocxViewer({ url, titulo, onClose }) {
           </h3>
           <button 
             onClick={onClose} 
-            aria-label="Cerrar visor de Word"
+            aria-label="Cerrar visor"
             style={{ 
               background: 'none', border: 'none', fontSize: '24px', 
               cursor: 'pointer', color: '#64748b', width: '36px', height: '36px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              borderRadius: '50%', transition: 'background 0.2s, color 0.2s'
+              borderRadius: '50%'
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.color = '#dc2626'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#64748b'; }}
           >
             ✕
           </button>
         </div>
 
-        {/* Contenedor del Documento */}
-        <div 
-          className="docx-viewer-container" 
-          ref={containerRef}
-          style={{ 
-            flex: 1, overflow: 'auto', padding: '24px', background: '#f1f5f9' 
-          }}
-        >
-          {loading && !error && (
+        <div style={{ flex: 1, overflow: 'auto', padding: '24px', background: '#f1f5f9' }}>
+          {loading && (
             <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-              <p>Procesando y cargando el documento Word...</p>
+              <p>Procesando documento Word...</p>
             </div>
           )}
+
+          {error && (
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '8px', padding: '20px', maxWidth: '500px', margin: '0 auto' }}>
+                <p style={{ color: '#991b1b', fontWeight: 'bold', marginBottom: '12px' }}>
+                  ⚠️ No se pudo cargar el documento
+                </p>
+                <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '16px', wordBreak: 'break-word' }}>
+                  {error}
+                </p>
+                <a 
+                  href={url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  download
+                  style={{ 
+                    display: 'inline-block', padding: '10px 20px', background: '#002855', 
+                    color: 'white', textDecoration: 'none', borderRadius: '6px', fontWeight: '600' 
+                  }}
+                >
+                  ⬇️ Intentar descargar directamente
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* ✅ Contenedor interno dedicado para docx-preview */}
+          <div ref={docContainerRef} />
         </div>
       </div>
 
-      {/* Estilos inyectados para que el documento Word se vea como una hoja de papel */}
       <style>{`
         .docx-wrapper {
           background: white;
@@ -165,14 +164,9 @@ export default function DocxViewer({ url, titulo, onClose }) {
           min-height: 100%;
           font-family: 'Calibri', 'Arial', sans-serif;
         }
-        
-        /* Modo de alto contraste para el visor Word */
         .high-contrast-mode .docx-modal-content {
           background: #000000 !important;
           border: 2px solid #ffffff !important;
-        }
-        .high-contrast-mode .docx-viewer-container {
-          background: #000000 !important;
         }
         .high-contrast-mode .docx-wrapper {
           background: #000000 !important;
@@ -183,7 +177,6 @@ export default function DocxViewer({ url, titulo, onClose }) {
         .high-contrast-mode .docx-wrapper p,
         .high-contrast-mode .docx-wrapper h1,
         .high-contrast-mode .docx-wrapper h2,
-        .high-contrast-mode .docx-wrapper h3,
         .high-contrast-mode .docx-wrapper span {
           color: #ffffff !important;
         }

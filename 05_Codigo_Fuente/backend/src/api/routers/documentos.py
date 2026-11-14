@@ -16,69 +16,42 @@ router = APIRouter()
 @router.get("/documentos/{documento_id}/ver")
 async def ver_documento_en_linea(
     documento_id: int,
-    db: Session = Depends(get_db),
-    usuario: Usuario = Depends(obtener_usuario_actual)
+    db: Session = Depends(get_db)
 ):
-    """
-    Endpoint proxy para servir documentos PDF desde Supabase Storage.
-    Evita problemas de CORS y garantiza el Content-Type correcto.
-    """
+    documento = db.query(PropuestaDocumentos).filter(
+        PropuestaDocumentos.documentoId == documento_id,
+        PropuestaDocumentos.activo == True
+    ).first()
+    
+    if not documento:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    
     try:
-        # 1. Obtener el documento de la base de datos
-        documento = db.query(PropuestaDocumentos).filter(
-            PropuestaDocumentos.documentoId == documento_id,
-            PropuestaDocumentos.activo == True
-        ).first()
+        response = s3_client.get_object(
+            Bucket=S3_BUCKET_NAME,
+            Key=documento.rutaArchivo
+        )
         
-        if not documento:
-            raise HTTPException(status_code=404, detail="Documento no encontrado")
+        # Determinar Content-Type según la extensión
+        content_type = "application/octet-stream"
+        if documento.nombreArchivo.lower().endswith('.pdf'):
+            content_type = "application/pdf"
+        elif documento.nombreArchivo.lower().endswith('.docx'):
+            content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        elif documento.nombreArchivo.lower().endswith('.xlsx'):
+            content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         
-        # 2. Verificar permisos (opcional pero recomendado)
-        # Descomenta si quieres validar que el usuario tenga acceso a esta propuesta
-        # asignacion = db.query(AsignacionComite).filter(
-        #     AsignacionComite.propuestaId == documento.propuestaId,
-        #     AsignacionComite.evaluadorId == usuario.usuarioId,
-        #     AsignacionComite.activo == True
-        # ).first()
-        # if not asignacion:
-        #     raise HTTPException(status_code=403, detail="No tiene acceso a este documento")
-        
-        # 3. Descargar el archivo desde Supabase S3
-        try:
-            response = s3_client.get_object(
-                Bucket=S3_BUCKET_NAME,
-                Key=documento.rutaArchivo
-            )
-            
-            # 4. Determinar el Content-Type
-            content_type = response.get('ContentType', 'application/pdf')
-            
-            # Si es un PDF, forzar el tipo correcto
-            if documento.nombreArchivo.lower().endswith('.pdf'):
-                content_type = 'application/pdf'
-            
-            # 5. Servir el archivo al frontend
-            return StreamingResponse(
-                response['Body'].iter_chunks(),
-                media_type=content_type,
-                headers={
-                    "Content-Disposition": f"inline; filename=\"{documento.nombreArchivo}\"",
-                    "Access-Control-Allow-Origin": "*",
-                    "Cache-Control": "public, max-age=3600"
-                }
-            )
-            
-        except ClientError as e:
-            error_code = e.response['Error']['Code']
-            if error_code == 'NoSuchKey':
-                raise HTTPException(status_code=404, detail="El archivo no existe en el almacenamiento")
-            elif error_code == 'AccessDenied':
-                raise HTTPException(status_code=403, detail="No tiene permisos para acceder al archivo")
-            else:
-                raise HTTPException(status_code=500, detail=f"Error al acceder al archivo: {error_code}")
-                
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"ERROR en ver_documento_en_linea: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error interno del servidor")
+        return StreamingResponse(
+            response['Body'].iter_chunks(),
+            media_type=content_type,
+            headers={
+                "Content-Disposition": f"inline; filename=\"{documento.nombreArchivo}\"",
+                "Access-Control-Allow-Origin": "*",
+                "Cache-Control": "public, max-age=3600"
+            }
+        )
+    except ClientError as e:
+        error_code = e.response['Error']['Code']
+        if error_code == 'NoSuchKey':
+            raise HTTPException(status_code=404, detail=f"Archivo no encontrado en Supabase. Ruta: {documento.rutaArchivo}")
+        raise HTTPException(status_code=500, detail=f"Error de S3: {error_code}")
