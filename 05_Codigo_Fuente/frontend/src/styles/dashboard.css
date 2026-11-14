@@ -3530,3 +3530,40 @@ body.high-contrast .form-step-tab.active-step .step-tab-short-name {
 body.high-contrast .form-step-tab.active-step .step-tab-status-text {
   color: #000000 !important;
 }
+
+/* Soporte de botón para accesos rápidos (Avisos) */
+button.quick-card,
+.quick-card-btn {
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  border: 1px solid var(--tec-borde);
+  background-color: var(--tec-card-bg);
+  cursor: pointer;
+  padding: 14px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.2s ease;
+}
+
+button.quick-card:focus-visible,
+.quick-card-btn:focus-visible {
+  outline: 2px solid var(--tec-boton-primario);
+  outline-offset: 2px;
+}
+
+body.high-contrast button.quick-card,
+body.high-contrast .quick-card-btn {
+  background-color: #000000 !important;
+  border: 1px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast button.quick-card:hover,
+body.high-contrast .quick-card-btn:hover {
+  border-color: #ffff00 !important;
+  box-shadow: 0 0 8px rgba(255, 255, 0, 0.4) !important;
+}
