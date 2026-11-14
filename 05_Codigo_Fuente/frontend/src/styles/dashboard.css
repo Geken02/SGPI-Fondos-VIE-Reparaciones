@@ -1,4 +1,14 @@
 /* src/styles/dashboard.css */
+
+/* Ensure all table headers are uppercase across the app */
+th,
+.table th,
+.vinculacion-table th,
+.institucional-data-table th,
+.compromiso-grid-table th {
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px;
+}
 /* ============================================================
    SGPI - FONDOS VIE (TEC) - SISTEMA DE DISEÑO OFICIAL
    ============================================================ */
@@ -705,8 +715,6 @@ body, input, button, select, textarea {
 .segment-aprobadas { stroke: var(--tec-azul-principal); }
 .segment-rechazadas { stroke: var(--tec-rojo); }
 
-.segment-canceladas { stroke: #94a3b8; }
-
 .donut-center-value {
   position: absolute;
   top: 50%;
@@ -733,17 +741,15 @@ body, input, button, select, textarea {
 }
 
 .dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   display: inline-block;
-  flex-shrink: 0;
 }
 
-.dot-cyan, .dot.dot-cyan { background: #0284c7 !important; background-color: #0284c7 !important; }
-.dot-dark, .dot.dot-dark { background: #002855 !important; background-color: #002855 !important; }
-.dot-coral, .dot.dot-coral { background: #EF3340 !important; background-color: #EF3340 !important; }
-.dot-gray, .dot.dot-gray { background: #94a3b8 !important; background-color: #94a3b8 !important; }
+.dot-cyan { background-color: #0284c7; }
+.dot-dark { background-color: var(--tec-azul-principal); }
+.dot-coral { background-color: var(--tec-rojo); }
 
 .kpi-big-number {
   font-size: 28px;
@@ -2837,15 +2843,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 /* ==============================================================================
    MÓDULO DE SUBSANACIONES
    ============================================================================== */
-.badge-cancelada {
-  background-color: #f1f5f9 !important;
-  color: #64748b !important;
-  border: 1px solid #cbd5e1 !important;
-  font-weight: 700 !important;
-}
-
-.propuesta-accordion-card.is-cancelada { border-left: 5px solid #94a3b8 !important; opacity: 0.75; }
-
 .badge-subsanacion {
   background-color: #fffbeb !important;
   color: #b45309 !important;
@@ -3270,1601 +3267,303 @@ input:checked + .slider:before { transform: translateX(20px); }
   margin-top: 16px;
 }
 
-/* =============================================================================
-   ESTILOS PARA USERFORM - CAMPO DE ESTADO Y ROLES
-   ============================================================================= */
-
-/* Alineación de campos en fila (Rol + Estado) */
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
+/* ============================================================
+   BARRA DE NAVEGACIÓN Y STEPPER DEL FORMULARIO 04 (PROYECTO)
+   ============================================================ */
+.form-stepper-container {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-/* Select de estado con colores según valor */
-.form-select.estado-activo {
-  border-color: #10b981;
-  background-color: #f0fdf4;
-}
-
-.form-select.estado-inactivo {
-  border-color: #ef4444;
-  background-color: #fef2f2;
-}
-
-/* Hint de nota sobre múltiples roles */
-.form-hint {
-  font-size: 12px;
-  color: #64748b;
-  margin-top: 4px;
-  font-style: italic;
-}
-
-/* Lista de roles asignados */
-.roles-lista {
-  list-style: none;
-  padding: 0;
-  margin: 8px 0;
-}
-
-.roles-lista li {
+.form-stepper-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  margin-bottom: 6px;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.roles-lista li .rol-nombre {
-  font-weight: 500;
-  color: #1e293b;
+.stepper-title-area {
+  flex: 1;
+  min-width: 280px;
 }
 
-/* Botón de revocar rol */
-.btn-revocar-rol {
-  padding: 4px 10px;
+.stepper-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.stepper-current-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #002855;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stepper-status-badge {
   font-size: 12px;
-  background-color: #fee2e2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.btn-revocar-rol:hover {
-  background-color: #fecaca;
-  color: #991b1b;
+.stepper-status-badge.badge-completo {
+  background-color: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
 }
 
-.btn-revocar-rol:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.stepper-status-badge.badge-incompleto {
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
 }
 
-/* Selector para agregar nuevo rol */
-.agregar-rol-container {
+.stepper-progress-box {
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stepper-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #334155;
+}
+
+.stepper-progress-track {
+  width: 100%;
+  height: 8px;
+  background-color: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.stepper-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0284c7 0%, #16a34a 100%);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.form-stepper-scroll-strip {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
 }
 
-.agregar-rol-container .form-select {
-  flex: 1;
+.form-stepper-scroll-strip::-webkit-scrollbar {
+  height: 6px;
 }
 
-.agregar-rol-container .btn-submit {
-  padding: 8px 16px;
-  font-size: 13px;
+.form-stepper-scroll-strip::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
 }
 
-/* Responsive: en móviles, los campos en fila se apilan */
-@media (max-width: 768px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ==========================================================================
-   ACCESIBILIDAD: NAVEGACIÓN POR TECLADO, LECTOR DE PANTALLA Y ALTO CONTRASTE
-   ========================================================================== */
-
-/* 1. Navegación por teclado: Foco visible, grueso y de alto contraste */
-*:focus-visible {
-  outline: 3px solid var(--tec-boton-primario, #0369A1) !important;
-  outline-offset: 3px !important;
-  border-radius: 4px;
-  z-index: 100;
-}
-
-/* Eliminar el anillo de foco al hacer clic con el mouse, pero mantenerlo para teclado */
-*:focus:not(:focus-visible) {
-  outline: none !important;
-}
-
-/* 2. Lector de pantalla: Clase para ocultar visualmente pero mantener accesible */
-.sr-only {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0, 0, 0, 0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
-}
-
-/* 3. Modo de Alto Contraste (Se activa añadiendo la clase 'high-contrast-mode' al <body>) */
-.high-contrast-mode {
-  --tec-azul-principal: #000000;
-  --tec-boton-primario: #FFFF00; /* Amarillo sobre negro (estándar WCAG AAA) */
-  --tec-boton-hover: #CCCC00;
-  --tec-rojo: #FF3333;
-  --tec-bg-pagina: #000000;
-  --tec-card-bg: #000000;
-  --tec-borde: #FFFFFF;
-  --tec-texto-oscuro: #FFFFFF;
-  --tec-texto-cuerpo: #FFFFFF;
-  --tec-texto-muted: #FFFFFF;
-  --tec-texto-caption: #FFFFFF;
-  --tec-celeste-suave: #000000;
-}
-
-/* Sobrescrituras completas de CARDS y PANELES para Investigador y Vinculación */
-.high-contrast-mode body,
-.high-contrast-mode .dashboard-layout,
-.high-contrast-mode .main-body,
-.high-contrast-mode .investigador-dashboard-container,
-.high-contrast-mode .vinculacion-dashboard-container,
-.high-contrast-mode .vinculacion-dictamenes-container,
-.high-contrast-mode .vinculacion-evaluar-container,
-.high-contrast-mode .dashboard-main-card,
-.high-contrast-mode .kpi-card,
-.high-contrast-mode .kpi-card-highlight,
-.high-contrast-mode .proposal-item-card,
-.high-contrast-mode .propuesta-accordion-card,
-.high-contrast-mode .accordion-card-header,
-.high-contrast-mode .accordion-card-body,
-.high-contrast-mode .convocatoria-card,
-.high-contrast-mode .conv-stat-card,
-.high-contrast-mode .convocatoria-card-header,
-.high-contrast-mode .historial-card,
-.high-contrast-mode .historial-card-header,
-.high-contrast-mode .evaluacion-card,
-.high-contrast-mode .eval-card-header,
-.high-contrast-mode .eval-card-obs,
-.high-contrast-mode .subsanacion-card,
-.high-contrast-mode .quick-card,
-.high-contrast-mode .modalidad-card-option,
-.high-contrast-mode .question-toggle-card,
-.high-contrast-mode .expediente-card-box,
-.high-contrast-mode .dictamen-emitido-box,
-.high-contrast-mode .documento-adjunto-card,
-.high-contrast-mode .archivo-firmado-box,
-.high-contrast-mode .dropzone-upload-box,
-.high-contrast-mode .search-result-card,
-.high-contrast-mode .success-meta-card,
-.high-contrast-mode .resumen-oe-card,
-.high-contrast-mode .compromiso-callout-card,
-.high-contrast-mode .compromiso-table-wrapper,
-.high-contrast-mode .donut-chart-wrapper,
-.high-contrast-mode .donut-card,
-.high-contrast-mode .chart-card,
-.high-contrast-mode .modal-content,
-.high-contrast-mode .form-paper-container,
-.high-contrast-mode .step-content-pane,
-.high-contrast-mode .new-expense-card-panel,
-.high-contrast-mode .proposals-empty-state,
-.high-contrast-mode .crear-propuesta-modal-card,
-.high-contrast-mode .crear-propuesta-modal-body,
-.high-contrast-mode .investigador-propietario-box,
-.high-contrast-mode .filter-search-box,
-.high-contrast-mode .filter-select,
-.high-contrast-mode .proposal-progress-pill,
-.high-contrast-mode .convocatorias-filters-bar,
-.high-contrast-mode .propuestas-filters-bar,
-.high-contrast-mode .filtros-row,
-.high-contrast-mode .filtro-search-wrapper,
-.high-contrast-mode .doc-item-pill,
-.high-contrast-mode .auto-calc-box,
-.high-contrast-mode .presupuesto-summary-footer-box,
-.high-contrast-mode .compromiso-horas-bar,
-.high-contrast-mode .adicionales-container,
-.high-contrast-mode .ayuda-search-box,
-.high-contrast-mode .ayuda-guia-card,
-.high-contrast-mode .plantilla-item-card,
-.high-contrast-mode .crear-propuesta-success-body,
-.high-contrast-mode .success-propuesta-code-box {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFFFF !important;
-  border: 2px solid #FFFFFF !important;
-  box-shadow: none !important;
-}
-
-/* Encabezados y pies interiores de tarjetas para evitar zonas claras o fondos desalineados */
-.high-contrast-mode .accordion-card-header,
-.high-contrast-mode .convocatoria-card-header,
-.high-contrast-mode .eval-card-header,
-.high-contrast-mode .historial-card-header,
-.high-contrast-mode .proposal-card-top,
-.high-contrast-mode .proposal-card-footer {
-  background: #0d0d0d !important;
-  background-color: #0d0d0d !important;
-  border-bottom: 2px solid #FFFFFF !important;
-  color: #FFFFFF !important;
-}
-
-/* Tarjetas activas, seleccionadas o en hover */
-.high-contrast-mode .kpi-card:hover,
-.high-contrast-mode .kpi-card-highlight,
-.high-contrast-mode .proposal-item-card:hover,
-.high-contrast-mode .propuesta-accordion-card.open,
-.high-contrast-mode .convocatoria-card:hover,
-.high-contrast-mode .historial-card:hover,
-.high-contrast-mode .quick-card:hover,
-.high-contrast-mode .modalidad-card-option.is-selected,
-.high-contrast-mode .documento-adjunto-card:hover,
-.high-contrast-mode .evaluacion-card:hover {
-  border-color: #FFFF00 !important;
-  outline: 2px solid #FFFF00 !important;
-  outline-offset: -2px !important;
-  background-color: #000000 !important;
-}
-
-/* Círculo selector de modalidad */
-.high-contrast-mode .modalidad-radio-circle {
-  border: 2px solid #FFFFFF !important;
-  background-color: #000000 !important;
-}
-
-.high-contrast-mode .modalidad-card-option.is-selected .modalidad-radio-circle {
-  border-color: #FFFF00 !important;
-  background-color: #FFFF00 !important;
-}
-
-/* Textos de títulos, etiquetas, métricas y detalles dentro de tarjetas */
-.high-contrast-mode .kpi-card-label,
-.high-contrast-mode .expediente-meta-label,
-.high-contrast-mode .quick-card-sub,
-.high-contrast-mode .proposal-card-meta,
-.high-contrast-mode .historial-card-meta,
-.high-contrast-mode .conv-card-desc,
-.high-contrast-mode .legend-text,
-.high-contrast-mode .proposal-code {
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .kpi-big-number,
-.high-contrast-mode .cie-big-number,
-.high-contrast-mode .proposal-card-title,
-.high-contrast-mode .historial-card-title,
-.high-contrast-mode .quick-card-title,
-.high-contrast-mode .dashboard-main-title {
-  color: #FFFFFF !important;
-}
-
-/* Botón mini de cancelar propuesta (X) */
-.high-contrast-mode .btn-cancelar-propuesta-mini {
-  background-color: #000000 !important;
-  color: #FF3333 !important;
-  border: 2px solid #FF3333 !important;
-}
-
-.high-contrast-mode .btn-cancelar-propuesta-mini:hover {
-  background-color: #FF3333 !important;
-  color: #000000 !important;
-}
-
-/* Gráfico donut de estados de propuesta en alto contraste */
-.high-contrast-mode .donut-bg-track {
-  stroke: #333333 !important;
-}
-
-.high-contrast-mode .segment-revision {
-  stroke: #0284C7 !important;
-}
-
-.high-contrast-mode .segment-aprobadas {
-  stroke: #00FF66 !important;
-}
-
-.high-contrast-mode .segment-rechazadas {
-  stroke: #FF3333 !important;
-}
-
-.high-contrast-mode .segment-canceladas {
-  stroke: #FFFFFF !important;
-}
-
-.high-contrast-mode .donut-center-value {
-  fill: #FFFFFF !important;
-  color: #FFFFFF !important;
-}
-
-/* Compatibilidad nativa con configuración de Alto Contraste del Sistema Operativo */
-@media (prefers-contrast: more), (forced-colors: active) {
-  .dashboard-main-card,
-  .kpi-card,
-  .proposal-item-card,
-  .propuesta-accordion-card,
-  .convocatoria-card,
-  .historial-card,
-  .evaluacion-card,
-  .quick-card,
-  .modalidad-card-option,
-  .expediente-card-box,
-  .documento-adjunto-card,
-  .resumen-oe-card,
-  .compromiso-callout-card {
-    border: 2px solid CanvasText !important;
-    box-shadow: none !important;
-  }
-
-  .kpi-card:hover,
-  .modalidad-card-option.is-selected,
-  .propuesta-accordion-card.open {
-    outline: 2px solid Highlight !important;
-    border-color: Highlight !important;
-  }
-}
-
-.high-contrast-mode .tec-sidebar {
-  background-color: #000000 !important;
-  border-right: 2px solid #FFFFFF !important;
-}
-
-.high-contrast-mode .sidebar-pill-btn {
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 2px solid #FFFF00 !important;
-}
-
-.high-contrast-mode .sidebar-pill-btn.active {
-  background-color: #FFFF00 !important;
-  color: #000000 !important;
-  border-color: #FFFFFF !important;
-}
-
-.high-contrast-mode .sidebar-pill-btn .sidebar-pill-icon,
-.high-contrast-mode .sidebar-pill-btn .sidebar-pill-icon svg {
-  color: #FFFF00 !important;
-  stroke: #FFFF00 !important;
-}
-
-.high-contrast-mode h1,
-.high-contrast-mode h2,
-.high-contrast-mode h3,
-.high-contrast-mode h4,
-.high-contrast-mode p,
-.high-contrast-mode span,
-.high-contrast-mode label,
-.high-contrast-mode td,
-.high-contrast-mode th,
-.high-contrast-mode .welcome-title {
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .btn-nueva-propuesta,
-.high-contrast-mode .btn-solid,
-.high-contrast-mode .btn-form-nav.btn-primary,
-.high-contrast-mode .btn-envio-definitivo,
-.high-contrast-mode .btn-modal-crear {
-  background-color: #FFFF00 !important;
-  color: #000000 !important;
-  border: 2px solid #FFFFFF !important;
-  font-weight: 700 !important;
-}
-
-.high-contrast-mode .btn-outline,
-.high-contrast-mode .btn-modal-cancelar,
-.high-contrast-mode .btn-form-nav.btn-outline,
-.high-contrast-mode .btn-doc-action {
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 2px solid #FFFF00 !important;
-}
-
-.high-contrast-mode .badge-status,
-.high-contrast-mode .conv-status-badge,
-.high-contrast-mode .estado-badge,
-.high-contrast-mode .badge-subsanacion,
-.high-contrast-mode .badge-cancelada {
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 1px solid #FFFF00 !important;
-}
-
-.high-contrast-mode .form-text-input,
-.high-contrast-mode .form-text-area,
-.high-contrast-mode .modal-input,
-.high-contrast-mode .filtro-search,
-.high-contrast-mode .filtro-select,
-.high-contrast-mode .tec-search-box {
-  background-color: #000000 !important;
-  color: #FFFFFF !important;
-  border: 2px solid #FFFFFF !important;
-}
-
-.high-contrast-mode .form-text-input:focus,
-.high-contrast-mode .form-text-area:focus,
-.high-contrast-mode .tec-search-box:focus-within {
-  border-color: #FFFF00 !important;
-  box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.3) !important;
-}
-
-.high-contrast-mode .tec-header {
-  background-color: #000000 !important;
-  border-bottom: 2px solid #FFFFFF !important;
-}
-
-.high-contrast-mode .search-input {
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .search-input::placeholder {
-  color: #CCCCCC !important;
-}
-
-.high-contrast-mode .proposals-empty-state,
-.high-contrast-mode .subsanacion-banner-box,
-.high-contrast-mode .vie-reminder-box,
-.high-contrast-mode .compromiso-callout-card {
-  background-color: #000000 !important;
-  border: 2px solid #FFFF00 !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .institucional-data-table th,
-.high-contrast-mode .institucional-data-table td,
-.high-contrast-mode .vinculacion-table th,
-.high-contrast-mode .vinculacion-table td {
-  background-color: #000000 !important;
-  color: #FFFFFF !important;
-  border-color: #FFFFFF !important;
-}
-
-.high-contrast-mode .institucional-data-table tr:hover td,
-.high-contrast-mode .vinculacion-table tr:hover td {
-  background-color: #1a1a1a !important;
-}
-
-/* ============================================================================
-   BOTÓN DE ALTO CONTRASTE (Header)
-   ============================================================================ */
-.btn-alto-contraste {
-  background: transparent;
-  border: 1.5px solid rgba(255, 255, 255, 0.4);
-  color: #ffffff;
+.form-step-tab {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
   cursor: pointer;
-  padding: 8px;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.form-step-tab:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.form-step-tab.active-step {
+  background: #002855;
+  border-color: #002855;
+  box-shadow: 0 2px 6px rgba(0, 40, 85, 0.25);
+}
+
+.form-step-tab.active-step .step-tab-num {
+  background: #ffffff;
+  color: #002855;
+  border-color: #ffffff;
+}
+
+.form-step-tab.active-step .step-tab-short-name {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.form-step-tab.active-step .step-tab-status-text {
+  color: #fbbf24 !important;
+}
+
+.step-tab-num {
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s, border-color 0.2s;
-}
-
-.btn-alto-contraste:hover {
-  background-color: rgba(255, 255, 255, 0.12);
-  border-color: #7dd3fc;
-}
-
-.btn-alto-contraste[aria-pressed="true"] {
-  background-color: #ffff00;
-  color: #000000;
-  border-color: #ffffff;
-}
-
-/* ============================================================================
-   SKIP LINK (Enlace para saltar al contenido)
-   ============================================================================ */
-.skip-link {
-  position: absolute;
-  top: -100px;
-  left: 16px;
-  background-color: #002855;
-  color: #ffffff;
-  padding: 12px 20px;
-  border-radius: 0 0 8px 8px;
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 700;
-  text-decoration: none;
-  z-index: 10000;
-  transition: top 0.2s ease;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  flex-shrink: 0;
 }
 
-.skip-link:focus {
-  top: 0;
-  outline: 3px solid #ffff00;
+.form-step-tab.complete-step .step-tab-num {
+  background: #22c55e;
+  border-color: #16a34a;
+  color: #ffffff;
+}
+
+.step-tab-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.step-tab-short-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.step-tab-status-text {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.step-tab-status-text.text-green {
+  color: #16a34a;
+}
+
+.step-tab-status-text.text-amber {
+  color: #d97706;
+}
+
+/* Soporte para modo Alto Contraste */
+body.high-contrast .form-stepper-container {
+  background: #000000 !important;
+  border: 2px solid #ffff00 !important;
+}
+
+body.high-contrast .stepper-kicker {
+  color: #ffff00 !important;
+}
+
+body.high-contrast .stepper-current-title {
+  color: #ffffff !important;
+}
+
+body.high-contrast .stepper-status-badge.badge-completo {
+  background: #000000 !important;
+  color: #00ff00 !important;
+  border: 1px solid #00ff00 !important;
+}
+
+body.high-contrast .stepper-status-badge.badge-incompleto {
+  background: #000000 !important;
+  color: #ffff00 !important;
+  border: 1px solid #ffff00 !important;
+}
+
+body.high-contrast .stepper-progress-track {
+  background-color: #333333 !important;
+  border: 1px solid #ffff00 !important;
+}
+
+body.high-contrast .stepper-progress-fill {
+  background: #ffff00 !important;
+}
+
+body.high-contrast .form-step-tab {
+  background: #000000 !important;
+  border: 1px solid #ffffff !important;
+}
+
+body.high-contrast .form-step-tab .step-tab-short-name {
+  color: #ffffff !important;
+}
+
+body.high-contrast .form-step-tab.active-step {
+  background: #ffff00 !important;
+  border-color: #ffff00 !important;
+}
+
+body.high-contrast .form-step-tab.active-step .step-tab-num {
+  background: #000000 !important;
+  color: #ffff00 !important;
+}
+
+body.high-contrast .form-step-tab.active-step .step-tab-short-name {
+  color: #000000 !important;
+}
+
+body.high-contrast .form-step-tab.active-step .step-tab-status-text {
+  color: #000000 !important;
+}
+
+/* Soporte de botón para accesos rápidos (Avisos) */
+button.quick-card,
+.quick-card-btn {
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  border: 1px solid var(--tec-borde);
+  background-color: var(--tec-card-bg);
+  cursor: pointer;
+  padding: 14px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.2s ease;
+}
+
+button.quick-card:focus-visible,
+.quick-card-btn:focus-visible {
+  outline: 2px solid var(--tec-boton-primario);
   outline-offset: 2px;
 }
 
-/* ==========================================================================
-   PARCHE FINAL SIDEBAR - ALTO CONTRASTE (VERSIÓN ROBUSTA)
-   ========================================================================== */
-
-/* 1. Título del grupo (ej: "ADMINISTRACIÓN") */
-.high-contrast-mode .sidebar-group-title {
-  color: #FFFF00 !important;
-  font-weight: 700 !important;
-  letter-spacing: 1px !important;
-}
-
-/* 2. TODOS los botones del sidebar → fondo negro, borde amarillo, texto amarillo */
-.high-contrast-mode .sidebar-pill-btn,
-.high-contrast-mode a.sidebar-pill-btn,
-.high-contrast-mode button.sidebar-pill-btn {
-  background: #000000 !important;
+body.high-contrast button.quick-card,
+body.high-contrast .quick-card-btn {
   background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 2px solid #FFFF00 !important;
+  border: 1px solid #ffffff !important;
+  color: #ffffff !important;
 }
 
-/* 3. TEXTO dentro de los botones → amarillo */
-.high-contrast-mode .sidebar-pill-btn .sidebar-pill-label,
-.high-contrast-mode .sidebar-pill-btn span,
-.high-contrast-mode .sidebar-pill-btn a,
-.high-contrast-mode .sidebar-pill-label {
-  color: #FFFF00 !important;
-}
-
-/* 4. ÍCONOS dentro de botones inactivos → amarillos */
-.high-contrast-mode .sidebar-pill-btn .sidebar-pill-icon,
-.high-contrast-mode .sidebar-pill-btn .sidebar-pill-icon svg,
-.high-contrast-mode .sidebar-pill-icon svg path,
-.high-contrast-mode .sidebar-pill-icon svg circle,
-.high-contrast-mode .sidebar-pill-icon svg line,
-.high-contrast-mode .sidebar-pill-icon svg polyline,
-.high-contrast-mode .sidebar-pill-icon svg rect {
-  color: #FFFF00 !important;
-  stroke: #FFFF00 !important;
-  fill: none !important;
-}
-
-/* 5. Botón ACTIVO → fondo amarillo, texto e ícono NEGROS */
-.high-contrast-mode .sidebar-pill-btn.active,
-.high-contrast-mode a.sidebar-pill-btn.active,
-.high-contrast-mode button.sidebar-pill-btn.active {
-  background: #FFFF00 !important;
-  background-color: #FFFF00 !important;
-  color: #000000 !important;
-  border-color: #FFFFFF !important;
-}
-
-/* 6. TEXTO del botón activo → NEGRO */
-.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-label,
-.high-contrast-mode .sidebar-pill-btn.active span,
-.high-contrast-mode .sidebar-pill-btn.active a {
-  color: #000000 !important;
-}
-
-/* 7. ÍCONOS del botón activo → NEGROS */
-.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon,
-.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg,
-.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg path,
-.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg circle,
-.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg line,
-.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg polyline,
-.high-contrast-mode .sidebar-pill-btn.active .sidebar-pill-icon svg rect {
-  color: #000000 !important;
-  stroke: #000000 !important;
-}
-
-/* 8. Barrita lateral roja del botón activo → negra (para que se vea sobre amarillo) */
-.high-contrast-mode .sidebar-pill-btn.active::before {
-  background-color: #000000 !important;
-}
-
-/* 9. Hover sobre botones inactivos → invertir colores */
-.high-contrast-mode .sidebar-pill-btn:hover:not(.active) {
-  background: #FFFF00 !important;
-  color: #000000 !important;
-}
-
-.high-contrast-mode .sidebar-pill-btn:hover:not(.active) .sidebar-pill-label,
-.high-contrast-mode .sidebar-pill-btn:hover:not(.active) span {
-  color: #000000 !important;
-}
-
-.high-contrast-mode .sidebar-pill-btn:hover:not(.active) .sidebar-pill-icon svg,
-.high-contrast-mode .sidebar-pill-btn:hover:not(.active) .sidebar-pill-icon svg path,
-.high-contrast-mode .sidebar-pill-btn:hover:not(.active) .sidebar-pill-icon svg circle {
-  stroke: #000000 !important;
-  color: #000000 !important;
-}
-
-/* ==========================================================================
-   PARCHE GLOBAL V3 - RÚBRICA + EXPEDIENTE + HOVER + SVG INLINE
-   Se pega en dashboard.css porque es el único que carga en TODAS las vistas.
-   Gana sobre atributos stroke="" inline gracias a !important.
-   ========================================================================== */
-
-/* ---------- RÚBRICA: sidebar de secciones ---------- */
-
-/* Hover sobre item INACTIVO: gris oscuro (NO amarillo) para no perder el texto */
-.high-contrast-mode .rubrica-container .nav-item:hover:not(.active) {
-  background-color: #1a1a1a !important;
-}
-.high-contrast-mode .rubrica-container .nav-item:hover:not(.active) .nav-nombre,
-.high-contrast-mode .rubrica-container .nav-item:hover:not(.active) .nav-peso {
-  color: #FFFF00 !important;
-}
-
-/* Item ACTIVO: fondo amarillo + TODO el texto NEGRO (nombre y peso) */
-.high-contrast-mode .rubrica-container .nav-item.active {
-  background-color: #FFFF00 !important;
-  border-left-color: #000000 !important;
-}
-.high-contrast-mode .rubrica-container .nav-item.active .nav-nombre,
-.high-contrast-mode .rubrica-container .nav-item.active .nav-peso,
-.high-contrast-mode .rubrica-container .nav-item.active .nav-text span {
-  color: #000000 !important;
-  font-weight: 700 !important;
-}
-/* El círculo del ícono del item activo: fondo negro + número amarillo */
-.high-contrast-mode .rubrica-container .nav-item.active .nav-icon {
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 2px solid #000000 !important;
-}
-
-/* Items inactivos: nombre amarillo, peso gris */
-.high-contrast-mode .rubrica-container .nav-item .nav-nombre { color: #FFFF00 !important; }
-.high-contrast-mode .rubrica-container .nav-item .nav-peso { color: #CCCCCC !important; }
-.high-contrast-mode .rubrica-container .nav-item .nav-icon {
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 2px solid #FFFF00 !important;
-}
-
-/* Item completado (done): verde */
-.high-contrast-mode .rubrica-container .nav-item.done .nav-nombre { color: #00FF00 !important; }
-.high-contrast-mode .rubrica-container .nav-item.done .nav-icon {
-  background-color: #00FF00 !important;
-  color: #000000 !important;
-}
-
-/* ---------- RÚBRICA: botón IA y badges ---------- */
-.high-contrast-mode .rubrica-container .btn-analizar-ia,
-.high-contrast-mode .rubrica-container .sugerencia-ia button {
-  background-color: #FFFF00 !important;
-  color: #000000 !important;
-  border: 2px solid #FFFFFF !important;
-  font-weight: 700 !important;
-}
-.high-contrast-mode .rubrica-container .obligatorio-badge {
-  background-color: #000000 !important;
-  color: #FF3333 !important;
-  border: 2px solid #FF3333 !important;
-}
-
-/* ---------- EXPEDIENTE: menú lateral de secciones ---------- */
-
-/* Hover inactivo: gris oscuro, texto amarillo */
-.high-contrast-mode .exp-nav-item:hover:not(.active) {
-  background-color: #1a1a1a !important;
-}
-.high-contrast-mode .exp-nav-item:hover:not(.active) svg { stroke: #FFFF00 !important; }
-.high-contrast-mode .exp-nav-item:hover:not(.active) .exp-nav-label { color: #FFFF00 !important; }
-
-/* Item ACTIVO: fondo amarillo + texto NEGRO + ícono NEGRO */
-.high-contrast-mode .exp-nav-item.active {
-  background-color: #FFFF00 !important;
-  color: #000000 !important;
-}
-.high-contrast-mode .exp-nav-item.active .exp-nav-label,
-.high-contrast-mode .exp-nav-item.active span {
-  color: #000000 !important;
-  font-weight: 700 !important;
-}
-.high-contrast-mode .exp-nav-item.active svg {
-  stroke: #000000 !important;   /* mata el stroke="#002855" inline */
-}
-
-/* Items inactivos: texto amarillo, ícono amarillo */
-.high-contrast-mode .exp-nav-item svg { stroke: #FFFF00 !important; }
-.high-contrast-mode .exp-nav-item .exp-nav-label { color: #FFFF00 !important; }
-
-/* ---------- EXPEDIENTE: botón "Registrar Evaluación" ---------- */
-.high-contrast-mode .exp-btn-evaluar {
-  background-color: #FFFF00 !important;
-  color: #000000 !important;
-  border: 2px solid #FFFFFF !important;
-  font-weight: 700 !important;
-}
-.high-contrast-mode .exp-btn-evaluar svg { stroke: #000000 !important; }  /* mata color="white" inline */
-
-/* ---------- EXPEDIENTE: ícono del header de sección (caja amarilla) ---------- */
-.high-contrast-mode .exp-doc-header-icon {
-  background-color: #FFFF00 !important;
-  border: 1px solid #FFFFFF !important;
-}
-.high-contrast-mode .exp-doc-header-icon svg { stroke: #000000 !important; }
-
-/* ---------- EXPEDIENTE: íconos de metadata y botones pequeños ---------- */
-.high-contrast-mode .exp-meta-icon svg,
-.high-contrast-mode .exp-icon-btn svg,
-.high-contrast-mode .exp-back-btn svg,
-.high-contrast-mode .exp-doc-icon-box svg,
-.high-contrast-mode .exp-doc-download svg,
-.high-contrast-mode .exp-info-box svg,
-.high-contrast-mode .exp-alert-box svg,
-.high-contrast-mode .exp-notas-title svg {
-  stroke: #FFFF00 !important;   /* todos los SVG decorativos → amarillo sobre negro */
-}
-/* ==========================================================================
-   PARCHE GLOBAL - MODAL CREAR PROPUESTA, FILTROS, SELECTS Y ELEMENTOS BLANCOS
-   Evita que queden contenedores en blanco y asegura alto contraste estricto
-   ========================================================================== */
-
-/* 1. Modal Crear Propuesta */
-.high-contrast-mode .crear-propuesta-modal-overlay {
-  background: rgba(0, 0, 0, 0.88) !important;
-  background-color: rgba(0, 0, 0, 0.88) !important;
-}
-
-.high-contrast-mode .crear-propuesta-modal-card {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFFFF !important;
-  border: 2px solid #FFFFFF !important;
-  box-shadow: 0 0 0 1px #000000 !important;
-}
-
-.high-contrast-mode .crear-propuesta-modal-header {
-  background: #0d0d0d !important;
-  background-color: #0d0d0d !important;
-  color: #FFFFFF !important;
-  border-bottom: 2px solid #FFFFFF !important;
-}
-
-.high-contrast-mode .crear-propuesta-modal-header .modal-header-title {
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .crear-propuesta-modal-header .btn-modal-close {
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .crear-propuesta-modal-body {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .crear-propuesta-modal-footer {
-  background: #0d0d0d !important;
-  background-color: #0d0d0d !important;
-  color: #FFFFFF !important;
-  border-top: 2px solid #FFFFFF !important;
-}
-
-.high-contrast-mode .modal-instructions {
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .form-label-modal {
-  color: #FFFF00 !important;
-  font-weight: 700 !important;
-}
-
-.high-contrast-mode .form-input-modal,
-.high-contrast-mode select.form-input-modal {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFFFF !important;
-  border: 2px solid #FFFFFF !important;
-}
-
-.high-contrast-mode .form-input-modal:focus,
-.high-contrast-mode select.form-input-modal:focus {
-  border-color: #FFFF00 !important;
-  outline: 2px solid #FFFF00 !important;
-  box-shadow: 0 0 0 2px rgba(255, 255, 0, 0.4) !important;
-}
-
-.high-contrast-mode .form-input-modal option,
-.high-contrast-mode select.form-input-modal option {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode select.form-input-modal option:disabled {
-  color: #777777 !important;
-}
-
-.high-contrast-mode .investigador-propietario-box {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #FFFFFF !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .propietario-avatar-circle {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #FFFF00 !important;
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .propietario-nombre {
-  color: #FFFFFF !important;
-  font-weight: 700 !important;
-}
-
-.high-contrast-mode .propietario-rol {
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .link-incorporar-equipo {
-  color: #FFFF00 !important;
-  text-decoration: underline !important;
-}
-
-.high-contrast-mode .alert-error-box {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #FF3333 !important;
-  color: #FF3333 !important;
-}
-
-/* 2. Filtros y Búsqueda en Dashboards (Investigador y Vinculación) */
-.high-contrast-mode .filter-search-box {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #FFFFFF !important;
-}
-
-.high-contrast-mode .filter-search-box:focus-within {
-  border-color: #FFFF00 !important;
-  outline: 2px solid #FFFF00 !important;
-}
-
-.high-contrast-mode .filter-search-input,
-.high-contrast-mode .filter-search-box input {
-  background: transparent !important;
-  background-color: transparent !important;
-  border: none !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .filter-search-input::placeholder,
-.high-contrast-mode .filter-search-box input::placeholder {
-  color: #CCCCCC !important;
-}
-
-.high-contrast-mode .filter-search-box svg {
-  stroke: #FFFF00 !important;
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .filter-select,
-.high-contrast-mode select.filter-select,
-.high-contrast-mode .filtro-select,
-.high-contrast-mode select.filtro-select,
-.high-contrast-mode .filter-date-input,
-.high-contrast-mode select {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFFFF !important;
-  border: 2px solid #FFFFFF !important;
-}
-
-.high-contrast-mode .filter-select:focus,
-.high-contrast-mode select.filter-select:focus,
-.high-contrast-mode .filtro-select:focus,
-.high-contrast-mode select.filtro-select:focus,
-.high-contrast-mode .filter-date-input:focus,
-.high-contrast-mode select:focus {
-  border-color: #FFFF00 !important;
-  outline: 2px solid #FFFF00 !important;
-}
-
-.high-contrast-mode .filter-select option,
-.high-contrast-mode select.filter-select option,
-.high-contrast-mode .filtro-select option,
-.high-contrast-mode select.filtro-select option,
-.high-contrast-mode select option {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .convocatorias-filters-bar,
-.high-contrast-mode .propuestas-filters-bar,
-.high-contrast-mode .filtros-row {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #FFFFFF !important;
-}
-
-.high-contrast-mode .btn-limpiar-filtros {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 2px solid #FFFF00 !important;
-}
-
-.high-contrast-mode .btn-limpiar-filtros:hover {
-  background: #FFFF00 !important;
-  background-color: #FFFF00 !important;
-  color: #000000 !important;
-}
-
-/* 3. Píldoras de Progreso y Estados en Tarjetas */
-.high-contrast-mode .proposal-progress-pill {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 1.5px solid #FFFF00 !important;
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .proposal-progress-pill * {
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .propuesta-codigo-pill,
-.high-contrast-mode .propuestas-codigo-badge {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 1.5px solid #FFFFFF !important;
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .propuesta-escuela-text {
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .badge-status.warning,
-.high-contrast-mode .badge-status.info,
-.high-contrast-mode .badge-status-vinculacion.pendiente,
-.high-contrast-mode .badge-status-vinculacion.en-curso,
-.high-contrast-mode .badge-status-vinculacion.completada {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 1.5px solid #FFFF00 !important;
-  color: #FFFF00 !important;
-}
-
-/* 4. LimitedInput y Contadores */
-.high-contrast-mode .limited-field-container label,
-.high-contrast-mode .limited-field-label {
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .limited-counter {
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .limited-counter.at-limit {
-  color: #FF3333 !important;
-}
-
-.high-contrast-mode .limit-error-msg {
-  color: #FF3333 !important;
-}
-
-/* 5. Vista de Éxito al Crear Propuesta */
-.high-contrast-mode .crear-propuesta-success-body {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .success-icon-badge {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #00FF66 !important;
-  color: #00FF66 !important;
-}
-
-.high-contrast-mode .success-modal-title {
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .success-modal-subtitle {
-  color: #CCCCCC !important;
-}
-
-.high-contrast-mode .success-propuesta-code-box {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #FFFF00 !important;
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .success-propuesta-code-box .code-label {
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .success-propuesta-code-box .code-value {
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .success-meta-card {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #FFFFFF !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .success-meta-card .meta-title {
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .success-meta-card .meta-val {
-  color: #FFFFFF !important;
-}
-
-/* 6. Documentos y Evaluaciones en Mis Propuestas */
-.high-contrast-mode .doc-item-pill,
-.high-contrast-mode .doc-item-pill.doc-completed,
-.high-contrast-mode .doc-item-pill.doc-pending {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 1.5px solid #FFFFFF !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .doc-item-pill.doc-completed {
-  border-color: #00FF66 !important;
-}
-
-.high-contrast-mode .doc-item-pill.doc-completed .doc-status-text {
-  color: #00FF66 !important;
-}
-
-.high-contrast-mode .doc-item-pill.doc-pending {
-  border-color: #FFFF00 !important;
-}
-
-.high-contrast-mode .doc-item-pill.doc-pending .doc-status-text {
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .badge-aprobado {
-  background: #000000 !important;
-  border: 1.5px solid #00FF66 !important;
-  color: #00FF66 !important;
-}
-
-.high-contrast-mode .badge-nota {
-  background: #000000 !important;
-  border: 1.5px solid #FFFF00 !important;
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .badge-pendiente {
-  background: #000000 !important;
-  border: 1.5px solid #FFCC00 !important;
-  color: #FFCC00 !important;
-}
-
-.high-contrast-mode .btn-ver-dictamen {
-  background: #000000 !important;
-  border: 1px solid #FFFF00 !important;
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .btn-ver-dictamen:hover {
-  background: #FFFF00 !important;
-  color: #000000 !important;
-}
-
-/* 7. Presupuesto, Tabs y Tablas */
-.high-contrast-mode .tab-year-btn {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #FFFFFF !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .tab-year-btn.active {
-  background: #FFFF00 !important;
-  background-color: #FFFF00 !important;
-  border-color: #FFFF00 !important;
-  color: #000000 !important;
-  font-weight: 700 !important;
-}
-
-.high-contrast-mode .btn-dashed-add-row {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px dashed #FFFF00 !important;
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .btn-dashed-add-row:hover {
-  background: #FFFF00 !important;
-  background-color: #FFFF00 !important;
-  color: #000000 !important;
-}
-
-.high-contrast-mode .auto-calc-box,
-.high-contrast-mode .presupuesto-summary-footer-box,
-.high-contrast-mode .compromiso-horas-bar,
-.high-contrast-mode .adicionales-container {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #FFFFFF !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .compromiso-horas-pill {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #FFFF00 !important;
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .tabla-footer {
-  background: #0d0d0d !important;
-  background-color: #0d0d0d !important;
-  border-top: 2px solid #FFFFFF !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .btn-page {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #FFFFFF !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .btn-page.active {
-  background: #FFFF00 !important;
-  background-color: #FFFF00 !important;
-  color: #000000 !important;
-  border-color: #FFFF00 !important;
-  font-weight: 700 !important;
-}
-
-/* ==========================================================================
-   FIX V4: SPANS INTERNOS DE BOTONES (la regla genérica .high-contrast-mode span
-   estaba pintando de blanco el texto sobre fondos amarillos)
-   ========================================================================== */
-
-/* Botón "Registrar Evaluación": fondo amarillo → texto NEGRO */
-.high-contrast-mode .exp-btn-evaluar,
-.high-contrast-mode .exp-btn-evaluar span {
-  color: #000000 !important;
-}
-
-/* Botón "Volver": fondo negro → texto AMARILLO */
-.high-contrast-mode .exp-back-btn,
-.high-contrast-mode .exp-back-btn span {
-  color: #FFFF00 !important;
-}
-
-/* Estado "Evaluación Completada": texto verde sobre negro */
-.high-contrast-mode .exp-status-box.completed,
-.high-contrast-mode .exp-status-box.completed span {
-  color: #00FF00 !important;
-}
-
-/* Estado "Solo lectura": texto blanco sobre negro */
-.high-contrast-mode .exp-status-box.readonly,
-.high-contrast-mode .exp-status-box.readonly span {
-  color: #FFFFFF !important;
-}
-
-/* Botón "Crear propuesta" activo del sidebar (por si su span cae en el mismo bug) */
-.high-contrast-mode button.sidebar-pill-btn.active,
-.high-contrast-mode button.sidebar-pill-btn.active span {
-  color: #000000 !important;
-}
-
-/* Botones de acciones en rúbrica/expediente con texto en span */
-.high-contrast-mode .asignar-btn-submit span,
-.high-contrast-mode .btn-modal-crear span,
-.high-contrast-mode .btn-enviar span {
-  color: #000000 !important;
-}
-
-
-/* ==========================================================================
-   ALTO CONTRASTE INTEGRAL: SUBSANACIONES, BADGES DE ESTADO Y BANNERS
-   Resuelve fondos blancos remanentes y etiquetas de estado ilegibles
-   ========================================================================== */
-
-/* 1. MÓDULO DE SUBSANACIONES (Sección 2 de Propuestas) */
-.high-contrast-mode .subsanacion-section-highlight,
-.high-contrast-mode .expediente-section.subsanacion-section-highlight {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #FFFF00 !important;
-  box-shadow: none !important;
-}
-
-.high-contrast-mode .subsanacion-card {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .subsanacion-header-meta {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border-bottom: 2px solid #333333 !important;
-}
-
-.high-contrast-mode .subsanacion-meta-label {
-  color: #FFFF00 !important;
-  font-weight: 700 !important;
-}
-
-.high-contrast-mode .subsanacion-meta-value {
-  color: #FFFFFF !important;
-  font-weight: 700 !important;
-}
-
-/* Badge de Estado de Subsanación (ej: PENDIENTE) */
-.high-contrast-mode .subsanacion-badge-status {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 2px solid #FFFF00 !important;
-  font-weight: 700 !important;
-}
-
-.high-contrast-mode .subsanacion-observaciones-box {
-  background: #0d0d0d !important;
-  background-color: #0d0d0d !important;
-  border: 2px solid #FFFF00 !important;
-  border-left: 6px solid #FFFF00 !important;
-}
-
-.high-contrast-mode .subsanacion-obs-title {
-  color: #FFFF00 !important;
-  font-weight: 700 !important;
-}
-
-.high-contrast-mode .subsanacion-obs-text {
-  color: #FFFFFF !important;
-  font-style: italic !important;
-}
-
-.high-contrast-mode .subsanacion-action-panel {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #FFFFFF !important;
-}
-
-.high-contrast-mode .subsanacion-step-title {
-  color: #FFFF00 !important;
-  font-weight: 800 !important;
-}
-
-.high-contrast-mode .subsanacion-quick-links {
-  background: transparent !important;
-}
-
-.high-contrast-mode .btn-sub-edit {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 2px solid #FFFF00 !important;
-  font-weight: 600 !important;
-}
-
-.high-contrast-mode .btn-sub-edit:hover {
-  background: #FFFF00 !important;
-  background-color: #FFFF00 !important;
-  color: #000000 !important;
-}
-
-.high-contrast-mode .subsanacion-file-upload-box {
-  background: #000000 !important;
-}
-
-.high-contrast-mode .btn-sub-upload {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 2px dashed #FFFF00 !important;
-  font-weight: 600 !important;
-}
-
-.high-contrast-mode .btn-sub-upload:hover {
-  background: #1a1a1a !important;
-  border-color: #FFFF00 !important;
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .subsanacion-files-list {
-  background: transparent !important;
-}
-
-.high-contrast-mode .subsanacion-file-tag {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 1.5px solid #FFFF00 !important;
-}
-
-.high-contrast-mode .subsanacion-file-tag button {
-  color: #FF3333 !important;
-  font-weight: 800 !important;
-}
-
-.high-contrast-mode .modal-form-input,
-.high-contrast-mode textarea.modal-form-input {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFFFF !important;
-  border: 2px solid #FFFFFF !important;
-}
-
-.high-contrast-mode .modal-form-input:focus,
-.high-contrast-mode textarea.modal-form-input:focus {
-  border-color: #FFFF00 !important;
-  outline: 2px solid #FFFF00 !important;
-}
-
-.high-contrast-mode .modal-form-input::placeholder,
-.high-contrast-mode textarea.modal-form-input::placeholder {
-  color: #CCCCCC !important;
-}
-
-.high-contrast-mode .btn-reenviar-propuesta {
-  background: #FFFF00 !important;
-  background-color: #FFFF00 !important;
-  color: #000000 !important;
-  border: 2px solid #FFFFFF !important;
-  font-weight: 700 !important;
-}
-
-.high-contrast-mode .btn-reenviar-propuesta:hover {
-  background: #CCCC00 !important;
-  background-color: #CCCC00 !important;
-}
-
-.high-contrast-mode .subsanacion-banner-box {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #FFFF00 !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .subsanacion-banner-title {
-  color: #FFFF00 !important;
-  font-weight: 800 !important;
-}
-
-.high-contrast-mode .subsanacion-banner-sub {
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .subsanacion-respondida-box {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #00FF66 !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .subsanacion-resp-badge {
-  color: #00FF66 !important;
-  font-weight: 700 !important;
-}
-
-.high-contrast-mode .subsanacion-resp-date {
-  color: #CCCCCC !important;
-}
-
-.high-contrast-mode .subsanacion-resp-content {
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .subsanacion-resp-footnote {
-  color: #00FF66 !important;
-}
-
-/* 2. BANNERS INFORMATIVOS Y DE ESTADO EN PROPUESTAS */
-.high-contrast-mode .banner-propuesta-cancelada {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #CCCCCC !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .banner-propuesta-cancelada * {
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .banner-envio-vinculacion {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #00FF66 !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .banner-envio-vinculacion div,
-.high-contrast-mode .banner-envio-vinculacion strong,
-.high-contrast-mode .banner-envio-vinculacion span {
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .banner-solo-coordinador {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 1.5px solid #FFFF00 !important;
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .banner-subsanacion-rechazada {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 2px solid #FF3333 !important;
-  color: #FF3333 !important;
-}
-
-.high-contrast-mode .banner-subsanacion-rechazada * {
-  color: #FF3333 !important;
-}
-
-/* 3. ETIQUETAS DE ESTADO Y BADGES VISIBLES EN TODO EL SISTEMA */
-.high-contrast-mode .badge-status {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 1.5px solid #FFFFFF !important;
-  color: #FFFFFF !important;
-  font-weight: 700 !important;
-}
-
-.high-contrast-mode .badge-status.info,
-.high-contrast-mode .badge-info,
-.high-contrast-mode .badge-status.borrador {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #00FFFF !important;
-  border: 1.5px solid #00FFFF !important;
-}
-
-.high-contrast-mode .badge-status.warning,
-.high-contrast-mode .badge-warning,
-.high-contrast-mode .estado-badge.warning {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 1.5px solid #FFFF00 !important;
-}
-
-.high-contrast-mode .badge-status.success,
-.high-contrast-mode .badge-success,
-.high-contrast-mode .estado-badge.success,
-.high-contrast-mode .badge-aprobado {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #00FF66 !important;
-  border: 1.5px solid #00FF66 !important;
-}
-
-.high-contrast-mode .badge-subsanacion,
-.high-contrast-mode .subsanacion-badge-status {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 1.5px solid #FFFF00 !important;
-}
-
-.high-contrast-mode .badge-cancelada,
-.high-contrast-mode .estado-badge.gray {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #CCCCCC !important;
-  border: 1.5px solid #CCCCCC !important;
-}
-
-.high-contrast-mode .eval-badge,
-.high-contrast-mode .eval-badge.badge-proximo {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #CCCCCC !important;
-  border: 1.5px solid #CCCCCC !important;
-}
-
-.high-contrast-mode .badge-coordinador-bloqueo {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #CCCCCC !important;
-  border: 1px solid #CCCCCC !important;
-}
-
-.high-contrast-mode .badge-equipo-miembro {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 1px solid #FFFF00 !important;
-}
-
-.high-contrast-mode .badge-nota {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 1.5px solid #FFFF00 !important;
-}
-
-.high-contrast-mode .badge-pendiente {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFCC00 !important;
-  border: 1.5px solid #FFCC00 !important;
-}
-
-.high-contrast-mode .badge-status-vinculacion {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 1.5px solid #FFFF00 !important;
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .badge-status-vinculacion.pendiente {
-  border-color: #FFFF00 !important;
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .badge-status-vinculacion.en-curso {
-  border-color: #00FFFF !important;
-  color: #00FFFF !important;
-}
-
-.high-contrast-mode .badge-status-vinculacion.completada {
-  border-color: #00FF66 !important;
-  color: #00FF66 !important;
-}
-
-.high-contrast-mode .conv-status-badge {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  border: 1.5px solid #FFFF00 !important;
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .conv-status-badge.status-open {
-  border-color: #00FF66 !important;
-  color: #00FF66 !important;
-}
-
-.high-contrast-mode .conv-status-badge.status-warning {
-  border-color: #FFFF00 !important;
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .conv-status-badge.status-closed {
-  border-color: #CCCCCC !important;
-  color: #CCCCCC !important;
-}
-
-.high-contrast-mode .gv-badge,
-.high-contrast-mode .dir-badge,
-.high-contrast-mode .cie-badge {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-  border: 1.5px solid #FFFF00 !important;
-}
-
-.high-contrast-mode .gv-badge-punto,
-.high-contrast-mode .dir-badge-punto {
-  background-color: #FFFF00 !important;
-}
-
-.high-contrast-mode .btn-cancelar-propuesta-mini {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #FF3333 !important;
-  border: 1.5px solid #FF3333 !important;
-}
-
-.high-contrast-mode .btn-cancelar-propuesta-mini:hover {
-  background: #FF3333 !important;
-  background-color: #FF3333 !important;
-  color: #000000 !important;
+body.high-contrast button.quick-card:hover,
+body.high-contrast .quick-card-btn:hover {
+  border-color: #ffff00 !important;
+  box-shadow: 0 0 8px rgba(255, 255, 0, 0.4) !important;
 }

@@ -7,28 +7,69 @@ import { propuestaService } from '../services/propuestaService';
 const VinculacionDetalleDictamen = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const propuestaId = location.state?.propuestaId || 1;
+  const propuestaId = location.state?.propuestaId || location.state?.item?.propuestaId || new URLSearchParams(location.search).get('propuestaId');
   const itemInicial = location.state?.item;
 
   const [expediente, setExpediente] = useState(itemInicial || null);
   const [dictamen, setDictamen] = useState(null);
+  const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
     const cargarDatos = async () => {
-      if (propuestaId) {
-        try {
-          const propData = await vinculacionService.obtenerPropuesta(propuestaId);
-          if (propData) setExpediente(propData);
-        } catch (_e) {}
-
-        try {
-          const dictData = await vinculacionService.obtenerDictamen(propuestaId);
-          if (dictData) setDictamen(dictData);
-        } catch (_e) {}
+      if (!propuestaId) {
+        setCargando(false);
+        return;
+      }
+      try {
+        setCargando(true);
+        const [propData, dictData] = await Promise.all([
+          vinculacionService.obtenerPropuesta(propuestaId).catch(() => null),
+          vinculacionService.obtenerDictamen(propuestaId).catch(() => null)
+        ]);
+        if (propData) setExpediente(propData);
+        if (dictData) setDictamen(dictData);
+      } catch (_e) {
+      } finally {
+        setCargando(false);
       }
     };
     cargarDatos();
   }, [propuestaId]);
+
+  if (!propuestaId && !expediente) {
+    return (
+      <div className="vinculacion-detalle-dictamen-container">
+        <div className="dashboard-main-card" style={{ textAlign: 'center', padding: '40px' }}>
+          <h2>No se ha seleccionado ninguna propuesta</h2>
+          <p style={{ color: '#627d98', margin: '16px 0' }}>
+            Seleccione una propuesta evaluada desde la bandeja de dictámenes para ver sus detalles.
+          </p>
+          <button 
+            type="button" 
+            className="btn-nueva-propuesta"
+            onClick={() => navigate('/dashboard/dictamenes')}
+          >
+            ← Ir a dictámenes emitidos
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const nombreArchivoDoc = dictamen?.rutaArchivo ? dictamen.rutaArchivo.split('/').pop() : null;
+
+  const handleDescargarDocumentoDictamen = () => {
+    if (!dictamen?.rutaArchivo) {
+      alert('Esta evaluación fue completada mediante el formulario en línea sin documento externo adjunto.');
+      return;
+    }
+    const url = dictamen.rutaArchivo.startsWith('http') 
+      ? dictamen.rutaArchivo 
+      : `/api/propuestas/${propuestaId}/archivos/${encodeURIComponent(nombreArchivoDoc)}`;
+    window.open(url, '_blank');
+  };
+
+  const tieneDeclaraciones = expediente?.poseeInnovacion || expediente?.tienePotencialPI || expediente?.requiereInstrumentoJuridico || expediente?.tieneInformacionConfidencial;
 
   return (
     <div className="vinculacion-detalle-dictamen-container">
@@ -38,7 +79,6 @@ const VinculacionDetalleDictamen = () => {
           <button 
             type="button" 
             className="btn-link-volver"
-            aria-label="Volver al listado de dictámenes emitidos"
             onClick={() => navigate('/dashboard/dictamenes')}
           >
             ← Volver a dictámenes emitidos
@@ -48,10 +88,10 @@ const VinculacionDetalleDictamen = () => {
         <div className="dashboard-header-row">
           <div className="dashboard-title-group">
             <h1 className="dashboard-main-title">
-              Detalle del Dictamen - {dictamen?.numeroOficio || expediente?.codigoPropuesta || 'FVIE-2027-004'}
+              Detalle del Dictamen — {dictamen?.numeroOficio || expediente?.codigoPropuesta || `Propuesta #${propuestaId}`}
             </h1>
             <p className="dashboard-subtitle">
-              {expediente?.titulo || 'Energía solar para comunidades rurales'} - {expediente?.investigadorCoordinador || 'Dr. Pedro Sánchez'}
+              {expediente?.titulo || 'Cargando expediente...'} {expediente?.investigadorCoordinador ? `— ${expediente.investigadorCoordinador}` : ''}
             </p>
           </div>
         </div>
@@ -64,35 +104,44 @@ const VinculacionDetalleDictamen = () => {
             <div className="expediente-card-box">
               <div className="expediente-meta-item">
                 <span className="expediente-meta-label">ID:</span>
-                <span className="expediente-meta-value">{expediente?.codigoPropuesta || expediente?.id || 'FVIE-2027-004'}</span>
+                <span className="expediente-meta-value">{expediente?.codigoPropuesta || expediente?.id || (propuestaId ? `Propuesta #${propuestaId}` : '—')}</span>
               </div>
 
               <div className="expediente-meta-item">
                 <span className="expediente-meta-label">Título:</span>
-                <span className="expediente-meta-value">{expediente?.titulo || 'Energía solar para comunidades rurales'}</span>
+                <span className="expediente-meta-value">{expediente?.titulo || '—'}</span>
               </div>
 
               <div className="expediente-meta-item">
                 <span className="expediente-meta-label">Investigador:</span>
-                <span className="expediente-meta-value">{expediente?.investigadorCoordinador || expediente?.investigador || 'Dr. Pedro Sánchez'} | {expediente?.nombreEscuela || 'Escuela de Ingeniería Electrónica'}</span>
+                <span className="expediente-meta-value">
+                  {expediente?.investigadorCoordinador || expediente?.investigador || 'No asignado'}
+                  {expediente?.nombreEscuela ? ` | ${expediente.nombreEscuela}` : ''}
+                </span>
               </div>
 
               <div className="expediente-meta-item">
-                <span className="expediente-meta-label">TRL Actual:</span>
-                <span className="badge-trl">Nivel {expediente?.nivelTrlActual || 3}</span>
+                <span className="expediente-meta-label">TRL Declarado:</span>
+                <span className="badge-trl">Nivel {expediente?.nivelTrlActual || '—'}</span>
               </div>
+
+              {expediente?.lineaInvestigacion && (
+                <div className="expediente-meta-item">
+                  <span className="expediente-meta-label">Línea de Inv.:</span>
+                  <span className="expediente-meta-value">{expediente.lineaInvestigacion}</span>
+                </div>
+              )}
 
               <div className="expediente-resumen-block">
                 <div className="expediente-resumen-title">Resumen:</div>
                 <p className="expediente-resumen-text">
-                  {expediente?.resumen || 'Este proyecto propone el diseño e implementación de un sistema de energía solar fotovoltaica para electrificar comunidades rurales aisladas en la zona sur de Costa Rica. Se instalarán paneles solares con sistemas de almacenamiento en baterías de litio para garantizar suministro eléctrico continuo.'}
+                  {expediente?.resumen || 'Sin resumen registrado en el formulario institucional.'}
                 </p>
               </div>
 
               <button 
                 type="button" 
                 className="btn-proposal-action btn-outline"
-                aria-label="Descargar Form-04 completo en formato PDF"
                 style={{ width: '100%', marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 onClick={() => descargarPropuestaPDF(propuestaId, propuestaService)}
               >
@@ -106,19 +155,21 @@ const VinculacionDetalleDictamen = () => {
             <h2 className="column-title" style={{ fontSize: '20px' }}>Dictamen de Vinculación Emitido</h2>
 
             <div className="dictamen-emitido-box">
-              {/* Banner Recomendado */}
+              {/* Banner */}
               <div className="banner-dictamen-recomendado">
-                ✓ RECOMENDADO
+                ✓ DICTAMEN DE VINCULACIÓN EMITIDO
               </div>
 
               {/* TRL Evaluado */}
               <div className="dictamen-seccion-item">
-                <h3 className="dictamen-item-title">TRL Evaluado</h3>
+                <h3 className="dictamen-item-title">Madurez Tecnológica (TRL)</h3>
                 <div className="dictamen-item-val" style={{ fontWeight: 600 }}>
-                  Nivel 3 → Nivel 6 (Demostración de prototipo en entorno relevante)
+                  Nivel {expediente?.nivelTrlActual || '—'} → Nivel {expediente?.nivelTrlEsperado || '—'}
                 </div>
                 <div className="dictamen-item-sub">
-                  Avance de 3 niveles según Regla 2.4.1
+                  {expediente?.nivelTrlActual && expediente?.nivelTrlEsperado
+                    ? `Avance proyectado de ${expediente.nivelTrlEsperado - expediente.nivelTrlActual} niveles`
+                    : 'Evaluación de madurez tecnológica registrada en el expediente'}
                 </div>
               </div>
 
@@ -126,44 +177,63 @@ const VinculacionDetalleDictamen = () => {
               <div className="dictamen-seccion-item">
                 <h3 className="dictamen-item-title">Análisis de Propiedad Intelectual</h3>
                 <p className="dictamen-item-parrafo">
-                  {dictamen?.contenido || 'La propuesta presenta alta viabilidad técnica. El uso de protocolos y arquitecturas modulares es apropiado para el alcance institucional. No se identificaron restricciones de patentes. Se recomienda registrar el diseño del sistema como propiedad intelectual del TEC.'}
+                  {dictamen?.contenido || 'Sin observaciones de análisis adicionales registradas.'}
                 </p>
               </div>
 
-              {/* Productos Esperados */}
+              {/* Declaraciones de Innovación y PI */}
               <div className="dictamen-seccion-item">
-                <h3 className="dictamen-item-title">Productos Esperados</h3>
+                <h3 className="dictamen-item-title">Componentes y Declaraciones Técnicas</h3>
                 <div className="dictamen-checklist">
-                  <div className="checklist-item">✓ Prototipo funcional</div>
-                  <div className="checklist-item">✓ Software registrado</div>
+                  {expediente?.poseeInnovacion && (
+                    <div className="checklist-item">✓ Componente de innovación: {expediente.tipoInnovacion || 'Declarada'}</div>
+                  )}
+                  {expediente?.tienePotencialPI && (
+                    <div className="checklist-item">✓ Potencial de Propiedad Intelectual identificado</div>
+                  )}
+                  {expediente?.requiereInstrumentoJuridico && (
+                    <div className="checklist-item">✓ Requiere instrumento jurídico o convenio</div>
+                  )}
+                  {expediente?.tieneInformacionConfidencial && (
+                    <div className="checklist-item">✓ Contiene información confidencial</div>
+                  )}
+                  {!tieneDeclaraciones && (
+                    <div className="checklist-item" style={{ color: '#627d98' }}>
+                      No se registraron declaraciones adicionales de PI o innovación para esta propuesta.
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Documento del Dictamen */}
               <div className="dictamen-seccion-item">
-                <h3 className="dictamen-item-title">Documento del Dictamen</h3>
-                <div 
-                  className="documento-adjunto-card"
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Descargar archivo de dictamen: ${dictamen?.rutaArchivo || 'Dictamen_Vinculacion.pdf'}`}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      if (dictamen?.rutaArchivo) { alert(`El archivo '${dictamen.rutaArchivo}' se descargará del servidor.`); } else { alert('No hay archivo de dictamen adjunto.'); }
-                    }
-                  }}
-                  onClick={() => { if (dictamen?.rutaArchivo) { alert(`El archivo '${dictamen.rutaArchivo}' se descargar\xe1 del servidor. Funcionalidad de almacenamiento de archivos pendiente.`); } else { alert('No hay archivo de dictamen adjunto.'); } }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '20px' }} aria-hidden="true">📄</span>
-                    <div>
-                      <div className="doc-nombre">{dictamen?.rutaArchivo || 'Dictamen_Vinculacion_FVIE-2027-004_RobertaSanchez.pdf'}</div>
-                      <div className="doc-peso">2.4 MB · Documento oficial firmado</div>
+                <h3 className="dictamen-item-title">Documento Oficial del Dictamen</h3>
+                {nombreArchivoDoc ? (
+                  <div 
+                    className="documento-adjunto-card"
+                    onClick={handleDescargarDocumentoDictamen}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '20px' }}>📄</span>
+                      <div>
+                        <div className="doc-nombre">{nombreArchivoDoc}</div>
+                        <div className="doc-peso">Documento oficial adjuntado al dictamen</div>
+                      </div>
+                    </div>
+                    <span className="doc-download-icon">📥</span>
+                  </div>
+                ) : (
+                  <div className="documento-adjunto-card" style={{ cursor: 'default', background: '#f8fafc', opacity: 0.85 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '20px' }}>📝</span>
+                      <div>
+                        <div className="doc-nombre">Dictamen registrado electrónicamente</div>
+                        <div className="doc-peso">Emitido mediante el formulario institucional en línea</div>
+                      </div>
                     </div>
                   </div>
-                  <span className="doc-download-icon" aria-hidden="true">📥</span>
-                </div>
+                )}
               </div>
 
               <div className="perfil-divider" />
@@ -171,10 +241,10 @@ const VinculacionDetalleDictamen = () => {
               {/* Evaluado por */}
               <div className="dictamen-firma-footer">
                 <div className="firma-evaluador">
-                  Evaluado por: <strong>{dictamen?.nombreRemitente || 'Lic. Roberta Sánchez | Centro de Vinculación TEC'}</strong>
+                  Evaluado por: <strong>{dictamen?.nombreRemitente || 'Evaluador de Vinculación TEC'}</strong>
                 </div>
                 <div className="firma-fecha">
-                  Fecha: {dictamen?.fechaEmision ? new Date(dictamen.fechaEmision).toLocaleDateString('es-CR', { day: '2-digit', month: 'long', year: 'numeric' }) : '21 de agosto de 2027'}
+                  Fecha: {dictamen?.fechaEmision ? new Date(dictamen.fechaEmision).toLocaleDateString('es-CR', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'}
                 </div>
               </div>
             </div>

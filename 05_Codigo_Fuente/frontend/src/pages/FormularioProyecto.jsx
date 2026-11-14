@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
@@ -19,7 +19,6 @@ const FormularioProyecto = () => {
   const [guardando, setGuardando] = useState(false);
   const [mensajeGuardado, setMensajeGuardado] = useState('Borrador listo para formulación');
   const [envioExitoso, setEnvioExitoso] = useState(false);
-  const [esPropietario, setEsPropietario] = useState(true);
 
   // Estados del Formulario Form-04 (en blanco para llenado por el investigador)
   // Paso 1: Identificación y Modalidad
@@ -59,8 +58,6 @@ const FormularioProyecto = () => {
 
   // Paso 7: Equipo de Investigación
   const [investigadoresTEC, setInvestigadoresTEC] = useState([]);
-  const [investigadoresDisponibles, setInvestigadoresDisponibles] = useState([]);
-  const [rolesEquipoDisponibles, setRolesEquipoDisponibles] = useState([]);
   const [colaboradoresExternos, setColaboradoresExternos] = useState([]);
 
   // Paso 8: Problema de Investigación
@@ -79,8 +76,6 @@ const FormularioProyecto = () => {
   // Paso 12: Plan de Acción y Gestión de Riesgos (Sin datos predeterminados)
   const [actividadesCronograma, setActividadesCronograma] = useState([]);
   const [riesgosMitigacion, setRiesgosMitigacion] = useState([]);
-  const isInitialMount = useRef(true);
-  const lastSyncedActividades = useRef('');
 
   // Paso 13: Presupuesto Plurianual Solicitado (Recursos VIE)
   const [presupuestoAnual, setPresupuestoAnual] = useState([
@@ -162,24 +157,6 @@ const FormularioProyecto = () => {
   }, [investigadoresTEC]);
 
   // Inicializar coordinador cuando carga el usuario
-  
-  useEffect(() => {
-    const cargarCatInvestigadores = async () => {
-      try {
-        const cat = await propuestaService.obtenerCatalogosFormulario();
-        if (cat?.investigadores) {
-          setInvestigadoresDisponibles(cat.investigadores);
-        }
-        if (cat?.rolesEquipo) {
-          setRolesEquipoDisponibles(cat.rolesEquipo);
-        }
-      } catch (_e) {
-        console.warn('Error cargando catálogo de investigadores:', _e);
-      }
-    };
-    cargarCatInvestigadores();
-  }, []);
-
   useEffect(() => {
     if (usuario?.nombre && investigadoresTEC.length === 0) {
       setInvestigadoresTEC([
@@ -203,24 +180,24 @@ const FormularioProyecto = () => {
   // Cargar datos de la propuesta desde la base de datos o almacenamiento local
   useEffect(() => {
     const cargarPropuestaBD = async () => {
-      let id = propuestaIdUrl && propuestaIdUrl !== 'undefined' ? propuestaIdUrl : null;
+      let id = propuestaIdUrl;
       if (!id) {
         id = localStorage.getItem('propuesta_activa_id');
-        if (!id || id === 'undefined') {
+        if (!id) {
           try {
-            const misProps = await propuestaService.listarMisPropuestas();
+            const misProps = await propuestaService.obtenerMisPropuestas();
             if (misProps && misProps.length > 0) {
               id = String(misProps[0].propuestaId);
               localStorage.setItem('propuesta_activa_id', id);
             }
           } catch (_e) {}
         }
-        if (id && id !== 'undefined') {
+        if (id) {
           navigate(`/dashboard/form4?propuestaId=${id}`, { replace: true });
         }
       }
 
-      if (!id || id === 'undefined') return;
+      if (!id) return;
       localStorage.setItem('propuesta_activa_id', String(id));
 
       // 1. Cargar primero de localStorage si existe borrador local previo
@@ -265,27 +242,8 @@ const FormularioProyecto = () => {
           if (l.colaboradoresExternos && Array.isArray(l.colaboradoresExternos)) {
             setColaboradoresExternos(l.colaboradoresExternos);
           }
-          let actsCargadas = null;
           if (l.actividadesCronograma && Array.isArray(l.actividadesCronograma) && l.actividadesCronograma.length > 0) {
-            actsCargadas = l.actividadesCronograma;
-          }
-          // Sincronizar con Form-05 si Form-05 tiene actividades más recientes o Form-04 no las tiene
-          try {
-            const rawF5 = localStorage.getItem(`propuesta_${id}_plan_riesgos`);
-            if (rawF5) {
-              const f5 = JSON.parse(rawF5);
-              if (f5.actividades && Array.isArray(f5.actividades) && f5.actividades.length > 0) {
-                const f5Time = f5.fechaGuardado ? new Date(f5.fechaGuardado).getTime() : 0;
-                const f4Time = l?.fechaGuardado ? new Date(l.fechaGuardado).getTime() : 0;
-                if (!actsCargadas || f5Time >= f4Time) {
-                  actsCargadas = f5.actividades;
-                }
-              }
-            }
-          } catch (_e) {}
-          if (actsCargadas && actsCargadas.length > 0) {
-            setActividadesCronograma(actsCargadas);
-            lastSyncedActividades.current = JSON.stringify(actsCargadas);
+            setActividadesCronograma(l.actividadesCronograma);
           }
           if (l.riesgosMitigacion && Array.isArray(l.riesgosMitigacion) && l.riesgosMitigacion.length > 0) {
             setRiesgosMitigacion(l.riesgosMitigacion);
@@ -302,7 +260,6 @@ const FormularioProyecto = () => {
       try {
         const prop = await propuestaService.obtenerPropuesta(id);
         if (prop) {
-          if (prop.esPropietario !== undefined) setEsPropietario(Boolean(prop.esPropietario));
           if (prop.titulo) setNombreProyecto(prop.titulo);
           if (prop.fechaInicio) setFechaInicio(prop.fechaInicio);
           if (prop.fechaFinalizacion) setFechaFin(prop.fechaFinalizacion);
@@ -342,32 +299,6 @@ const FormularioProyecto = () => {
             setPoseeInnovacion(prev => ({ ...prev, aplica: !!prop.declaraciones.poseeInnovacion }));
             setResguardoCompromiso(!!prop.declaraciones.aceptaResguardoRepositorio);
           }
-
-          if (prop.integrantes && Array.isArray(prop.integrantes) && prop.integrantes.length > 0) {
-            setInvestigadoresTEC(prop.integrantes.map(inte => ({
-              id: inte.integranteEquipoId || inte.usuarioId,
-              usuarioId: inte.usuarioId,
-              nombre: inte.nombreCompleto || '',
-              correo: inte.correoInstitucional || '',
-              orcid: inte.orcid || '',
-              instancia: inte.instancia || usuario?.escuela || 'TEC',
-              rol: inte.rolEquipoId === 1 ? 'Coordinador(a)' : 'Co-Investigador(a)',
-              rolEquipoId: inte.rolEquipoId || 2,
-              horas: `${inte.horasSemanales || 10} h (VIE)`,
-              nombramiento: String(new Date().getFullYear())
-            })));
-          }
-
-          if (prop.colaboradoresExternos && Array.isArray(prop.colaboradoresExternos) && prop.colaboradoresExternos.length > 0) {
-            setColaboradoresExternos(prop.colaboradoresExternos.map(col => ({
-              id: col.colaboradorId,
-              nombre: col.nombreColaborador || '',
-              apellido1: col.apellido1Colaborador || '',
-              apellido2: col.apellido2Colaborador || '',
-              orcid: col.idOrcid || '',
-              institucion: col.institucionEmpresa || ''
-            })));
-          }
           setMensajeGuardado('Sincronizado con BD');
         }
       } catch (_e) {
@@ -375,89 +306,7 @@ const FormularioProyecto = () => {
       }
     };
 
-    cargarPropuestaBD().finally(() => {
-      isInitialMount.current = false;
-    });
-  }, [propuestaIdUrl]);
-
-  // Sincronización continua de la matriz de Paso 12 con Form-05 (Plan de Acción y Riesgos)
-  useEffect(() => {
-    if (isInitialMount.current) return;
-    const serialized = JSON.stringify(actividadesCronograma);
-    if (serialized === lastSyncedActividades.current) return;
-    lastSyncedActividades.current = serialized;
-
-    const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
-    if (!id || id === 'undefined') return;
-
-    try {
-      const ahora = new Date().toISOString();
-      // 1. Guardar en Form 05
-      const rawF5 = localStorage.getItem(`propuesta_${id}_plan_riesgos`);
-      const f5Data = rawF5 ? JSON.parse(rawF5) : {};
-      f5Data.actividades = actividadesCronograma;
-      f5Data.nombrePropuesta = nombreProyecto || f5Data.nombrePropuesta;
-      f5Data.tipoIniciativa = modalidad || f5Data.tipoIniciativa;
-      f5Data.fechaGuardado = ahora;
-      localStorage.setItem(`propuesta_${id}_plan_riesgos`, JSON.stringify(f5Data));
-      localStorage.setItem(`borrador_form05_${id}`, JSON.stringify(f5Data));
-
-      // 2. Mantener actualizado el borrador Form 04 local
-      const rawF4 = localStorage.getItem(`borrador_form04_${id}`);
-      if (rawF4) {
-        const f4Data = JSON.parse(rawF4);
-        f4Data.actividadesCronograma = actividadesCronograma;
-        f4Data.fechaGuardado = ahora;
-        localStorage.setItem(`borrador_form04_${id}`, JSON.stringify(f4Data));
-      }
-
-      // 3. Emitir evento de sincronización para cualquier vista activa de Form 05
-      window.dispatchEvent(new CustomEvent('sgpi_matrices_sync', {
-        detail: { propuestaId: String(id), actividades: actividadesCronograma, fuente: 'form04' }
-      }));
-    } catch (_e) {}
-  }, [actividadesCronograma, nombreProyecto, modalidad]);
-
-  // Escuchar sincronización de actividades provenientes de Form-05
-  useEffect(() => {
-    const handleSync = (e) => {
-      const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
-      if (!id || !e.detail || e.detail.fuente === 'form04') return;
-      if (String(e.detail.propuestaId) === String(id) && Array.isArray(e.detail.actividades)) {
-        const serialized = JSON.stringify(e.detail.actividades);
-        if (serialized !== lastSyncedActividades.current) {
-          lastSyncedActividades.current = serialized;
-          setActividadesCronograma(e.detail.actividades);
-        }
-      }
-    };
-
-    const handleStorage = (e) => {
-      const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
-      if (!id) return;
-      if (e.key === `propuesta_${id}_plan_riesgos` || e.key === `borrador_form05_${id}`) {
-        try {
-          const raw = localStorage.getItem(`propuesta_${id}_plan_riesgos`);
-          if (raw) {
-            const data = JSON.parse(raw);
-            if (data.actividades && Array.isArray(data.actividades)) {
-              const serialized = JSON.stringify(data.actividades);
-              if (serialized !== lastSyncedActividades.current) {
-                lastSyncedActividades.current = serialized;
-                setActividadesCronograma(data.actividades);
-              }
-            }
-          }
-        } catch (_e) {}
-      }
-    };
-
-    window.addEventListener('sgpi_matrices_sync', handleSync);
-    window.addEventListener('storage', handleStorage);
-    return () => {
-      window.removeEventListener('sgpi_matrices_sync', handleSync);
-      window.removeEventListener('storage', handleStorage);
-    };
+    cargarPropuestaBD();
   }, [propuestaIdUrl]);
 
   // Sincronizar paso con URL param si existe
@@ -470,135 +319,22 @@ const FormularioProyecto = () => {
     }
   }, [pasoParam]);
 
-  // Helper: crear objeto vacío de periodo de ejecución por meses (Form 05)
-  const crearPeriodoVacio = () => {
-    const periodo = {};
-    for (let a = 1; a <= 3; a++) {
-      periodo[`a${a}`] = {};
-      for (let m = 1; m <= 12; m++) {
-        periodo[`a${a}`][`m${m}`] = false;
-      }
-    }
-    return periodo;
-  };
-
-  // Número de años del proyecto (derivado de fechas de la propuesta o por defecto 3)
-  const numAniosCronograma = (() => {
-    if (fechaInicio && fechaFin) {
-      const d1 = new Date(fechaInicio);
-      const d2 = new Date(fechaFin);
-      const diff = (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth());
-      if (diff <= 12) return 1;
-      if (diff <= 24) return 2;
-      return 3;
-    }
-    return 3;
-  })();
-
-  // Obtener lista consolidada de participantes para selectores
-  const obtenerIntegrantesLista = () => {
-    const lista = [];
-    const vistos = new Set();
-    if (usuario?.nombre) {
-      const nomCoord = `${usuario.nombre} ${usuario.apellido1 || ''}`.trim();
-      const inits = ((usuario.nombre[0] || '') + (usuario.apellido1 ? usuario.apellido1[0] : '')).toUpperCase() || 'IP';
-      vistos.add(nomCoord.toLowerCase());
-      lista.push({ nombre: nomCoord, iniciales: inits, rol: 'Persona coordinadora' });
-    }
-    (investigadoresTEC || []).forEach(inv => {
-      const nom = (inv.nombre || '').trim();
-      if (nom && !vistos.has(nom.toLowerCase())) {
-        vistos.add(nom.toLowerCase());
-        const partes = nom.split(/\s+/);
-        const inits = partes.length >= 2 ? (partes[0][0] + partes[1][0]).toUpperCase() : nom.slice(0, 2).toUpperCase();
-        lista.push({ nombre: nom, iniciales: inits, rol: inv.rol || 'Co-Investigador(a)' });
-      }
-    });
-    (colaboradoresExternos || []).forEach(col => {
-      const nom = (col.nombre || '').trim();
-      if (nom && !vistos.has(nom.toLowerCase())) {
-        vistos.add(nom.toLowerCase());
-        const partes = nom.split(/\s+/);
-        const inits = partes.length >= 2 ? (partes[0][0] + partes[1][0]).toUpperCase() : nom.slice(0, 2).toUpperCase();
-        lista.push({ nombre: nom, iniciales: inits, rol: col.institucion ? `Externo (${col.institucion})` : 'Colaborador externo' });
-      }
-    });
-    return lista;
-  };
-
-  // Toggle de casillas de meses en el cronograma
-  const handleTogglePeriodo = (idx, anio, mes) => {
-    const copia = [...actividadesCronograma];
-    const act = { ...copia[idx] };
-    if (!act.periodoEjecucion) {
-      act.periodoEjecucion = crearPeriodoVacio();
-    }
-    const aKey = `a${anio}`;
-    const mKey = `m${mes}`;
-    if (!act.periodoEjecucion[aKey]) {
-      act.periodoEjecucion[aKey] = {};
-    }
-    const val = !act.periodoEjecucion[aKey][mKey];
-    act.periodoEjecucion[aKey][mKey] = val;
-    act[`a${anio}`] = Object.values(act.periodoEjecucion[aKey]).some(Boolean);
-    copia[idx] = act;
-    setActividadesCronograma(copia);
-  };
-
-  const handleAgregarFilaActividad = () => {
-    const primerOE = objetivosEspecificos.find(o => o && o.trim()) ? 'OE 1' : '';
-    const nueva = {
-      id: Date.now(),
-      obj: primerOE,
-      objetivo: primerOE,
-      actividad: '',
-      resultado: '',
-      entregable: '',
-      participante: '',
-      responsable: '',
-      responsabilidad: '',
-      riesgo: '',
-      mitigacion: '',
-      responsableGestion: '',
-      mesInicio: '',
-      duracionMesesAct: '',
-      periodoEjecucion: crearPeriodoVacio(),
-      a1: false,
-      a2: false,
-      a3: false
-    };
-    setActividadesCronograma([...actividadesCronograma, nueva]);
-  };
-
-  const handleEliminarActividad = (idOIndice) => {
-    setActividadesCronograma(actividadesCronograma.filter((a, idx) => a.id !== idOIndice && idx !== idOIndice));
-  };
-
   const handleDescargarPDF = () => {
-    try {
-      const idProp = propuestaIdUrl || localStorage.getItem('propuesta_activa_id') || '';
-      const cod = idProp ? `Propuesta-${idProp}` : 'Form04';
-      const datos = {
-        nombreProyecto, modalidad, fechaInicio, fechaFin, trlSeleccionado,
-        resumen, palabrasClave, abstract, keywords, problemaInvestigacion,
-        objetivoGeneral, objetivosEspecificos, estadoArte, metodologia,
-        divulgacion, aspectosEticos, hojaRuta, otrasFuentes, vinculacionTecnica,
-        problemasNacionales, requiereInstrumento, convenioMarco, basePosgrado,
-        infoConfidencial, potencialPI, poseeInnovacion, resguardoCompromiso,
-        resguardoSoftware, referenciasBibliograficas, presupuestoAnual,
-        fuentesAdicionales, investigadoresTEC, colaboradoresExternos,
-        actividadesCronograma, riesgosMitigacion, rangoHorasCompromiso,
-        firmaCoordinador, productos14a, productos14b
-      };
-      if (idProp) {
-        localStorage.setItem(`borrador_form04_${idProp}`, JSON.stringify(datos));
-      }
-      localStorage.setItem('borrador_form04_ultimo', JSON.stringify(datos));
-      exportarForm04PDF(datos, cod);
-    } catch (err) {
-      console.error('Error al generar PDF:', err);
-      alert('Error al generar el PDF: ' + (err.message || 'Error inesperado'));
-    }
+    const idProp = propuestaIdUrl || localStorage.getItem('propuesta_activa_id') || '';
+    const cod = idProp ? `Propuesta-${idProp}` : 'Form04';
+    const datos = {
+      nombreProyecto, modalidad, fechaInicio, fechaFin, trlSeleccionado,
+      resumen, palabrasClave, abstract, keywords, problemaInvestigacion,
+      objetivoGeneral, objetivosEspecificos, estadoArte, metodologia,
+      divulgacion, aspectosEticos, hojaRuta, otrasFuentes, vinculacionTecnica,
+      problemasNacionales, requiereInstrumento, convenioMarco, basePosgrado,
+      infoConfidencial, potencialPI, poseeInnovacion, resguardoCompromiso,
+      resguardoSoftware, referenciasBibliograficas, presupuestoAnual,
+      fuentesAdicionales, investigadoresTEC, colaboradoresExternos,
+      actividadesCronograma, riesgosMitigacion, rangoHorasCompromiso,
+      firmaCoordinador, productos14a, productos14b
+    };
+    exportarForm04PDF(datos, cod);
   };
 
     const guardarBorradorActual = async () => {
@@ -625,16 +361,6 @@ const FormularioProyecto = () => {
 
     if (idParaGuardar) {
       localStorage.setItem(`borrador_form04_${idParaGuardar}`, JSON.stringify(snapshotCompleto));
-      try {
-        const rawF5 = localStorage.getItem(`propuesta_${idParaGuardar}_plan_riesgos`);
-        const f5Data = rawF5 ? JSON.parse(rawF5) : {};
-        f5Data.actividades = snapshotCompleto.actividadesCronograma;
-        f5Data.nombrePropuesta = nombreProyecto || f5Data.nombrePropuesta;
-        f5Data.tipoIniciativa = modalidad || f5Data.tipoIniciativa;
-        f5Data.fechaGuardado = snapshotCompleto.fechaGuardado;
-        localStorage.setItem(`propuesta_${idParaGuardar}_plan_riesgos`, JSON.stringify(f5Data));
-        localStorage.setItem(`borrador_form05_${idParaGuardar}`, JSON.stringify(f5Data));
-      } catch (_e) {}
     }
     localStorage.setItem('borrador_form04_ultimo', JSON.stringify(snapshotCompleto));
 
@@ -682,52 +408,6 @@ const FormularioProyecto = () => {
         };
         await propuestaService.guardarDeclaraciones(idParaGuardar, payloadDeclaraciones);
 
-        // Sincronizar Equipo de Investigación y Colaboradores Externos en la BD
-        try {
-          const payloadEquipo = {
-            integrantes: investigadoresTEC.map(inv => ({
-              usuarioId: Number(inv.usuarioId || inv.id) || usuario?.id || 1,
-              tipoHoraId: 1,
-              horasSemanales: parseFloat(String(inv.horas || '10').replace(/[^\d.]/g, '')) || 10.0,
-              rolEquipoId: (inv.rol && inv.rol.includes('Coord')) ? 1 : (Number(inv.rolEquipoId) || 2),
-              orcid: inv.orcid || null
-            })),
-            colaboradoresExternos: colaboradoresExternos.filter(c => c.nombre && c.nombre.trim()).map(col => ({
-              nombreColaborador: col.nombre.trim(),
-              apellido1Colaborador: col.apellido1 || null,
-              apellido2Colaborador: col.apellido2 || null,
-              idOrcid: col.orcid || null,
-              institucionEmpresa: col.institucion || 'Institución Externa'
-            }))
-          };
-          await propuestaService.guardarEquipoCompleto(idParaGuardar, payloadEquipo);
-        } catch (_eqErr) {
-          console.warn('Error al persistir equipo en BD:', _eqErr);
-        }
-
-        // Sincronizar Equipo de Investigación y Colaboradores Externos en la BD
-        try {
-          const payloadEquipo = {
-            integrantes: investigadoresTEC.map(inv => ({
-              usuarioId: Number(inv.usuarioId || inv.id) || usuario?.id || 1,
-              tipoHoraId: 1,
-              horasSemanales: parseFloat(String(inv.horas || '10').replace(/[^\d.]/g, '')) || 10.0,
-              rolEquipoId: (inv.rol && inv.rol.includes('Coord')) ? 1 : (Number(inv.rolEquipoId) || 2),
-              orcid: inv.orcid || null
-            })),
-            colaboradoresExternos: colaboradoresExternos.filter(c => c.nombre && c.nombre.trim()).map(col => ({
-              nombreColaborador: col.nombre.trim(),
-              apellido1Colaborador: col.apellido1 || null,
-              apellido2Colaborador: col.apellido2 || null,
-              idOrcid: col.orcid || null,
-              institucionEmpresa: col.institucion || 'Institución Externa'
-            }))
-          };
-          await propuestaService.guardarEquipoCompleto(idParaGuardar, payloadEquipo);
-        } catch (_eqErr) {
-          console.warn('Error al persistir equipo en BD:', _eqErr);
-        }
-
         setMensajeGuardado(`Guardado ${ahora}`);
       } catch (_err) {
         console.warn('Error al persistir en backend, respaldado localmente:', _err);
@@ -741,7 +421,229 @@ const FormularioProyecto = () => {
     }
   };
 
+  // Configuración de las 16 ventanas del Formulario 04
+  const PASOS_CONFIG = useMemo(() => [
+    { num: 1, titulo: 'Identificación de la Propuesta y Modalidad', corto: 'Identificación' },
+    { num: 2, titulo: 'Financiación Previa, Vinculación y Problemas Nacionales', corto: 'Financiación' },
+    { num: 3, titulo: 'Instrumentos Jurídicos, Convenios Marco y Posgrados', corto: 'Instrumentos' },
+    { num: 4, titulo: 'Propiedad Intelectual, Confidencialidad e Innovación', corto: 'Prop. Intelectual' },
+    { num: 5, titulo: 'Niveles de Madurez Tecnológica (TRL)', corto: 'Escala TRL' },
+    { num: 6, titulo: 'Resumen, Abstract y Palabras Clave', corto: 'Resumen' },
+    { num: 7, titulo: 'Equipo de Investigación', corto: 'Equipo' },
+    { num: 8, titulo: 'Problema de Investigación y su Importancia', corto: 'Problema' },
+    { num: 9, titulo: 'Objetivos del Proyecto', corto: 'Objetivos' },
+    { num: 10, titulo: 'Estado del Arte y Antecedentes', corto: 'Estado del Arte' },
+    { num: 11, titulo: 'Metodología de la Investigación', corto: 'Metodología' },
+    { num: 12, titulo: 'Plan de Acción y Plan de Gestión de Riesgos', corto: 'Plan y Riesgos' },
+    { num: 13, titulo: 'Presupuesto Plurianual y Fuentes Adicionales', corto: 'Presupuesto' },
+    { 
+      num: 14, 
+      titulo: esDesarrolloTecnologico ? 'Compromisos de Producción (Desarrollo Tecnológico)' : 'Compromisos de Producción (Investigación Básica / Aplicada)', 
+      corto: 'Compromisos' 
+    },
+    { num: 15, titulo: 'Estrategia de Divulgación, Aspectos Éticos y Hoja de Ruta', corto: 'Divulgación y Ética' },
+    { num: 16, titulo: 'Resguardo, Referencias y Declaración Jurada', corto: 'Resguardo y Firma' }
+  ], [esDesarrolloTecnologico]);
+
+  // Función para evaluar si un paso específico está completo o tiene campos vacíos
+  const evaluarPaso = useCallback((num) => {
+    const faltantes = [];
+    switch (num) {
+      case 1:
+        if (!nombreProyecto || !nombreProyecto.trim()) faltantes.push('Nombre del proyecto');
+        if (!fechaInicio) faltantes.push('Fecha de inicio');
+        if (!fechaFin) faltantes.push('Fecha de finalización');
+        if (!modalidad) faltantes.push('Modalidad de investigación');
+        break;
+      case 2:
+        if (otrasFuentes?.aplica && (!otrasFuentes.detalle || !otrasFuentes.detalle.trim())) {
+          faltantes.push('Detalle de otras fuentes de financiamiento');
+        }
+        if (vinculacionTecnica?.aplica && (!vinculacionTecnica.detalle || !vinculacionTecnica.detalle.trim())) {
+          faltantes.push('Detalle de vinculación técnica');
+        }
+        if (problemasNacionales?.aplica && (!problemasNacionales.detalle || !problemasNacionales.detalle.trim())) {
+          faltantes.push('Detalle de atención a problemas nacionales');
+        }
+        break;
+      case 3:
+        if (convenioMarco?.aplica && (!convenioMarco.nombre || !convenioMarco.nombre.trim())) {
+          faltantes.push('Nombre del convenio marco');
+        }
+        if (basePosgrado?.aplica && basePosgrado.aplica !== 'No') {
+          if (!basePosgrado.candidato || !basePosgrado.candidato.trim()) faltantes.push('Nombre del candidato a posgrado');
+          if (!basePosgrado.programa || !basePosgrado.programa.trim()) faltantes.push('Programa de posgrado');
+          if (!basePosgrado.universidad || !basePosgrado.universidad.trim()) faltantes.push('Universidad del posgrado');
+        }
+        break;
+      case 4:
+        if (infoConfidencial?.aplica && (!infoConfidencial.detalle || !infoConfidencial.detalle.trim())) {
+          faltantes.push('Justificación de confidencialidad');
+        }
+        if (potencialPI?.aplica && (!potencialPI.oficioDictamen || !potencialPI.oficioDictamen.trim())) {
+          faltantes.push('Oficio o dictamen de propiedad intelectual');
+        }
+        break;
+      case 5:
+        if (!trlSeleccionado) faltantes.push('Nivel TRL seleccionado');
+        break;
+      case 6:
+        if (!resumen || !resumen.trim()) faltantes.push('Resumen en español');
+        if (!palabrasClave || !palabrasClave.trim()) faltantes.push('Palabras clave en español');
+        if (!abstract || !abstract.trim()) faltantes.push('Abstract en inglés');
+        if (!keywords || !keywords.trim()) faltantes.push('Keywords en inglés');
+        break;
+      case 7:
+        if (!investigadoresTEC || investigadoresTEC.length === 0) {
+          faltantes.push('Al menos un integrante del equipo investigador');
+        } else {
+          if (investigadoresTEC.some(i => !i.nombre || !i.nombre.trim())) faltantes.push('Nombre de los integrantes TEC');
+          if (investigadoresTEC.some(i => !i.horas || !String(i.horas).trim())) faltantes.push('Horas de dedicación semanal');
+        }
+        break;
+      case 8:
+        if (!problemaInvestigacion || !problemaInvestigacion.trim()) {
+          faltantes.push('Descripción del problema de investigación');
+        }
+        break;
+      case 9:
+        if (!objetivoGeneral || !objetivoGeneral.trim()) {
+          faltantes.push('Objetivo general');
+        }
+        const validObjs = (objetivosEspecificos || []).filter(o => o && o.trim());
+        if (validObjs.length === 0) {
+          faltantes.push('Al menos un objetivo específico');
+        }
+        break;
+      case 10:
+        if (!estadoArte || !estadoArte.trim()) {
+          faltantes.push('Estado del arte y antecedentes');
+        }
+        break;
+      case 11:
+        if (!metodologia || !metodologia.trim()) {
+          faltantes.push('Metodología de la investigación');
+        }
+        break;
+      case 12:
+        if (!actividadesCronograma || actividadesCronograma.length === 0) {
+          faltantes.push('Actividades del cronograma');
+        } else if (actividadesCronograma.some(a => !a.descripcion || !a.descripcion.trim())) {
+          faltantes.push('Descripción de todas las actividades');
+        }
+        if (!riesgosMitigacion || riesgosMitigacion.length === 0) {
+          faltantes.push('Riesgos y medidas de mitigación');
+        } else if (riesgosMitigacion.some(r => !r.riesgo || !r.riesgo.trim() || !r.mitigacion || !r.mitigacion.trim())) {
+          faltantes.push('Descripción y mitigación de todos los riesgos');
+        }
+        break;
+      case 13:
+        const tieneMonto = (presupuestoAnual || []).some(p => (p.operativo && String(p.operativo).trim()) || (p.duradero && String(p.duradero).trim()));
+        if (!tieneMonto) {
+          faltantes.push('Montos de presupuesto anual estimado');
+        }
+        break;
+      case 14:
+        if (esDesarrolloTecnologico) {
+          const tiene14b = Object.values(productos14b || {}).some(item => item && (item.check || item.cantidad > 0));
+          if (!tiene14b) faltantes.push('Al menos un compromiso de desarrollo tecnológico (patente, software, etc.)');
+        } else {
+          const p14a = productos14a || {};
+          const tiene14a = p14a.opcion1?.check || p14a.opcion2?.check || p14a.opcion3?.check || (p14a.adicional1 && p14a.adicional1.trim()) || (p14a.adicional2 && p14a.adicional2.trim());
+          if (!tiene14a) faltantes.push('Al menos un compromiso de producción académica');
+        }
+        break;
+      case 15:
+        const div = divulgacion || {};
+        const tieneDiv = (div.cientifica && div.cientifica.trim()) || (div.canalesInstitucionales && div.canalesInstitucionales.trim()) || (div.socializacion && div.socializacion.trim()) || (div.mediosMasivos && div.mediosMasivos.trim());
+        if (!tieneDiv) faltantes.push('Estrategia de divulgación');
+        if (!hojaRuta || !hojaRuta.trim()) faltantes.push('Hoja de ruta y escalamiento');
+        const asp = aspectosEticos || {};
+        if ((asp.seresHumanos || asp.biodiversidad || asp.animales || asp.comunidadesIndigenas) && (!asp.acuerdoComision || !asp.acuerdoComision.trim())) {
+          faltantes.push('Acuerdo o resolución de la comisión de ética');
+        }
+        break;
+      case 16:
+        if (!referenciasBibliograficas || !referenciasBibliograficas.trim()) faltantes.push('Referencias bibliográficas');
+        if (!resguardoCompromiso) faltantes.push('Aceptación del compromiso de resguardo y depósito');
+        if (!firmaCoordinador?.cedula || !firmaCoordinador.cedula.trim()) faltantes.push('Cédula del coordinador');
+        break;
+      default:
+        break;
+    }
+    return {
+      completo: faltantes.length === 0,
+      faltantes
+    };
+  }, [
+    nombreProyecto, fechaInicio, fechaFin, modalidad,
+    otrasFuentes, vinculacionTecnica, problemasNacionales,
+    convenioMarco, basePosgrado,
+    infoConfidencial, potencialPI,
+    trlSeleccionado,
+    resumen, palabrasClave, abstract, keywords,
+    investigadoresTEC,
+    problemaInvestigacion,
+    objetivoGeneral, objetivosEspecificos,
+    estadoArte,
+    metodologia,
+    actividadesCronograma, riesgosMitigacion,
+    presupuestoAnual,
+    esDesarrolloTecnologico, productos14a, productos14b,
+    divulgacion, hojaRuta, aspectosEticos,
+    referenciasBibliograficas, resguardoCompromiso, firmaCoordinador
+  ]);
+
+  // Mapa con el estado de completitud de los 16 pasos
+  const estadosPasos = useMemo(() => {
+    const mapa = {};
+    for (let i = 1; i <= 16; i++) {
+      mapa[i] = evaluarPaso(i);
+    }
+    return mapa;
+  }, [evaluarPaso]);
+
+  const totalCompletos = useMemo(() => {
+    return Object.values(estadosPasos).filter(e => e.completo).length;
+  }, [estadosPasos]);
+
+  const porcentajeProgreso = Math.round((totalCompletos / 16) * 100);
+
+  // Navegar a una ventana específica con validación previa de campos vacíos
+  const handleNavegarPaso = async (nuevoPaso) => {
+    if (nuevoPaso === pasoActual) return;
+
+    // Si avanza a un paso posterior, advertir si el paso actual tiene campos vacíos
+    if (nuevoPaso > pasoActual) {
+      const validacion = evaluarPaso(pasoActual);
+      if (!validacion.completo) {
+        const lista = validacion.faltantes.map(f => `  • ${f}`).join('\n');
+        const continuar = window.confirm(
+          `Atención: La ventana actual (Paso ${pasoActual}) tiene campos pendientes de completar:\n\n${lista}\n\n¿Realmente desea continuar a la ventana ${nuevoPaso} y dejar estos campos vacíos?`
+        );
+        if (!continuar) {
+          return;
+        }
+      }
+    }
+
+    await guardarBorradorActual();
+    setPasoActual(nuevoPaso);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSiguiente = async () => {
+    const validacion = evaluarPaso(pasoActual);
+    if (!validacion.completo) {
+      const lista = validacion.faltantes.map(f => `  • ${f}`).join('\n');
+      const continuar = window.confirm(
+        `Atención: La ventana actual (Paso ${pasoActual}) tiene campos pendientes de completar:\n\n${lista}\n\n¿Realmente desea continuar al siguiente paso y dejar estos campos vacíos?`
+      );
+      if (!continuar) {
+        return;
+      }
+    }
+
     await guardarBorradorActual();
     if (pasoActual < 16) {
       const siguientePaso = pasoActual + 1;
@@ -759,11 +661,6 @@ const FormularioProyecto = () => {
   };
 
   const handleEnvioDefinitivo = async () => {
-    if (!esPropietario) {
-      alert('Solo la persona coordinadora (propietaria de la propuesta) puede realizar el envío definitivo a la Unidad de Vinculación.');
-      return;
-    }
-
     if (!resguardoCompromiso) {
       alert('Debe aceptar el compromiso de resguardo y depósito de productos para realizar el envío.');
       return;
@@ -771,16 +668,18 @@ const FormularioProyecto = () => {
 
     setGuardando(true);
     try {
+      await guardarBorradorActual();
       if (propuestaIdUrl) {
         await propuestaService.enviarRevision(propuestaIdUrl);
         localStorage.setItem(`propuesta_${propuestaIdUrl}_form04_enviado`, 'true');
+        localStorage.setItem(`propuesta_${propuestaIdUrl}_enviada`, 'true');
       }
       setEnvioExitoso(true);
       window.dispatchEvent(new Event('propuestaCreada'));
     } catch (err) {
       console.error(err);
-      const detalle = err.response?.data?.detail || err.message || 'Ocurrió un error al enviar la propuesta.';
-      alert(`No se pudo enviar la propuesta: ${detalle}`);
+      const msg = err?.response?.data?.detail || err?.message || 'Ocurrió un error al enviar la propuesta.';
+      alert(`No se pudo enviar la propuesta: ${msg}`);
     } finally {
       setGuardando(false);
     }
@@ -814,7 +713,7 @@ const FormularioProyecto = () => {
             <div className="success-icon-badge">✓</div>
             <h1 className="success-modal-title">¡Propuesta Enviada a Revisión Institucional!</h1>
             <p className="success-modal-subtitle">
-              El Formulario Form-04 ha sido firmado digitalmente y enviado con éxito a la Unidad de Vinculación para su proceso de evaluación y dictamen.
+              El Formulario Form-04 ha sido firmado digitalmente y enviado con éxito a la Vicerrectoría de Investigación y Extensión (VIE) para su proceso de dictamen y evaluación.
             </p>
             <div className="success-propuesta-code-box">
               <span className="code-label">PROYECTO REGISTRADO</span>
@@ -832,10 +731,66 @@ const FormularioProyecto = () => {
           </div>
         ) : (
           <>
-            {/* Header del Paso Actual */}
-            <div className="step-counter-label">
-              PASO {pasoActual} DE 16 {pasoActual === 14 ? (esDesarrolloTecnologico ? '(Variante 14b: Desarrollo Tecnológico)' : '(Variante 14a: Investigación Básica / Aplicada)') : ''}
-            </div>
+            {/* Barra de Navegación por las Ventanas del Formulario */}
+            <nav className="form-stepper-container" aria-label="Navegación de secciones del Formulario 04">
+              <div className="form-stepper-header">
+                <div className="stepper-title-area">
+                  <div className="stepper-kicker">Navegación por Ventanas del Formulario</div>
+                  <div className="stepper-current-title">
+                    <span>Ventana {pasoActual} de 16: <strong>{PASOS_CONFIG[pasoActual - 1]?.titulo}</strong></span>
+                    {estadosPasos[pasoActual]?.completo ? (
+                      <span className="stepper-status-badge badge-completo">
+                        ✓ Parte completa
+                      </span>
+                    ) : (
+                      <span className="stepper-status-badge badge-incompleto">
+                        ⚠ Incompleta ({estadosPasos[pasoActual]?.faltantes?.length || 0} pendiente{estadosPasos[pasoActual]?.faltantes?.length === 1 ? '' : 's'})
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="stepper-progress-box">
+                  <div className="stepper-progress-label">
+                    <span>Avance general:</span>
+                    <strong>{totalCompletos} de 16 completas ({porcentajeProgreso}%)</strong>
+                  </div>
+                  <div className="stepper-progress-track" role="progressbar" aria-valuenow={porcentajeProgreso} aria-valuemin="0" aria-valuemax="100">
+                    <div 
+                      className="stepper-progress-fill" 
+                      style={{ width: `${porcentajeProgreso}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Tira horizontal de selección de ventanas */}
+              <div className="form-stepper-scroll-strip">
+                {PASOS_CONFIG.map((p) => {
+                  const estaCompleto = estadosPasos[p.num]?.completo;
+                  const esActivo = pasoActual === p.num;
+                  return (
+                    <button
+                      key={p.num}
+                      type="button"
+                      className={`form-step-tab ${esActivo ? 'active-step' : ''} ${estaCompleto ? 'complete-step' : 'incomplete-step'}`}
+                      onClick={() => handleNavegarPaso(p.num)}
+                      title={`Ventana ${p.num}: ${p.titulo} - ${estaCompleto ? 'Completa' : 'Incompleta'}`}
+                    >
+                      <div className="step-tab-num">
+                        {estaCompleto ? '✓' : p.num}
+                      </div>
+                      <div className="step-tab-info">
+                        <span className="step-tab-short-name">{p.num}. {p.corto}</span>
+                        <span className={`step-tab-status-text ${estaCompleto ? 'text-green' : 'text-amber'}`}>
+                          {estaCompleto ? 'Completa' : 'Incompleta'}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </nav>
 
             {/* ========================================================
                 PASO 1: Identificación de la Propuesta y Modalidad
@@ -886,7 +841,7 @@ const FormularioProyecto = () => {
                   <p className="form-field-hint">
                     Seleccione la modalidad. Recuerde que elegir "Desarrollo tecnológico" activará la sección 14b de compromisos de propiedad industrial.
                   </p>
-                  <div className="modalidades-grid-cards" role="radiogroup" aria-label="Modalidad del proyecto">
+                  <div className="modalidades-grid-cards">
                     {[
                       { key: 'Investigación básica', desc: 'Generación de nuevo conocimiento fundamental sin aplicación comercial inmediata.' },
                       { key: 'Investigación aplicada', desc: 'Adquisición de nuevo conocimiento orientado a objetivos o metas prácticas específicas.' },
@@ -896,14 +851,9 @@ const FormularioProyecto = () => {
                       <div 
                         key={m.key} 
                         className={`modalidad-card-option ${modalidad === m.key ? 'is-selected' : ''}`}
-                        role="radio"
-                        aria-checked={modalidad === m.key}
-                        tabIndex={0}
-                        aria-label={`Modalidad: ${m.key}. ${m.desc}`}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setModalidad(m.key); } }}
                         onClick={() => setModalidad(m.key)}
                       >
-                        <div className="modalidad-radio-circle" aria-hidden="true">
+                        <div className="modalidad-radio-circle">
                           {modalidad === m.key && <span className="inner-dot"></span>}
                         </div>
                         <div className="modalidad-texts">
@@ -1413,19 +1363,9 @@ const FormularioProyecto = () => {
                   Indique los investigadores que son funcionarios del TEC y los colaboradores externos que estarán participando en la propuesta.
                 </p>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', marginBottom: '8px' }}>
-                  <h3 style={{ fontSize: '15px', color: '#002855', margin: 0, fontWeight: 700 }}>
-                    Cuadro 2. Investigadores que son funcionarios del TEC
-                  </h3>
-                  <button 
-                    type="button" 
-                    className="btn-link-action"
-                    style={{ fontSize: '12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                    onClick={() => setInvestigadoresTEC([...investigadoresTEC, { id: Date.now(), usuarioId: null, nombre: '', orcid: '', instancia: 'TEC', rol: 'Co-Investigador(a)', rolEquipoId: 2, horas: '10 h (VIE)', nombramiento: String(new Date().getFullYear()) }])}
-                  >
-                    + Añadir miembro al equipo
-                  </button>
-                </div>
+                <h3 style={{ fontSize: '15px', color: '#002855', marginTop: '16px', marginBottom: '8px', fontWeight: 700 }}>
+                  Cuadro 2. Investigadores que son funcionarios del TEC
+                </h3>
                 <div className="table-responsive-container">
                   <table className="institucional-data-table">
                     <thead>
@@ -1443,45 +1383,18 @@ const FormularioProyecto = () => {
                       {investigadoresTEC.map((inv, idx) => (
                         <tr key={inv.id || idx}>
                           <td>
-                            {idx === 0 ? (
-                              <input 
-                                type="text"
-                                className="form-table-input"
-                                value={inv.nombre}
-                                readOnly
-                                title="Investigador Coordinador responsable de la propuesta"
-                                style={{ backgroundColor: '#f8fafc', fontWeight: 600, color: '#002855' }}
-                              />
-                            ) : (
-                              <select
-                                className="form-table-input"
-                                value={inv.usuarioId || ''}
-                                style={{ background: '#ffffff', cursor: 'pointer' }}
-                                onChange={(e) => {
-                                  const uId = Number(e.target.value);
-                                  const selUsu = investigadoresDisponibles.find(u => u.usuarioId === uId);
-                                  const copia = [...investigadoresTEC];
-                                  if (selUsu) {
-                                    copia[idx].usuarioId = selUsu.usuarioId;
-                                    copia[idx].nombre = selUsu.nombreCompleto;
-                                    copia[idx].correo = selUsu.correo;
-                                    copia[idx].instancia = selUsu.escuela || 'TEC';
-                                  } else {
-                                    copia[idx].usuarioId = null;
-                                    copia[idx].nombre = '';
-                                    copia[idx].instancia = 'TEC';
-                                  }
-                                  setInvestigadoresTEC(copia);
-                                }}
-                              >
-                                <option value="">-- Seleccionar Investigador TEC de la BD --</option>
-                                {investigadoresDisponibles.map(u => (
-                                  <option key={u.usuarioId} value={u.usuarioId}>
-                                    {u.nombreCompleto} ({u.escuela || 'TEC'})
-                                  </option>
-                                ))}
-                              </select>
-                            )}
+                            <LimitedInput 
+                              type="text" 
+                              className="form-table-input"
+                              value={inv.nombre}
+                              maxLength={100}
+                              showCounter={false}
+                              onChange={(e) => {
+                                const copia = [...investigadoresTEC];
+                                copia[idx].nombre = e.target.value;
+                                setInvestigadoresTEC(copia);
+                              }}
+                            />
                           </td>
                           <td>
                             <LimitedInput 
@@ -1562,6 +1475,7 @@ const FormularioProyecto = () => {
                               title="Eliminar integrante"
                               onClick={() => {
                                 if (investigadoresTEC.length > 1) {
+                                  if (!confirm('¿Está seguro de que desea eliminar a este integrante del equipo?')) return;
                                   setInvestigadoresTEC(investigadoresTEC.filter((_, i) => i !== idx));
                                 } else {
                                   alert('Debe permanecer al menos el Investigador Coordinador.');
@@ -1579,7 +1493,7 @@ const FormularioProyecto = () => {
                 <button 
                   type="button" 
                   className="btn-add-table-row"
-                  onClick={() => setInvestigadoresTEC([...investigadoresTEC, { id: Date.now(), usuarioId: null, nombre: '', orcid: '', instancia: 'TEC', rol: 'Co-Investigador(a)', rolEquipoId: 2, horas: '5 h (VIE)', nombramiento: String(new Date().getFullYear()) }])}
+                  onClick={() => setInvestigadoresTEC([...investigadoresTEC, { id: Date.now(), nombre: '', orcid: '', instancia: usuario?.escuela || 'TEC', rol: 'Co-Investigador(a)', horas: '5 h (VIE)', nombramiento: String(new Date().getFullYear()) }])}
                 >
                   + Insertar fila en Investigadores TEC
                 </button>
@@ -1648,7 +1562,10 @@ const FormularioProyecto = () => {
                               type="button" 
                               className="btn-remove-table-row"
                               title="Eliminar colaborador externo"
-                              onClick={() => setColaboradoresExternos(colaboradoresExternos.filter((_, i) => i !== idx))}
+                              onClick={() => {
+                                if (!confirm('¿Está seguro de que desea eliminar a este colaborador externo?')) return;
+                                setColaboradoresExternos(colaboradoresExternos.filter((_, i) => i !== idx));
+                              }}
                             >
                               ✕
                             </button>
@@ -1732,7 +1649,10 @@ const FormularioProyecto = () => {
                             type="button"
                             className="btn-icon-action btn-icon-delete"
                             style={{ marginTop: '24px' }}
-                            onClick={() => setObjetivosEspecificos(objetivosEspecificos.filter((_, idx) => idx !== i))}
+                            onClick={() => {
+                              if (!confirm('¿Está seguro de que desea eliminar este objetivo específico?')) return;
+                              setObjetivosEspecificos(objetivosEspecificos.filter((_, idx) => idx !== i));
+                            }}
                             title="Eliminar objetivo"
                           >
                             🗑
@@ -1748,31 +1668,6 @@ const FormularioProyecto = () => {
                   >
                     + Agregar Objetivo Específico
                   </button>
-
-                  <div style={{
-                    marginTop: '16px',
-                    padding: '12px 16px',
-                    backgroundColor: '#f0fdf4',
-                    border: '1px solid #bbf7d0',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '10px'
-                  }}>
-                    <span style={{ fontSize: '13px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>🔗</span> Los objetivos específicos definidos aquí están vinculados directamente con el <strong>Paso 12 (Plan de Acción y Cronograma)</strong>.
-                    </span>
-                    <button
-                      type="button"
-                      className="btn-link-action"
-                      style={{ fontSize: '12px', color: '#15803d', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-                      onClick={() => setPasoActual(12)}
-                    >
-                      Ir a Paso 12 (Cronograma) →
-                    </button>
-                  </div>
                 </div>
               </div>
             )}
@@ -1835,169 +1730,52 @@ const FormularioProyecto = () => {
                   Detalle el cronograma de actividades asociadas a los objetivos específicos y la matriz de identificación y mitigación de riesgos del proyecto.
                 </p>
 
-                <div style={{ marginBottom: "14px", marginTop: "8px" }}>
-                  <h2 className="section-title-h2" style={{ margin: 0, fontSize: '16px' }}>
-                    3. Plan de Acción y Matriz de Riesgos
-                  </h2>
-                </div>
-
-                {/* Panel de Objetivos Específicos Vinculados desde Paso 9 */}
-                <div style={{
-                  marginBottom: '16px',
-                  padding: '14px 18px',
-                  backgroundColor: '#f0f9ff',
-                  border: '1px solid #bae6fd',
-                  borderRadius: '8px'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ fontWeight: 700, fontSize: '14px', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>🎯</span> Objetivos Específicos Vinculados (Paso 9)
-                    </div>
-                    <button 
-                      type="button" 
-                      className="btn-link-action"
-                      style={{ fontSize: '12px', color: '#0284c7', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontWeight: 600 }}
-                      onClick={() => setPasoActual(9)}
-                      title="Ir a Paso 9 para agregar o editar los objetivos específicos"
-                    >
-                      ✏️ Editar objetivos en Paso 9
-                    </button>
-                  </div>
-                  {objetivosEspecificos.filter(o => o && o.trim()).length === 0 ? (
-                    <div style={{ fontSize: '13px', color: '#64748b', fontStyle: 'italic', padding: '6px 0' }}>
-                      ⚠️ Aún no se han redactado objetivos específicos en el <strong>Paso 9</strong>. Haga clic en <em>"Editar objetivos en Paso 9"</em> para agregarlos y vincularlos a cada actividad del cronograma.
-                    </div>
-                  ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
-                      {objetivosEspecificos.map((oe, idx) => {
-                        const texto = (oe || '').trim();
-                        if (!texto) return null;
-                        const clave = `OE ${idx + 1}`;
-                        const cant = actividadesCronograma.filter(a => (a.obj || a.objetivo) === clave).length;
-                        return (
-                          <div key={idx} style={{
-                            backgroundColor: '#ffffff',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: '6px',
-                            padding: '10px 12px',
-                            fontSize: '12px',
-                            lineHeight: 1.45,
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
-                          }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                              <strong style={{ color: '#002855', fontSize: '13px' }}>{clave}</strong>
-                              <span style={{
-                                fontSize: '11px',
-                                backgroundColor: cant > 0 ? '#dcfce7' : '#fef3c7',
-                                color: cant > 0 ? '#166534' : '#92400e',
-                                padding: '2px 8px',
-                                borderRadius: '12px',
-                                fontWeight: 600
-                              }}>
-                                {cant} {cant === 1 ? 'actividad' : 'actividades'}
-                              </span>
-                            </div>
-                            <div style={{ color: '#334155' }}>{texto}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                <div className="table-responsive-container" style={{ overflowX: 'auto', marginBottom: '14px' }}>
-                  <table className="institucional-data-table" style={{ minWidth: numAniosCronograma === 3 ? '2200px' : numAniosCronograma === 2 ? '1800px' : '1400px' }}>
+                <h3 style={{ fontSize: '15px', color: '#002855', marginBottom: '8px', fontWeight: 700 }}>
+                  1. Matriz de Actividades y Cronograma
+                </h3>
+                <div className="table-responsive-container">
+                  <table className="institucional-data-table">
                     <thead>
                       <tr>
-                        <th rowSpan={2} style={{ width: '80px', minWidth: '80px' }}>OBJETIVO</th>
-                        <th rowSpan={2} style={{ minWidth: '150px' }}>ACTIVIDADES</th>
-                        <th rowSpan={2} style={{ minWidth: '130px' }}>RESULTADO ESPERADO</th>
-                        <th rowSpan={2} style={{ width: "140px", minWidth: "140px" }}>PARTICIPANTES</th>
-                        <th rowSpan={2} style={{ width: '90px', minWidth: '90px' }}>RESPONSABILIDAD</th>
-                        <th rowSpan={2} style={{ minWidth: '130px' }}>RIESGOS IDENTIFICADOS</th>
-                        <th rowSpan={2} style={{ minWidth: '130px' }}>MEDIDAS DE MITIGACIÓN</th>
-                        <th rowSpan={2} style={{ width: "140px", minWidth: "140px" }}>RESPONSABLE DE GESTIÓN</th>
-                        <th rowSpan={2} style={{ width: '70px', minWidth: '70px', textAlign: 'center' }}>MES INICIO</th>
-                        <th rowSpan={2} style={{ width: '70px', minWidth: '70px', textAlign: 'center' }}>DURACIÓN (MESES)</th>
-                        {Array.from({ length: numAniosCronograma }, (_, a) => (
-                          <th key={`anio-${a+1}`} colSpan={12} style={{ textAlign: 'center' }}>{`AÑO ${a + 1}`}</th>
-                        ))}
-                        <th rowSpan={2} style={{ width: '40px', textAlign: 'center' }}></th>
-                      </tr>
-                      <tr>
-                        {Array.from({ length: numAniosCronograma }, (_, a) =>
-                          Array.from({ length: 12 }, (_, m) => (
-                            <th key={`a${a+1}-m${m+1}`} style={{ width: '28px', minWidth: '28px', textAlign: 'center', fontSize: '10px', padding: '2px' }}>
-                              {m + 1}
-                            </th>
-                          ))
-                        )}
+                        <th style={{ width: '12%' }}>Obj. Esp.</th>
+                        <th>Actividad principal</th>
+                        <th>Meta / Entregable</th>
+                        <th style={{ width: '8%', textAlign: 'center' }}>Año 1</th>
+                        <th style={{ width: '8%', textAlign: 'center' }}>Año 2</th>
+                        <th style={{ width: '8%', textAlign: 'center' }}>Año 3</th>
+                        <th style={{ width: '48px', textAlign: 'center' }}>Acción</th>
                       </tr>
                     </thead>
                     <tbody>
                       {actividadesCronograma.length === 0 ? (
                         <tr>
-                          <td colSpan={11 + numAniosCronograma * 12} style={{ textAlign: 'center', padding: '28px', color: '#64748b' }}>
-                            No hay actividades registradas aún en el cronograma. Haz clic en <strong>+ Agregar Actividad</strong> para comenzar.
+                          <td colSpan="7" style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>
+                            No hay actividades registradas en el cronograma. Haga clic en <strong>+ Agregar Actividad al Cronograma</strong> para comenzar.
                           </td>
                         </tr>
                       ) : (
                         actividadesCronograma.map((act, i) => (
                           <tr key={act.id || i}>
-                            {/* 1. OBJETIVO */}
-                            <td>
-                              {objetivosEspecificos.filter(o => o && o.trim()).length > 0 ? (
-                                <select 
-                                  className="form-table-input"
-                                  value={act.obj || act.objetivo || ''}
-                                  style={{ background: '#ffffff', cursor: 'pointer', fontSize: '12px', width: '100%', fontWeight: 500 }}
-                                  onChange={(e) => {
-                                    const copia = [...actividadesCronograma];
-                                    copia[i].obj = e.target.value;
-                                    copia[i].objetivo = e.target.value;
-                                    setActividadesCronograma(copia);
-                                  }}
-                                >
-                                  <option value="">— OE —</option>
-                                  {objetivosEspecificos.map((oe, idx) => {
-                                    const tLimpio = (oe || '').trim();
-                                    if (!tLimpio) return null;
-                                    const clave = `OE ${idx + 1}`;
-                                    const tCorto = tLimpio.length > 40 ? `${tLimpio.substring(0, 40)}...` : tLimpio;
-                                    return (
-                                      <option key={idx} value={clave} title={`${clave}: ${tLimpio}`}>
-                                        {clave}: {tCorto}
-                                      </option>
-                                    );
-                                  })}
-                                  {(act.obj || act.objetivo) && !objetivosEspecificos.some((_, idx) => `OE ${idx + 1}` === (act.obj || act.objetivo)) && (
-                                    <option value={act.obj || act.objetivo}>{act.obj || act.objetivo}</option>
-                                  )}
-                                </select>
-                              ) : (
-                                <LimitedInput 
-                                  type="text" 
-                                  className="form-table-input"
-                                  value={act.obj || act.objetivo || ''}
-                                  maxLength={30}
-                                  showCounter={false}
-                                  placeholder="OE 1"
-                                  onChange={(e) => {
-                                    const copia = [...actividadesCronograma];
-                                    copia[i].obj = e.target.value;
-                                    copia[i].objetivo = e.target.value;
-                                    setActividadesCronograma(copia);
-                                  }}
-                                />
-                              )}
-                            </td>
-
-                            {/* 2. ACTIVIDADES */}
                             <td>
                               <LimitedInput 
                                 type="text" 
                                 className="form-table-input"
-                                value={act.actividad || ''}
+                                value={act.obj}
+                                maxLength={30}
+                                showCounter={false}
+                                placeholder="OE 1"
+                                onChange={(e) => {
+                                  const copia = [...actividadesCronograma];
+                                  copia[i].obj = e.target.value;
+                                  setActividadesCronograma(copia);
+                                }}
+                              />
+                            </td>
+                            <td>
+                              <LimitedInput 
+                                type="text" 
+                                className="form-table-input"
+                                value={act.actividad}
                                 maxLength={500}
                                 showCounter={false}
                                 placeholder="Descripción de la actividad principal..."
@@ -2008,180 +1786,65 @@ const FormularioProyecto = () => {
                                 }}
                               />
                             </td>
-
-                            {/* 3. RESULTADO ESPERADO */}
                             <td>
                               <LimitedInput 
                                 type="text" 
                                 className="form-table-input"
-                                value={act.resultado || act.entregable || ''}
+                                value={act.entregable}
                                 maxLength={500}
                                 showCounter={false}
-                                placeholder="Resultado o entregable técnico..."
+                                placeholder="Meta o entregable técnico..."
                                 onChange={(e) => {
                                   const copia = [...actividadesCronograma];
-                                  copia[i].resultado = e.target.value;
                                   copia[i].entregable = e.target.value;
                                   setActividadesCronograma(copia);
                                 }}
                               />
                             </td>
-
-                            {/* 4. PARTICIPANTES */}
-                            <td>
-                              <select 
-                                className="form-table-input"
-                                value={act.participante || act.responsable || ''}
-                                style={{ background: '#ffffff', cursor: 'pointer' }}
-                                onChange={(e) => {
-                                  const copia = [...actividadesCronograma];
-                                  copia[i].participante = e.target.value;
-                                  copia[i].responsable = e.target.value;
-                                  setActividadesCronograma(copia);
-                                }}
-                              >
-                                <option value="">— Seleccionar —</option>
-                                {obtenerIntegrantesLista().map((int, idx) => (
-                                  <option key={idx} value={int.iniciales}>{int.iniciales} — {int.nombre} ({int.rol})</option>
-                                ))}
-                              </select>
-                            </td>
-
-                            {/* 5. RESPONSABILIDAD */}
-                            <td>
-                              <select 
-                                className="form-table-input"
-                                value={act.responsabilidad || ''}
-                                style={{ background: '#ffffff', cursor: 'pointer' }}
-                                onChange={(e) => {
-                                  const copia = [...actividadesCronograma];
-                                  copia[i].responsabilidad = e.target.value;
-                                  setActividadesCronograma(copia);
-                                }}
-                              >
-                                <option value="">—</option>
-                                <option value="Ejecuta">Ejecuta</option>
-                                <option value="Supervisa">Supervisa</option>
-                                <option value="Colabora">Colabora</option>
-                              </select>
-                            </td>
-
-                            {/* 6. RIESGOS IDENTIFICADOS */}
-                            <td>
-                              <LimitedInput 
-                                type="text" 
-                                className="form-table-input"
-                                value={act.riesgo || ''}
-                                maxLength={500}
-                                showCounter={false}
-                                placeholder="Riesgo identificado..."
-                                onChange={(e) => {
-                                  const copia = [...actividadesCronograma];
-                                  copia[i].riesgo = e.target.value;
-                                  setActividadesCronograma(copia);
-                                }}
-                              />
-                            </td>
-
-                            {/* 7. MEDIDAS DE MITIGACIÓN */}
-                            <td>
-                              <LimitedInput 
-                                type="text" 
-                                className="form-table-input"
-                                value={act.mitigacion || ''}
-                                maxLength={500}
-                                showCounter={false}
-                                placeholder="Medidas de mitigación..."
-                                onChange={(e) => {
-                                  const copia = [...actividadesCronograma];
-                                  copia[i].mitigacion = e.target.value;
-                                  setActividadesCronograma(copia);
-                                }}
-                              />
-                            </td>
-
-                            {/* 8. RESPONSABLE DE GESTIÓN */}
-                            <td>
-                              <select 
-                                className="form-table-input"
-                                value={act.responsableGestion || ''}
-                                style={{ background: '#ffffff', cursor: 'pointer' }}
-                                onChange={(e) => {
-                                  const copia = [...actividadesCronograma];
-                                  copia[i].responsableGestion = e.target.value;
-                                  setActividadesCronograma(copia);
-                                }}
-                              >
-                                <option value="">— Seleccionar —</option>
-                                {obtenerIntegrantesLista().map((int, idx) => (
-                                  <option key={idx} value={int.iniciales}>{int.iniciales} — {int.nombre} ({int.rol})</option>
-                                ))}
-                              </select>
-                            </td>
-
-                            {/* 9. MES INICIO */}
                             <td style={{ textAlign: 'center' }}>
                               <input 
-                                type="number" 
-                                min="1" 
-                                max="36" 
-                                className="form-table-input" 
-                                style={{ width: '50px', textAlign: 'center' }} 
-                                value={act.mesInicio || ''} 
+                                type="checkbox" 
+                                checked={!!act.a1}
                                 onChange={(e) => {
                                   const copia = [...actividadesCronograma];
-                                  copia[i].mesInicio = e.target.value;
+                                  copia[i].a1 = e.target.checked;
                                   setActividadesCronograma(copia);
-                                }} 
+                                }}
                               />
                             </td>
-
-                            {/* 10. DURACIÓN (MESES) */}
                             <td style={{ textAlign: 'center' }}>
                               <input 
-                                type="number" 
-                                min="1" 
-                                max="36" 
-                                className="form-table-input" 
-                                style={{ width: '50px', textAlign: 'center' }} 
-                                value={act.duracionMesesAct || ''} 
+                                type="checkbox" 
+                                checked={!!act.a2}
                                 onChange={(e) => {
                                   const copia = [...actividadesCronograma];
-                                  copia[i].duracionMesesAct = e.target.value;
+                                  copia[i].a2 = e.target.checked;
                                   setActividadesCronograma(copia);
-                                }} 
+                                }}
                               />
                             </td>
-
-                            {/* 11. CHECKBOXES POR MES */}
-                            {Array.from({ length: numAniosCronograma }, (_, a) =>
-                              Array.from({ length: 12 }, (_, m) => {
-                                const checked = act.periodoEjecucion?.[`a${a+1}`]?.[`m${m+1}`] || false;
-                                return (
-                                  <td key={`${act.id || i}-a${a+1}-m${m+1}`} style={{ textAlign: 'center', padding: '1px' }}>
-                                    <input
-                                      type="checkbox"
-                                      checked={checked}
-                                      aria-label={`Actividad ${i + 1}, Año ${a + 1}, Mes ${m + 1}`}
-                                      onChange={() => handleTogglePeriodo(i, a + 1, m + 1)}
-                                      style={{ cursor: 'pointer', width: '14px', height: '14px' }}
-                                    />
-                                  </td>
-                                );
-                              })
-                            )}
-
-                            {/* 12. ACCIÓN ELIMINAR */}
+                            <td style={{ textAlign: 'center' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={!!act.a3}
+                                onChange={(e) => {
+                                  const copia = [...actividadesCronograma];
+                                  copia[i].a3 = e.target.checked;
+                                  setActividadesCronograma(copia);
+                                }}
+                              />
+                            </td>
                             <td style={{ textAlign: 'center' }}>
                               <button 
                                 type="button" 
-                                className="btn-icon-action btn-icon-delete"
+                                className="btn-remove-table-row"
                                 title="Eliminar actividad"
-                                aria-label={`Eliminar fila de actividad ${i + 1}`}
-                                onClick={() => handleEliminarActividad(act.id || i)}
+                                onClick={() => {
+                                  if (!confirm('¿Está seguro de que desea eliminar esta actividad del cronograma?')) return;
+                                  setActividadesCronograma(actividadesCronograma.filter((_, idx) => idx !== i));
+                                }}
                               >
-                                <span aria-hidden="true">✕</span>
-                                <span className="sr-only">Eliminar actividad</span>
+                                ✕
                               </button>
                             </td>
                           </tr>
@@ -2190,38 +1853,20 @@ const FormularioProyecto = () => {
                     </tbody>
                   </table>
                 </div>
-
                 <button 
                   type="button" 
                   className="btn-add-table-row"
-                  aria-label="Agregar nueva fila de actividad al cronograma"
-                  onClick={handleAgregarFilaActividad}
+                  onClick={() => setActividadesCronograma([
+                    ...actividadesCronograma,
+                    { id: Date.now(), obj: '', actividad: '', entregable: '', a1: false, a2: false, a3: false }
+                  ])}
                 >
-                  + Agregar Actividad
+                  + Agregar Actividad al Cronograma
                 </button>
 
-                {/* Recordatorio VIE */}
-                <div className="vie-reminder-box" style={{ marginTop: '14px' }}>
-                  <span className="reminder-icon">💡</span>
-                  <div className="reminder-text">
-                    <strong>Recordatorio VIE:</strong> Dentro de la programación de actividades se deben incluir obligatoriamente las giras de campo y los informes de avance. Además, deberá registrarse cualquier pasantía nacional o internacional que se requiera para el desarrollo del proyecto.
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', marginBottom: '8px' }}>
-                  <h3 style={{ fontSize: '15px', color: '#002855', margin: 0, fontWeight: 700 }}>
-                    2. Identificación y Mitigación de Riesgos
-                  </h3>
-                  <button 
-                    type="button" 
-                    className="btn-link-action"
-                    style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                    onClick={() => setPasoActual(7)}
-                    title="Ir al Paso 7 para incorporar nuevos investigadores o colaboradores"
-                  >
-                    + Añadir / Gestionar miembros del equipo
-                  </button>
-                </div>
+                <h3 style={{ fontSize: '15px', color: '#002855', marginTop: '24px', marginBottom: '8px', fontWeight: 700 }}>
+                  2. Identificación y Mitigación de Riesgos
+                </h3>
                 <div className="table-responsive-container">
                   <table className="institucional-data-table">
                     <thead>
@@ -2234,7 +1879,7 @@ const FormularioProyecto = () => {
                     <tbody>
                       {riesgosMitigacion.length === 0 ? (
                         <tr>
-                          <td colSpan="4" style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>
+                          <td colSpan="3" style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>
                             No hay riesgos registrados. Haga clic en <strong>+ Agregar Riesgo y Estrategia</strong> para comenzar.
                           </td>
                         </tr>
@@ -2271,36 +1916,15 @@ const FormularioProyecto = () => {
                                 }}
                               />
                             </td>
-                            <td>
-                              <select 
-                                className="form-table-input"
-                                value={r.responsable || ''}
-                                style={{ background: '#ffffff', cursor: 'pointer' }}
-                                onChange={(e) => {
-                                  const copia = [...riesgosMitigacion];
-                                  copia[i].responsable = e.target.value;
-                                  setRiesgosMitigacion(copia);
-                                }}
-                              >
-                                <option value="">— Seleccionar —</option>
-                                {investigadoresTEC.filter(inv => inv.nombre).map((inv, idx) => (
-                                  <option key={inv.id || idx} value={inv.nombre}>
-                                    {inv.nombre} ({inv.rol || 'TEC'})
-                                  </option>
-                                ))}
-                                {colaboradoresExternos.filter(col => col.nombre).map((col, idx) => (
-                                  <option key={col.id || idx} value={col.nombre}>
-                                    {col.nombre} (Externo)
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
                             <td style={{ textAlign: 'center' }}>
                               <button 
                                 type="button" 
                                 className="btn-remove-table-row"
                                 title="Eliminar riesgo"
-                                onClick={() => setRiesgosMitigacion(riesgosMitigacion.filter((_, idx) => idx !== i))}
+                                onClick={() => {
+                                  if (!confirm('¿Está seguro de que desea eliminar este riesgo y su mitigación?')) return;
+                                  setRiesgosMitigacion(riesgosMitigacion.filter((_, idx) => idx !== i));
+                                }}
                               >
                                 ✕
                               </button>
@@ -2352,7 +1976,8 @@ const FormularioProyecto = () => {
                             <td><strong>{p.ano}</strong></td>
                             <td>
                               <LimitedInput
-                                type="number"
+                                type="text"
+                                formatoMonto
                                 min="0"
                                 placeholder="0"
                                 showCounter={false}
@@ -2367,7 +1992,8 @@ const FormularioProyecto = () => {
                             </td>
                             <td>
                               <LimitedInput
-                                type="number"
+                                type="text"
+                                formatoMonto
                                 min="0"
                                 placeholder="0"
                                 showCounter={false}
@@ -2420,7 +2046,8 @@ const FormularioProyecto = () => {
                         <td>Financiamiento externo</td>
                         <td>
                           <LimitedInput 
-                            type="number" 
+                            type="text" 
+                            formatoMonto 
                             min="0" 
                             className="form-table-input" 
                             placeholder="0"
@@ -2433,7 +2060,8 @@ const FormularioProyecto = () => {
                         </td>
                         <td>
                           <LimitedInput 
-                            type="number" 
+                            type="text" 
+                            formatoMonto 
                             min="0" 
                             className="form-table-input" 
                             placeholder="0"
@@ -2446,7 +2074,8 @@ const FormularioProyecto = () => {
                         </td>
                         <td>
                           <LimitedInput 
-                            type="number" 
+                            type="text" 
+                            formatoMonto 
                             min="0" 
                             className="form-table-input" 
                             placeholder="0"
@@ -2476,9 +2105,11 @@ const FormularioProyecto = () => {
                         <td>Contrapartida (Escuela/Centro)</td>
                         <td>
                           <LimitedInput 
-                            type="number" 
+                            type="text" 
+                            formatoMonto 
                             min="0" 
                             className="form-table-input" 
+                            placeholder="0"
                             value={fuentesAdicionales.contrapartida.ano1}
                             onChange={(e) => setFuentesAdicionales({
                               ...fuentesAdicionales,
@@ -2488,9 +2119,11 @@ const FormularioProyecto = () => {
                         </td>
                         <td>
                           <LimitedInput 
-                            type="number" 
+                            type="text" 
+                            formatoMonto 
                             min="0" 
                             className="form-table-input" 
+                            placeholder="0"
                             value={fuentesAdicionales.contrapartida.ano2}
                             onChange={(e) => setFuentesAdicionales({
                               ...fuentesAdicionales,
@@ -2500,7 +2133,8 @@ const FormularioProyecto = () => {
                         </td>
                         <td>
                           <LimitedInput 
-                            type="number" 
+                            type="text" 
+                            formatoMonto 
                             min="0" 
                             className="form-table-input" 
                             placeholder="0"
@@ -2562,7 +2196,10 @@ const FormularioProyecto = () => {
                         type="button" 
                         className="btn-table-action" 
                         style={{ color: '#ef4444', borderColor: '#fca5a5' }} 
-                        onClick={() => setArchivoPlanRiesgos(null)}
+                        onClick={() => {
+                          if (!confirm('¿Está seguro de que desea quitar el archivo adjunto?')) return;
+                          setArchivoPlanRiesgos(null);
+                        }}
                       >
                         Eliminar
                       </button>
@@ -2612,7 +2249,11 @@ const FormularioProyecto = () => {
                   De acuerdo con la normativa institucional de la VIE, la cantidad de productos académicos comprometidos se define en función del total de horas semanales asignadas a la propuesta y es requisito indispensable para la liquidación técnica y el cierre del proyecto en el repositorio institucional.
                 </p>
 
-                
+                {/* Resumen de horas del proyecto */}
+                <div className="compromiso-horas-bar">
+                  <span>Total de horas semanales propuestas en el proyecto:</span>
+                  <span className="compromiso-horas-pill">{totalHorasSemanales} horas</span>
+                </div>
 
                 {/* Sección a: Compromiso según carga horaria (Sólo 3 rangos según normativa) */}
                 <h3 className="compromiso-section-header">
@@ -2681,17 +2322,14 @@ const FormularioProyecto = () => {
                           <input 
                             type="checkbox" 
                             checked={productos14a.opcion1?.check || false}
-                            onChange={(e) => {
-                              const isChecked = e.target.checked;
-                              setProductos14a(prev => ({
-                                ...prev,
-                                opcion1: {
-                                  ...prev.opcion1,
-                                  check: isChecked,
-                                  cantidad: isChecked ? (prev.opcion1?.cantidad >= 1 ? prev.opcion1.cantidad : 1) : 0
-                                }
-                              }));
-                            }}
+                            onChange={(e) => setProductos14a({
+                              ...productos14a,
+                              opcion1: {
+                                ...productos14a.opcion1,
+                                check: e.target.checked,
+                                cantidad: productos14a.opcion1?.cantidad === 0 && e.target.checked ? 1 : productos14a.opcion1?.cantidad
+                              }
+                            })}
                           />
                         </td>
                         <td>
@@ -2701,17 +2339,7 @@ const FormularioProyecto = () => {
                             className="form-table-input"
                             showCounter={false}
                             value={productos14a.opcion1?.cantidad ?? 0}
-                            onChange={(e) => {
-                              const cant = Math.max(0, parseInt(e.target.value, 10) || 0);
-                              setProductos14a(prev => ({
-                                ...prev,
-                                opcion1: {
-                                  ...prev.opcion1,
-                                  cantidad: cant,
-                                  check: cant >= 1
-                                }
-                              }));
-                            }}
+                            onChange={(e) => setProductos14a({ ...productos14a, opcion1: { ...productos14a.opcion1, cantidad: Math.max(0, Number(e.target.value) || 0) } })}
                           />
                         </td>
                         <td>
@@ -2737,17 +2365,14 @@ const FormularioProyecto = () => {
                           <input 
                             type="checkbox" 
                             checked={productos14a.opcion2?.check || false}
-                            onChange={(e) => {
-                              const isChecked = e.target.checked;
-                              setProductos14a(prev => ({
-                                ...prev,
-                                opcion2: {
-                                  ...prev.opcion2,
-                                  check: isChecked,
-                                  cantidad: isChecked ? (prev.opcion2?.cantidad >= 1 ? prev.opcion2.cantidad : 2) : 0
-                                }
-                              }));
-                            }}
+                            onChange={(e) => setProductos14a({
+                              ...productos14a,
+                              opcion2: {
+                                ...productos14a.opcion2,
+                                check: e.target.checked,
+                                cantidad: productos14a.opcion2?.cantidad === 0 && e.target.checked ? 2 : productos14a.opcion2?.cantidad
+                              }
+                            })}
                           />
                         </td>
                         <td>
@@ -2757,17 +2382,7 @@ const FormularioProyecto = () => {
                             className="form-table-input"
                             showCounter={false}
                             value={productos14a.opcion2?.cantidad ?? 0}
-                            onChange={(e) => {
-                              const cant = Math.max(0, parseInt(e.target.value, 10) || 0);
-                              setProductos14a(prev => ({
-                                ...prev,
-                                opcion2: {
-                                  ...prev.opcion2,
-                                  cantidad: cant,
-                                  check: cant >= 1
-                                }
-                              }));
-                            }}
+                            onChange={(e) => setProductos14a({ ...productos14a, opcion2: { ...productos14a.opcion2, cantidad: Math.max(0, Number(e.target.value) || 0) } })}
                           />
                         </td>
                         <td>
@@ -2793,17 +2408,14 @@ const FormularioProyecto = () => {
                           <input 
                             type="checkbox" 
                             checked={productos14a.opcion3?.check || false}
-                            onChange={(e) => {
-                              const isChecked = e.target.checked;
-                              setProductos14a(prev => ({
-                                ...prev,
-                                opcion3: {
-                                  ...prev.opcion3,
-                                  check: isChecked,
-                                  cantidad: isChecked ? (prev.opcion3?.cantidad >= 1 ? prev.opcion3.cantidad : 1) : 0
-                                }
-                              }));
-                            }}
+                            onChange={(e) => setProductos14a({
+                              ...productos14a,
+                              opcion3: {
+                                ...productos14a.opcion3,
+                                check: e.target.checked,
+                                cantidad: productos14a.opcion3?.cantidad === 0 && e.target.checked ? 1 : productos14a.opcion3?.cantidad
+                              }
+                            })}
                           />
                         </td>
                         <td>
@@ -2813,17 +2425,7 @@ const FormularioProyecto = () => {
                             className="form-table-input"
                             showCounter={false}
                             value={productos14a.opcion3?.cantidad ?? 0}
-                            onChange={(e) => {
-                              const cant = Math.max(0, parseInt(e.target.value, 10) || 0);
-                              setProductos14a(prev => ({
-                                ...prev,
-                                opcion3: {
-                                  ...prev.opcion3,
-                                  cantidad: cant,
-                                  check: cant >= 1
-                                }
-                              }));
-                            }}
+                            onChange={(e) => setProductos14a({ ...productos14a, opcion3: { ...productos14a.opcion3, cantidad: Math.max(0, Number(e.target.value) || 0) } })}
                           />
                         </td>
                         <td>
@@ -2877,7 +2479,13 @@ const FormularioProyecto = () => {
                   </div>
                 </div>
 
-                
+                {/* Recordatorio Técnico */}
+                <div className="compromiso-callout-card">
+                  <span style={{ fontSize: '18px' }}>ℹ️</span>
+                  <div>
+                    <strong>Recordatorio Técnico:</strong> En cumplimiento del artículo 44 del Reglamento de Investigación y Extensión del ITCR, los compromisos adquiridos en esta sección son vinculantes para la liquidación final del proyecto y la emisión de la certificación de cierre institucional por parte de la Vicerrectoría de Investigación y Extensión (VIE).
+                  </div>
+                </div>
               </div>
             )}
 
@@ -2895,7 +2503,11 @@ const FormularioProyecto = () => {
                   De acuerdo con la normativa institucional de la VIE y el Centro de Vinculación, los proyectos de Desarrollo Tecnológico deben seleccionar obligatoriamente al menos un activo de propiedad industrial amparado en dictamen oficial (Requisito 5.5.a) y productos académicos complementarios (Requisito 5.5.b).
                 </p>
 
-                
+                {/* Resumen de horas del proyecto */}
+                <div className="compromiso-horas-bar">
+                  <span>Total de horas semanales propuestas en el proyecto:</span>
+                  <span className="compromiso-horas-pill">{totalHorasSemanales} horas</span>
+                </div>
 
                 {/* Sección a: Compromiso según carga horaria para desarrollo tecnológico (3 rangos oficiales) */}
                 <h3 className="compromiso-section-header">
@@ -2976,17 +2588,14 @@ const FormularioProyecto = () => {
                               <input 
                                 type="checkbox" 
                                 checked={data.check}
-                                onChange={(e) => {
-                                  const isChecked = e.target.checked;
-                                  setProductos14b(prev => ({
-                                    ...prev,
-                                    [act.key]: {
-                                      ...data,
-                                      check: isChecked,
-                                      cantidad: isChecked ? (data.cantidad >= 1 ? data.cantidad : 1) : 0
-                                    }
-                                  }));
-                                }}
+                                onChange={(e) => setProductos14b({
+                                  ...productos14b,
+                                  [act.key]: {
+                                    ...data,
+                                    check: e.target.checked,
+                                    cantidad: data.cantidad === 0 && e.target.checked ? 1 : data.cantidad
+                                  }
+                                })}
                               />
                             </td>
                             <td>
@@ -2996,17 +2605,10 @@ const FormularioProyecto = () => {
                                 className="form-table-input"
                                 showCounter={false}
                                 value={data.cantidad ?? 0}
-                                onChange={(e) => {
-                                  const cant = Math.max(0, parseInt(e.target.value, 10) || 0);
-                                  setProductos14b(prev => ({
-                                    ...prev,
-                                    [act.key]: {
-                                      ...data,
-                                      cantidad: cant,
-                                      check: cant >= 1
-                                    }
-                                  }));
-                                }}
+                                onChange={(e) => setProductos14b({
+                                  ...productos14b,
+                                  [act.key]: { ...data, cantidad: Math.max(0, Number(e.target.value) || 0) }
+                                })}
                               />
                             </td>
                             <td>
@@ -3058,24 +2660,20 @@ const FormularioProyecto = () => {
                         { key: 'norma', opcion: 'Opción 4: Norma técnica sometida ante entes competentes de reconocida reputación (INTECO u homologado)' }
                       ].map((prod) => {
                         const data = productos14b[prod.key] || { check: false, cantidad: 0, objetivo: '' };
-                        const minCant = prod.key === 'memoria' ? 2 : 1;
                         return (
                           <tr key={prod.key} className={data.check ? 'is-selected' : ''}>
                             <td style={{ textAlign: 'center' }}>
                               <input 
                                 type="checkbox" 
                                 checked={data.check}
-                                onChange={(e) => {
-                                  const isChecked = e.target.checked;
-                                  setProductos14b(prev => ({
-                                    ...prev,
-                                    [prod.key]: {
-                                      ...data,
-                                      check: isChecked,
-                                      cantidad: isChecked ? (data.cantidad >= 1 ? data.cantidad : minCant) : 0
-                                    }
-                                  }));
-                                }}
+                                onChange={(e) => setProductos14b({
+                                  ...productos14b,
+                                  [prod.key]: {
+                                    ...data,
+                                    check: e.target.checked,
+                                    cantidad: data.cantidad === 0 && e.target.checked ? 1 : data.cantidad
+                                  }
+                                })}
                               />
                             </td>
                             <td>
@@ -3085,17 +2683,10 @@ const FormularioProyecto = () => {
                                 className="form-table-input"
                                 showCounter={false}
                                 value={data.cantidad ?? 0}
-                                onChange={(e) => {
-                                  const cant = Math.max(0, parseInt(e.target.value, 10) || 0);
-                                  setProductos14b(prev => ({
-                                    ...prev,
-                                    [prod.key]: {
-                                      ...data,
-                                      cantidad: cant,
-                                      check: cant >= 1
-                                    }
-                                  }));
-                                }}
+                                onChange={(e) => setProductos14b({
+                                  ...productos14b,
+                                  [prod.key]: { ...data, cantidad: Math.max(0, Number(e.target.value) || 0) }
+                                })}
                               />
                             </td>
                             <td>
@@ -3122,7 +2713,13 @@ const FormularioProyecto = () => {
                   </table>
                 </div>
 
-                
+                {/* Recordatorio Técnico */}
+                <div className="compromiso-callout-card">
+                  <span style={{ fontSize: '18px' }}>ℹ️</span>
+                  <div>
+                    <strong>Requisito Institucional de Cierre:</strong> Los activos de propiedad industrial comprometidos requieren el acompañamiento y dictamen favorable del Centro de Vinculación TEC conforme al Reglamento Institucional de Propiedad Intelectual para el trámite de finiquito.
+                  </div>
+                </div>
               </div>
             )}
 
@@ -3354,29 +2951,14 @@ const FormularioProyecto = () => {
                     Siguiente →
                   </button>
                 ) : (
-                  esPropietario ? (
-                    <button 
-                      type="button" 
-                      className="btn-envio-definitivo"
-                      onClick={handleEnvioDefinitivo}
-                      disabled={guardando}
-                    >
-                      {guardando ? 'Enviando a Unidad de Vinculación...' : 'ENVÍO DEFINITIVO A VINCULACIÓN'}
-                    </button>
-                  ) : (
-                    <div style={{
-                      backgroundColor: '#eff6ff',
-                      border: '1px solid #bfdbfe',
-                      borderRadius: '8px',
-                      padding: '10px 16px',
-                      color: '#1e40af',
-                      fontSize: '13px',
-                      maxWidth: '440px',
-                      textAlign: 'right'
-                    }}>
-                      🔒 <strong>Modo Colaborador:</strong> Como integrante del equipo de investigación puedes editar y guardar cambios, pero el Envío Definitivo a Vinculación debe realizarlo la persona coordinadora.
-                    </div>
-                  )
+                  <button 
+                    type="button" 
+                    className="btn-envio-definitivo"
+                    onClick={handleEnvioDefinitivo}
+                    disabled={guardando}
+                  >
+                    {guardando ? 'Enviando a VIE...' : 'ENVÍO DEFINITIVO DE PROPUESTA'}
+                  </button>
                 )}
               </div>
             </div>

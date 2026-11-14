@@ -10,7 +10,7 @@ const VinculacionEvaluar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { usuario } = useAuth();
-  const propuestaId = location.state?.propuestaId || 1;
+  const propuestaId = location.state?.propuestaId || location.state?.item?.propuestaId || new URLSearchParams(location.search).get('propuestaId');
   const itemInicial = location.state?.item;
 
   const [tabActiva, setTabActiva] = useState('online'); // 'online' | 'subida'
@@ -27,8 +27,8 @@ const VinculacionEvaluar = () => {
   });
 
   // Archivos — sin predeterminado
-  const [archivoAdjunto, setArchivoAdjunto] = useState(null);     // File object for pestaña 1
-  const [archivoSubida, setArchivoSubida] = useState(null);       // File object for pestaña 2
+  const [archivoAdjunto, setArchivoAdjunto] = useState(null);
+  const [archivoSubida, setArchivoSubida] = useState(null);
   const fileInputRef = useRef(null);
   const fileInputSubidaRef = useRef(null);
 
@@ -50,18 +50,37 @@ const VinculacionEvaluar = () => {
             }
           }
         } catch (_err) {
-          // Mantener estado inicial
         }
       }
     };
     cargarExpediente();
   }, [propuestaId, usuario]);
 
+  if (!propuestaId && !expediente) {
+    return (
+      <div className="vinculacion-evaluar-container">
+        <div className="dashboard-main-card" style={{ textAlign: 'center', padding: '40px' }}>
+          <h2>No se ha seleccionado ninguna propuesta para evaluar</h2>
+          <p style={{ color: '#627d98', margin: '16px 0' }}>
+            Regrese a la bandeja de evaluación para seleccionar una propuesta pendiente.
+          </p>
+          <button 
+            type="button" 
+            className="btn-nueva-propuesta"
+            onClick={() => navigate('/dashboard/bandeja-evaluacion')}
+          >
+            ← Ir a la bandeja de evaluación
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const handleEnviarDictamen = async (e) => {
     e.preventDefault();
 
-    if (esAutoEvaluacion && !window.confirm('Aviso: Usted figura como investigador coordinador de esta propuesta. ¿Desea continuar con la emisión del dictamen para fines de prueba?')) {
-
+    if (esAutoEvaluacion) {
+      alert('No puede evaluar una propuesta de la cual usted es el investigador coordinador.');
       return;
     }
 
@@ -95,13 +114,21 @@ const VinculacionEvaluar = () => {
         }
       }
 
+      const anioActual = new Date().getFullYear();
+      const codigoSufijo = expediente?.codigoPropuesta 
+        ? expediente.codigoPropuesta.replace(/[^a-zA-Z0-9]/g, '') 
+        : (propuestaId || 'DOC');
+
       const payload = {
-        propuestaId: Number(propuestaId) || 1,
-        numeroOficio: `VINC-2027-${Math.floor(100 + Math.random() * 900)}`,
+        propuestaId: Number(propuestaId),
+        numeroOficio: `VINC-${anioActual}-${codigoSufijo}`,
         contenido: textoContenido,
         rutaArchivo: rutaSeaweed || archivoParaGuardar?.name || null
       };
+
       await vinculacionService.crearDictamen(payload);
+      alert('Dictamen de Vinculación guardado exitosamente en SeaweedFS y notificado al Comité Técnico.');
+      navigate('/dashboard/dictamenes');
     } catch (err) {
       const msg = err?.response?.data?.detail || 'Error al guardar el dictamen';
       if (msg.includes('investigador coordinador')) {
@@ -109,13 +136,12 @@ const VinculacionEvaluar = () => {
         return;
       }
       console.warn('Backend:', msg);
+      alert(msg);
     }
-    alert('Dictamen de Vinculación guardado exitosamente en SeaweedFS y notificado al Comité Técnico.');
-    navigate('/dashboard/dictamenes');
   };
 
   const handleGuardarBorrador = () => {
-    alert('Borrador del dictamen guardado correctamente.');
+    alert('Borrador del dictamen guardado temporalmente.');
   };
 
   /* ── Utilidades para archivos ──────────────────────── */
@@ -144,8 +170,7 @@ const VinculacionEvaluar = () => {
           <button 
             type="button" 
             className="btn-link-volver"
-            aria-label="Volver a la bandeja de entrada"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/dashboard/bandeja-evaluacion')}
           >
             ← Volver a la bandeja de entrada
           </button>
@@ -154,7 +179,7 @@ const VinculacionEvaluar = () => {
         <div className="dashboard-header-row">
           <div className="dashboard-title-group">
             <h1 className="dashboard-main-title">
-              Evaluación de Propuesta – {expediente?.codigoPropuesta || expediente?.id || ''}
+              Evaluación de Propuesta — {expediente?.codigoPropuesta || (propuestaId ? `Propuesta #${propuestaId}` : '—')}
             </h1>
             <p className="dashboard-subtitle">
               Emisión de dictamen técnico de Propiedad Intelectual y madurez tecnológica (TRL).
@@ -186,22 +211,22 @@ const VinculacionEvaluar = () => {
             <div className="expediente-card-box">
               <div className="expediente-meta-item">
                 <span className="expediente-meta-label">ID:</span>
-                <span className="expediente-meta-value">{expediente?.codigoPropuesta || expediente?.id || ''}</span>
+                <span className="expediente-meta-value">{expediente?.codigoPropuesta || (propuestaId ? `Propuesta #${propuestaId}` : '—')}</span>
               </div>
 
               <div className="expediente-meta-item">
                 <span className="expediente-meta-label">Título:</span>
-                <span className="expediente-meta-value">{expediente?.titulo || ''}</span>
+                <span className="expediente-meta-value">{expediente?.titulo || '—'}</span>
               </div>
 
               <div className="expediente-meta-item">
                 <span className="expediente-meta-label">Escuela:</span>
-                <span className="expediente-meta-value">{expediente?.nombreEscuela || expediente?.escuela || ''}</span>
+                <span className="expediente-meta-value">{expediente?.nombreEscuela || expediente?.escuela || '—'}</span>
               </div>
 
               <div className="expediente-meta-item">
                 <span className="expediente-meta-label">Investigador:</span>
-                <span className="expediente-meta-value">{expediente?.investigadorCoordinador || expediente?.investigador || ''}</span>
+                <span className="expediente-meta-value">{expediente?.investigadorCoordinador || expediente?.investigador || 'No asignado'}</span>
               </div>
 
               <div className="expediente-meta-item">
@@ -212,35 +237,13 @@ const VinculacionEvaluar = () => {
               <div className="expediente-resumen-block">
                 <div className="expediente-resumen-title">Resumen Ejecutivo:</div>
                 <p className="expediente-resumen-text">
-                  {expediente?.resumen || 'Sin resumen disponible.'}
+                  {expediente?.resumen || 'Sin resumen registrado en el formulario.'}
                 </p>
-              </div>
-
-              <div className="expediente-adjuntos-seccion">
-                <div className="expediente-resumen-title">Documentos Adjuntos:</div>
-                <div 
-                  className="documento-adjunto-card" 
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Descargar documento adjunto: Form-04_Propuesta.pdf"
-                  style={{ marginTop: '6px' }}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); descargarPropuestaPDF(propuestaId, propuestaService); } }}
-                  onClick={() => descargarPropuestaPDF(propuestaId, propuestaService)}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span aria-hidden="true">📄</span>
-                    <div>
-                      <div className="doc-nombre">Form-04_Propuesta.pdf</div>
-                      <div className="doc-peso">Formulario oficial</div>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               <button 
                 type="button" 
                 className="btn-proposal-action btn-outline"
-                aria-label="Descargar Form-04 completo en formato PDF"
                 style={{ width: '100%', marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 onClick={() => descargarPropuestaPDF(propuestaId, propuestaService)}
               >
@@ -289,7 +292,7 @@ const VinculacionEvaluar = () => {
                     </select>
                     {expediente?.nivelTrlActual && (
                       <span className="form-caption-subtext">
-                        El investigador declaró TRL {expediente.nivelTrlActual}.
+                        El investigador declaró TRL actual: Nivel {expediente.nivelTrlActual}.
                       </span>
                     )}
                   </div>
@@ -341,7 +344,6 @@ const VinculacionEvaluar = () => {
 
                   <div className="form-group">
                     <label>4. Dictamen de Vinculación firmado (opcional)</label>
-                    {/* Input de archivo oculto */}
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -359,12 +361,14 @@ const VinculacionEvaluar = () => {
                         <button 
                           type="button" 
                           className="btn-eliminar-adjunto"
-                          onClick={() => { setArchivoAdjunto(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                          title="Eliminar archivo adjunto"
-                          aria-label="Eliminar archivo adjunto"
+                          onClick={() => {
+                            if (!confirm('¿Está seguro de que desea eliminar el archivo adjunto?')) return;
+                            setArchivoAdjunto(null);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
+                          title="Eliminar archivo"
                         >
-                          <span aria-hidden="true">✕</span>
-                          <span className="sr-only">Eliminar archivo adjunto</span>
+                          ✕
                         </button>
                       </div>
                     ) : (
@@ -398,19 +402,9 @@ const VinculacionEvaluar = () => {
             {tabActiva === 'subida' && (
               <div className="evaluacion-subida-container" style={{ marginTop: '20px' }}>
                 <p className="column-subtitle" style={{ marginBottom: '14px' }}>
-                  Si prefiere trabajar offline, descargue la plantilla oficial, complétela, fírmela y súbala aquí.
+                  Adjunte el archivo firmado oficial del Dictamen de Vinculación para vincularlo al expediente en SeaweedFS.
                 </p>
 
-                <button 
-                  type="button" 
-                  className="btn-proposal-action btn-outline"
-                  style={{ width: '100%', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                  onClick={() => alert('Descargando plantilla oficial de Dictamen de Vinculación (Word/PDF)...')}
-                >
-                  📥 Descargar Plantilla de Dictamen (Word/PDF)
-                </button>
-
-                {/* Input de archivo oculto para subida */}
                 <input
                   ref={fileInputSubidaRef}
                   type="file"
@@ -419,7 +413,6 @@ const VinculacionEvaluar = () => {
                   onChange={(e) => handleFileChange(e, setArchivoSubida)}
                 />
 
-                {/* Zona de Dropzone */}
                 {archivoSubida ? (
                   <div className="archivo-firmado-box" style={{ padding: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -432,21 +425,19 @@ const VinculacionEvaluar = () => {
                     <button
                       type="button"
                       className="btn-eliminar-adjunto"
-                      onClick={() => { setArchivoSubida(null); if (fileInputSubidaRef.current) fileInputSubidaRef.current.value = ''; }}
-                      title="Eliminar archivo adjunto"
-                      aria-label="Eliminar archivo adjunto"
+                      onClick={() => {
+                        if (!confirm('¿Está seguro de que desea eliminar el archivo adjunto?')) return;
+                        setArchivoSubida(null);
+                        if (fileInputSubidaRef.current) fileInputSubidaRef.current.value = '';
+                      }}
+                      title="Eliminar archivo"
                     >
-                      <span aria-hidden="true">✕</span>
-                      <span className="sr-only">Eliminar archivo adjunto</span>
+                      ✕
                     </button>
                   </div>
                 ) : (
                   <div 
                     className="dropzone-upload-box"
-                    role="button"
-                    tabIndex={0}
-                    aria-label="Zona de subida de dictamen firmado. Haga clic o presione Enter para seleccionar un archivo PDF, DOC o DOCX"
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputSubidaRef.current?.click(); } }}
                     onClick={() => fileInputSubidaRef.current?.click()}
                     onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     onDrop={(e) => {
@@ -462,7 +453,7 @@ const VinculacionEvaluar = () => {
                       }
                     }}
                   >
-                    <div className="dropzone-icon" aria-hidden="true">↑</div>
+                    <div className="dropzone-icon">↑</div>
                     <div className="dropzone-title">
                       Arrastre el archivo firmado aquí
                     </div>
