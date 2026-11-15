@@ -1212,6 +1212,225 @@ export async function descargarPresupuestoDirectoExcel(propuestaId, propuestaSer
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   7. GENERAR RÚBRICA COMO BLOB (Para guardar borrador en S3)
+   ═══════════════════════════════════════════════════════════════ */
+export async function generarBlobRubricaExcel(rubricaData, evaluaciones, productos) {
+  const ExcelJS = (await import('exceljs')).default;
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Rúbrica Oficial');
+
+  const modalidad = rubricaData.nombreRubrica || 'ACTIVIDADES DE FORTALECIMIENTO';
+  
+  // Encabezado
+  ws.mergeCells('A1:I1');
+  const cellTitulo = ws.getCell('A1');
+  cellTitulo.value = `RÚBRICA DE EVALUACIÓN – ${modalidad.toUpperCase()}`;
+  cellTitulo.font = { bold: true, size: 14, color: { argb: 'FF002855' } };
+  cellTitulo.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  ws.mergeCells('A2:I2');
+  ws.getCell('A2').value = 'Convocatoria con fondos VIE 2027 – Vicerrectoría de Investigación y Extensión, Instituto Tecnológico de Costa Rica';
+  ws.getCell('A2').alignment = { horizontal: 'center' };
+
+  ws.mergeCells('A3:B3'); ws.getCell('A3').value = 'Nombre de la propuesta:'; ws.getCell('A3').font = { bold: true };
+  ws.mergeCells('C3:I3'); ws.getCell('C3').value = rubricaData.titulo || '';
+
+  ws.mergeCells('A4:B4'); ws.getCell('A4').value = 'Dependencia académica coordinadora:'; ws.getCell('A4').font = { bold: true };
+  ws.mergeCells('C4:I4'); ws.getCell('C4').value = rubricaData.escuela || '';
+
+  ws.mergeCells('A5:B5'); ws.getCell('A5').value = 'Fecha de evaluación:'; ws.getCell('A5').font = { bold: true };
+  ws.mergeCells('C5:I5'); ws.getCell('C5').value = new Date().toLocaleDateString('es-CR');
+
+  ws.mergeCells('A7:I7');
+  const cellAdvertencia = ws.getCell('A7');
+  cellAdvertencia.value = '⚠ REQUISITOS MÍNIMOS OBLIGATORIOS: Los criterios marcados con ⛔ son requisitos obligatorios.';
+  cellAdvertencia.font = { italic: true, color: { argb: 'FFCC0000' }, size: 10 };
+  cellAdvertencia.alignment = { wrapText: true };
+
+  // Encabezados de tabla
+  const headers = ['Criterio de evaluación', 'Peso', 'Deficiente (0 pts)', 'Regular (6 pts)', 'Bueno (8 pts)', 'Excelente (10 pts)', 'Nivel', 'Subpuntaje', 'Justificación'];
+  const headerRow = ws.getRow(9);
+  headers.forEach((h, i) => {
+    const cell = headerRow.getCell(i + 1);
+    cell.value = h;
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002855' } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+  });
+  headerRow.height = 30;
+
+  let currentRow = 11;
+  const celdasSubtotales = [];
+
+  rubricaData.estructuraRubrica.secciones.forEach((seccion) => {
+    ws.mergeCells(`A${currentRow}:I${currentRow}`);
+    const cellSec = ws.getCell(`A${currentRow}`);
+    cellSec.value = `${seccion.nombre} — Peso: ${seccion.peso_seccion}%`;
+    cellSec.font = { bold: true, size: 12, color: { argb: 'FF002855' } };
+    cellSec.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F0FA' } };
+    currentRow++;
+
+    let subTotalSeccion = 0;
+    let pesoEvaluadoSeccion = 0;
+
+    seccion.criterios.forEach((crit) => {
+      const ev = evaluaciones[crit.id] || {};
+      const esObligatorio = crit.es_requisito_obligatorio;
+      const nombreCriterio = esObligatorio ? `⛔ ${crit.nombre}` : crit.nombre;
+
+      const row = ws.getRow(currentRow);
+      row.getCell(1).value = nombreCriterio;
+      row.getCell(1).font = esObligatorio ? { bold: true, color: { argb: 'FFCC0000' } } : { bold: false };
+      row.getCell(1).alignment = { wrapText: true, vertical: 'top' };
+
+      row.getCell(2).value = crit.peso;
+      row.getCell(2).numFmt = '0"%"';
+      row.getCell(2).alignment = { horizontal: 'center', vertical: 'top' };
+
+      row.getCell(3).value = crit.niveles?.Deficiente || '';
+      row.getCell(4).value = crit.niveles?.Regular || '';
+      row.getCell(5).value = crit.niveles?.Bueno || '';
+      row.getCell(6).value = crit.niveles?.Excelente || '';
+      ['C','D','E','F'].forEach(col => {
+        row.getCell(col).alignment = { wrapText: true, vertical: 'top' };
+        row.getCell(col).font = { size: 9 };
+      });
+
+      row.getCell(7).value = ev.nivel || '';
+      row.getCell(7).font = { bold: true, color: { argb: 'FF006600' } };
+      row.getCell(7).alignment = { horizontal: 'center', vertical: 'middle' };
+
+      const puntajeCalculado = ev.puntaje !== undefined && ev.puntaje !== null ? ev.puntaje : '';
+      row.getCell(8).value = puntajeCalculado;
+      if (puntajeCalculado !== '') {
+        row.getCell(8).font = { bold: true, color: { argb: 'FF002855' } };
+        subTotalSeccion += (puntajeCalculado / 10) * crit.peso;
+        pesoEvaluadoSeccion += crit.peso;
+      }
+      row.getCell(8).alignment = { horizontal: 'center', vertical: 'middle' };
+
+      row.getCell(9).value = ev.justificacion || '';
+      row.getCell(9).alignment = { wrapText: true, vertical: 'top' };
+
+      for (let i = 1; i <= 9; i++) {
+        row.getCell(i).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+      }
+      row.height = 80;
+      currentRow++;
+    });
+
+    ws.mergeCells(`A${currentRow}:F${currentRow}`);
+    ws.getCell(`A${currentRow}`).value = `Subtotal – ${seccion.nombre}`;
+    ws.getCell(`A${currentRow}`).font = { bold: true, italic: true };
+    ws.getCell(`A${currentRow}`).alignment = { horizontal: 'right' };
+
+    if (pesoEvaluadoSeccion > 0) {
+      const notaSeccion = (subTotalSeccion / pesoEvaluadoSeccion) * (seccion.peso_seccion / 100);
+      ws.mergeCells(`G${currentRow}:H${currentRow}`);
+      ws.getCell(`G${currentRow}`).value = parseFloat(notaSeccion.toFixed(2));
+      ws.getCell(`G${currentRow}`).numFmt = '0.00';
+      ws.getCell(`G${currentRow}`).font = { bold: true, color: { argb: 'FF002855' } };
+      ws.getCell(`G${currentRow}`).alignment = { horizontal: 'center' };
+      celdasSubtotales.push(parseFloat(notaSeccion.toFixed(2)));
+    }
+    currentRow += 2;
+  });
+
+  // Calificación final
+  const calificacionFinal = celdasSubtotales.reduce((a, b) => a + b, 0);
+  ws.mergeCells(`A${currentRow}:F${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'PUNTAJE TOTAL (escala 0 – 1)';
+  ws.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
+  ws.getCell(`A${currentRow}`).alignment = { horizontal: 'right' };
+
+  ws.mergeCells(`G${currentRow}:H${currentRow}`);
+  ws.getCell(`G${currentRow}`).value = parseFloat(calificacionFinal.toFixed(2));
+  ws.getCell(`G${currentRow}`).numFmt = '0.00';
+  ws.getCell(`G${currentRow}`).font = { bold: true, size: 14, color: { argb: calificacionFinal >= 0.70 ? 'FF008000' : 'FFCC0000' } };
+  ws.getCell(`G${currentRow}`).alignment = { horizontal: 'center' };
+  currentRow++;
+
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'ESCALA: ≥ 0.70 = RECOMIENDA | < 0.70 = NO RECOMIENDA';
+  ws.getCell(`A${currentRow}`).font = { bold: true, italic: true, color: { argb: 'FF666666' } };
+  ws.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
+  currentRow += 2;
+
+  // Sección de Productos
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = '8. PRODUCTOS ACADÉMICOS — Sección no sumativa';
+  ws.getCell(`A${currentRow}`).font = { bold: true, size: 12, color: { argb: 'FF002855' } };
+  ws.getCell(`A${currentRow}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F0FA' } };
+  currentRow++;
+
+  const esDesarrollo = modalidad.toLowerCase().includes('desarrollo');
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = esDesarrollo 
+    ? 'ATENCIÓN: Todo proyecto de desarrollo tecnológico requiere MÍNIMO 2 productos (1 de PI obligatorio + 1 adicional).'
+    : 'ATENCIÓN: Si el equipo NO cumple con el mínimo, el Comité Técnico NO DEBE RECOMENDAR la propuesta.';
+  ws.getCell(`A${currentRow}`).font = { italic: true, color: { argb: 'FFCC0000' }, size: 10 };
+  ws.getCell(`A${currentRow}`).alignment = { wrapText: true };
+  currentRow++;
+
+  ws.mergeCells(`A${currentRow}:B${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Horas semanales totales:';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  ws.mergeCells(`C${currentRow}:I${currentRow}`);
+  ws.getCell(`C${currentRow}`).value = `${productos.horasSemanales || 0} horas`;
+  currentRow++;
+
+  ws.mergeCells(`A${currentRow}:B${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Mínimo requerido:';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  ws.mergeCells(`C${currentRow}:I${currentRow}`);
+  ws.getCell(`C${currentRow}`).value = `${rubricaData.minimoProductosRequeridos || 0} producto(s)`;
+  currentRow++;
+
+  ws.mergeCells(`A${currentRow}:B${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Cantidad propuesta:';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  ws.mergeCells(`C${currentRow}:I${currentRow}`);
+  ws.getCell(`C${currentRow}`).value = `${productos.cantidadPropuesta || 0}`;
+  currentRow++;
+
+  ws.mergeCells(`A${currentRow}:B${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Tipos comprometidos:';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  ws.mergeCells(`C${currentRow}:I${currentRow}`);
+  ws.getCell(`C${currentRow}`).value = (productos.tiposSeleccionados || []).join(', ') || 'Ninguno';
+  currentRow += 2;
+
+  const cumpleMinimo = productos.cantidadPropuesta >= (rubricaData.minimoProductosRequeridos || 0);
+  ws.mergeCells(`A${currentRow}:B${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = '¿Cumple con el mínimo?';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  ws.mergeCells(`C${currentRow}:I${currentRow}`);
+  ws.getCell(`C${currentRow}`).value = cumpleMinimo ? '✓ CUMPLE' : '✗ NO CUMPLE';
+  ws.getCell(`C${currentRow}`).font = { bold: true, color: { argb: cumpleMinimo ? 'FF008000' : 'FFCC0000' } };
+  currentRow += 2;
+
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = `DICTAMEN: ${calificacionFinal >= 0.70 && cumpleMinimo ? 'PROPUESTA RECOMENDADA' : 'PROPUESTA NO RECOMENDADA'}`;
+  ws.getCell(`A${currentRow}`).font = { bold: true, size: 12, color: { argb: (calificacionFinal >= 0.70 && cumpleMinimo) ? 'FF008000' : 'FFCC0000' } };
+  ws.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
+
+  // Anchos de columna
+  ws.getColumn('A').width = 35;
+  ws.getColumn('B').width = 8;
+  ws.getColumn('C').width = 25;
+  ws.getColumn('D').width = 25;
+  ws.getColumn('E').width = 25;
+  ws.getColumn('F').width = 25;
+  ws.getColumn('G').width = 15;
+  ws.getColumn('H').width = 12;
+  ws.getColumn('I').width = 40;
+
+  const buffer = await wb.xlsx.writeBuffer();
+  return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+
+/* ═══════════════════════════════════════════════════════════════
    HELPER: Subir un Blob a Supabase via el servicio de propuestas
    ═══════════════════════════════════════════════════════════════ */
 export async function subirBlobASupabase(propuestaService, propuestaId, tipoDocumentoId, blob, nombreArchivo) {

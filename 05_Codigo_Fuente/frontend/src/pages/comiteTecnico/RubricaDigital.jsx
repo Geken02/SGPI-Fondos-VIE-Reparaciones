@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { comiteTecnicoService } from '../../services/comiteTecnicoService';
+import { propuestaService } from '../../services/propuestaService'; // ✅ Agregado para la subida a S3
 import PanelDocumentos from '../../components/PanelDocumentos';
 import AnalisisIA from '../../components/AnalisisIA';
 import PDFViewer from '../../components/PDFViewer';
@@ -30,6 +31,10 @@ export default function RubricaDigital() {
   });
   const [cargando, setCargando] = useState(true);
   const [pdfAbierto, setPdfAbierto] = useState(null); 
+  
+  // ✅ NUEVOS ESTADOS para el guardado de borrador
+  const [guardando, setGuardando] = useState(false);
+  const [mensajeGuardado, setMensajeGuardado] = useState('Evaluación en progreso');
 
   useEffect(() => {
     const cargar = async () => {
@@ -37,6 +42,17 @@ export default function RubricaDigital() {
         const res = await comiteTecnicoService.obtenerEstructuraRubrica(propuestaId);
         setRubricaData(res.data);
         setProductos(prev => ({ ...prev, horasSemanales: res.data.horasSemanalesTotales || 0 }));
+        
+        // Intentar cargar borrador local si existe
+        const borradorLocal = localStorage.getItem(`rubrica_borrador_${propuestaId}`);
+        if (borradorLocal) {
+          try {
+            const datos = JSON.parse(borradorLocal);
+            if (datos.evaluaciones) setEvaluaciones(datos.evaluaciones);
+            if (datos.productos) setProductos(prev => ({ ...prev, ...datos.productos }));
+            setMensajeGuardado('Borrador local cargado');
+          } catch (_e) {}
+        }
       } catch (err) {
         console.error('Error cargando rúbrica:', err);
       } finally {
@@ -70,6 +86,47 @@ export default function RubricaDigital() {
     if (!rubricaData) return false;
     return productos.cantidadPropuesta >= (rubricaData.minimoProductosRequeridos || 0);
   }, [productos, rubricaData]);
+
+  // =========================================================================
+  // ✅ FUNCIÓN PARA GUARDAR BORRADOR Y SUBIR A S3
+  // =========================================================================
+  const guardarBorrador = async () => {
+    setGuardando(true);
+    try {
+      // 1. Guardar en localStorage
+      const datosBorrador = {
+        evaluaciones,
+        productos,
+        fechaGuardado: new Date().toISOString()
+      };
+      localStorage.setItem(`rubrica_borrador_${propuestaId}`, JSON.stringify(datosBorrador));
+
+      // 2. Generar Excel y subir a S3 (Supabase)
+      const { generarBlobRubricaExcel, subirBlobASupabase } = await import('../../utils/exportUtils');
+      const blob = await generarBlobRubricaExcel(rubricaData, evaluaciones, productos);
+      
+      if (blob && blob.size > 0) {
+        // ⚠️ El '5' es el tipoDocumentoId para "Rúbrica de Evaluación". 
+        // Si en tu tabla TiposDocumento es otro número, cámbialo aquí.
+        await propuestaService.subirDocumentoFormulario(
+          propuestaId,
+          5, 
+          blob,
+          `Rubrica_Borrador_${rubricaData.codigoPropuesta || propuestaId}.xlsx`
+        );
+        console.log('✅ Rúbrica guardada como borrador y subida a S3');
+      }
+      
+      const ahora = new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
+      setMensajeGuardado(`Borrador guardado ${ahora}`);
+      alert('Borrador guardado exitosamente en el sistema y en la nube.');
+    } catch (err) {
+      console.error('Error al guardar borrador:', err);
+      alert('Error al subir a la nube, pero se guardó localmente en tu navegador.');
+    } finally {
+      setGuardando(false);
+    }
+  };
 
   const handleDescargarOficial = async () => {
     try {
@@ -717,14 +774,31 @@ export default function RubricaDigital() {
             {pasoActual === 8 && renderizarProductos()}
             {pasoActual === 9 && renderizarResumen()}
 
-            <div className="navegacion-inferior">
-              <button className="btn-nav" onClick={irAnterior} disabled={pasoActual === 0}>Anterior</button>
-              <span className="nav-counter">Paso {pasoActual + 1} de {totalPasos}</span>
-              {pasoActual < 9 ? (
-                <button className="btn-siguiente" onClick={irSiguiente}>Siguiente</button>
-              ) : (
-                <button className="btn-enviar" onClick={enviarEvaluacion}>Enviar Evaluación</button>
-              )}
+            {/* ✅ BARRA DE NAVEGACIÓN ACTUALIZADA CON BOTÓN DE GUARDAR BORRADOR */}
+            <div className="navegacion-inferior" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <button className="btn-nav" onClick={irAnterior} disabled={pasoActual === 0}>Anterior</button>
+                <span className="nav-counter">Paso {pasoActual + 1} de {totalPasos}</span>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <button 
+                  className="btn-form-nav btn-outline" 
+                  onClick={guardarBorrador} 
+                  disabled={guardando}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  {guardando ? 'Guardando...' : '💾 Guardar Borrador'}
+                </button>
+                
+                {pasoActual < 9 ? (
+                  <button className="btn-siguiente" onClick={irSiguiente}>Siguiente</button>
+                ) : (
+                  <button className="btn-enviar" onClick={enviarEvaluacion} disabled={guardando}>
+                    Enviar Evaluación Final
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </main>
