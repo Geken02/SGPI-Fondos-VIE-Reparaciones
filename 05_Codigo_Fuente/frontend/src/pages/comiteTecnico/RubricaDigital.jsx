@@ -64,15 +64,14 @@ export default function RubricaDigital() {
 
 const handleDescargarOficial = async () => {
   try {
-    const response = await api.get(
-      `/api/comite-tecnico/evaluador/${propuestaId}/rubrica/excel`,
-      { responseType: 'blob' }
-    );
+    // ✅ Usamos el servicio en lugar de 'api' directamente
+    const response = await comiteTecnicoService.descargarRubricaExcel(propuestaId);
 
+    // Crear un blob y forzar la descarga
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `Rubrica_Oficial_${rubricaData.codigoPropuesta}.xlsx`);
+    link.setAttribute('download', `Rubrica_Oficial_${rubricaData.codigoPropuesta || propuestaId}.xlsx`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -81,7 +80,8 @@ const handleDescargarOficial = async () => {
     alert('✅ Excel oficial descargado. Ábrelo en Excel y las fórmulas se calcularán solas.');
   } catch (err) {
     console.error('Error al descargar Excel:', err);
-    alert('❌ Error al generar el Excel: ' + (err.response?.data?.detail || err.message));
+    const msg = err.response?.data?.detail || err.message || 'Error desconocido';
+    alert('❌ Error al generar el Excel: ' + msg);
   }
 };
   const handleCargarOficial = async (e) => {
