@@ -1697,10 +1697,10 @@ const guardarBorradorActual = async () => {
                         <tr 
                           key={item.nivel} 
                           onClick={() => setTrlSeleccionado(item.nivel)}
-                          style={{ cursor: 'pointer', backgroundColor: trlSeleccionado === item.nivel ? '#f0fdf4' : 'transparent' }}
+                          className={`trl-table-row ${trlSeleccionado === item.nivel ? 'is-selected' : ''}`} style={{ cursor: 'pointer' }}
                         >
-                          <td style={{ fontWeight: 600, color: '#002855' }}>{item.label}</td>
-                          <td style={{ fontSize: '13px', color: '#475569' }}>{item.desc}</td>
+                          <td className="trl-label-cell"><strong>{item.label}</strong></td>
+                          <td className="trl-desc-cell">{item.desc}</td>
                           <td style={{ textAlign: 'center' }}>
                             <input 
                               type="radio" 
@@ -1832,7 +1832,7 @@ const guardarBorradorActual = async () => {
                                 value={inv.nombre}
                                 readOnly
                                 title="Investigador Coordinador responsable de la propuesta"
-                                style={{ backgroundColor: '#f8fafc', fontWeight: 600, color: '#002855' }}
+                                className="form-table-input form-table-input-readonly"
                               />
                             ) : (
                               <select
@@ -2138,25 +2138,13 @@ const guardarBorradorActual = async () => {
                     + Agregar Objetivo Específico
                   </button>
 
-                  <div style={{
-                    marginTop: '16px',
-                    padding: '12px 16px',
-                    backgroundColor: '#f0fdf4',
-                    border: '1px solid #bbf7d0',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '10px'
-                  }}>
-                    <span style={{ fontSize: '13px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div className="oe-vinculo-cronograma-callout">
+                    <span className="oe-vinculo-text">
                       <span>🔗</span> Los objetivos específicos definidos aquí están vinculados directamente con el <strong>Paso 12 (Plan de Acción y Cronograma)</strong>.
                     </span>
                     <button
                       type="button"
-                      className="btn-link-action"
-                      style={{ fontSize: '12px', color: '#15803d', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                      className="btn-link-action oe-vinculo-btn"
                       onClick={() => setPasoActual(12)}
                     >
                       Ir a Paso 12 (Cronograma) →
@@ -2761,7 +2749,7 @@ const guardarBorradorActual = async () => {
                           </tr>
                         );
                       })}
-                      <tr style={{ backgroundColor: '#f8fafc', fontWeight: 700 }}>
+                      <tr className="table-total-row">
                         <td>TOTAL</td>
                         <td>₡ {presupuestoAnual.reduce((acc, p) => acc + (Number(String(p.operativo || 0).replace(/\s+/g, '')) || 0), 0).toLocaleString('es-CR')}</td>
                         <td>₡ {presupuestoAnual.reduce((acc, p) => acc + (Number(String(p.duradero || 0).replace(/\s+/g, '')) || 0), 0).toLocaleString('es-CR')}</td>
@@ -2949,25 +2937,12 @@ const guardarBorradorActual = async () => {
                     </div>
                   </div>
                 ) : (
-                  <div 
-                    style={{
-                      marginTop: '20px',
-                      padding: '16px',
-                      border: '1px dashed #cbd5e1',
-                      borderRadius: '6px',
-                      backgroundColor: '#f8fafc',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => fileInputPlanRef.current && fileInputPlanRef.current.click()}
-                  >
+                  <div className="adjuntar-plan-box" onClick={() => fileInputPlanRef.current && fileInputPlanRef.current.click()}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ fontSize: '22px' }}>📊</span>
                       <div>
-                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#002855' }}>+ Adjuntar Plan de Acción y Gestión de Riesgos</div>
-                        <div style={{ fontSize: '12px', color: '#64748b' }}>Formatos aceptados: Excel (.xlsx, .xls) o PDF firmado (Máx. 10MB)</div>
+                        <div className="adjuntar-plan-title">+ Adjuntar Plan de Acción y Gestión de Riesgos</div>
+                        <div className="adjuntar-plan-hint">Formatos aceptados: Excel (.xlsx, .xls) o PDF firmado (Máx. 10MB)</div>
                       </div>
                     </div>
                     <button type="button" className="btn-table-action btn-table-action-primary">
@@ -3286,7 +3261,7 @@ const guardarBorradorActual = async () => {
             {pasoActual === 14 && esDesarrolloTecnologico && (
               <div className="step-content-pane">
                 <h1 className="step-main-title">1. Compromisos de producción académica y tecnológica</h1>
-                <div className="step-subheading-tag" style={{ backgroundColor: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}>
+                <div className="step-subheading-tag step-subheading-tag-tech">
                   1.1. Para proyectos de desarrollo tecnológico
                 </div>
                 <p className="form-field-hint" style={{ marginBottom: '18px' }}>
@@ -3573,8 +3548,8 @@ const guardarBorradorActual = async () => {
                     { key: 'animales', label: 'c. ¿Involucra uso o experimentación con animales vertebrados? (Reglamento CICUA)' },
                     { key: 'comunidadesIndigenas', label: 'd. ¿Involucra trabajo en o con territorios o comunidades indígenas?' }
                   ].map((item) => (
-                    <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-                      <span style={{ fontSize: '13px', color: '#1e293b' }}>{item.label}</span>
+                    <div key={item.key} className="aspecto-etico-row">
+                      <span className="aspecto-etico-label">{item.label}</span>
                       <div className="toggle-btn-group">
                         <button 
                           type="button" 
