@@ -65,10 +65,10 @@ export const generarExcelOficial = async (rubricaData, evaluaciones = {}, produc
   headerRow.height = 30;
 
   let currentRow = 11;
-  let calificacionFinalTotal = 0;
+  const celdasSubtotales = []; // Para guardar las referencias de celdas de subtotal y sumarlas al final
 
   // =========================================================================
-  // 3. SECCIONES Y CRITERIOS (Con cálculos autogenerados)
+  // 3. SECCIONES Y CRITERIOS (Con FÓRMULAS DE EXCEL AUTOCALCULABLES)
   // =========================================================================
   rubricaData.estructuraRubrica.secciones.forEach((seccion) => {
     ws.mergeCells(`A${currentRow}:I${currentRow}`);
@@ -78,8 +78,7 @@ export const generarExcelOficial = async (rubricaData, evaluaciones = {}, produc
     cellSec.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.azulClaro } };
     currentRow++;
 
-    let subTotalSeccion = 0;
-    let pesoEvaluadoSeccion = 0;
+    const startRow = currentRow; // Guardamos la fila inicial de los criterios de esta sección
 
     seccion.criterios.forEach((crit) => {
       const ev = evaluaciones[crit.id] || {};
@@ -92,7 +91,9 @@ export const generarExcelOficial = async (rubricaData, evaluaciones = {}, produc
       row.getCell(1).font = esObligatorio ? { bold: true, color: { argb: COLORS.rojoObligatorio } } : { bold: false };
       row.getCell(1).alignment = { wrapText: true, vertical: 'top' };
 
-      row.getCell(2).value = `${crit.peso}%`;
+      // Columna B: Peso (como número para que las fórmulas funcionen, pero con formato visual)
+      row.getCell(2).value = crit.peso; 
+      row.getCell(2).numFmt = '0"%"';
       row.getCell(2).alignment = { horizontal: 'center', vertical: 'top' };
 
       row.getCell(3).value = crit.niveles?.Deficiente || '';
@@ -111,21 +112,20 @@ export const generarExcelOficial = async (rubricaData, evaluaciones = {}, produc
         allowBlank: true,
         formulae: ['"Deficiente,Regular,Bueno,Excelente"'],
         showErrorMessage: true,
-        error: 'Por favor seleccione un nivel válido de la lista.',
+        error: 'Seleccione: Deficiente, Regular, Bueno o Excelente',
         errorTitle: 'Nivel Inválido'
       };
       row.getCell(7).alignment = { horizontal: 'center', vertical: 'middle' };
       row.getCell(7).font = { bold: true, color: { argb: '006600' } };
 
-      // Columna H: Subpuntaje (AUTOCALCULADO si existe)
-      if (ev.puntaje !== undefined && ev.puntaje !== null) {
-        row.getCell(8).value = ev.puntaje;
-        row.getCell(8).font = { bold: true, color: { argb: COLORS.azulTec } };
-        
-        // Cálculo para subtotal
-        subTotalSeccion += (ev.puntaje / 10) * crit.peso;
-        pesoEvaluadoSeccion += crit.peso;
-      }
+      // Columna H: Subpuntaje (¡FÓRMULA DE EXCEL!)
+      // Mapea el texto de la columna G a su valor numérico
+      const formulaSubpuntaje = `IF(G${currentRow}="Deficiente", 0, IF(G${currentRow}="Regular", 6, IF(G${currentRow}="Bueno", 8, IF(G${currentRow}="Excelente", 10, ""))))`;
+      row.getCell(8).value = { 
+        formula: formulaSubpuntaje,
+        result: ev.puntaje !== undefined ? ev.puntaje : null // Valor inicial calculado por JS
+      };
+      row.getCell(8).font = { bold: true, color: { argb: COLORS.azulTec } };
       row.getCell(8).alignment = { horizontal: 'center', vertical: 'middle' };
 
       // Columna I: Justificación
@@ -140,40 +140,50 @@ export const generarExcelOficial = async (rubricaData, evaluaciones = {}, produc
       currentRow++;
     });
 
+    const endRow = currentRow - 1; // Última fila de criterios de esta sección
+
     // Fila de Subtotal de la sección
     ws.mergeCells(`A${currentRow}:F${currentRow}`);
     ws.getCell(`A${currentRow}`).value = `Subtotal – ${seccion.nombre}`;
     ws.getCell(`A${currentRow}`).font = { bold: true, italic: true };
     ws.getCell(`A${currentRow}`).alignment = { horizontal: 'right' };
     
-    if (pesoEvaluadoSeccion > 0) {
-      const notaSeccion = (subTotalSeccion / pesoEvaluadoSeccion) * (seccion.peso_seccion / 100);
-      calificacionFinalTotal += notaSeccion;
-      
-      ws.mergeCells(`G${currentRow}:H${currentRow}`);
-      ws.getCell(`G${currentRow}`).value = parseFloat(notaSeccion.toFixed(2));
-      ws.getCell(`G${currentRow}`).font = { bold: true, color: { argb: COLORS.azulTec } };
-      ws.getCell(`G${currentRow}`).alignment = { horizontal: 'center' };
-    }
+    // Fórmula del subtotal: SUMPRODUCT(puntajes, pesos) / SUM(pesos) * (peso_seccion / 100)
+    // Esto calcula el promedio ponderado de la sección y lo escala a su peso final
+    const formulaSubtotal = `SUMPRODUCT(H${startRow}:H${endRow}, B${startRow}:B${endRow}) / SUM(B${startRow}:B${endRow}) * (${seccion.peso_seccion}/100)`;
     
+    ws.mergeCells(`G${currentRow}:H${currentRow}`);
+    ws.getCell(`G${currentRow}`).value = {
+      formula: formulaSubtotal,
+      result: null // Excel lo calculará al abrirse
+    };
+    ws.getCell(`G${currentRow}`).numFmt = '0.00';
+    ws.getCell(`G${currentRow}`).font = { bold: true, color: { argb: COLORS.azulTec } };
+    ws.getCell(`G${currentRow}`).alignment = { horizontal: 'center' };
+    
+    celdasSubtotales.push(`G${currentRow}`);
     currentRow += 2; // Espacio entre secciones
   });
 
   // =========================================================================
-  // 4. CALIFICACIÓN FINAL
+  // 4. CALIFICACIÓN FINAL (FÓRMULA DE SUMA)
   // =========================================================================
   ws.mergeCells(`A${currentRow}:F${currentRow}`);
   ws.getCell(`A${currentRow}`).value = 'CALIFICACIÓN FINAL DE LA PROPUESTA';
   ws.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
   ws.getCell(`A${currentRow}`).alignment = { horizontal: 'right' };
 
+  // Fórmula que suma todas las celdas de subtotal de las secciones
+  const formulaCalificacionFinal = `SUM(${celdasSubtotales.join(',')})`;
+  
   ws.mergeCells(`G${currentRow}:H${currentRow}`);
-  ws.getCell(`G${currentRow}`).value = parseFloat(calificacionFinalTotal.toFixed(2));
-  ws.getCell(`G${currentRow}`).font = { 
-    bold: true, 
-    size: 14, 
-    color: { argb: calificacionFinalTotal >= 0.70 ? COLORS.verdeExito : COLORS.rojoError } 
+  ws.getCell(`G${currentRow}`).value = {
+    formula: formulaCalificacionFinal,
+    result: null
   };
+  ws.getCell(`G${currentRow}`).numFmt = '0.00';
+  // El color se aplicará condicionalmente en Excel, pero ponemos un color base
+  ws.getCell(`G${currentRow}`).font = { bold: true, size: 14 };
   ws.getCell(`G${currentRow}`).alignment = { horizontal: 'center' };
   currentRow++;
 
@@ -251,10 +261,11 @@ export const generarExcelOficial = async (rubricaData, evaluaciones = {}, produc
   // =========================================================================
   // 6. DICTAMEN Y FIRMAS
   // =========================================================================
-  const recomiendaFinal = calificacionFinalTotal >= 0.70 && cumpleMinimo;
+  // Nota: El dictamen final se calcula en base a la celda de calificación final
+  const recomiendaFinal = true; // Se evalúa visualmente en Excel, pero dejamos el texto base
   ws.mergeCells(`A${currentRow}:I${currentRow}`);
-  ws.getCell(`A${currentRow}`).value = `DICTAMEN DEL COMITÉ TÉCNICO: ${recomiendaFinal ? 'PROPUESTA RECOMENDADA' : 'PROPUESTA NO RECOMENDADA'}`;
-  ws.getCell(`A${currentRow}`).font = { bold: true, size: 12, color: { argb: recomiendaFinal ? COLORS.verdeExito : COLORS.rojoError } };
+  ws.getCell(`A${currentRow}`).value = 'DICTAMEN DEL COMITÉ TÉCNICO: (Ver Calificación Final y Productos)';
+  ws.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
   ws.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
   currentRow += 2;
 
