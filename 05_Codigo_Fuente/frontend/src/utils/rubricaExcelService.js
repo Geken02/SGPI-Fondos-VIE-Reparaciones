@@ -1,13 +1,13 @@
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
-// Colores oficiales TEC / VIE
 const COLORS = {
   azulTec: '002855',
   azulClaro: 'E6F0FA',
-  grisHeader: 'F2F2F2',
-  rojoObligatorio: 'FF0000',
+  rojoObligatorio: 'CC0000',
   blanco: 'FFFFFF',
+  verdeExito: '008000',
+  rojoError: 'CC0000'
 };
 
 export const generarExcelOficial = async (rubricaData, evaluaciones = {}, productos = {}) => {
@@ -15,7 +15,7 @@ export const generarExcelOficial = async (rubricaData, evaluaciones = {}, produc
   const ws = workbook.addWorksheet('Rúbrica Oficial');
 
   // =========================================================================
-  // 1. ENCABEZADO OFICIAL (Celdas combinadas y estilos)
+  // 1. ENCABEZADO OFICIAL
   // =========================================================================
   const modalidad = rubricaData.nombreRubrica || 'ACTIVIDADES DE FORTALECIMIENTO';
   
@@ -38,11 +38,10 @@ export const generarExcelOficial = async (rubricaData, evaluaciones = {}, produc
   ws.mergeCells('A5:B5'); ws.getCell('A5').value = 'Fecha de evaluación:'; ws.getCell('A5').font = { bold: true };
   ws.mergeCells('C5:I5'); ws.getCell('C5').value = new Date().toLocaleDateString('es-CR');
 
-  // Advertencia de requisitos obligatorios
   ws.mergeCells('A7:I7');
   const cellAdvertencia = ws.getCell('A7');
-  cellAdvertencia.value = '⚠ REQUISITOS MÍNIMOS OBLIGATORIOS: Los criterios marcados con ⛔ son requisitos obligatorios. Si obtienen "Deficiente" o "Regular", la propuesta NO será recomendada.';
-  cellAdvertencia.font = { italic: true, color: { argb: 'CC0000' }, size: 10 };
+  cellAdvertencia.value = '⚠ REQUISITOS MÍNIMOS OBLIGATORIOS: Los criterios marcados con ⛔ son requisitos obligatorios. Cuando un requisito obligatorio obtenga una calificación "deficiente" o "regular", el Comité Técnico emitirá dictamen técnico desfavorable o no recomendará la propuesta.';
+  cellAdvertencia.font = { italic: true, color: { argb: COLORS.rojoObligatorio }, size: 10 };
   cellAdvertencia.alignment = { wrapText: true };
 
   // =========================================================================
@@ -65,19 +64,22 @@ export const generarExcelOficial = async (rubricaData, evaluaciones = {}, produc
   });
   headerRow.height = 30;
 
-  // =========================================================================
-  // 3. SECCIONES Y CRITERIOS
-  // =========================================================================
   let currentRow = 11;
+  let calificacionFinalTotal = 0;
 
+  // =========================================================================
+  // 3. SECCIONES Y CRITERIOS (Con cálculos autogenerados)
+  // =========================================================================
   rubricaData.estructuraRubrica.secciones.forEach((seccion) => {
-    // Fila de Título de Sección (Combinada)
     ws.mergeCells(`A${currentRow}:I${currentRow}`);
     const cellSec = ws.getCell(`A${currentRow}`);
     cellSec.value = `${seccion.nombre} — Peso de la sección: ${seccion.peso_seccion}%`;
     cellSec.font = { bold: true, size: 12, color: { argb: COLORS.azulTec } };
     cellSec.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.azulClaro } };
     currentRow++;
+
+    let subTotalSeccion = 0;
+    let pesoEvaluadoSeccion = 0;
 
     seccion.criterios.forEach((crit) => {
       const ev = evaluaciones[crit.id] || {};
@@ -86,16 +88,13 @@ export const generarExcelOficial = async (rubricaData, evaluaciones = {}, produc
 
       const row = ws.getRow(currentRow);
       
-      // Columna A: Nombre
       row.getCell(1).value = nombreCriterio;
       row.getCell(1).font = esObligatorio ? { bold: true, color: { argb: COLORS.rojoObligatorio } } : { bold: false };
       row.getCell(1).alignment = { wrapText: true, vertical: 'top' };
 
-      // Columna B: Peso
       row.getCell(2).value = `${crit.peso}%`;
       row.getCell(2).alignment = { horizontal: 'center', vertical: 'top' };
 
-      // Columnas C-F: Descripciones de niveles
       row.getCell(3).value = crit.niveles?.Deficiente || '';
       row.getCell(4).value = crit.niveles?.Regular || '';
       row.getCell(5).value = crit.niveles?.Bueno || '';
@@ -105,7 +104,7 @@ export const generarExcelOficial = async (rubricaData, evaluaciones = {}, produc
         row.getCell(col).font = { size: 9 };
       });
 
-      // Columna G: Nivel (¡AQUÍ AGREGAMOS LA LISTA DESPLEGABLE!)
+      // Columna G: Nivel (Lista desplegable)
       row.getCell(7).value = ev.nivel || '';
       row.getCell(7).dataValidation = {
         type: 'list',
@@ -118,34 +117,168 @@ export const generarExcelOficial = async (rubricaData, evaluaciones = {}, produc
       row.getCell(7).alignment = { horizontal: 'center', vertical: 'middle' };
       row.getCell(7).font = { bold: true, color: { argb: '006600' } };
 
-      // Columna H: Subpuntaje
-      row.getCell(8).value = ev.puntaje !== undefined ? ev.puntaje : '';
+      // Columna H: Subpuntaje (AUTOCALCULADO si existe)
+      if (ev.puntaje !== undefined && ev.puntaje !== null) {
+        row.getCell(8).value = ev.puntaje;
+        row.getCell(8).font = { bold: true, color: { argb: COLORS.azulTec } };
+        
+        // Cálculo para subtotal
+        subTotalSeccion += (ev.puntaje / 10) * crit.peso;
+        pesoEvaluadoSeccion += crit.peso;
+      }
       row.getCell(8).alignment = { horizontal: 'center', vertical: 'middle' };
 
       // Columna I: Justificación
       row.getCell(9).value = ev.justificacion || '';
       row.getCell(9).alignment = { wrapText: true, vertical: 'top' };
 
-      // Bordes para toda la fila
       for (let i = 1; i <= 9; i++) {
         row.getCell(i).border = { top: {style:'thin'}, bottom: {style:'thin'}, left: {style:'thin'}, right: {style:'thin'} };
       }
 
-      // Ajustar altura de fila para que se vea el texto
       row.height = 80; 
       currentRow++;
     });
 
-    // Fila de Subtotal
+    // Fila de Subtotal de la sección
     ws.mergeCells(`A${currentRow}:F${currentRow}`);
     ws.getCell(`A${currentRow}`).value = `Subtotal – ${seccion.nombre}`;
     ws.getCell(`A${currentRow}`).font = { bold: true, italic: true };
     ws.getCell(`A${currentRow}`).alignment = { horizontal: 'right' };
+    
+    if (pesoEvaluadoSeccion > 0) {
+      const notaSeccion = (subTotalSeccion / pesoEvaluadoSeccion) * (seccion.peso_seccion / 100);
+      calificacionFinalTotal += notaSeccion;
+      
+      ws.mergeCells(`G${currentRow}:H${currentRow}`);
+      ws.getCell(`G${currentRow}`).value = parseFloat(notaSeccion.toFixed(2));
+      ws.getCell(`G${currentRow}`).font = { bold: true, color: { argb: COLORS.azulTec } };
+      ws.getCell(`G${currentRow}`).alignment = { horizontal: 'center' };
+    }
+    
     currentRow += 2; // Espacio entre secciones
   });
 
   // =========================================================================
-  // 4. ANCHOS DE COLUMNA
+  // 4. CALIFICACIÓN FINAL
+  // =========================================================================
+  ws.mergeCells(`A${currentRow}:F${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'CALIFICACIÓN FINAL DE LA PROPUESTA';
+  ws.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
+  ws.getCell(`A${currentRow}`).alignment = { horizontal: 'right' };
+
+  ws.mergeCells(`G${currentRow}:H${currentRow}`);
+  ws.getCell(`G${currentRow}`).value = parseFloat(calificacionFinalTotal.toFixed(2));
+  ws.getCell(`G${currentRow}`).font = { 
+    bold: true, 
+    size: 14, 
+    color: { argb: calificacionFinalTotal >= 0.70 ? COLORS.verdeExito : COLORS.rojoError } 
+  };
+  ws.getCell(`G${currentRow}`).alignment = { horizontal: 'center' };
+  currentRow++;
+
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'ESCALA DE RESULTADOS: ≥ 0.70 = RECOMIENDA | < 0.70 = NO RECOMIENDA';
+  ws.getCell(`A${currentRow}`).font = { bold: true, italic: true, color: { argb: '666666' } };
+  ws.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
+  currentRow += 2;
+
+  // =========================================================================
+  // 5. SECCIÓN 8: PRODUCTOS ACADÉMICOS (Oficial)
+  // =========================================================================
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = '8. PRODUCTOS ACADÉMICOS — Sección no sumativa';
+  ws.getCell(`A${currentRow}`).font = { bold: true, size: 12, color: { argb: COLORS.azulTec } };
+  ws.getCell(`A${currentRow}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.azulClaro } };
+  currentRow++;
+
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'ATENCIÓN: Esta sección NO agrega puntos a la calificación final. Verifica que los productos comprometidos cumplan con las disposiciones de la Convocatoria. Si el equipo NO cumple, el Comité Técnico NO DEBE RECOMENDAR la propuesta independientemente de la calificación final obtenida.';
+  ws.getCell(`A${currentRow}`).font = { italic: true, color: { argb: COLORS.rojoObligatorio }, size: 10 };
+  ws.getCell(`A${currentRow}`).alignment = { wrapText: true };
+  currentRow++;
+
+  // Horas semanales
+  ws.mergeCells(`A${currentRow}:B${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Total de horas semanales asignadas al equipo';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  ws.mergeCells(`C${currentRow}:I${currentRow}`);
+  ws.getCell(`C${currentRow}`).value = `Indique la suma total de horas semanales (VIE + VIE-Centro + REC + CONS + DOC + VIESA) del equipo según la propuesta:\n\n___${productos.horasSemanales || 0}___ horas semanales totales`;
+  ws.getCell(`C${currentRow}`).alignment = { wrapText: true };
+  currentRow++;
+
+  // Mínimo requerido
+  ws.mergeCells(`A${currentRow}:B${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Mínimo de productos requeridos (escala de proporcionalidad)';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  ws.mergeCells(`C${currentRow}:I${currentRow}`);
+  ws.getCell(`C${currentRow}`).value = `Según la Convocatoria:\n1 a 10 horas semanales → 1 producto académico mínimo\n11 a 20 horas semanales → 2 productos académicos mínimos\n21 a 30 horas semanales → 3 productos académicos mínimos\n(un producto adicional por cada 10 horas semanales excedentes, redondeado hacia arriba)`;
+  ws.getCell(`C${currentRow}`).alignment = { wrapText: true };
+  currentRow++;
+
+  // Cantidad propuesta
+  ws.mergeCells(`A${currentRow}:B${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Cantidad de productos propuestos por el equipo';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  ws.mergeCells(`C${currentRow}:I${currentRow}`);
+  ws.getCell(`C${currentRow}`).value = `El equipo declara comprometer ___${productos.cantidadPropuesta || 0}___ productos académicos en la propuesta.`;
+  currentRow++;
+
+  // Tipos de productos
+  ws.mergeCells(`A${currentRow}:B${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Tipo(s) de producto(s) comprometidos';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  ws.mergeCells(`C${currentRow}:I${currentRow}`);
+  ws.getCell(`C${currentRow}`).value = (productos.tiposSeleccionados && productos.tiposSeleccionados.length > 0) 
+    ? productos.tiposSeleccionados.join(', ') 
+    : 'Ninguno seleccionado';
+  ws.getCell(`C${currentRow}`).alignment = { wrapText: true };
+  currentRow++;
+
+  // Cumple con el mínimo
+  const cumpleMinimo = productos.cantidadPropuesta >= (rubricaData.minimoProductosRequeridos || 0);
+  ws.mergeCells(`A${currentRow}:B${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = '¿Cumple con el mínimo según las horas asignadas?';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  ws.mergeCells(`C${currentRow}:I${currentRow}`);
+  ws.getCell(`C${currentRow}`).value = cumpleMinimo 
+    ? '✓ CUMPLE con los requisitos mínimos de productos académicos → La propuesta puede continuar su revisión'
+    : '✗ NO CUMPLE con los requisitos mínimos → La propuesta debe ser RECHAZADA por el Comité Técnico';
+  ws.getCell(`C${currentRow}`).font = { bold: true, color: { argb: cumpleMinimo ? COLORS.verdeExito : COLORS.rojoError } };
+  ws.getCell(`C${currentRow}`).alignment = { wrapText: true };
+  currentRow += 2;
+
+  // =========================================================================
+  // 6. DICTAMEN Y FIRMAS
+  // =========================================================================
+  const recomiendaFinal = calificacionFinalTotal >= 0.70 && cumpleMinimo;
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = `DICTAMEN DEL COMITÉ TÉCNICO: ${recomiendaFinal ? 'PROPUESTA RECOMENDADA' : 'PROPUESTA NO RECOMENDADA'}`;
+  ws.getCell(`A${currentRow}`).font = { bold: true, size: 12, color: { argb: recomiendaFinal ? COLORS.verdeExito : COLORS.rojoError } };
+  ws.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
+  currentRow += 2;
+
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Nombre y firma de la persona integrante 1 del Comité Técnico:';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  currentRow++;
+
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Nombre y firma de la persona integrante 2 del Comité Técnico:';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  currentRow++;
+
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Nombre y firma de la persona integrante 3 del Comité Técnico:';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  currentRow++;
+
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Nombre y firma de la persona coordinadora del Comité Técnico:';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+
+  // =========================================================================
+  // 7. ANCHOS DE COLUMNA
   // =========================================================================
   ws.getColumn('A').width = 35;
   ws.getColumn('B').width = 8;
@@ -158,7 +291,7 @@ export const generarExcelOficial = async (rubricaData, evaluaciones = {}, produc
   ws.getColumn('I').width = 40;
 
   // =========================================================================
-  // 5. DESCARGAR
+  // 8. DESCARGAR
   // =========================================================================
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
