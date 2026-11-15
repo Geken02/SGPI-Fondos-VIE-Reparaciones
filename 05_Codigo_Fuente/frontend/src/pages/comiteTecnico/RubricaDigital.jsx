@@ -40,22 +40,28 @@ export default function RubricaDigital() {
   }, [propuestaId]);
 
   // Calcular calificación en tiempo real
-  const calificacion = useMemo(() => {
-    if (!rubricaData) return 0;
-    let total = 0;
-    rubricaData.estructuraRubrica.secciones.forEach(sec => {
-      let sub = 0, peso = 0;
-      sec.criterios.forEach(c => {
-        const ev = evaluaciones[c.id];
-        if (ev) { 
-          sub += (ev.puntaje / 10) * c.peso; 
-          peso += c.peso; 
+// Calcular calificación en tiempo real
+const calificacion = useMemo(() => {
+  if (!rubricaData) return 0;
+  let total = 0;
+  
+  rubricaData.estructuraRubrica.secciones.forEach(sec => {
+    let sub = 0, peso = 0;
+    sec.criterios.forEach(c => {
+      const ev = evaluaciones[c.id];
+      if (ev && ev.puntaje !== undefined && ev.puntaje !== null) {
+        const puntajeNum = parseFloat(ev.puntaje);
+        if (!isNaN(puntajeNum)) {
+          sub += (puntajeNum / 10) * c.peso;
+          peso += c.peso;
         }
-      });
-      if (peso > 0) total += (sub / peso) * sec.peso_seccion;
+      }
     });
-    return total / 100;
-  }, [evaluaciones, rubricaData]);
+    if (peso > 0) total += (sub / peso) * sec.peso_seccion;
+  });
+  
+  return total / 100;
+}, [evaluaciones, rubricaData]);
 
   const productosCumple = useMemo(() => {
     if (!rubricaData) return false;
@@ -85,32 +91,46 @@ const handleDescargarOficial = async () => {
   }
 };
   const handleCargarOficial = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const file = e.target.files[0];
+  if (!file) return;
 
-    try {
-      const resultado = await importarExcelOficial(file, rubricaData);
-      
-      if (resultado.errores.length > 0) {
-        alert(`⚠️ Hubo ${resultado.errores.length} errores de formato:\n${resultado.errores.slice(0, 5).join('\n')}`);
-      }
-
-      if (resultado.criteriosProcesados > 0) {
-        if (window.confirm(`Se encontraron ${resultado.criteriosProcesados} criterios evaluados en el archivo.\n\n¿Desea aplicar estos datos a la rúbrica actual?`)) {
-          setEvaluaciones(prev => ({ ...prev, ...resultado.evaluaciones }));
-          alert('✅ Rúbrica oficial cargada y aplicada correctamente.');
-        }
-      } else {
-        alert('No se encontraron criterios evaluados en el archivo.');
-      }
-    } catch (err) {
-      console.error('Error al leer Excel:', err);
-      alert('❌ Error al leer el archivo. Asegúrese de que sea el formato oficial generado por el sistema.');
-    }
+  try {
+    const resultado = await importarExcelOficial(file, rubricaData);
     
-    // Limpiar el input para permitir cargar el mismo archivo nuevamente si es necesario
-    e.target.value = '';
-  };
+    if (resultado.errores.length > 0) {
+      alert(`⚠️ Hubo ${resultado.errores.length} errores de formato:\n${resultado.errores.slice(0, 5).join('\n')}`);
+    }
+
+    if (resultado.criteriosProcesados > 0) {
+      const evaluacionesValidas = {};
+      Object.entries(resultado.evaluaciones).forEach(([criterioId, ev]) => {
+        const puntajeNum = parseFloat(ev.puntaje);
+        if (!isNaN(puntajeNum) && [0, 6, 8, 10].includes(puntajeNum)) {
+          evaluacionesValidas[criterioId] = {
+            ...ev,
+            puntaje: puntajeNum,
+            justificacionRequerida: puntajeNum < 10 || 
+              rubricaData.estructuraRubrica.secciones
+                .flatMap(s => s.criterios)
+                .find(c => c.id === parseInt(criterioId))?.es_requisito_obligatorio
+          };
+        }
+      });
+
+      if (window.confirm(`Se encontraron ${Object.keys(evaluacionesValidas).length} criterios evaluados en el archivo.\n\n¿Desea aplicar estos datos a la rúbrica actual?`)) {
+        setEvaluaciones(prev => ({ ...prev, ...evaluacionesValidas }));
+        alert('✅ Rúbrica oficial cargada y aplicada correctamente.');
+      }
+    } else {
+      alert('No se encontraron criterios evaluados en el archivo.');
+    }
+  } catch (err) {
+    console.error('Error al leer Excel:', err);
+    alert('❌ Error al leer el archivo. Asegúrese de que sea el formato oficial generado por el sistema.');
+  }
+  
+  e.target.value = '';
+};
   // =========================================================================
 
   const handleSeleccionar = (criterioId, nivel, puntaje) => {
