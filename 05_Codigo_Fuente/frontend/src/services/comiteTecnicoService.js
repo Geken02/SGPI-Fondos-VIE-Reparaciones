@@ -66,6 +66,11 @@ enviarEvaluacion: (propuestaId, data) =>
     return response.data; 
   },
 
+    descargarRubricaExcel: (propuestaId) => 
+    api.get(`/api/comite-tecnico/evaluador/${propuestaId}/rubrica/excel`, {
+      responseType: 'blob' 
+    }),
+
   obtenerEstadoIA: () => 
     api.get('/api/comite-tecnico/ia/estado'),
 

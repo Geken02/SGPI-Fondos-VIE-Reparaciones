@@ -19,6 +19,7 @@ from src.models.escuelas import Escuela
 from src.models.subsanaciones import Subsanaciones, EstadosSubsanacion 
 from src.models.asignaciones_comite import AsignacionComite
 from src.models.dictamenes import Dictamenes
+from src.models.productos_academicos import ProductosAcademicos
 
 from src.utils.dependencias import obtener_usuario_actual
 from src.utils.s3_client import obtener_url_documento
@@ -26,6 +27,9 @@ from src.api.schemas.comite_tecnico.ia_schemas import AnalisisIARequest, Analisi
 from src.api.schemas.comite_tecnico.evaluacion import EnviarEvaluacionRequest, RespuestaEvaluacionSchema
 from src.services.comite_tecnico.ia_service import analizar_documento_completo
 from src.services.comite_tecnico.rubricas_data import obtener_rubrica, calcular_minimo_productos
+from fastapi.responses import StreamingResponse
+from src.services.rubrica_excel_generator import generar_rubrica_excel
+from io import BytesIO
 
 API_BASE_URL = "https://sgpi-fondos-vie-reparaciones.onrender.com"
 
@@ -447,7 +451,6 @@ def obtener_documentos_propuesta(
             "tipoDocumentoId": doc.tipoDocumentoId, 
             "nombreArchivo": doc.nombreArchivo or f"Documento_{doc.tipoDocumentoId}", 
             "urlDescarga": obtener_url_documento(doc.rutaArchivo),
-            # ✅ AQUÍ ESTÁ LA CLAVE: URL ABSOLUTA, no relativa
             "urlVerEnLinea": f"{API_BASE_URL}/documentos/{doc.documentoId}/ver"
         })
     
@@ -1098,3 +1101,56 @@ def obtener_expediente_completo(
     except Exception as e:
         print(f"ERROR en obtener_expediente_completo: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+@router.get("/evaluador/{propuesta_id}/rubrica/excel")
+def descargar_rubrica_excel(
+    propuesta_id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obtener_usuario_actual)
+):
+    try:
+        # 1. Obtener la estructura de la rúbrica (mismo endpoint que usa tu frontend)
+        rubrica_data = obtener_estructura_rubrica(propuesta_id, db)  # Tu función existente
+        
+        # 2. Obtener evaluaciones previas del usuario (si existen)
+        evaluaciones = {}
+        evs = db.query(DetalleEvaluacion).filter(
+            DetalleEvaluacion.propuestaId == propuesta_id,
+            DetalleEvaluacion.evaluadorId == usuario.usuarioId
+        ).all()
+        for e in evs:
+            evaluaciones[str(e.criterioId)] = {
+                "nivel": obtener_nivel_por_puntaje(e.puntaje),
+                "puntaje": e.puntaje,
+                "justificacion": e.justificacion
+            }
+        
+        # 3. Obtener productos
+        producto = db.query(ProductosAcademicos).filter(
+            ProductosAcademicos.propuestaId == propuesta_id
+        ).first()
+        productos = {
+            "horasSemanales": producto.horasSemanales if producto else 0,
+            "cantidadPropuesta": producto.cantidadPropuesta if producto else 0,
+            "tiposSeleccionados": producto.tiposSeleccionados if producto else []
+        }
+        
+        # 4. Generar el Excel
+        excel_bytes = generar_rubrica_excel(rubrica_data, evaluaciones, productos)
+        
+        # 5. Retornar como descarga
+        filename = f"Rubrica_Oficial_{rubrica_data.get('codigoPropuesta', propuesta_id)}.xlsx"
+        return StreamingResponse(
+            BytesIO(excel_bytes),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al generar Excel: {str(e)}")
+
+def obtener_nivel_por_puntaje(puntaje):
+    if puntaje == 0: return "Deficiente"
+    if puntaje == 6: return "Regular"
+    if puntaje == 8: return "Bueno"
+    if puntaje == 10: return "Excelente"
+    return ""
