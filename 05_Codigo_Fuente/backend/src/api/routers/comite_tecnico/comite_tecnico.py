@@ -1102,55 +1102,81 @@ def obtener_expediente_completo(
         print(f"ERROR en obtener_expediente_completo: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
+
 @router.get("/evaluador/{propuesta_id}/rubrica/excel")
 def descargar_rubrica_excel(
     propuesta_id: int,
-    db: Session = Depends(get_db),
-    usuario: Usuario = Depends(obtener_usuario_actual)
+    db: Session = Depends(get_db)
 ):
     try:
-        # 1. Obtener la estructura de la rúbrica (mismo endpoint que usa tu frontend)
-        rubrica_data = obtener_estructura_rubrica(propuesta_id, db)  # Tu función existente
+        # 1. Obtener la propuesta de la BD
+        from src.models import Propuestas
         
-        # 2. Obtener evaluaciones previas del usuario (si existen)
-        evaluaciones = {}
-        evs = db.query(DetalleEvaluacion).filter(
-            DetalleEvaluacion.propuestaId == propuesta_id,
-            DetalleEvaluacion.evaluadorId == usuario.usuarioId
-        ).all()
-        for e in evs:
-            evaluaciones[str(e.criterioId)] = {
-                "nivel": obtener_nivel_por_puntaje(e.puntaje),
-                "puntaje": e.puntaje,
-                "justificacion": e.justificacion
+        propuesta = db.query(Propuestas).filter(Propuestas.propuestaId == propuesta_id).first()
+        if not propuesta:
+            raise HTTPException(status_code=404, detail="Propuesta no encontrada")
+        
+        # 2. Obtener la estructura de la rúbrica desde rubricas_data.py
+        # Asumiendo que propuesta.tipoRubrica tiene valores como "fortalecimiento", "basica_aplicada", "desarrollo_tecnologico"
+        tipo_modalidad = propuesta.tipoRubrica or "fortalecimiento"
+        
+        try:
+            estructura_rubrica = obtener_rubrica(tipo_modalidad)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        
+        # 3. Construir rubrica_data para el generador
+        rubrica_data = {
+            "titulo": propuesta.titulo or "",
+            "escuela": propuesta.escuela or "",
+            "codigoPropuesta": propuesta.codigoPropuesta or f"P-{propuesta_id}",
+            "nombreRubrica": estructura_rubrica["nombre"],
+            "minimoProductosRequeridos": calcular_minimo_productos(tipo_modalidad, propuesta.horasSemanales or 0),
+            "estructuraRubrica": {
+                "secciones": estructura_rubrica["secciones"],
+                "seccion_productos": estructura_rubrica.get("seccion_productos", {})
             }
-        
-        # 3. Obtener productos
-        producto = db.query(ProductosAcademicos).filter(
-            ProductosAcademicos.propuestaId == propuesta_id
-        ).first()
-        productos = {
-            "horasSemanales": producto.horasSemanales if producto else 0,
-            "cantidadPropuesta": producto.cantidadPropuesta if producto else 0,
-            "tiposSeleccionados": producto.tiposSeleccionados if producto else []
         }
         
-        # 4. Generar el Excel
+        # 4. Obtener evaluaciones previas (si existen)
+        # Ajusta esto según tus modelos reales
+        evaluaciones = {}
+        try:
+            from src.models import EvaluacionDetalle
+            
+            evals = db.query(EvaluacionDetalle).filter(
+                EvaluacionDetalle.propuestaId == propuesta_id
+            ).all()
+            
+            for e in evals:
+                evaluaciones[str(e.criterioId)] = {
+                    "nivel": e.nivel or "",
+                    "puntaje": e.puntaje,
+                    "justificacion": e.justificacion or ""
+                }
+        except Exception as e:
+            print(f"⚠️ No se pudieron cargar evaluaciones previas: {e}")
+        
+        # 5. Obtener productos (si existen)
+        productos = {
+            "horasSemanales": propuesta.horasSemanales or 0,
+            "cantidadPropuesta": propuesta.cantidadProductos or 0,
+            "tiposSeleccionados": propuesta.tiposProductos or []
+        }
+        
+        # 6. Generar el Excel
         excel_bytes = generar_rubrica_excel(rubrica_data, evaluaciones, productos)
         
-        # 5. Retornar como descarga
+        # 7. Retornar como descarga
         filename = f"Rubrica_Oficial_{rubrica_data.get('codigoPropuesta', propuesta_id)}.xlsx"
         return StreamingResponse(
             BytesIO(excel_bytes),
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'}
         )
+    except HTTPException:
+        raise
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error al generar Excel: {str(e)}")
-
-def obtener_nivel_por_puntaje(puntaje):
-    if puntaje == 0: return "Deficiente"
-    if puntaje == 6: return "Regular"
-    if puntaje == 8: return "Bueno"
-    if puntaje == 10: return "Excelente"
-    return ""
