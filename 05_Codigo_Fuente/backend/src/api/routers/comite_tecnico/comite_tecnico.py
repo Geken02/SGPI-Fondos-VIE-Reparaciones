@@ -36,10 +36,6 @@ API_BASE_URL = "https://sgpi-fondos-vie-reparaciones.onrender.com"
 router = APIRouter(prefix="/api/comite-tecnico", tags=["Comité Técnico"])
 
 # ============================================================================
-# ✅ NUEVO: Constantes para los campos NOT NULL de la tabla evaluaciones
-# ⚠️ IMPORTANTE: Ajusta estos valores según tu base de datos real.
-# Ejecuta en Supabase: SELECT * FROM "tiposevaluacion"; SELECT * FROM "estadosevaluacion";
-# ============================================================================
 DEFAULT_TIPO_EVALUACION_ID = 2        # ID del tipo de evaluación (ej: "Evaluación de Comité")
 DEFAULT_ESTADO_BORRADOR_ID = 1        # ID del estado "En Progreso" o "Borrador"
 DEFAULT_ESTADO_COMPLETADA_ID = 3      # ID del estado "Completada" o "Enviada"
@@ -1109,10 +1105,9 @@ def descargar_rubrica_excel(
     db: Session = Depends(get_db)
 ):
     try:
-        # 1. Obtener la propuesta de la BD
-        from src.models import Propuestas
+
         
-        propuesta = db.query(Propuestas).filter(Propuestas.propuestaId == propuesta_id).first()
+        propuesta = db.query(Propuesta).filter(Propuesta.propuestaId == propuesta_id).first()
         if not propuesta:
             raise HTTPException(status_code=404, detail="Propuesta no encontrada")
         
@@ -1142,10 +1137,10 @@ def descargar_rubrica_excel(
         # Ajusta esto según tus modelos reales
         evaluaciones = {}
         try:
-            from src.models import EvaluacionDetalle
+
             
-            evals = db.query(EvaluacionDetalle).filter(
-                EvaluacionDetalle.propuestaId == propuesta_id
+            evals = db.query(DetalleEvaluacion).filter(
+                DetalleEvaluacion.propuestaId == propuesta_id
             ).all()
             
             for e in evals:
