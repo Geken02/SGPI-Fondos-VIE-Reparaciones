@@ -90,50 +90,76 @@ const handleDescargarOficial = async () => {
     alert('❌ Error al generar el Excel: ' + msg);
   }
 };
-   const handleCargarOficial = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+const handleCargarOficial = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    try {
-      // Asumiendo que importarExcelOficial está importado arriba
-      const resultado = await importarExcelOficial(file, rubricaData);
-      
-      if (resultado.errores && resultado.errores.length > 0) {
-        alert(`⚠️ Hubo ${resultado.errores.length} errores de formato:\n${resultado.errores.slice(0, 5).join('\n')}`);
-      }
+  try {
+    const resultado = await importarExcelOficial(file, rubricaData);
+    
+    if (resultado.errores && resultado.errores.length > 0) {
+      alert(`⚠️ Hubo ${resultado.errores.length} errores de formato:\n${resultado.errores.slice(0, 5).join('\n')}`);
+    }
 
-      if (resultado.criteriosProcesados > 0) {
-        // Filtrar solo evaluaciones válidas
-        const evaluacionesValidas = {};
-        Object.entries(resultado.evaluaciones).forEach(([criterioId, ev]) => {
+    if (resultado.criteriosProcesados > 0) {
+      // ✅ Validación más flexible: aceptar cualquier puntaje entre 0 y 10
+      const evaluacionesValidas = {};
+      const nivelesAPuntaje = {
+        'Deficiente': 0,
+        'Regular': 6,
+        'Bueno': 8,
+        'Excelente': 10
+      };
+
+      Object.entries(resultado.evaluaciones).forEach(([criterioId, ev]) => {
+        const criterioReal = rubricaData.estructuraRubrica.secciones
+          .flatMap(s => s.criterios)
+          .find(c => c.id === parseInt(criterioId));
+
+        if (!criterioReal) return;
+
+        // Derivar puntaje del nivel si existe
+        let puntajeFinal = null;
+        if (ev.nivel && nivelesAPuntaje[ev.nivel] !== undefined) {
+          puntajeFinal = nivelesAPuntaje[ev.nivel];
+        } else if (ev.puntaje !== undefined && ev.puntaje !== null) {
           const puntajeNum = parseFloat(ev.puntaje);
-          if (!isNaN(puntajeNum) && [0, 6, 8, 10].includes(puntajeNum)) {
-            const criterioReal = rubricaData.estructuraRubrica.secciones
-              .flatMap(s => s.criterios)
-              .find(c => c.id === parseInt(criterioId));
-              
-            evaluacionesValidas[criterioId] = {
-              ...ev,
-              puntaje: puntajeNum,
-              justificacionRequerida: puntajeNum < 10 || criterioReal?.es_requisito_obligatorio
-            };
+          if (!isNaN(puntajeNum) && puntajeNum >= 0 && puntajeNum <= 10) {
+            puntajeFinal = puntajeNum;
           }
-        });
+        }
 
-        if (window.confirm(`Se encontraron ${Object.keys(evaluacionesValidas).length} criterios válidos. ¿Aplicar?`)) {
+        // Solo agregar si tenemos un puntaje válido
+        if (puntajeFinal !== null) {
+          evaluacionesValidas[criterioId] = {
+            ...ev,
+            puntaje: puntajeFinal,
+            nivel: ev.nivel || Object.keys(nivelesAPuntaje).find(key => nivelesAPuntaje[key] === puntajeFinal) || '',
+            justificacionRequerida: puntajeFinal < 10 || criterioReal.es_requisito_obligatorio
+          };
+        }
+      });
+
+      const totalValidos = Object.keys(evaluacionesValidas).length;
+      
+      if (totalValidos > 0) {
+        if (window.confirm(`Se encontraron ${totalValidos} de ${resultado.criteriosProcesados} criterios válidos. ¿Aplicar?`)) {
           setEvaluaciones(prev => ({ ...prev, ...evaluacionesValidas }));
-          alert('✅ Rúbrica cargada correctamente.');
+          alert(`✅ Rúbrica cargada: ${totalValidos} criterios aplicados.`);
         }
       } else {
-        alert('No se encontraron criterios evaluados en el archivo.');
+        alert('❌ No se encontraron criterios con puntajes válidos (0-10) en el archivo.');
       }
-    } catch (err) {
-      console.error('Error al leer Excel:', err);
-      alert('❌ Error al leer el archivo. Verifica la consola (F12).');
+    } else {
+      alert('No se encontraron criterios evaluados en el archivo.');
     }
-    
-    e.target.value = ''; // Limpiar input
-  };
+  } catch (err) {
+    console.error('Error al leer Excel:', err);
+    alert('❌ Error al leer el archivo. Verifica la consola (F12).');
+  }
+  
+  e.target.value = '';
+};
   // =========================================================================
 
   const handleSeleccionar = (criterioId, nivel, puntaje) => {
