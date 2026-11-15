@@ -1,6 +1,5 @@
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.formatting.rule import CellIsRule
 from datetime import datetime
@@ -12,7 +11,7 @@ AZUL_CLARO = "E6F0FA"
 ROJO = "CC0000"
 VERDE = "008000"
 
-# Tipos de productos según modalidad (extraídos del Excel oficial)
+# Tipos de productos según modalidad
 TIPOS_PRODUCTOS = {
     "fortalecimiento": [
         "Opción 1 - Diagnóstico de situación",
@@ -49,10 +48,7 @@ TIPOS_PRODUCTOS = {
 
 def generar_rubrica_excel(rubrica_data: dict, evaluaciones: dict = None, productos: dict = None) -> bytes:
     """
-    Genera el Excel oficial de la rúbrica con FÓRMULAS REALES.
-    rubrica_data: dict con la estructura de la rúbrica
-    evaluaciones: dict {criterio_id: {nivel, puntaje, justificacion}}
-    productos: dict {horasSemanales, cantidadPropuesta, tiposSeleccionados}
+    Genera el Excel oficial de la rúbrica con FÓRMULAS REALES y DROPDOWNS.
     """
     if evaluaciones is None:
         evaluaciones = {}
@@ -77,6 +73,20 @@ def generar_rubrica_excel(rubrica_data: dict, evaluaciones: dict = None, product
     font_azul_bold = Font(bold=True, color=AZUL_TEC, size=11)
     font_rojo = Font(italic=True, color=ROJO, size=10)
     font_bold = Font(bold=True)
+
+    # =========================================================================
+    # CREAR DROPDOWN PARA LA COLUMNA G (Nivel)
+    # =========================================================================
+    dv_nivel = DataValidation(
+        type="list",
+        formula1='"Deficiente,Regular,Bueno,Excelente"',
+        allow_blank=True
+    )
+    dv_nivel.error = "Por favor seleccione un nivel válido de la lista."
+    dv_nivel.errorTitle = "Nivel Inválido"
+    dv_nivel.prompt = "Seleccione el nivel de evaluación"
+    dv_nivel.promptTitle = "Nivel"
+    ws.add_data_validation(dv_nivel)
 
     # =========================================================================
     # ENCABEZADO
@@ -157,10 +167,13 @@ def generar_rubrica_excel(rubrica_data: dict, evaluaciones: dict = None, product
             ws.cell(row=current_row, column=5, value=niveles.get("Bueno", "")).alignment = Alignment(wrap_text=True, vertical="top")
             ws.cell(row=current_row, column=6, value=niveles.get("Excelente", "")).alignment = Alignment(wrap_text=True, vertical="top")
 
-            # Columna G: Nivel con lista desplegable
+            # ✅ Columna G: Nivel con DROPDOWN
             nivel_cell = ws.cell(row=current_row, column=7, value=ev.get("nivel", ""))
             nivel_cell.font = Font(bold=True, color="006600")
             nivel_cell.alignment = Alignment(horizontal="center", vertical="center")
+            
+            # Agregar la validación de datos (dropdown) a esta celda
+            dv_nivel.add(nivel_cell)
 
             # Columna H: FÓRMULA REAL
             formula = f'=IF(G{current_row}="Deficiente",0,IF(G{current_row}="Regular",6,IF(G{current_row}="Bueno",8,IF(G{current_row}="Excelente",10,""))))'
