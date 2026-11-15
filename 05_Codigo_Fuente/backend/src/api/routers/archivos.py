@@ -1,7 +1,4 @@
-# src/api/routers/archivos.py
 import hashlib
-import httpx
-import os
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
@@ -9,34 +6,23 @@ from sqlalchemy.orm import Session
 from src.database import get_db
 from src.utils.dependencias import obtener_usuario_activo
 from src.models.usuarios import Usuario
-# Ajusta estos imports a la ruta real de tus modelos
 from src.models.propuesta_documentos import PropuestaDocumentos, TiposDocumento 
 
+# ✅ Importamos el cliente S3 ya configurado para Supabase
+from src.utils.s3_client import s3_client, S3_BUCKET_NAME, obtener_url_documento
+
 router = APIRouter(prefix="/api/propuestas", tags=["Archivos"])
-
-SEAWEED_FILER_URL = os.getenv("SEAWEED_FILER_URL", "http://localhost:8888")
-
-async def subir_a_seaweedfs(archivo_bytes: bytes, nombre_archivo: str, ruta_relativa: str) -> str:
-    """Sube un archivo al Filer de SeaweedFS usando HTTP PUT"""
-    url = f"{SEAWEED_FILER_URL.rstrip('/')}/{ruta_relativa.strip('/')}/{nombre_archivo}"
-    
-    async with httpx.AsyncClient() as client:
-        response = await client.put(url, content=archivo_bytes)
-        if response.status_code not in (200, 201):
-            raise HTTPException(status_code=500, detail=f"Error al subir a SeaweedFS: {response.text}")
-    
-    return f"/{ruta_relativa.strip('/')}/{nombre_archivo}"
 
 @router.post("/{propuesta_id}/archivos")
 async def guardar_archivo_propuesta(
     propuesta_id: int,
     archivo: UploadFile = File(...),
-    tipo_documento_id: int = Form(...),  # <-- El frontend enviará el ID numérico del tipo
+    tipo_documento_id: int = Form(...),
     usuario_actual: Usuario = Depends(obtener_usuario_activo),
     sesion: Session = Depends(get_db)
 ):
     """
-    Recibe un archivo, lo sube a SeaweedFS y guarda el registro en PropuestaDocumentos.
+    Recibe un archivo, lo sube a Supabase Storage (vía S3) y guarda el registro en PropuestaDocumentos.
     """
     # 1. Validar que el tipo de documento existe y está activo
     tipo_doc = sesion.query(TiposDocumento).filter(
@@ -47,27 +33,35 @@ async def guardar_archivo_propuesta(
     if not tipo_doc:
         raise HTTPException(status_code=400, detail="El tipo de documento especificado no es válido o está inactivo.")
 
-    # 2. Leer el contenido del archivo en memoria
+    # 2. Leer el contenido del archivo en memoria para calcular el checksum
     contenido = await archivo.read()
     tamanio_bytes = len(contenido)
     
-    # 3. Calcular checksum (SHA-256) para garantizar la integridad del archivo
+    # 3. Calcular checksum (SHA-256) para garantizar la integridad
     checksum = hashlib.sha256(contenido).hexdigest()
 
-    # 4. Definir ruta organizada en SeaweedFS
-    ruta_relativa = f"propuestas/{propuesta_id}"
+    # 4. Definir ruta organizada en Supabase Storage
+    ruta_s3 = f"propuestas/{propuesta_id}/{archivo.filename}"
     
-    # 5. Subir a SeaweedFS
+    # 5. Subir a Supabase Storage usando boto3 (put_object es ideal para bytes en memoria)
     try:
-        ruta_seaweed = await subir_a_seaweedfs(contenido, archivo.filename, ruta_relativa)
+        s3_client.put_object(
+            Bucket=S3_BUCKET_NAME,
+            Key=ruta_s3,
+            Body=contenido,
+            ContentType=archivo.content_type or "application/octet-stream"
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Fallo en SeaweedFS: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Fallo al subir a Supabase Storage: {str(e)}")
 
-    # 6. Guardar registro en la base de datos usando tu modelo PropuestaDocumentos
+    # 6. Obtener la URL pública del documento (la que usa el frontend)
+    url_publica = obtener_url_documento(ruta_s3)
+
+    # 7. Guardar registro en la base de datos
     nuevo_documento = PropuestaDocumentos(
         propuestaId=propuesta_id,
         tipoDocumentoId=tipo_documento_id,
-        rutaArchivo=ruta_seaweed,
+        rutaArchivo=ruta_s3,  # Guardamos la ruta relativa (buena práctica)
         nombreArchivo=archivo.filename,
         tamanioBytes=tamanio_bytes,
         checksum=checksum,
@@ -82,13 +76,15 @@ async def guardar_archivo_propuesta(
     sesion.refresh(nuevo_documento)
 
     return {
-        "mensaje": "Archivo guardado exitosamente en SeaweedFS y registrado en la base de datos",
+        "mensaje": "Archivo guardado exitosamente en Supabase y registrado en la base de datos",
         "documentoId": nuevo_documento.documentoId,
         "nombre": archivo.filename,
-        "ruta": ruta_seaweed,
+        "ruta": ruta_s3,
+        "urlDescarga": url_publica,  # ✅ Devolvemos la URL completa para que el frontend la use de inmediato
         "tamanioBytes": tamanio_bytes,
         "checksum": checksum
     }
+
 
 @router.get("/{propuesta_id}/archivos/{nombre_archivo:path}")
 async def descargar_archivo_propuesta(
@@ -97,9 +93,10 @@ async def descargar_archivo_propuesta(
     sesion: Session = Depends(get_db)
 ):
     """
-    Descarga o sirve el archivo desde SeaweedFS Filer.
+    Redirige a la URL pública de Supabase para descargar el archivo.
+    (Alternativa a servir el archivo directamente, aprovechando que el bucket es público).
     """
-    from fastapi.responses import Response
+    from fastapi.responses import RedirectResponse
 
     doc = sesion.query(PropuestaDocumentos).filter(
         PropuestaDocumentos.propuestaId == propuesta_id,
@@ -107,22 +104,9 @@ async def descargar_archivo_propuesta(
         PropuestaDocumentos.activo == True
     ).first()
 
-    ruta_seaweed = doc.rutaArchivo if doc else f"/propuestas/{propuesta_id}/{nombre_archivo}"
-    url = f"{SEAWEED_FILER_URL.rstrip('/')}/{ruta_seaweed.lstrip('/')}"
+    if not doc:
+        raise HTTPException(status_code=404, detail="Registro del archivo no encontrado en la base de datos")
 
-    async with httpx.AsyncClient() as client:
-        try:
-            resp = await client.get(url)
-            if resp.status_code == 200:
-                media_type = resp.headers.get("content-type", "application/octet-stream")
-                return Response(
-                    content=resp.content,
-                    media_type=media_type,
-                    headers={
-                        "Content-Disposition": f'inline; filename="{nombre_archivo}"'
-                    }
-                )
-        except Exception:
-            pass
-
-    raise HTTPException(status_code=404, detail="Archivo no encontrado en SeaweedFS")
+    # Redirigimos directamente a la URL pública de Supabase
+    url_publica = obtener_url_documento(doc.rutaArchivo)
+    return RedirectResponse(url=url_publica, status_code=302)
