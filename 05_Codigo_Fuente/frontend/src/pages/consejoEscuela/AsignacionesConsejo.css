@@ -302,3 +302,7 @@ body.high-contrast-mode .asignaciones-container select:focus-visible {
   outline: 3px solid #00ff00 !important;
   outline-offset: 3px;
 }
+
+.tabla-asignaciones th {
+  text-transform: uppercase;
+}

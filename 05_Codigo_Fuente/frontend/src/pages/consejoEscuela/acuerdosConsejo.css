@@ -325,3 +325,7 @@ body.high-contrast-mode .acuerdos-consejo textarea:focus-visible {
   outline-offset: 3px;
 }
 
+
+.acuerdos-tabla th {
+  text-transform: uppercase;
+}
