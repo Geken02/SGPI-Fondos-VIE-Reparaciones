@@ -741,6 +741,10 @@ const FormularioProyecto = () => {
     }
   };
 
+  // Determinar si en el paso 14 corresponde la variante 14a o 14b
+  // Regla del usuario: la 14b se pone si elige "Desarrollo tecnológico", sino se pone la 14a
+  const esDesarrolloTecnologico = Boolean(modalidad && String(modalidad).toLowerCase().includes('desarrollo'));
+
   // Configuración de las 16 ventanas del Formulario 04
   const PASOS_CONFIG = useMemo(() => [
     { num: 1, titulo: 'Identificación de la Propuesta y Modalidad', corto: 'Identificación' },
@@ -848,7 +852,10 @@ const FormularioProyecto = () => {
       case 12:
         if (!actividadesCronograma || actividadesCronograma.length === 0) {
           faltantes.push('Actividades del cronograma');
-        } else if (actividadesCronograma.some(a => !a.descripcion || !a.descripcion.trim())) {
+        } else if (actividadesCronograma.some(a => {
+          const desc = (a.actividad || a.descripcion || '');
+          return !desc || !String(desc).trim();
+        })) {
           faltantes.push('Descripción de todas las actividades');
         }
         if (!riesgosMitigacion || riesgosMitigacion.length === 0) {
@@ -1007,9 +1014,7 @@ const FormularioProyecto = () => {
     }
   };
 
-  // Determinar si en el paso 14 corresponde la variante 14a o 14b
-  // Regla del usuario: la 14b se pone si elige "Desarrollo tecnológico", sino se pone la 14a
-  const esDesarrolloTecnologico = Boolean(modalidad && String(modalidad).toLowerCase().includes('desarrollo'));
+  // Variante paso 14 (esDesarrolloTecnologico declarada previamente)
 
   return (
     <div className="formulario-proyecto-master-wrapper">
