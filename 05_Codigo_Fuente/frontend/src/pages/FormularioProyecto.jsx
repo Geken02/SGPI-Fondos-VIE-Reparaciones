@@ -700,34 +700,54 @@ const guardarBorradorActual = async () => {
       // ========================================================================
       // NUEVO: Generar y Subir el PDF del Form-04 a SeaweedFS automáticamente
       // ========================================================================
+           // ========================================================================
+      // NUEVO: Generar y Subir el PDF del Form-04 a SeaweedFS automáticamente
+      // ========================================================================
       try {
+        // Validación 1: Verificar que la función esté importada
+        if (typeof generarBlobForm04PDF !== 'function') {
+          throw new Error('generarBlobForm04PDF NO está importado. Revisa el import de exportUtils');
+        }
+
         setMensajeGuardado('Generando documento PDF...');
         
-        // 1. Generar el Blob del PDF en memoria usando los datos actuales
+        // Validación 2: Generar el Blob
         const pdfBlob = generarBlobForm04PDF(snapshotCompleto, `Propuesta-${idParaGuardar}`);
-        
-        // 2. Convertir el Blob a un objeto File (necesario para que el servicio lo envíe)
-        const pdfFile = new File([pdfBlob], `Form04_${idParaGuardar}.pdf`, { type: 'application/pdf' });
 
-        // 3. Subir al backend
+        // Validación 3: Verificar que el Blob sea válido
+        if (!pdfBlob || !(pdfBlob instanceof Blob) || pdfBlob.size === 0) {
+          throw new Error(`El PDF generado es inválido. Tipo: ${typeof pdfBlob}, Tamaño: ${pdfBlob?.size || 0}`);
+        }
+
+        console.log('📄 PDF generado correctamente:', pdfBlob.size, 'bytes');
+        
+        // Validación 4: Convertir a File
+        const pdfFile = new File([pdfBlob], `Form04_${idParaGuardar}.pdf`, { 
+          type: 'application/pdf',
+          lastModified: Date.now()
+        });
+
+        // Validación 5: Verificar que el File tenga contenido
+        if (pdfFile.size === 0) {
+          throw new Error('El archivo File está vacío después de la conversión');
+        }
+
         setMensajeGuardado('Subiendo documento a SeaweedFS...');
         
-        // ⚠️ IMPORTANTE: El número '1' debe ser el ID real de "Form-04" en tu tabla TiposDocumento.
         const TIPO_DOCUMENTO_FORM_04 = 1; 
         
-        await propuestaService.subirDocumentoFormulario(
+        const respuesta = await propuestaService.subirDocumentoFormulario(
           idParaGuardar,
           TIPO_DOCUMENTO_FORM_04,
           pdfFile
         );
 
-        console.log('✅ Documento guardado en BD y SeaweedFS exitosamente');
+        console.log('✅ Documento guardado en BD y SeaweedFS:', respuesta);
         setMensajeGuardado(`Guardado y documento generado ${ahora}`);
 
       } catch (err) {
         console.error('❌ Error al generar/subir el PDF:', err);
-        setMensajeGuardado(`Datos guardados, pero falló el PDF ${ahora}`);
-        // No lanzamos el error para que el guardado de texto no se cancele si esto falla
+        setMensajeGuardado(`Datos guardados, pero falló el PDF: ${err.message}`);
       }
       // ========================================================================
 

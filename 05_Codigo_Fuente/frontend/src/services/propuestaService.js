@@ -107,15 +107,14 @@ export const propuestaService = {
     return response.data;
   },
 
-  subirDocumentoFormulario: async (propuestaId, tipoDocumentoId, archivo) => {
-    const formData = new FormData();
-    // El tercer parámetro (nombre del archivo) es importante para que FormData lo envíe correctamente
-    formData.append('archivo', archivo, archivo.name || 'documento.pdf');
-    formData.append('tipo_documento_id', String(tipoDocumentoId));
+subirDocumentoFormulario: async (propuestaId, tipoDocumentoId, archivo) => {
+  const formData = new FormData();
+  formData.append('archivo', archivo, archivo.name || 'documento.pdf');
+  formData.append('tipo_documento_id', String(tipoDocumentoId));
   
-    const response = await api.post(`/api/propuestas/${propuestaId}/archivos`, formData);
-    
-    return response.data;
-  }
+  const response = await api.post(`/api/propuestas/${propuestaId}/archivos`, formData);
+  
+  return response.data;
+}
 
 };
