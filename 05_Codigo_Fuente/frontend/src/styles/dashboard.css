@@ -4868,3 +4868,317 @@ input:checked + .slider:before { transform: translateX(20px); }
   background-color: #FF3333 !important;
   color: #000000 !important;
 }
+
+/* ============================================================
+   SGPI - ENCABEZADOS DE TABLA EN MAYÚSCULA INSTITUCIONAL
+   ============================================================ */
+th,
+.table th,
+.vinculacion-table th,
+.institucional-data-table th,
+.compromiso-grid-table th {
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================================
+   BARRA DE NAVEGACIÓN Y STEPPER DEL FORMULARIO 04 (PROYECTO)
+   ============================================================ */
+.form-stepper-container {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-stepper-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.stepper-title-area {
+  flex: 1;
+  min-width: 280px;
+}
+
+.stepper-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.stepper-current-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #002855;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stepper-status-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stepper-status-badge.badge-completo {
+  background-color: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.stepper-status-badge.badge-incompleto {
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.stepper-progress-box {
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stepper-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #334155;
+}
+
+.stepper-progress-track {
+  width: 100%;
+  height: 8px;
+  background-color: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.stepper-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0284c7 0%, #16a34a 100%);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.form-stepper-scroll-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+}
+
+.form-stepper-scroll-strip::-webkit-scrollbar {
+  height: 6px;
+}
+
+.form-stepper-scroll-strip::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.form-step-tab {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.form-step-tab:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.form-step-tab.active-step {
+  background: #002855;
+  border-color: #002855;
+  box-shadow: 0 2px 6px rgba(0, 40, 85, 0.25);
+}
+
+.form-step-tab.active-step .step-tab-num {
+  background: #ffffff;
+  color: #002855;
+  border-color: #ffffff;
+}
+
+.form-step-tab.active-step .step-tab-short-name {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.form-step-tab.active-step .step-tab-status-text {
+  color: #fbbf24 !important;
+}
+
+.step-tab-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.form-step-tab.complete-step .step-tab-num {
+  background: #22c55e;
+  border-color: #16a34a;
+  color: #ffffff;
+}
+
+.step-tab-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.step-tab-short-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.step-tab-status-text {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.step-tab-status-text.text-green {
+  color: #16a34a;
+}
+
+.step-tab-status-text.text-amber {
+  color: #d97706;
+}
+
+/* Soporte para modo Alto Contraste */
+body.high-contrast .form-stepper-container {
+  background: #000000 !important;
+  border: 2px solid #ffff00 !important;
+}
+
+body.high-contrast .stepper-kicker {
+  color: #ffff00 !important;
+}
+
+body.high-contrast .stepper-current-title {
+  color: #ffffff !important;
+}
+
+body.high-contrast .stepper-status-badge.badge-completo {
+  background: #000000 !important;
+  color: #00ff00 !important;
+  border: 1px solid #00ff00 !important;
+}
+
+body.high-contrast .stepper-status-badge.badge-incompleto {
+  background: #000000 !important;
+  color: #ffff00 !important;
+  border: 1px solid #ffff00 !important;
+}
+
+body.high-contrast .stepper-progress-track {
+  background-color: #333333 !important;
+  border: 1px solid #ffff00 !important;
+}
+
+body.high-contrast .stepper-progress-fill {
+  background: #ffff00 !important;
+}
+
+body.high-contrast .form-step-tab {
+  background: #000000 !important;
+  border: 1px solid #ffffff !important;
+}
+
+body.high-contrast .form-step-tab .step-tab-short-name {
+  color: #ffffff !important;
+}
+
+body.high-contrast .form-step-tab.active-step {
+  background: #ffff00 !important;
+  border-color: #ffff00 !important;
+}
+
+body.high-contrast .form-step-tab.active-step .step-tab-num {
+  background: #000000 !important;
+  color: #ffff00 !important;
+}
+
+body.high-contrast .form-step-tab.active-step .step-tab-short-name {
+  color: #000000 !important;
+}
+
+body.high-contrast .form-step-tab.active-step .step-tab-status-text {
+  color: #000000 !important;
+}
+
+/* Soporte de botón para accesos rápidos (Avisos) */
+button.quick-card,
+.quick-card-btn {
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  border: 1px solid var(--tec-borde);
+  background-color: var(--tec-card-bg);
+  cursor: pointer;
+  padding: 14px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.2s ease;
+}
+
+button.quick-card:focus-visible,
+.quick-card-btn:focus-visible {
+  outline: 2px solid var(--tec-boton-primario);
+  outline-offset: 2px;
+}
+
+body.high-contrast button.quick-card,
+body.high-contrast .quick-card-btn {
+  background-color: #000000 !important;
+  border: 1px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast button.quick-card:hover,
+body.high-contrast .quick-card-btn:hover {
+  border-color: #ffff00 !important;
+  box-shadow: 0 0 8px rgba(255, 255, 0, 0.4) !important;
+}
+
