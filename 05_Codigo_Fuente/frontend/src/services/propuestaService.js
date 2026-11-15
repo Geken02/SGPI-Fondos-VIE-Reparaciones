@@ -107,15 +107,21 @@ export const propuestaService = {
     return response.data;
   },
 
-  subirDocumentoFormulario: async (propuestaId, tipoDocumentoId, archivo) => {
-    const formData = new FormData();
-    formData.append('archivo', archivo);
-    formData.append('tipo_documento_id', tipoDocumentoId);
-    
-    // ✅ Axios detecta FormData y agrega el "boundary" automáticamente.
-    const response = await api.post(`/api/propuestas/${propuestaId}/archivos`, formData);
-    
-    return response.data;
-  }
+subirDocumentoFormulario: async (propuestaId, tipoDocumentoId, archivo) => {
+  const formData = new FormData();
+  formData.append('archivo', archivo, archivo.name || 'documento.pdf');
+  formData.append('tipo_documento_id', String(tipoDocumentoId));
+  const response = await api.post(
+    `/api/propuestas/${propuestaId}/archivos`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }
+  );
+
+  return response.data;
+}
 
 };
