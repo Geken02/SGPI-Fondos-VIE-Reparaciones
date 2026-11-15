@@ -48,7 +48,7 @@ TIPOS_PRODUCTOS = {
 
 def generar_rubrica_excel(rubrica_data: dict, evaluaciones: dict = None, productos: dict = None) -> bytes:
     """
-    Genera el Excel oficial de la rúbrica con FÓRMULAS REALES y DROPDOWNS.
+    Genera el Excel oficial de la rúbrica con FÓRMULAS REALES, DROPDOWNS y ESCALA 0-1.
     """
     if evaluaciones is None:
         evaluaciones = {}
@@ -167,15 +167,13 @@ def generar_rubrica_excel(rubrica_data: dict, evaluaciones: dict = None, product
             ws.cell(row=current_row, column=5, value=niveles.get("Bueno", "")).alignment = Alignment(wrap_text=True, vertical="top")
             ws.cell(row=current_row, column=6, value=niveles.get("Excelente", "")).alignment = Alignment(wrap_text=True, vertical="top")
 
-            # ✅ Columna G: Nivel con DROPDOWN
+            # Columna G: Nivel con DROPDOWN
             nivel_cell = ws.cell(row=current_row, column=7, value=ev.get("nivel", ""))
             nivel_cell.font = Font(bold=True, color="006600")
             nivel_cell.alignment = Alignment(horizontal="center", vertical="center")
-            
-            # Agregar la validación de datos (dropdown) a esta celda
             dv_nivel.add(nivel_cell)
 
-            # Columna H: FÓRMULA REAL
+            # Columna H: FÓRMULA REAL (Mapea texto a número)
             formula = f'=IF(G{current_row}="Deficiente",0,IF(G{current_row}="Regular",6,IF(G{current_row}="Bueno",8,IF(G{current_row}="Excelente",10,""))))'
             h_cell = ws.cell(row=current_row, column=8, value=formula)
             h_cell.font = Font(bold=True, color=AZUL_TEC)
@@ -190,13 +188,15 @@ def generar_rubrica_excel(rubrica_data: dict, evaluaciones: dict = None, product
 
         end_row = current_row - 1
 
-        # Subtotal con FÓRMULA REAL
+        # ✅ CORRECCIÓN DE FÓRMULA: Escala 0 a 1
+        # Dividimos entre 10 para normalizar la escala de 0-10 a 0-1 antes de aplicar el peso.
+        # Ejemplo: (Promedio 10 / 10) * (20/100) = 0.20
         ws.merge_cells(f"A{current_row}:F{current_row}")
         ws[f"A{current_row}"] = f"Subtotal – {seccion['nombre']}"
         ws[f"A{current_row}"].font = Font(bold=True, italic=True)
         ws[f"A{current_row}"].alignment = Alignment(horizontal="right")
 
-        formula_subtotal = f"=SUMPRODUCT(H{start_row}:H{end_row},B{start_row}:B{end_row})/SUM(B{start_row}:B{end_row})*({seccion['peso_seccion']}/100)"
+        formula_subtotal = f"=(SUMPRODUCT(H{start_row}:H{end_row},B{start_row}:B{end_row})/SUM(B{start_row}:B{end_row})/10)*({seccion['peso_seccion']}/100)"
         ws.merge_cells(f"G{current_row}:H{current_row}")
         sub_cell = ws.cell(row=current_row, column=7, value=formula_subtotal)
         sub_cell.number_format = '0.00'
@@ -207,10 +207,10 @@ def generar_rubrica_excel(rubrica_data: dict, evaluaciones: dict = None, product
         current_row += 2
 
     # =========================================================================
-    # CALIFICACIÓN FINAL
+    # CALIFICACIÓN FINAL (Suma de subtotales en escala 0-1)
     # =========================================================================
     ws.merge_cells(f"A{current_row}:F{current_row}")
-    ws[f"A{current_row}"] = "CALIFICACIÓN FINAL DE LA PROPUESTA"
+    ws[f"A{current_row}"] = "PUNTAJE TOTAL DE LA PROPUESTA (escala 0 – 1)"
     ws[f"A{current_row}"].font = Font(bold=True, size=12)
     ws[f"A{current_row}"].alignment = Alignment(horizontal="right")
 
@@ -222,7 +222,7 @@ def generar_rubrica_excel(rubrica_data: dict, evaluaciones: dict = None, product
     final_cell.alignment = Alignment(horizontal="center")
     calificacion_row = current_row
 
-    # Formato condicional
+    # Formato condicional (Verde si >= 0.70, Rojo si < 0.70)
     ws.conditional_formatting.add(
         f"G{current_row}",
         CellIsRule(operator="greaterThanOrEqual", formula=["0.7"], font=Font(color=VERDE, bold=True))
