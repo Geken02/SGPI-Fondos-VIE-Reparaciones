@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedInput, LimitedTextarea } from '../components/LimitedInput';
-import { exportarForm04PDF } from '../utils/exportUtils';
+import { exportarForm04PDF, generarBlobForm04PDF } from '../utils/exportUtils';
 
 const FormularioProyecto = () => {
   const { usuario } = useAuth();
@@ -601,145 +601,147 @@ const FormularioProyecto = () => {
     }
   };
 
-    const guardarBorradorActual = async () => {
-    setGuardando(true);
-    const ahora = new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
-    const idParaGuardar = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
+const guardarBorradorActual = async () => {
+  setGuardando(true);
+  const ahora = new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
+  const idParaGuardar = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
 
-    // 1. Guardar snapshot completo en localStorage para persistencia instantánea
-    const snapshotCompleto = {
-      nombreProyecto, modalidad, fechaInicio, fechaFin, trlSeleccionado,
-      resumen, palabrasClave, abstract, keywords, problemaInvestigacion,
-      objetivoGeneral, objetivosEspecificos, estadoArte, metodologia,
-      divulgacion, aspectosEticos, hojaRuta, otrasFuentes, vinculacionTecnica,
-      problemasNacionales, requiereInstrumento, convenioMarco, basePosgrado,
-      infoConfidencial, potencialPI, poseeInnovacion, resguardoCompromiso,
-      resguardoSoftware, referenciasBibliograficas, presupuestoAnual,
-      fuentesAdicionales,
-      investigadoresTEC, colaboradoresExternos,
-      actividadesCronograma, riesgosMitigacion,
-      rangoHorasCompromiso, firmaCoordinador,
-      productos14a, productos14b,
-      fechaGuardado: new Date().toISOString()
-    };
+  // 1. Guardar snapshot completo en localStorage para persistencia instantánea
+  const snapshotCompleto = {
+    nombreProyecto, modalidad, fechaInicio, fechaFin, trlSeleccionado,
+    resumen, palabrasClave, abstract, keywords, problemaInvestigacion,
+    objetivoGeneral, objetivosEspecificos, estadoArte, metodologia,
+    divulgacion, aspectosEticos, hojaRuta, otrasFuentes, vinculacionTecnica,
+    problemasNacionales, requiereInstrumento, convenioMarco, basePosgrado,
+    infoConfidencial, potencialPI, poseeInnovacion, resguardoCompromiso,
+    resguardoSoftware, referenciasBibliograficas, presupuestoAnual,
+    fuentesAdicionales,
+    investigadoresTEC, colaboradoresExternos,
+    actividadesCronograma, riesgosMitigacion,
+    rangoHorasCompromiso, firmaCoordinador,
+    productos14a, productos14b,
+    fechaGuardado: new Date().toISOString()
+  };
 
-    if (idParaGuardar) {
-      localStorage.setItem(`borrador_form04_${idParaGuardar}`, JSON.stringify(snapshotCompleto));
+  if (idParaGuardar) {
+    localStorage.setItem(`borrador_form04_${idParaGuardar}`, JSON.stringify(snapshotCompleto));
+    try {
+      const rawF5 = localStorage.getItem(`propuesta_${idParaGuardar}_plan_riesgos`);
+      const f5Data = rawF5 ? JSON.parse(rawF5) : {};
+      f5Data.actividades = snapshotCompleto.actividadesCronograma;
+      f5Data.nombrePropuesta = nombreProyecto || f5Data.nombrePropuesta;
+      f5Data.tipoIniciativa = modalidad || f5Data.tipoIniciativa;
+      f5Data.fechaGuardado = snapshotCompleto.fechaGuardado;
+      localStorage.setItem(`propuesta_${idParaGuardar}_plan_riesgos`, JSON.stringify(f5Data));
+      localStorage.setItem(`borrador_form05_${idParaGuardar}`, JSON.stringify(f5Data));
+    } catch (_e) {}
+  }
+  localStorage.setItem('borrador_form04_ultimo', JSON.stringify(snapshotCompleto));
+
+  // 2. Si hay ID de propuesta, sincronizar con la base de datos
+  if (idParaGuardar) {
+    try {
+      // Cabecera (título, fechas, TRL)
+      await propuestaService.actualizarCabecera(idParaGuardar, {
+        titulo: nombreProyecto || 'Borrador de Propuesta',
+        fechaInicio: fechaInicio || null,
+        fechaFinalizacion: fechaFin || null,
+        nivelTrlActual: Number(trlSeleccionado) || 1
+      });
+
+      // Contenido narrativo
+      const payloadContenido = {
+        resumen: resumen,
+        palabrasClave: palabrasClave,
+        abstract: abstract,
+        problemaInvestigacion: problemaInvestigacion,
+        objetivoGeneral: objetivoGeneral,
+        objetivosEspecificos: objetivosEspecificos.join(';\n'),
+        estadoArte: estadoArte,
+        metodologia: metodologia,
+        estrategiaDivulgacion: JSON.stringify(divulgacion),
+        hojaRuta: hojaRuta
+      };
+      await propuestaService.guardarContenido(idParaGuardar, payloadContenido);
+
+      // Declaraciones
+      const payloadDeclaraciones = {
+        tieneFinanciamientoPrevio: !!otrasFuentes.aplica,
+        tieneContinuidadProyecto: !!vinculacionTecnica.aplica,
+        requiereInstrumentoJuridico: !!requiereInstrumento.aplica,
+        tieneBasePosgrado: basePosgrado.aplica !== 'No',
+        tieneInformacionConfidencial: !!infoConfidencial.aplica,
+        tienePotencialPI: !!potencialPI.aplica,
+        poseeInnovacion: !!poseeInnovacion.aplica,
+        aceptaResguardoRepositorio: !!resguardoCompromiso,
+        aceptaDeclaracionJurada: true
+      };
+      await propuestaService.guardarDeclaraciones(idParaGuardar, payloadDeclaraciones);
+
+      // Sincronizar Equipo de Investigación y Colaboradores Externos en la BD (UNA SOLA VEZ)
+      const payloadEquipo = {
+        integrantes: investigadoresTEC.map(inv => ({
+          usuarioId: Number(inv.usuarioId || inv.id) || usuario?.id || 1,
+          tipoHoraId: 1,
+          horasSemanales: parseFloat(String(inv.horas || '10').replace(/[^\d.]/g, '')) || 10.0,
+          rolEquipoId: (inv.rol && inv.rol.includes('Coord')) ? 1 : (Number(inv.rolEquipoId) || 2),
+          orcid: inv.orcid || null
+        })),
+        colaboradoresExternos: colaboradoresExternos.filter(c => c.nombre && c.nombre.trim()).map(col => ({
+          nombreColaborador: col.nombre.trim(),
+          apellido1Colaborador: col.apellido1 || null,
+          apellido2Colaborador: col.apellido2 || null,
+          idOrcid: col.orcid || null,
+          institucionEmpresa: col.institucion || 'Institución Externa'
+        }))
+      };
+      await propuestaService.guardarEquipoCompleto(idParaGuardar, payloadEquipo);
+
+      // ========================================================================
+      // NUEVO: Generar y Subir el PDF del Form-04 a SeaweedFS automáticamente
+      // ========================================================================
       try {
-        const rawF5 = localStorage.getItem(`propuesta_${idParaGuardar}_plan_riesgos`);
-        const f5Data = rawF5 ? JSON.parse(rawF5) : {};
-        f5Data.actividades = snapshotCompleto.actividadesCronograma;
-        f5Data.nombrePropuesta = nombreProyecto || f5Data.nombrePropuesta;
-        f5Data.tipoIniciativa = modalidad || f5Data.tipoIniciativa;
-        f5Data.fechaGuardado = snapshotCompleto.fechaGuardado;
-        localStorage.setItem(`propuesta_${idParaGuardar}_plan_riesgos`, JSON.stringify(f5Data));
-        localStorage.setItem(`borrador_form05_${idParaGuardar}`, JSON.stringify(f5Data));
-      } catch (_e) {}
-    }
-    localStorage.setItem('borrador_form04_ultimo', JSON.stringify(snapshotCompleto));
+        setMensajeGuardado('Generando documento PDF...');
+        
+        // 1. Generar el Blob del PDF en memoria usando los datos actuales
+        const pdfBlob = generarBlobForm04PDF(snapshotCompleto, `Propuesta-${idParaGuardar}`);
+        
+        // 2. Convertir el Blob a un objeto File (necesario para que el servicio lo envíe)
+        const pdfFile = new File([pdfBlob], `Form04_${idParaGuardar}.pdf`, { type: 'application/pdf' });
 
-    // 2. Si hay ID de propuesta, sincronizar con la base de datos
-    if (idParaGuardar) {
-      try {
-        // Cabecera (título, fechas, TRL)
-        try {
-          await propuestaService.actualizarCabecera(idParaGuardar, {
-            titulo: nombreProyecto || 'Borrador de Propuesta',
-            fechaInicio: fechaInicio || null,
-            fechaFinalizacion: fechaFin || null,
-            nivelTrlActual: Number(trlSeleccionado) || 1
-          });
-        } catch (_cabErr) {
-          console.warn('Error actualizando cabecera en BD:', _cabErr);
-        }
+        // 3. Subir al backend
+        setMensajeGuardado('Subiendo documento a SeaweedFS...');
+        
+        // ⚠️ IMPORTANTE: El número '1' debe ser el ID real de "Form-04" en tu tabla TiposDocumento.
+        const TIPO_DOCUMENTO_FORM_04 = 1; 
+        
+        await propuestaService.subirDocumentoFormulario(
+          idParaGuardar,
+          TIPO_DOCUMENTO_FORM_04,
+          pdfFile
+        );
 
-        // Contenido narrativo
-        const payloadContenido = {
-          resumen: resumen,
-          palabrasClave: palabrasClave,
-          abstract: abstract,
-          problemaInvestigacion: problemaInvestigacion,
-          objetivoGeneral: objetivoGeneral,
-          objetivosEspecificos: objetivosEspecificos.join(';\n'),
-          estadoArte: estadoArte,
-          metodologia: metodologia,
-          estrategiaDivulgacion: JSON.stringify(divulgacion),
-          hojaRuta: hojaRuta
-        };
-        await propuestaService.guardarContenido(idParaGuardar, payloadContenido);
+        console.log('✅ Documento guardado en BD y SeaweedFS exitosamente');
+        setMensajeGuardado(`Guardado y documento generado ${ahora}`);
 
-        // Declaraciones
-        const payloadDeclaraciones = {
-          tieneFinanciamientoPrevio: !!otrasFuentes.aplica,
-          tieneContinuidadProyecto: !!vinculacionTecnica.aplica,
-          requiereInstrumentoJuridico: !!requiereInstrumento.aplica,
-          tieneBasePosgrado: basePosgrado.aplica !== 'No',
-          tieneInformacionConfidencial: !!infoConfidencial.aplica,
-          tienePotencialPI: !!potencialPI.aplica,
-          poseeInnovacion: !!poseeInnovacion.aplica,
-          aceptaResguardoRepositorio: !!resguardoCompromiso,
-          aceptaDeclaracionJurada: true
-        };
-        await propuestaService.guardarDeclaraciones(idParaGuardar, payloadDeclaraciones);
-
-        // Sincronizar Equipo de Investigación y Colaboradores Externos en la BD
-        try {
-          const payloadEquipo = {
-            integrantes: investigadoresTEC.map(inv => ({
-              usuarioId: Number(inv.usuarioId || inv.id) || usuario?.id || 1,
-              tipoHoraId: 1,
-              horasSemanales: parseFloat(String(inv.horas || '10').replace(/[^\d.]/g, '')) || 10.0,
-              rolEquipoId: (inv.rol && inv.rol.includes('Coord')) ? 1 : (Number(inv.rolEquipoId) || 2),
-              orcid: inv.orcid || null
-            })),
-            colaboradoresExternos: colaboradoresExternos.filter(c => c.nombre && c.nombre.trim()).map(col => ({
-              nombreColaborador: col.nombre.trim(),
-              apellido1Colaborador: col.apellido1 || null,
-              apellido2Colaborador: col.apellido2 || null,
-              idOrcid: col.orcid || null,
-              institucionEmpresa: col.institucion || 'Institución Externa'
-            }))
-          };
-          await propuestaService.guardarEquipoCompleto(idParaGuardar, payloadEquipo);
-        } catch (_eqErr) {
-          console.warn('Error al persistir equipo en BD:', _eqErr);
-        }
-
-        // Sincronizar Equipo de Investigación y Colaboradores Externos en la BD
-        try {
-          const payloadEquipo = {
-            integrantes: investigadoresTEC.map(inv => ({
-              usuarioId: Number(inv.usuarioId || inv.id) || usuario?.id || 1,
-              tipoHoraId: 1,
-              horasSemanales: parseFloat(String(inv.horas || '10').replace(/[^\d.]/g, '')) || 10.0,
-              rolEquipoId: (inv.rol && inv.rol.includes('Coord')) ? 1 : (Number(inv.rolEquipoId) || 2),
-              orcid: inv.orcid || null
-            })),
-            colaboradoresExternos: colaboradoresExternos.filter(c => c.nombre && c.nombre.trim()).map(col => ({
-              nombreColaborador: col.nombre.trim(),
-              apellido1Colaborador: col.apellido1 || null,
-              apellido2Colaborador: col.apellido2 || null,
-              idOrcid: col.orcid || null,
-              institucionEmpresa: col.institucion || 'Institución Externa'
-            }))
-          };
-          await propuestaService.guardarEquipoCompleto(idParaGuardar, payloadEquipo);
-        } catch (_eqErr) {
-          console.warn('Error al persistir equipo en BD:', _eqErr);
-        }
-
-        setMensajeGuardado(`Guardado ${ahora}`);
-      } catch (_err) {
-        console.warn('Error al persistir en backend, respaldado localmente:', _err);
-        setMensajeGuardado(`Guardado local ${ahora}`);
-      } finally {
-        setGuardando(false);
+      } catch (err) {
+        console.error('❌ Error al generar/subir el PDF:', err);
+        setMensajeGuardado(`Datos guardados, pero falló el PDF ${ahora}`);
+        // No lanzamos el error para que el guardado de texto no se cancele si esto falla
       }
-    } else {
+      // ========================================================================
+
+    } catch (_err) {
+      console.warn('Error al persistir en backend, respaldado localmente:', _err);
       setMensajeGuardado(`Guardado local ${ahora}`);
+    } finally {
       setGuardando(false);
     }
-  };
+  } else {
+    setMensajeGuardado(`Guardado local ${ahora}`);
+    setGuardando(false);
+  }
+};
 
   // Determinar si en el paso 14 corresponde la variante 14a o 14b
   // Regla del usuario: la 14b se pone si elige "Desarrollo tecnológico", sino se pone la 14a
