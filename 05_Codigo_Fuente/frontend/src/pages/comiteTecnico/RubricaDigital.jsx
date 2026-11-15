@@ -62,18 +62,28 @@ export default function RubricaDigital() {
     return productos.cantidadPropuesta >= (rubricaData.minimoProductosRequeridos || 0);
   }, [productos, rubricaData]);
 
-  // =========================================================================
-  // ✅ HANDLERS DE EXCEL OFICIAL
-  // =========================================================================
-  const handleDescargarOficial = () => {
-    try {
-      generarExcelOficial(rubricaData, evaluaciones, productos);
-    } catch (err) {
-      console.error('Error al generar Excel:', err);
-      alert('❌ Error al generar el archivo Excel.');
-    }
-  };
+const handleDescargarOficial = async () => {
+  try {
+    const response = await api.get(
+      `/api/comite-tecnico/evaluador/${propuestaId}/rubrica/excel`,
+      { responseType: 'blob' }
+    );
 
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Rubrica_Oficial_${rubricaData.codigoPropuesta}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+
+    alert('✅ Excel oficial descargado. Ábrelo en Excel y las fórmulas se calcularán solas.');
+  } catch (err) {
+    console.error('Error al descargar Excel:', err);
+    alert('❌ Error al generar el Excel: ' + (err.response?.data?.detail || err.message));
+  }
+};
   const handleCargarOficial = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
