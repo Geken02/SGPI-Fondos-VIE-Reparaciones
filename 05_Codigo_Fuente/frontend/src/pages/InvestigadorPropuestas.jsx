@@ -99,7 +99,13 @@ const InvestigadorPropuestas = () => {
       await propuestaService.enviarRevision(propuestaId);
 
       localStorage.setItem(`propuesta_${propuestaId}_enviada`, 'true');
+      localStorage.setItem(`propuesta_${propuestaId}_enviada_vinculacion`, 'true');
       localStorage.setItem(`propuesta_${propuestaId}_form04_enviado`, 'true');
+      localStorage.setItem(`propuesta_${propuestaId}_form04_completado`, 'true');
+      localStorage.setItem(`propuesta_${propuestaId}_form05_enviado`, 'true');
+      localStorage.setItem(`propuesta_${propuestaId}_form05_completado`, 'true');
+      localStorage.setItem(`propuesta_${propuestaId}_form06_enviado`, 'true');
+      localStorage.setItem(`propuesta_${propuestaId}_form06_completado`, 'true');
 
       alert('¡Propuesta enviada con éxito a la Unidad de Vinculación! El expediente ha pasado al proceso de evaluación temprana.');
       window.dispatchEvent(new Event('propuestaCreada'));
@@ -404,15 +410,30 @@ const InvestigadorPropuestas = () => {
                 prop.estadoId === 9 || (prop.nombreEstado || '').toLowerCase().includes('cancelad')
               );
 
-              // 2. Calcular nombre/texto del estado
+              // 2. Detectar si ya fue enviada a Vinculación (localStorage o estadoId)
+              const fueEnviadaAVinculacion = Boolean(
+                localStorage.getItem(`propuesta_${prop.propuestaId}_enviada_vinculacion`) === 'true' ||
+                localStorage.getItem(`propuesta_${prop.propuestaId}_enviada`) === 'true' ||
+                prop.estadoId === 2 ||
+                (prop.nombreEstado || '').toLowerCase().includes('enviada') ||
+                (prop.nombreEstado || '').toLowerCase().includes('vinculaci') ||
+                (prop.nombreEstado || '').toLowerCase().includes('evaluaci')
+              );
+
+              // 3. Calcular nombre/texto del estado
               const estado = esCancelada
                 ? 'Cancelada'
                 : esSubsanacion
                 ? 'En Subsanación'
-                : (prop.nombreEstado || prop.estadoBadge || (prop.estadoId === 3 ? 'En Evaluación de Vinculación' : prop.estadoId === 2 ? 'Enviada a VIE' : 'Borrador'));
+                : fueEnviadaAVinculacion
+                ? (prop.estadoId === 3 || (prop.nombreEstado || '').toLowerCase().includes('eval') ? 'En Evaluación de Vinculación' : 'Enviada a Vinculación')
+                : (prop.nombreEstado || prop.estadoBadge || 'Borrador');
 
-              // 3. Evaluar si es borrador (desactivado si está cancelada o en subsanación)
-              const esBorrador = !esCancelada && !esSubsanacion && (prop.estadoId === 1 || estado.toLowerCase().includes('borrador'));
+              // 4. Evaluar si es borrador (desactivado si está cancelada, en subsanación o ya enviada)
+              const esBorrador = !esCancelada && !esSubsanacion && !fueEnviadaAVinculacion && (prop.estadoId === 1 || estado.toLowerCase().includes('borrador'));
+
+              // 5. Bloquear Editar/Subir Doc si ya fue enviada a Vinculación o está cancelada
+              const estaBloqueadaParaEdicion = esCancelada || fueEnviadaAVinculacion || (!esBorrador && !esSubsanacion);
 
               const badgeClass = esSubsanacion ? 'badge-subsanacion'
                                 : esCancelada ? 'badge-cancelada'
@@ -527,16 +548,34 @@ const InvestigadorPropuestas = () => {
                   {/* Cuerpo desplegable del expediente */}
                   {estaAbierto && (() => {
                     const f01Completado = Boolean(
+                      fueEnviadaAVinculacion ||
+                      prop.fechaEnvio ||
                       prop.form01Completado || 
-                      localStorage.getItem(`propuesta_${prop.propuestaId}_form04_enviado`) === 'true'
+                      prop.form04Completado ||
+                      localStorage.getItem(`propuesta_${prop.propuestaId}_form04_enviado`) === 'true' ||
+                      localStorage.getItem(`propuesta_${prop.propuestaId}_form04_completado`) === 'true' ||
+                      localStorage.getItem(`borrador_form04_${prop.propuestaId}_completado`) === 'true' ||
+                      localStorage.getItem(`borrador_form04_${prop.propuestaId}`) !== null ||
+                      (localStorage.getItem('form04_ultimo_completado_id') === String(prop.propuestaId)) ||
+                      (prop.contenido && (prop.contenido.resumen || prop.contenido.objetivoGeneral))
                     );
                     const f02Completado = Boolean(
+                      fueEnviadaAVinculacion ||
+                      prop.fechaEnvio ||
                       prop.form02Completado || 
-                      localStorage.getItem(`propuesta_${prop.propuestaId}_form05_enviado`) === 'true'
+                      prop.form05Completado ||
+                      localStorage.getItem(`propuesta_${prop.propuestaId}_form05_enviado`) === 'true' ||
+                      localStorage.getItem(`propuesta_${prop.propuestaId}_form05_completado`) === 'true' ||
+                      localStorage.getItem(`propuesta_${prop.propuestaId}_plan_riesgos`) !== null
                     );
                     const f03Completado = Boolean(
+                      fueEnviadaAVinculacion ||
+                      prop.fechaEnvio ||
                       prop.form03Completado || 
-                      localStorage.getItem(`propuesta_${prop.propuestaId}_form06_enviado`) === 'true'
+                      prop.form06Completado ||
+                      localStorage.getItem(`propuesta_${prop.propuestaId}_form06_enviado`) === 'true' ||
+                      localStorage.getItem(`propuesta_${prop.propuestaId}_form06_completado`) === 'true' ||
+                      localStorage.getItem(`propuesta_${prop.propuestaId}_presupuesto_trienal`) !== null
                     );
 
                     return (
@@ -648,32 +687,29 @@ const InvestigadorPropuestas = () => {
                               <button 
                                 type="button" 
                                 className="btn-doc-action"
-                                disabled={esCancelada}
-                                style={{ backgroundColor: '#0369A1', color: '#ffffff', borderColor: '#0369A1', opacity: esCancelada ? 0.5 : 1, cursor: esCancelada ? 'not-allowed' : 'pointer' }}
-                                onClick={() => { if (!esCancelada) { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/form4?propuestaId=${prop.propuestaId || ''}`); } }}
+                                disabled={estaBloqueadaParaEdicion}
+                                title={estaBloqueadaParaEdicion ? (esCancelada ? 'Propuesta cancelada' : 'Propuesta enviada a Vinculación - En proceso de revisión institucional') : undefined}
+                                style={{
+                                  backgroundColor: '#0369A1',
+                                  color: '#ffffff',
+                                  borderColor: '#0369A1',
+                                  opacity: estaBloqueadaParaEdicion ? 0.45 : 1,
+                                  cursor: estaBloqueadaParaEdicion ? 'not-allowed' : 'pointer'
+                                }}
+                                onClick={() => { if (!estaBloqueadaParaEdicion) { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/form4?propuestaId=${prop.propuestaId || ''}`); } }}
                               >
                                 {esSubsanacion ? 'Corregir' : 'Editar / Llenar'}
                               </button>
                               <label 
                                 className="btn-doc-action"
+                                title={estaBloqueadaParaEdicion ? (esCancelada ? 'Propuesta cancelada' : 'Propuesta enviada a Vinculación - En proceso de revisión institucional') : 'Subir formulario en PDF/Word directamente a SeaweedFS'}
                                 style={{
                                   backgroundColor: '#10b981',
                                   color: '#ffffff',
                                   borderColor: '#10b981',
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  margin: 0
-                                }}
-                                title="Subir formulario en PDF/Word directamente a SeaweedFS si no desea llenarlo en línea"
-                                style={{
-                                  backgroundColor: '#10b981',
-                                  color: '#ffffff',
-                                  borderColor: '#10b981',
-                                  cursor: esCancelada ? 'not-allowed' : 'pointer',
-                                  opacity: esCancelada ? 0.5 : 1,
-                                  pointerEvents: esCancelada ? 'none' : 'auto',
+                                  cursor: estaBloqueadaParaEdicion ? 'not-allowed' : 'pointer',
+                                  opacity: estaBloqueadaParaEdicion ? 0.45 : 1,
+                                  pointerEvents: estaBloqueadaParaEdicion ? 'none' : 'auto',
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
@@ -685,7 +721,7 @@ const InvestigadorPropuestas = () => {
                                   type="file"
                                   accept=".pdf,.doc,.docx"
                                   style={{ display: 'none' }}
-                                  disabled={esCancelada || subiendoFormulario[`${prop.propuestaId}_1`]}
+                                  disabled={estaBloqueadaParaEdicion || subiendoFormulario[`${prop.propuestaId}_1`]}
                                   onChange={(e) => handleSubirDocumentoFormulario(prop.propuestaId, 1, 'F-01 Formulario de Proyecto', e)}
                                 />
                               </label>
@@ -713,32 +749,29 @@ const InvestigadorPropuestas = () => {
                               <button 
                                 type="button" 
                                 className="btn-doc-action"
-                                disabled={esCancelada}
-                                style={{ backgroundColor: '#0369A1', color: '#ffffff', borderColor: '#0369A1', opacity: esCancelada ? 0.5 : 1, cursor: esCancelada ? 'not-allowed' : 'pointer' }}
-                                onClick={() => { if (!esCancelada) { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/form5?propuestaId=${prop.propuestaId || ''}`); } }}
+                                disabled={estaBloqueadaParaEdicion}
+                                title={estaBloqueadaParaEdicion ? (esCancelada ? 'Propuesta cancelada' : 'Propuesta enviada a Vinculación - En proceso de revisión institucional') : undefined}
+                                style={{
+                                  backgroundColor: '#0369A1',
+                                  color: '#ffffff',
+                                  borderColor: '#0369A1',
+                                  opacity: estaBloqueadaParaEdicion ? 0.45 : 1,
+                                  cursor: estaBloqueadaParaEdicion ? 'not-allowed' : 'pointer'
+                                }}
+                                onClick={() => { if (!estaBloqueadaParaEdicion) { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/form5?propuestaId=${prop.propuestaId || ''}`); } }}
                               >
                                 {esSubsanacion ? 'Corregir' : 'Editar / Llenar'}
                               </button>
                               <label 
                                 className="btn-doc-action"
+                                title={estaBloqueadaParaEdicion ? (esCancelada ? 'Propuesta cancelada' : 'Propuesta enviada a Vinculación - En proceso de revisión institucional') : 'Subir archivo Excel o documento de Plan y Riesgos directamente a SeaweedFS'}
                                 style={{
                                   backgroundColor: '#10b981',
                                   color: '#ffffff',
                                   borderColor: '#10b981',
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  margin: 0
-                                }}
-                                title="Subir archivo Excel o documento de Plan y Riesgos directamente a SeaweedFS"
-                                style={{
-                                  backgroundColor: '#10b981',
-                                  color: '#ffffff',
-                                  borderColor: '#10b981',
-                                  cursor: esCancelada ? 'not-allowed' : 'pointer',
-                                  opacity: esCancelada ? 0.5 : 1,
-                                  pointerEvents: esCancelada ? 'none' : 'auto',
+                                  cursor: estaBloqueadaParaEdicion ? 'not-allowed' : 'pointer',
+                                  opacity: estaBloqueadaParaEdicion ? 0.45 : 1,
+                                  pointerEvents: estaBloqueadaParaEdicion ? 'none' : 'auto',
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
@@ -750,7 +783,7 @@ const InvestigadorPropuestas = () => {
                                   type="file"
                                   accept=".xlsx,.xls,.pdf,.doc,.docx"
                                   style={{ display: 'none' }}
-                                  disabled={esCancelada || subiendoFormulario[`${prop.propuestaId}_2`]}
+                                  disabled={estaBloqueadaParaEdicion || subiendoFormulario[`${prop.propuestaId}_2`]}
                                   onChange={(e) => handleSubirDocumentoFormulario(prop.propuestaId, 2, 'F-02 Plan y Riesgos', e)}
                                 />
                               </label>
@@ -778,32 +811,35 @@ const InvestigadorPropuestas = () => {
                               <button 
                                 type="button" 
                                 className="btn-doc-action btn-add-files"
-                                disabled={esCancelada}
-                                style={{ opacity: esCancelada ? 0.5 : 1, cursor: esCancelada ? 'not-allowed' : 'pointer' }}
-                                onClick={() => { if (!esCancelada) { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/presupuesto?propuestaId=${prop.propuestaId || ''}`); } }}
+                                disabled={estaBloqueadaParaEdicion}
+                                title={estaBloqueadaParaEdicion ? (esCancelada ? 'Propuesta cancelada' : 'Propuesta enviada a Vinculación - En proceso de revisión institucional') : undefined}
+                                style={{ opacity: estaBloqueadaParaEdicion ? 0.45 : 1, cursor: estaBloqueadaParaEdicion ? 'not-allowed' : 'pointer' }}
+                                onClick={() => { if (!estaBloqueadaParaEdicion) { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/presupuesto?propuestaId=${prop.propuestaId || ''}`); } }}
                               >
                                 {esSubsanacion ? 'Corregir' : 'Abrir Módulo'}
                               </button>
                               <label 
                                 className="btn-doc-action"
+                                title={estaBloqueadaParaEdicion ? (esCancelada ? 'Propuesta cancelada' : 'Propuesta enviada a Vinculación - En proceso de revisión institucional') : 'Subir plantilla Excel de Presupuesto directamente a SeaweedFS'}
                                 style={{
                                   backgroundColor: '#10b981',
                                   color: '#ffffff',
                                   borderColor: '#10b981',
-                                  cursor: 'pointer',
+                                  cursor: estaBloqueadaParaEdicion ? 'not-allowed' : 'pointer',
+                                  opacity: estaBloqueadaParaEdicion ? 0.45 : 1,
+                                  pointerEvents: estaBloqueadaParaEdicion ? 'none' : 'auto',
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   margin: 0
                                 }}
-                                title="Subir plantilla Excel de Presupuesto directamente a SeaweedFS"
                               >
                                 {subiendoFormulario[`${prop.propuestaId}_3`] ? 'Subiendo...' : '📤 Subir Doc'}
                                 <input
                                   type="file"
                                   accept=".xlsx,.xls,.pdf,.doc,.docx"
                                   style={{ display: 'none' }}
-                                  disabled={subiendoFormulario[`${prop.propuestaId}_3`]}
+                                  disabled={estaBloqueadaParaEdicion || subiendoFormulario[`${prop.propuestaId}_3`]}
                                   onChange={(e) => handleSubirDocumentoFormulario(prop.propuestaId, 3, 'F-03 Presupuesto Detallado', e)}
                                 />
                               </label>
@@ -974,7 +1010,7 @@ const InvestigadorPropuestas = () => {
                             </div>
                           </div>
                         ) : (
-                          <div style={{ padding: '16px', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', color: '#64748b', fontSize: '13px' }}>
+                          <div className="subsanacion-vacia-box">
                             No hay observaciones de subsanación pendientes para esta propuesta. El expediente continúa en su curso normal de revisión institucional.
                           </div>
                         )}
@@ -994,7 +1030,7 @@ const InvestigadorPropuestas = () => {
                                 <span className="entity-instrument">Instrumento: Dictamen TEC / PI</span>
                               </div>
                               <div className="eval-status-group">
-                                <span className="eval-badge badge-proximo" style={{ backgroundColor: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1' }}>
+                                <span className="eval-badge badge-proximo">
                                   Próximo
                                 </span>
                                 <button 
@@ -1020,7 +1056,7 @@ const InvestigadorPropuestas = () => {
                                 <span className="entity-instrument">Instrumento: Rúbrica V2</span>
                               </div>
                               <div className="eval-status-group">
-                                <span className="eval-badge badge-proximo" style={{ backgroundColor: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1' }}>
+                                <span className="eval-badge badge-proximo">
                                   Próximo
                                 </span>
                                 <button 
@@ -1046,7 +1082,7 @@ const InvestigadorPropuestas = () => {
                                 <span className="entity-instrument">Instrumento: Acuerdo y Aval Acta</span>
                               </div>
                               <div className="eval-status-group">
-                                <span className="eval-badge badge-proximo" style={{ backgroundColor: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1' }}>
+                                <span className="eval-badge badge-proximo">
                                   Próximo
                                 </span>
                                 <button 

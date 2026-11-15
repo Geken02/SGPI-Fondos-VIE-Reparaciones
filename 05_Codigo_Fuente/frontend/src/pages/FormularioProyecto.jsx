@@ -996,8 +996,13 @@ const FormularioProyecto = () => {
     try {
       // Guardar todos los datos del Formulario 04
       await guardarBorradorActual();
-      if (propuestaIdUrl) {
-        localStorage.setItem(`propuesta_${propuestaIdUrl}_form04_completado`, 'true');
+      const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
+      if (id) {
+        localStorage.setItem(`propuesta_${id}_form04_completado`, 'true');
+        localStorage.setItem(`propuesta_${id}_form04_enviado`, 'true');
+        localStorage.setItem(`borrador_form04_${id}_completado`, 'true');
+        localStorage.setItem('form04_ultimo_completado_id', String(id));
+        localStorage.setItem('form04_completado_global', 'true');
       }
       setEnvioExitoso(true);
       window.dispatchEvent(new Event('propuestaCreada'));

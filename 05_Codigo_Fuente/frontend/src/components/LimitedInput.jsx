@@ -32,7 +32,7 @@ export const LimitedInput = ({
   step,
   name,
   id,
-  showCounter = true,
+  showCounter,
   formatoMonto = false,
   onFocus,
   onBlur,
@@ -43,6 +43,7 @@ export const LimitedInput = ({
   const rawVal = value !== null && value !== undefined ? String(value).replace(/\s+/g, '') : '';
   const currentLength = rawVal.length;
   const isAtLimit = Boolean(maxLength && currentLength >= maxLength);
+  const shouldShowCounter = showCounter !== undefined ? showCounter : Boolean(label);
 
   const displayValue = formatoMonto
     ? (isFocused ? rawVal : formatearMontoEspacios(rawVal))
@@ -96,15 +97,15 @@ export const LimitedInput = ({
   };
 
   return (
-    <div className="limited-field-container" style={{ display: 'flex', flexDirection: 'column', width: '100%', ...containerStyle }}>
-      {(label || (maxLength && showCounter)) && (
+    <div className="limited-field-container" style={{ display: 'flex', flexDirection: 'column', width: '100%', ...(label || (maxLength && shouldShowCounter) ? {} : { justifyContent: 'center' }), ...containerStyle }}>
+      {(label || (maxLength && shouldShowCounter)) && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
           {label && (
             <label style={{ fontSize: '13px', fontWeight: 600, color: '#002855' }}>
               {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
             </label>
           )}
-          {maxLength && showCounter && type !== 'number' && type !== 'date' && (
+          {maxLength && shouldShowCounter && type !== 'number' && type !== 'date' && (
             <span 
               className={`limited-counter ${isAtLimit ? 'at-limit' : ''}`}
               style={{

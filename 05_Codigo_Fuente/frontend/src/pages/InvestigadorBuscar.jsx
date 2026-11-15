@@ -142,8 +142,9 @@ const InvestigadorBuscar = () => {
               value={terminoBusqueda}
               onChange={(e) => setTerminoBusqueda(e.target.value)}
               maxLength={200}
+              showCounter={false}
               className="filter-search-input"
-              containerStyle={{ flex: 1 }}
+              containerStyle={{ flex: 1, margin: 0, padding: 0 }}
               style={{ fontSize: '15px', border: 'none', outline: 'none', background: 'transparent' }}
             />
             {terminoBusqueda && (
