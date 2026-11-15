@@ -265,19 +265,19 @@ const InvestigadorDashboard = () => {
               {/* Leyenda */}
               <div className="kpi-legend" aria-label="Leyenda de estados">
                 <div className="kpi-legend-row">
-                  <span className="dot dot-cyan" aria-hidden="true" style={{ background: '#0284c7', backgroundColor: '#0284c7' }}></span>
+                  <span className="dot dot-cyan" aria-hidden="true"></span>
                   <span className="legend-text"><strong>{enProceso}</strong> En proceso</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-dark" aria-hidden="true" style={{ background: '#002855', backgroundColor: '#002855' }}></span>
+                  <span className="dot dot-dark" aria-hidden="true"></span>
                   <span className="legend-text"><strong>{aprobadas}</strong> Aprobadas</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-coral" aria-hidden="true" style={{ background: '#EF3340', backgroundColor: '#EF3340' }}></span>
+                  <span className="dot dot-coral" aria-hidden="true"></span>
                   <span className="legend-text"><strong>{rechazadas}</strong> Rechazadas</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-gray" aria-hidden="true" style={{ background: '#94a3b8', backgroundColor: '#94a3b8' }}></span>
+                  <span className="dot dot-gray" aria-hidden="true"></span>
                   <span className="legend-text"><strong>{canceladas}</strong> Canceladas</span>
                 </div>
               </div>

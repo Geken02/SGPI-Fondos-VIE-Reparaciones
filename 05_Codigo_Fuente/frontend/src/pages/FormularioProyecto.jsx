@@ -986,29 +986,25 @@ const FormularioProyecto = () => {
     }
   };
 
-  const handleEnvioDefinitivo = async () => {
-    if (!esPropietario) {
-      alert('Solo la persona coordinadora (propietaria de la propuesta) puede realizar el envío definitivo a la Unidad de Vinculación.');
-      return;
-    }
-
+  const handleFinalizarFormulario = async () => {
     if (!resguardoCompromiso) {
-      alert('Debe aceptar el compromiso de resguardo y depósito de productos para realizar el envío.');
+      alert('Debe aceptar el compromiso de resguardo y depósito de productos para completar el formulario.');
       return;
     }
 
     setGuardando(true);
     try {
+      // Guardar todos los datos del Formulario 04
+      await guardarBorradorActual();
       if (propuestaIdUrl) {
-        await propuestaService.enviarRevision(propuestaIdUrl);
-        localStorage.setItem(`propuesta_${propuestaIdUrl}_form04_enviado`, 'true');
+        localStorage.setItem(`propuesta_${propuestaIdUrl}_form04_completado`, 'true');
       }
       setEnvioExitoso(true);
       window.dispatchEvent(new Event('propuestaCreada'));
     } catch (err) {
       console.error(err);
-      const detalle = err.response?.data?.detail || err.message || 'Ocurrió un error al enviar la propuesta.';
-      alert(`No se pudo enviar la propuesta: ${detalle}`);
+      const detalle = err.response?.data?.detail || err.message || 'Ocurrió un error al guardar el formulario.';
+      alert(`No se pudo guardar el formulario: ${detalle}`);
     } finally {
       setGuardando(false);
     }
@@ -1038,9 +1034,9 @@ const FormularioProyecto = () => {
         {envioExitoso ? (
           <div className="envio-exitoso-splash">
             <div className="success-icon-badge">✓</div>
-            <h1 className="success-modal-title">¡Propuesta Enviada a Revisión Institucional!</h1>
+            <h1 className="success-modal-title">¡Formulario Form-04 Guardado con Éxito!</h1>
             <p className="success-modal-subtitle">
-              El Formulario Form-04 ha sido firmado digitalmente y enviado con éxito a la Unidad de Vinculación para su proceso de evaluación y dictamen.
+              El Formulario Form-04 ha sido completado y guardado en el expediente. Recuerde que el envío oficial a la Unidad de Vinculación se realiza desde la sección "Mis Propuestas" mediante el botón de envío correspondiente.
             </p>
             <div className="success-propuesta-code-box">
               <span className="code-label">PROYECTO REGISTRADO</span>
@@ -2639,14 +2635,16 @@ const FormularioProyecto = () => {
                     </thead>
                     <tbody>
                       {presupuestoAnual.map((p, i) => {
-                        const totalFila = (Number(p.operativo) || 0) + (Number(p.duradero) || 0);
+                        const numOp = Number(String(p.operativo || 0).replace(/\s+/g, '')) || 0;
+                        const numDu = Number(String(p.duradero || 0).replace(/\s+/g, '')) || 0;
+                        const totalFila = numOp + numDu;
                         return (
                           <tr key={i}>
                             <td><strong>{p.ano}</strong></td>
                             <td>
                               <LimitedInput
-                                type="number"
-                                min="0"
+                                type="text"
+                                formatoMonto={true}
                                 placeholder="0"
                                 showCounter={false}
                                 className="form-table-input"
@@ -2660,8 +2658,8 @@ const FormularioProyecto = () => {
                             </td>
                             <td>
                               <LimitedInput
-                                type="number"
-                                min="0"
+                                type="text"
+                                formatoMonto={true}
                                 placeholder="0"
                                 showCounter={false}
                                 className="form-table-input"
@@ -2681,12 +2679,12 @@ const FormularioProyecto = () => {
                       })}
                       <tr style={{ backgroundColor: '#f8fafc', fontWeight: 700 }}>
                         <td>TOTAL</td>
-                        <td>₡ {presupuestoAnual.reduce((acc, p) => acc + (Number(p.operativo) || 0), 0).toLocaleString('es-CR')}</td>
-                        <td>₡ {presupuestoAnual.reduce((acc, p) => acc + (Number(p.duradero) || 0), 0).toLocaleString('es-CR')}</td>
+                        <td>₡ {presupuestoAnual.reduce((acc, p) => acc + (Number(String(p.operativo || 0).replace(/\s+/g, '')) || 0), 0).toLocaleString('es-CR')}</td>
+                        <td>₡ {presupuestoAnual.reduce((acc, p) => acc + (Number(String(p.duradero || 0).replace(/\s+/g, '')) || 0), 0).toLocaleString('es-CR')}</td>
                         <td style={{ color: '#002855' }}>
                           ₡ {(
-                            presupuestoAnual.reduce((acc, p) => acc + (Number(p.operativo) || 0), 0) +
-                            presupuestoAnual.reduce((acc, p) => acc + (Number(p.duradero) || 0), 0)
+                            presupuestoAnual.reduce((acc, p) => acc + (Number(String(p.operativo || 0).replace(/\s+/g, '')) || 0), 0) +
+                            presupuestoAnual.reduce((acc, p) => acc + (Number(String(p.duradero || 0).replace(/\s+/g, '')) || 0), 0)
                           ).toLocaleString('es-CR')}
                         </td>
                       </tr>
@@ -2713,8 +2711,8 @@ const FormularioProyecto = () => {
                         <td>Financiamiento externo</td>
                         <td>
                           <LimitedInput 
-                            type="number" 
-                            min="0" 
+                            type="text" 
+                            formatoMonto={true}
                             className="form-table-input" 
                             placeholder="0"
                             value={fuentesAdicionales.externo.ano1}
@@ -2726,8 +2724,8 @@ const FormularioProyecto = () => {
                         </td>
                         <td>
                           <LimitedInput 
-                            type="number" 
-                            min="0" 
+                            type="text" 
+                            formatoMonto={true}
                             className="form-table-input" 
                             placeholder="0"
                             value={fuentesAdicionales.externo.ano2}
@@ -2739,8 +2737,8 @@ const FormularioProyecto = () => {
                         </td>
                         <td>
                           <LimitedInput 
-                            type="number" 
-                            min="0" 
+                            type="text" 
+                            formatoMonto={true}
                             className="form-table-input" 
                             placeholder="0"
                             value={fuentesAdicionales.externo.ano3}
@@ -2769,8 +2767,9 @@ const FormularioProyecto = () => {
                         <td>Contrapartida (Escuela/Centro)</td>
                         <td>
                           <LimitedInput 
-                            type="number" 
-                            min="0" 
+                            type="text" 
+                            formatoMonto={true}
+                            placeholder="0"
                             className="form-table-input" 
                             value={fuentesAdicionales.contrapartida.ano1}
                             onChange={(e) => setFuentesAdicionales({
@@ -2781,8 +2780,9 @@ const FormularioProyecto = () => {
                         </td>
                         <td>
                           <LimitedInput 
-                            type="number" 
-                            min="0" 
+                            type="text" 
+                            formatoMonto={true}
+                            placeholder="0"
                             className="form-table-input" 
                             value={fuentesAdicionales.contrapartida.ano2}
                             onChange={(e) => setFuentesAdicionales({
@@ -2793,8 +2793,8 @@ const FormularioProyecto = () => {
                         </td>
                         <td>
                           <LimitedInput 
-                            type="number" 
-                            min="0" 
+                            type="text" 
+                            formatoMonto={true}
                             className="form-table-input" 
                             placeholder="0"
                             value={fuentesAdicionales.contrapartida.ano3}
@@ -3650,29 +3650,14 @@ const FormularioProyecto = () => {
                     Siguiente →
                   </button>
                 ) : (
-                  esPropietario ? (
-                    <button 
-                      type="button" 
-                      className="btn-envio-definitivo"
-                      onClick={handleEnvioDefinitivo}
-                      disabled={guardando}
-                    >
-                      {guardando ? 'Enviando a Unidad de Vinculación...' : 'ENVÍO DEFINITIVO A VINCULACIÓN'}
-                    </button>
-                  ) : (
-                    <div style={{
-                      backgroundColor: '#eff6ff',
-                      border: '1px solid #bfdbfe',
-                      borderRadius: '8px',
-                      padding: '10px 16px',
-                      color: '#1e40af',
-                      fontSize: '13px',
-                      maxWidth: '440px',
-                      textAlign: 'right'
-                    }}>
-                      🔒 <strong>Modo Colaborador:</strong> Como integrante del equipo de investigación puedes editar y guardar cambios, pero el Envío Definitivo a Vinculación debe realizarlo la persona coordinadora.
-                    </div>
-                  )
+                  <button 
+                    type="button" 
+                    className="btn-envio-definitivo"
+                    onClick={handleFinalizarFormulario}
+                    disabled={guardando}
+                  >
+                    {guardando ? 'Guardando Formulario...' : 'Enviar formulario'}
+                  </button>
                 )}
               </div>
             </div>
