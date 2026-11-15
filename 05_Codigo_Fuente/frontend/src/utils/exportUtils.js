@@ -318,7 +318,7 @@ export function exportarForm04PDF(datos, codigo = '') {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   1.1 GENERAR FORM-04 COMO BLOB (Para subir a SeaweedFS)
+   1.1 GENERAR FORM-04 COMO BLOB (Para subir a Supabase)
    ═══════════════════════════════════════════════════════════════ */
 export function generarBlobForm04PDF(datos, codigo = '') {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
@@ -575,7 +575,6 @@ export function generarBlobForm04PDF(datos, codigo = '') {
     doc.text(`Página ${i} de ${totalPages}  |  SGPI — Vicerrectoría de Investigación y Extensión, TEC`, margin, 272);
   }
 
-  // AQUÍ ESTÁ LA CLAVE: En lugar de doc.save(), devolvemos el Blob
   return doc.output('blob');
 }
 
@@ -669,7 +668,7 @@ export async function exportarForm05Excel(datos, codigo = '') {
   const acts = datos.actividades || [];
   let dataRow = 4;
   acts.forEach(a => {
-    const rowValues = [safe(a.objetivo), safe(a.actividad), safe(a.resultado), safe(a.participante), safe(a.responsabilidad), safe(a.riesgo), safe(a.mitigacion), safe(a.responsableGestion), safe(a.mesInicio), safe(a.duracionMesesAct)];
+    const rowValues = [safe(a.objetivo || a.obj), safe(a.actividad), safe(a.resultado), safe(a.participante), safe(a.responsabilidad), safe(a.riesgo), safe(a.mitigacion), safe(a.responsableGestion), safe(a.mesInicio), safe(a.duracionMesesAct)];
     for (let yr = 1; yr <= numAnios; yr++) {
       for (let mo = 1; mo <= 12; mo++) {
         const checked = a.periodoEjecucion?.[`a${yr}`]?.[`m${mo}`];
@@ -688,6 +687,130 @@ export async function exportarForm05Excel(datos, codigo = '') {
 
   const fileName = `Form05_PlanRiesgos_${safe(codigo).replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`;
   await guardarWorkbook(wb, fileName);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   2.1 GENERAR FORM-05 COMO BLOB (Para subir a Supabase)
+   ═══════════════════════════════════════════════════════════════ */
+export async function generarBlobForm05Excel(datos, codigo = '') {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'SGPI — Vicerrectoría de Investigación y Extensión, TEC';
+  wb.created = new Date();
+
+  const wsInfo = wb.addWorksheet('Información General');
+  wsInfo.columns = [{ width: 30 }, { width: 50 }];
+  wsInfo.mergeCells('A1:B1');
+  const titleCell = wsInfo.getCell('A1');
+  titleCell.value = 'FORMULARIO F-05: PLAN DE ACCIÓN Y GESTIÓN DEL RIESGO';
+  titleCell.font = { bold: true, size: 14, color: { argb: 'FF002855' } };
+  titleCell.alignment = { horizontal: 'center' };
+  wsInfo.mergeCells('A2:B2');
+  wsInfo.getCell('A2').value = 'Instituto Tecnológico de Costa Rica — Vicerrectoría de Investigación y Extensión';
+  wsInfo.getCell('A2').font = { size: 10, italic: true, color: { argb: 'FF475569' } };
+  wsInfo.getCell('A2').alignment = { horizontal: 'center' };
+
+  const infoData = [['Código de Propuesta', safe(codigo)], ['Título del Proyecto', safe(datos.nombrePropuesta, 'Sin título')], ['Tipo de Iniciativa', safe(datos.tipoIniciativa)], ['Duración', safe(datos.duracionMeses)], ['Fecha de Generación', hoy()]];
+  let row = 4;
+  infoData.forEach(([label, val]) => {
+    wsInfo.getCell(`A${row}`).value = label;
+    wsInfo.getCell(`A${row}`).font = { bold: true };
+    wsInfo.getCell(`B${row}`).value = val;
+    row++;
+  });
+
+  const wsEquipo = wb.addWorksheet('Equipo de Trabajo');
+  wsEquipo.columns = [{ header: 'Nombre', key: 'nombre', width: 35 }, { header: 'Iniciales', key: 'iniciales', width: 12 }, { header: 'Rol', key: 'rol', width: 30 }];
+  const headerRowEquipo = wsEquipo.getRow(1);
+  for (let c = 1; c <= 3; c++) {
+    const cell = headerRowEquipo.getCell(c);
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002855' } };
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+    cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+  }
+  const integrantes = datos.integrantes || [];
+  integrantes.forEach(i => { wsEquipo.addRow({ nombre: safe(i.nombre), iniciales: safe(i.iniciales), rol: safe(i.rol) }); });
+  if (integrantes.length > 0) {
+    for (let r = 2; r <= 1 + integrantes.length; r++) {
+      for (let c = 1; c <= 3; c++) {
+        wsEquipo.getRow(r).getCell(c).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+      }
+    }
+  }
+
+  const wsPlan = wb.addWorksheet('Plan de Acción');
+  const durStr = safe(datos.duracionMeses);
+  const numAnios = durStr.includes('12') ? 1 : durStr.includes('36') ? 3 : 2;
+  const fixedHeaders = ['Objetivo', 'Actividades', 'Resultado Esperado', 'Participantes', 'Responsabilidad', 'Riesgos Identificados', 'Medidas de Mitigación', 'Responsable de la Gestión', 'Mes de Inicio', 'Duración (Meses)'];
+  const fixedWidths = [12, 25, 20, 12, 14, 20, 20, 14, 10, 10];
+  const allCols = [];
+  fixedHeaders.forEach((h, idx) => { allCols.push({ header: '', key: `f${idx}`, width: fixedWidths[idx] }); });
+  for (let a = 1; a <= numAnios; a++) { for (let m = 1; m <= 12; m++) { allCols.push({ header: '', key: `a${a}m${m}`, width: 4 }); } }
+  wsPlan.columns = allCols;
+  const totalCols = fixedHeaders.length + numAnios * 12;
+
+  wsPlan.mergeCells(1, 1, 1, totalCols);
+  const planTitle = wsPlan.getCell(1, 1);
+  planTitle.value = 'PLAN DE ACCIÓN Y GESTIÓN DE RIESGOS';
+  planTitle.font = { bold: true, size: 14, color: { argb: 'FF002855' } };
+  planTitle.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  const headerRow1 = wsPlan.getRow(2);
+  fixedHeaders.forEach((h, idx) => {
+    wsPlan.mergeCells(2, idx + 1, 3, idx + 1);
+    const cell = wsPlan.getCell(2, idx + 1);
+    cell.value = h.toUpperCase();
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002855' } };
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+    cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+  });
+  for (let a = 0; a < numAnios; a++) {
+    const startCol = fixedHeaders.length + 1 + a * 12;
+    const endCol = startCol + 11;
+    wsPlan.mergeCells(2, startCol, 2, endCol);
+    const cell = wsPlan.getCell(2, startCol);
+    cell.value = `AÑO ${a + 1}`;
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002855' } };
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+    cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+  }
+  const headerRow3 = wsPlan.getRow(3);
+  for (let a = 0; a < numAnios; a++) {
+    for (let m = 0; m < 12; m++) {
+      const col = fixedHeaders.length + 1 + a * 12 + m;
+      const cell = headerRow3.getCell(col);
+      cell.value = m + 1;
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002855' } };
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 9 };
+      cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    }
+  }
+
+  const acts = datos.actividades || [];
+  let dataRow = 4;
+  acts.forEach(a => {
+    const rowValues = [safe(a.objetivo || a.obj), safe(a.actividad), safe(a.resultado), safe(a.participante), safe(a.responsabilidad), safe(a.riesgo), safe(a.mitigacion), safe(a.responsableGestion), safe(a.mesInicio), safe(a.duracionMesesAct)];
+    for (let yr = 1; yr <= numAnios; yr++) {
+      for (let mo = 1; mo <= 12; mo++) {
+        const checked = a.periodoEjecucion?.[`a${yr}`]?.[`m${mo}`];
+        rowValues.push(checked ? 'X' : '');
+      }
+    }
+    const excelRow = wsPlan.getRow(dataRow);
+    rowValues.forEach((v, idx) => {
+      excelRow.getCell(idx + 1).value = v;
+      excelRow.getCell(idx + 1).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+      excelRow.getCell(idx + 1).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    });
+    [1, 2, 3, 6, 7].forEach(col => { excelRow.getCell(col).alignment = { vertical: 'middle', horizontal: 'left', wrapText: true }; });
+    dataRow++;
+  });
+
+  const buffer = await wb.xlsx.writeBuffer();
+  return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -773,6 +896,112 @@ export async function exportarPresupuestoExcel(presupuestos, propuesta, usuario)
 
   const fileName = `Presupuesto_F06_VIE_${cod.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`;
   await guardarWorkbook(wb, fileName);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   3.1 GENERAR FORM-06 COMO BLOB (Para subir a Supabase)
+   ═══════════════════════════════════════════════════════════════ */
+export async function generarBlobForm06Excel(presupuestos, propuesta, usuario) {
+  const totalRubros = Object.values(presupuestos).reduce((acc, curr) => acc + (curr?.length || 0), 0);
+  if (totalRubros === 0) {
+    throw new Error('No hay objetos de gasto registrados para exportar.');
+  }
+
+  const cod = propuesta?.codigoPropuesta || 'FVIE-2027-001';
+  const nom = propuesta?.titulo || 'Sin título';
+  const autor = usuario?.nombre ? `${usuario.nombre} ${usuario.apellido1 || ''}`.trim() : 'Investigador Principal';
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'SGPI — VIE, TEC';
+  wb.created = new Date();
+
+  const anios = [2027, 2028, 2029];
+  let granTotal = 0;
+  const resumenData = [];
+
+  anios.forEach((ano, idx) => {
+    const filas = presupuestos[ano] || [];
+    const subtotal = filas.reduce((a, b) => a + (Number(b.monto) || 0), 0);
+    granTotal += subtotal;
+    const serv = filas.filter(f => f.categoria === 'Servicios').reduce((a, b) => a + (Number(b.monto) || 0), 0);
+    const mat  = filas.filter(f => f.categoria === 'Materiales').reduce((a, b) => a + (Number(b.monto) || 0), 0);
+    const bec  = filas.filter(f => f.categoria === 'Becas').reduce((a, b) => a + (Number(b.monto) || 0), 0);
+    const eq   = filas.filter(f => f.categoria === 'Equipo').reduce((a, b) => a + (Number(b.monto) || 0), 0);
+    resumenData.push({ ano, serv, mat, bec, eq, total: subtotal });
+
+    const ws = wb.addWorksheet(`Año ${idx + 1} (${ano})`);
+    ws.mergeCells('A1:E1');
+    ws.getCell('A1').value = 'FORMULARIO F-06: PRESUPUESTO OPERATIVO DE PROYECTO';
+    ws.getCell('A1').font = { bold: true, size: 14, color: { argb: 'FF002855' } };
+    ws.mergeCells('A2:E2');
+    ws.getCell('A2').value = `${cod} — ${nom}`;
+    ws.getCell('A2').font = { size: 10, italic: true };
+    ws.mergeCells('A3:E3');
+    ws.getCell('A3').value = `Investigador(a): ${autor}  |  Generado: ${hoy()}`;
+    ws.getCell('A3').font = { size: 9, color: { argb: 'FF627D98' } };
+
+    ws.getRow(5).values = ['Código OG', 'Categoría', 'Detalle de Objeto de Gasto', 'Monto (CRC)', 'Justificación Técnica'];
+    ws.columns = [{ width: 16 }, { width: 14 }, { width: 40 }, { width: 18 }, { width: 40 }];
+    const headerRow = ws.getRow(5);
+    for (let c = 1; c <= 5; c++) {
+      const cell = headerRow.getCell(c);
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002855' } };
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+      cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    }
+
+    let r = 6;
+    filas.forEach(f => {
+      ws.getRow(r).values = [f.codigo, f.categoria, f.detalle || '', Number(f.monto) || 0, f.justificacion || ''];
+      ws.getCell(`D${r}`).numFmt = '#,##0.00';
+      for (let c = 1; c <= 5; c++) {
+        ws.getRow(r).getCell(c).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+      }
+      r++;
+    });
+
+    ws.getRow(r).values = ['', '', `Subtotal Año ${idx + 1} (${ano}):`, subtotal, ''];
+    ws.getCell(`C${r}`).font = { bold: true };
+    ws.getCell(`D${r}`).font = { bold: true };
+    ws.getCell(`D${r}`).numFmt = '#,##0.00';
+    ws.getCell(`D${r}`).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+  });
+
+  const wsR = wb.addWorksheet('Resumen Trienal');
+  wsR.mergeCells('A1:F1');
+  wsR.getCell('A1').value = 'RESUMEN CONSOLIDADO TRIENAL (VIE 2027-2029)';
+  wsR.getCell('A1').font = { bold: true, size: 14, color: { argb: 'FF002855' } };
+
+  wsR.getRow(3).values = ['Año', 'Servicios (CRC)', 'Materiales (CRC)', 'Becas (CRC)', 'Equipo (CRC)', 'Total Anual (CRC)'];
+  wsR.columns = [{ width: 12 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 20 }];
+  const headerRowR = wsR.getRow(3);
+  for (let c = 1; c <= 6; c++) {
+    const cell = headerRowR.getCell(c);
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002855' } };
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+    cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+  }
+
+  let rr = 4;
+  resumenData.forEach(d => {
+    wsR.getRow(rr).values = [d.ano, d.serv, d.mat, d.bec, d.eq, d.total];
+    for (let c = 2; c <= 6; c++) {
+      wsR.getRow(rr).getCell(c).numFmt = '#,##0.00';
+      wsR.getRow(rr).getCell(c).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+    }
+    rr++;
+  });
+
+  wsR.getRow(rr).values = ['GRAN TOTAL', '', '', '', '', granTotal];
+  wsR.getCell(`A${rr}`).font = { bold: true, size: 12 };
+  wsR.getCell(`F${rr}`).font = { bold: true, size: 12 };
+  wsR.getCell(`F${rr}`).numFmt = '#,##0.00';
+  wsR.getCell(`F${rr}`).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+
+  const buffer = await wb.xlsx.writeBuffer();
+  return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -980,4 +1209,15 @@ export async function descargarPresupuestoDirectoExcel(propuestaId, propuestaSer
     console.error('Error al exportar presupuesto:', err);
     alert('Error al generar el archivo Excel de presupuesto.');
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HELPER: Subir un Blob a Supabase via el servicio de propuestas
+   ═══════════════════════════════════════════════════════════════ */
+export async function subirBlobASupabase(propuestaService, propuestaId, tipoDocumentoId, blob, nombreArchivo) {
+  if (!blob || blob.size === 0) {
+    throw new Error(`El archivo ${nombreArchivo} está vacío`);
+  }
+  const file = new File([blob], nombreArchivo, { type: blob.type });
+  return await propuestaService.subirDocumentoFormulario(propuestaId, tipoDocumentoId, file);
 }
