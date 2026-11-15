@@ -355,7 +355,7 @@ const VinculacionEvaluar = () => {
                       <div className="archivo-firmado-box">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '18px' }}>📄</span>
-                          <span style={{ fontSize: '13px', fontWeight: 500, color: '#002855' }}>{archivoAdjunto.name}</span>
+                          <span className="archivo-firmado-nombre" style={{ fontSize: '13px', fontWeight: 500 }}>{archivoAdjunto.name}</span>
                           <span style={{ fontSize: '12px', color: '#627d98' }}>({formatFileSize(archivoAdjunto.size)})</span>
                         </div>
                         <button 
@@ -418,7 +418,7 @@ const VinculacionEvaluar = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ fontSize: '24px' }}>📄</span>
                       <div>
-                        <div style={{ fontWeight: 600, color: '#002855' }}>{archivoSubida.name}</div>
+                        <div className="archivo-firmado-nombre" style={{ fontWeight: 600 }}>{archivoSubida.name}</div>
                         <div style={{ fontSize: '13px', color: '#627d98' }}>{formatFileSize(archivoSubida.size)}</div>
                       </div>
                     </div>

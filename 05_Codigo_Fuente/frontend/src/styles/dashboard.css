@@ -6060,3 +6060,331 @@ body.high-contrast-mode .btn-doc-download-action {
   border: 1.5px solid #FFFF00 !important;
   font-weight: 700 !important;
 }
+
+/* ============================================================
+   VINCULACIÓN: ESTILOS ESTÁNDAR Y MODO ALTO CONTRASTE
+   ============================================================ */
+.propuesta-titulo-td {
+  color: var(--tec-azul-principal);
+}
+.empty-state-title {
+  color: var(--tec-azul-principal);
+}
+.archivo-firmado-nombre {
+  color: var(--tec-azul-principal);
+}
+.doc-electronico-card {
+  background-color: #f8fafc;
+}
+
+/* 1. Badges de Escuelas en Alto Contraste */
+.high-contrast-mode .badge-escuela-abbr,
+body.high-contrast-mode .badge-escuela-abbr,
+body.high-contrast .badge-escuela-abbr {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+/* 2. Badges de Estado de Dictamen y Vinculación en Alto Contraste */
+.high-contrast-mode .badge-dictamen-aprobado,
+.high-contrast-mode .badge-dictamen-emitido,
+.high-contrast-mode [class*="badge-dictamen-aprobado"],
+.high-contrast-mode [class*="badge-dictamen-emitido"],
+.high-contrast-mode .badge-status-vinculacion.completada,
+body.high-contrast-mode .badge-dictamen-aprobado,
+body.high-contrast-mode .badge-dictamen-emitido,
+body.high-contrast-mode [class*="badge-dictamen-aprobado"],
+body.high-contrast-mode [class*="badge-dictamen-emitido"],
+body.high-contrast-mode .badge-status-vinculacion.completada,
+body.high-contrast .badge-dictamen-aprobado,
+body.high-contrast .badge-dictamen-emitido,
+body.high-contrast .badge-status-vinculacion.completada {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #22c55e !important;
+  border: 1.5px solid #22c55e !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .badge-dictamen-rechazado,
+.high-contrast-mode [class*="badge-dictamen-rechazado"],
+body.high-contrast-mode .badge-dictamen-rechazado,
+body.high-contrast-mode [class*="badge-dictamen-rechazado"],
+body.high-contrast .badge-dictamen-rechazado {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #ef4444 !important;
+  border: 1.5px solid #ef4444 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion.pendiente,
+body.high-contrast-mode .badge-status-vinculacion.pendiente,
+body.high-contrast .badge-status-vinculacion.pendiente {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion.en-curso,
+body.high-contrast-mode .badge-status-vinculacion.en-curso,
+body.high-contrast .badge-status-vinculacion.en-curso {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #38bdf8 !important;
+  border: 1.5px solid #38bdf8 !important;
+  font-weight: 700 !important;
+}
+
+/* 3. Badges de TRL, PI e Innovación */
+.high-contrast-mode .badge-trl,
+.high-contrast-mode .badge-pi,
+.high-contrast-mode .badge-inn,
+body.high-contrast-mode .badge-trl,
+body.high-contrast-mode .badge-pi,
+body.high-contrast-mode .badge-inn,
+body.high-contrast .badge-trl,
+body.high-contrast .badge-pi,
+body.high-contrast .badge-inn {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+/* 4. Expediente de la Propuesta (Evaluar y Detalle) */
+.high-contrast-mode .expediente-meta-label,
+body.high-contrast-mode .expediente-meta-label,
+body.high-contrast .expediente-meta-label {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .expediente-meta-value,
+body.high-contrast-mode .expediente-meta-value,
+body.high-contrast .expediente-meta-value {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .expediente-resumen-title,
+body.high-contrast-mode .expediente-resumen-title,
+body.high-contrast .expediente-resumen-title {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .expediente-resumen-text,
+body.high-contrast-mode .expediente-resumen-text,
+body.high-contrast .expediente-resumen-text {
+  color: #FFFFFF !important;
+}
+
+/* 5. Detalle del Dictamen */
+.high-contrast-mode .banner-dictamen-recomendado,
+body.high-contrast-mode .banner-dictamen-recomendado,
+body.high-contrast .banner-dictamen-recomendado {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #22c55e !important;
+  border: 2px solid #22c55e !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .dictamen-item-title,
+body.high-contrast-mode .dictamen-item-title,
+body.high-contrast .dictamen-item-title {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .dictamen-item-val,
+body.high-contrast-mode .dictamen-item-val,
+body.high-contrast .dictamen-item-val {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .dictamen-item-sub,
+body.high-contrast-mode .dictamen-item-sub,
+body.high-contrast .dictamen-item-sub {
+  color: #cccccc !important;
+}
+
+.high-contrast-mode .dictamen-item-parrafo,
+body.high-contrast-mode .dictamen-item-parrafo,
+body.high-contrast .dictamen-item-parrafo {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .checklist-item,
+body.high-contrast-mode .checklist-item,
+body.high-contrast .checklist-item {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .checklist-item-empty,
+body.high-contrast-mode .checklist-item-empty,
+body.high-contrast .checklist-item-empty {
+  color: #cbd5e1 !important;
+}
+
+/* 6. Documento Adjunto Card en Alto Contraste */
+.high-contrast-mode .documento-adjunto-card,
+.high-contrast-mode .doc-electronico-card,
+body.high-contrast-mode .documento-adjunto-card,
+body.high-contrast-mode .doc-electronico-card,
+body.high-contrast .documento-adjunto-card,
+body.high-contrast .doc-electronico-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  opacity: 1 !important;
+}
+
+.high-contrast-mode .documento-adjunto-card:hover,
+body.high-contrast-mode .documento-adjunto-card:hover,
+body.high-contrast .documento-adjunto-card:hover {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .documento-adjunto-card .doc-nombre,
+.high-contrast-mode .doc-nombre,
+body.high-contrast-mode .documento-adjunto-card .doc-nombre,
+body.high-contrast-mode .doc-nombre,
+body.high-contrast .documento-adjunto-card .doc-nombre,
+body.high-contrast .doc-nombre {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .documento-adjunto-card .doc-peso,
+.high-contrast-mode .doc-peso,
+body.high-contrast-mode .documento-adjunto-card .doc-peso,
+body.high-contrast-mode .doc-peso,
+body.high-contrast .documento-adjunto-card .doc-peso,
+body.high-contrast .doc-peso {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .doc-download-icon,
+body.high-contrast-mode .doc-download-icon,
+body.high-contrast .doc-download-icon {
+  color: #FFFF00 !important;
+}
+
+/* 7. Firma y pie del Dictamen */
+.high-contrast-mode .dictamen-firma-footer,
+.high-contrast-mode .firma-evaluador,
+.high-contrast-mode .firma-fecha,
+body.high-contrast-mode .dictamen-firma-footer,
+body.high-contrast-mode .firma-evaluador,
+body.high-contrast-mode .firma-fecha,
+body.high-contrast .dictamen-firma-footer,
+body.high-contrast .firma-evaluador,
+body.high-contrast .firma-fecha {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .firma-evaluador strong,
+body.high-contrast-mode .firma-evaluador strong,
+body.high-contrast .firma-evaluador strong {
+  color: #FFFF00 !important;
+}
+
+/* 8. Pestañas, Volver, Enlaces y Dropzone en Vinculación */
+.high-contrast-mode .evaluacion-tabs-header,
+body.high-contrast-mode .evaluacion-tabs-header,
+body.high-contrast .evaluacion-tabs-header {
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .tab-btn,
+body.high-contrast-mode .tab-btn,
+body.high-contrast .tab-btn {
+  color: #FFFFFF !important;
+  background: transparent !important;
+}
+
+.high-contrast-mode .tab-btn.active,
+body.high-contrast-mode .tab-btn.active,
+body.high-contrast .tab-btn.active {
+  color: #FFFF00 !important;
+  border-bottom: 3px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .form-caption-subtext,
+body.high-contrast-mode .form-caption-subtext,
+body.high-contrast .form-caption-subtext {
+  color: #e2e8f0 !important;
+}
+
+.high-contrast-mode .btn-link-volver,
+body.high-contrast-mode .btn-link-volver,
+body.high-contrast .btn-link-volver {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .code-link,
+body.high-contrast-mode .code-link,
+body.high-contrast .code-link {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+  text-decoration: underline !important;
+}
+
+.high-contrast-mode .archivo-firmado-box,
+body.high-contrast-mode .archivo-firmado-box,
+body.high-contrast .archivo-firmado-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .archivo-firmado-nombre,
+body.high-contrast-mode .archivo-firmado-nombre,
+body.high-contrast .archivo-firmado-nombre {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .dropzone-upload-box,
+body.high-contrast-mode .dropzone-upload-box,
+body.high-contrast .dropzone-upload-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px dashed #FFFF00 !important;
+}
+
+.high-contrast-mode .dropzone-title,
+body.high-contrast-mode .dropzone-title,
+body.high-contrast .dropzone-title {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .dropzone-sub,
+body.high-contrast-mode .dropzone-sub,
+body.high-contrast .dropzone-sub {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .propuesta-titulo-td,
+body.high-contrast-mode .propuesta-titulo-td,
+body.high-contrast .propuesta-titulo-td {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .empty-state-title,
+body.high-contrast-mode .empty-state-title,
+body.high-contrast .empty-state-title {
+  color: #FFFFFF !important;
+}
