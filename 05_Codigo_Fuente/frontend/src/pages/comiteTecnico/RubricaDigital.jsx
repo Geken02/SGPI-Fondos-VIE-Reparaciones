@@ -3,7 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { comiteTecnicoService } from '../../services/comiteTecnicoService';
 import PanelDocumentos from '../../components/PanelDocumentos';
 import AnalisisIA from '../../components/AnalisisIA';
-import PDFViewer from '../../components/PDFViewer'; // ✅ 1. Importar el visor de PDF
+import PDFViewer from '../../components/PDFViewer';
+import { generarExcelOficial } from '../../utils/rubricaExcelService';
+import { importarExcelOficial } from '../../utils/rubricaExcelParser';
 
 export default function RubricaDigital() {
   const { propuestaId } = useParams();
@@ -19,7 +21,7 @@ export default function RubricaDigital() {
   });
   const [cargando, setCargando] = useState(true);
   
-  // ✅ 2. Estado para controlar qué PDF está abierto en el modal
+  // Estado para controlar qué PDF está abierto en el modal (por si algún componente aún lo usa)
   const [pdfAbierto, setPdfAbierto] = useState(null); 
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export default function RubricaDigital() {
       try {
         const res = await comiteTecnicoService.obtenerEstructuraRubrica(propuestaId);
         setRubricaData(res.data);
-        setProductos(prev => ({ ...prev, horasSemanales: res.data.horasSemanalesTotales }));
+        setProductos(prev => ({ ...prev, horasSemanales: res.data.horasSemanalesTotales || 0 }));
       } catch (err) {
         console.error('Error cargando rúbrica:', err);
       } finally {
@@ -57,8 +59,49 @@ export default function RubricaDigital() {
 
   const productosCumple = useMemo(() => {
     if (!rubricaData) return false;
-    return productos.cantidadPropuesta >= rubricaData.minimoProductosRequeridos;
+    return productos.cantidadPropuesta >= (rubricaData.minimoProductosRequeridos || 0);
   }, [productos, rubricaData]);
+
+  // =========================================================================
+  // ✅ HANDLERS DE EXCEL OFICIAL
+  // =========================================================================
+  const handleDescargarOficial = () => {
+    try {
+      generarExcelOficial(rubricaData, evaluaciones, productos);
+    } catch (err) {
+      console.error('Error al generar Excel:', err);
+      alert('❌ Error al generar el archivo Excel.');
+    }
+  };
+
+  const handleCargarOficial = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const resultado = await importarExcelOficial(file, rubricaData);
+      
+      if (resultado.errores.length > 0) {
+        alert(`⚠️ Hubo ${resultado.errores.length} errores de formato:\n${resultado.errores.slice(0, 5).join('\n')}`);
+      }
+
+      if (resultado.criteriosProcesados > 0) {
+        if (window.confirm(`Se encontraron ${resultado.criteriosProcesados} criterios evaluados en el archivo.\n\n¿Desea aplicar estos datos a la rúbrica actual?`)) {
+          setEvaluaciones(prev => ({ ...prev, ...resultado.evaluaciones }));
+          alert('✅ Rúbrica oficial cargada y aplicada correctamente.');
+        }
+      } else {
+        alert('No se encontraron criterios evaluados en el archivo.');
+      }
+    } catch (err) {
+      console.error('Error al leer Excel:', err);
+      alert('❌ Error al leer el archivo. Asegúrese de que sea el formato oficial generado por el sistema.');
+    }
+    
+    // Limpiar el input para permitir cargar el mismo archivo nuevamente si es necesario
+    e.target.value = '';
+  };
+  // =========================================================================
 
   const handleSeleccionar = (criterioId, nivel, puntaje) => {
     setEvaluaciones(prev => ({
@@ -269,7 +312,7 @@ export default function RubricaDigital() {
           <div className="producto-info-item">
             <label className="producto-label">Mínimo de productos requeridos</label>
             <div className="producto-valor-display">
-              {rubricaData.minimoProductosRequeridos} producto(s)
+              {rubricaData.minimoProductosRequeridos || 0} producto(s)
             </div>
             <small className="producto-help">Según la Convocatoria</small>
           </div>
@@ -420,7 +463,40 @@ export default function RubricaDigital() {
             <span className="tag">{rubricaData.nombreRubrica}</span>
           </div>
         </div>
-        <div className="header-right">
+        
+        {/* ✅ BOTONES DE EXCEL AGREGADOS AL HEADER */}
+        <div className="header-right" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button 
+            onClick={handleDescargarOficial}
+            style={{ 
+              padding: '8px 14px', background: '#10b981', color: 'white', border: 'none', 
+              borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', 
+              display: 'flex', alignItems: 'center', gap: '6px' 
+            }}
+            title="Descargar rúbrica en formato Excel oficial"
+          >
+            📥 Descargar Excel
+          </button>
+          
+          <input 
+            type="file" 
+            accept=".xlsx,.xls" 
+            onChange={handleCargarOficial} 
+            id="file-upload-excel" 
+            style={{ display: 'none' }} 
+          />
+          <label 
+            htmlFor="file-upload-excel" 
+            style={{ 
+              padding: '8px 14px', background: '#0369A1', color: 'white', borderRadius: '6px', 
+              cursor: 'pointer', fontSize: '13px', fontWeight: '600', display: 'flex', 
+              alignItems: 'center', gap: '6px' 
+            }}
+            title="Cargar rúbrica completada en Excel"
+          >
+            📤 Cargar Excel
+          </label>
+
           <div className="calificacion-box">
             <span className="cal-label">Calificación</span>
             <span className={`cal-valor ${calificacion >= 0.70 ? 'ok' : 'mal'}`}>
@@ -615,16 +691,13 @@ export default function RubricaDigital() {
 
         {/* COLUMNA 3: PANEL DE DOCUMENTOS */}
         <aside className="panel-derecho">
-          {/* ✅ 3. Pasamos la función onVerPdf para que el panel avise a la rúbrica qué PDF abrir */}
-          <PanelDocumentos 
-            propuestaId={propuestaId} 
-            onVerPdf={(url, titulo) => setPdfAbierto({ url, titulo })} 
-          />
+          {/* PanelDocumentos ahora maneja su propio modal internamente con UniversalViewer */}
+          <PanelDocumentos propuestaId={propuestaId} />
         </aside>
 
       </div>
 
-      {/* ✅ 4. Renderizamos el Modal del Visor de PDF condicionalmente al final del componente */}
+      {/* Modal del Visor de PDF (Respaldo por si algún componente lo invoca) */}
       {pdfAbierto && (
         <PDFViewer 
           url={pdfAbierto.url} 
