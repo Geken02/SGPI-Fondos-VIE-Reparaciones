@@ -41,6 +41,7 @@ const Sidebar = () => {
 
   const isItemActive = (path, isRouterActive) => {
     if (isRouterActive) return true;
+    if (path === '/dashboard/bandeja-evaluacion' && (location.pathname === '/dashboard' || location.pathname === '/dashboard/' || location.pathname.includes('/evaluar-propuesta') || location.pathname.includes('/vinculacion') || location.pathname.includes('/bandeja-evaluacion'))) return true;
     if (path === '/comite-tecnico/propuestas-asignadas' && location.pathname.includes('/expediente/')) return true;
     if (path === '/comite-tecnico/propuestas-asignadas' && location.pathname.includes('/dictamen/')) return true;
     if (path === '/dashboard/dictamenes' && location.pathname.includes('/detalle-dictamen')) return true;
@@ -315,11 +316,6 @@ const Sidebar = () => {
     if (esVinculacion) {
       return (
         <>
-          <div className="sidebar-group-title">General</div>
-          <NavLink to="/dashboard" end className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
-            <span className="sidebar-pill-icon">{IconoInicio}</span>
-            <span className="sidebar-pill-label">Inicio</span>
-          </NavLink>
           <div className="sidebar-group-title">Evaluación</div>
           <NavLink to="/dashboard/bandeja-evaluacion" className={({ isActive }) => `sidebar-pill-btn ${isItemActive('/dashboard/bandeja-evaluacion', isActive) ? 'active' : ''}`}>
             <span className="sidebar-pill-icon">{IconoEvaluacion}</span>

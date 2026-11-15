@@ -42,17 +42,20 @@ const VinculacionDashboard = () => {
               : p.nombreEscuela.split(' ').filter(w => w.length > 2).map(w => w[0]).join('').slice(0, 4).toUpperCase()
           ) : '—');
 
+          const tieneDictamen = !!(p.tieneDictamenVinculacion || p.dictamenId || p.numeroOficio);
+
           return {
             id: p.codigoPropuesta || (p.propuestaId ? `FVIE-${p.propuestaId}` : '—'),
             propuestaId: p.propuestaId,
             titulo: p.titulo || 'Sin título registrado',
-            estado: p.tieneDictamenVinculacion ? 'Completada' : 'Pendiente',
+            estado: tieneDictamen ? 'Completada' : 'Pendiente',
+            tieneDictamenVinculacion: tieneDictamen,
             escuela: escuelaAbbr,
             nombreEscuelaCompleto: p.nombreEscuela || '',
             investigador: p.investigadorCoordinador || 'No asignado',
             fecha: formatearFecha(p.fechaEnvio || p.fechaCreacion),
-            accion: p.tieneDictamenVinculacion ? 'Ver Dictamen' : 'Evaluar',
-            tipoAccion: p.tieneDictamenVinculacion ? 'outline' : 'primary'
+            accion: tieneDictamen ? 'Ver Dictamen' : 'Evaluar',
+            tipoAccion: tieneDictamen ? 'outline' : 'primary'
           };
         }));
       } else {
@@ -84,8 +87,8 @@ const VinculacionDashboard = () => {
   });
 
   const totalAsignadas = propuestas.length;
-  const pendientes = propuestas.filter(p => (p.estado || '').toLowerCase().includes('pend') || !p.tieneDictamenVinculacion).length;
-  const completadas = propuestas.filter(p => (p.estado || '').toLowerCase().includes('comp') || p.tieneDictamenVinculacion).length;
+  const pendientes = propuestas.filter(p => (p.estado || '').toLowerCase().includes('pend')).length;
+  const completadas = propuestas.filter(p => (p.estado || '').toLowerCase().includes('comp')).length;
 
   return (
     <div className="vinculacion-dashboard-container">
