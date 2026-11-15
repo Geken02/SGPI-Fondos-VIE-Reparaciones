@@ -5182,3 +5182,220 @@ body.high-contrast .quick-card-btn:hover {
   box-shadow: 0 0 8px rgba(255, 255, 0, 0.4) !important;
 }
 
+/* ============================================================
+   ALTO CONTRASTE: STEPPER FORMULARIO 04, BADGES HISTORIAL Y PUNTOS DONUT
+   ============================================================ */
+
+/* Stepper Formulario 04 en Alto Contraste */
+.high-contrast-mode .form-stepper-container,
+body.high-contrast .form-stepper-container,
+body.high-contrast-mode .form-stepper-container {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+.high-contrast-mode .form-stepper-header,
+body.high-contrast .form-stepper-header,
+body.high-contrast-mode .form-stepper-header {
+  border-bottom: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .stepper-kicker,
+body.high-contrast .stepper-kicker,
+body.high-contrast-mode .stepper-kicker {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .stepper-current-title,
+body.high-contrast .stepper-current-title,
+body.high-contrast-mode .stepper-current-title {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .stepper-current-title strong,
+body.high-contrast .stepper-current-title strong,
+body.high-contrast-mode .stepper-current-title strong {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .stepper-status-badge.badge-completo,
+body.high-contrast .stepper-status-badge.badge-completo,
+body.high-contrast-mode .stepper-status-badge.badge-completo {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #00FF66 !important;
+  border: 1.5px solid #00FF66 !important;
+}
+
+.high-contrast-mode .stepper-status-badge.badge-incompleto,
+body.high-contrast .stepper-status-badge.badge-incompleto,
+body.high-contrast-mode .stepper-status-badge.badge-incompleto {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .stepper-progress-label,
+body.high-contrast .stepper-progress-label,
+body.high-contrast-mode .stepper-progress-label {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .stepper-progress-label strong,
+body.high-contrast .stepper-progress-label strong,
+body.high-contrast-mode .stepper-progress-label strong {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .stepper-progress-track,
+body.high-contrast .stepper-progress-track,
+body.high-contrast-mode .stepper-progress-track {
+  background-color: #222222 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .stepper-progress-fill,
+body.high-contrast .stepper-progress-fill,
+body.high-contrast-mode .stepper-progress-fill {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .form-step-tab,
+body.high-contrast .form-step-tab,
+body.high-contrast-mode .form-step-tab {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .form-step-tab:hover,
+body.high-contrast .form-step-tab:hover,
+body.high-contrast-mode .form-step-tab:hover {
+  background-color: #1a1a1a !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .form-step-tab.active-step,
+body.high-contrast .form-step-tab.active-step,
+body.high-contrast-mode .form-step-tab.active-step {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .form-step-tab.active-step .step-tab-num,
+body.high-contrast .form-step-tab.active-step .step-tab-num,
+body.high-contrast-mode .form-step-tab.active-step .step-tab-num {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border-color: #000000 !important;
+}
+
+.high-contrast-mode .form-step-tab.active-step .step-tab-short-name,
+body.high-contrast .form-step-tab.active-step .step-tab-short-name,
+body.high-contrast-mode .form-step-tab.active-step .step-tab-short-name {
+  color: #000000 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .form-step-tab.active-step .step-tab-status-text,
+body.high-contrast .form-step-tab.active-step .step-tab-status-text,
+body.high-contrast-mode .form-step-tab.active-step .step-tab-status-text {
+  color: #000000 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .step-tab-num,
+body.high-contrast .step-tab-num,
+body.high-contrast-mode .step-tab-num {
+  background: #000000 !important;
+  border: 1px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .form-step-tab.complete-step .step-tab-num,
+body.high-contrast .form-step-tab.complete-step .step-tab-num,
+body.high-contrast-mode .form-step-tab.complete-step .step-tab-num {
+  background: #00FF66 !important;
+  background-color: #00FF66 !important;
+  color: #000000 !important;
+  border-color: #00FF66 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .step-tab-short-name,
+body.high-contrast .step-tab-short-name,
+body.high-contrast-mode .step-tab-short-name {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .step-tab-status-text.text-green,
+body.high-contrast .step-tab-status-text.text-green,
+body.high-contrast-mode .step-tab-status-text.text-green {
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .step-tab-status-text.text-amber,
+body.high-contrast .step-tab-status-text.text-amber,
+body.high-contrast-mode .step-tab-status-text.text-amber {
+  color: #FFFF00 !important;
+}
+
+/* Etiquetas en Historial de Proyectos */
+.high-contrast-mode .historial-tag-badge,
+body.high-contrast .historial-tag-badge,
+body.high-contrast-mode .historial-tag-badge {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+/* Puntos de leyenda del Gráfico de Dona en Alto Contraste */
+.high-contrast-mode .dot.dot-cyan,
+body.high-contrast .dot.dot-cyan,
+body.high-contrast-mode .dot.dot-cyan {
+  background-color: #0284C7 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .dot.dot-dark,
+body.high-contrast .dot.dot-dark,
+body.high-contrast-mode .dot.dot-dark {
+  background-color: #00FF66 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .dot.dot-coral,
+body.high-contrast .dot.dot-coral,
+body.high-contrast-mode .dot.dot-coral {
+  background-color: #FF3333 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .dot.dot-gray,
+body.high-contrast .dot.dot-gray,
+body.high-contrast-mode .dot.dot-gray {
+  background-color: #FFFFFF !important;
+  border: 1.5px solid #000000 !important;
+}
+
+.high-contrast-mode .kpi-legend-row .legend-text,
+body.high-contrast .kpi-legend-row .legend-text,
+body.high-contrast-mode .kpi-legend-row .legend-text {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .kpi-legend-row .legend-text strong,
+body.high-contrast .kpi-legend-row .legend-text strong,
+body.high-contrast-mode .kpi-legend-row .legend-text strong {
+  color: #FFFF00 !important;
+}
+
