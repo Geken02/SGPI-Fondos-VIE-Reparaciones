@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
@@ -82,6 +82,21 @@ const FormularioProyecto = () => {
   const isInitialMount = useRef(true);
   const lastSyncedActividades = useRef('');
 
+
+  // Sincronizar riesgosMitigacion automaticamente desde actividadesCronograma (Item 2 desde Tabla 1)
+  useEffect(() => {
+    const riesgosDeMatriz = actividadesCronograma
+      .filter(act => act.riesgo && act.riesgo.trim() !== '')
+      .map(act => ({
+        id: act.id,
+        riesgo: act.riesgo || '',
+        mitigacion: act.mitigacion || '',
+        responsable: act.responsableGestion || act.responsable || ''
+      }));
+    if (riesgosDeMatriz.length > 0) {
+      setRiesgosMitigacion(riesgosDeMatriz);
+    }
+  }, [actividadesCronograma]);
   // Paso 13: Presupuesto Plurianual Solicitado (Recursos VIE)
   const [presupuestoAnual, setPresupuestoAnual] = useState([
     { ano: 'Año 1', operativo: '', duradero: '' },
@@ -470,6 +485,29 @@ const FormularioProyecto = () => {
     }
   }, [pasoParam]);
 
+  // Helper: rellenar checkboxes de periodo segun mes de inicio y duracion
+  const actualizarPeriodoDesdeMeses = (act, mesIni, durMeses) => {
+    const inicio = parseInt(mesIni, 10);
+    const duracion = parseInt(durMeses, 10);
+    if (isNaN(inicio) || inicio < 1) return;
+    const dur = !isNaN(duracion) && duracion >= 1 ? duracion : 1;
+    const fin = inicio + dur - 1;
+    if (!act.periodoEjecucion) act.periodoEjecucion = crearPeriodoVacio();
+    for (let a = 1; a <= 3; a++) {
+      for (let m = 1; m <= 12; m++) {
+        act.periodoEjecucion[`a${a}`][`m${m}`] = false;
+      }
+    }
+    act.a1 = false; act.a2 = false; act.a3 = false;
+    for (let mesAbs = inicio; mesAbs <= fin && mesAbs <= 36; mesAbs++) {
+      const a = Math.floor((mesAbs - 1) / 12) + 1;
+      const m = ((mesAbs - 1) % 12) + 1;
+      if (a <= 3) {
+        act.periodoEjecucion[`a${a}`][`m${m}`] = true;
+        act[`a${a}`] = true;
+      }
+    }
+  };
   // Helper: crear objeto vacío de periodo de ejecución por meses (Form 05)
   const crearPeriodoVacio = () => {
     const periodo = {};
@@ -2454,6 +2492,7 @@ const guardarBorradorActual = async () => {
                                 onChange={(e) => {
                                   const copia = [...actividadesCronograma];
                                   copia[i].mesInicio = e.target.value;
+                                  actualizarPeriodoDesdeMeses(copia[i], e.target.value, copia[i].duracionMesesAct);
                                   setActividadesCronograma(copia);
                                 }} 
                               />
@@ -2471,6 +2510,7 @@ const guardarBorradorActual = async () => {
                                 onChange={(e) => {
                                   const copia = [...actividadesCronograma];
                                   copia[i].duracionMesesAct = e.target.value;
+                                  actualizarPeriodoDesdeMeses(copia[i], copia[i].mesInicio, e.target.value);
                                   setActividadesCronograma(copia);
                                 }} 
                               />
@@ -2551,6 +2591,7 @@ const guardarBorradorActual = async () => {
                       <tr>
                         <th>Riesgo Identificado (Técnico / Operativo / Financiero)</th>
                         <th>Estrategia de mitigación / Plan de contingencia</th>
+                        <th style={{ width: '130px' }}>Responsable</th>
                         <th style={{ width: '48px', textAlign: 'center' }}>Acción</th>
                       </tr>
                     </thead>

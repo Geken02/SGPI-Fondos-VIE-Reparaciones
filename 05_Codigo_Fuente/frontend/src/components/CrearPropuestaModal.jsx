@@ -301,9 +301,9 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
                     <span className="propietario-rol">Profesor - Investigador Coordinador</span>
                   </div>
                 </div>
-                <div className="link-incorporar-equipo">
-                  + Incorporar co-propietario o integrantes del equipo luego de crear
-                </div>
+                <span className="link-incorporar-equipo">
+                  Incorporar co-propietario o integrantes del equipo luego de crear
+                </span>
               </div>
             </div>
 
