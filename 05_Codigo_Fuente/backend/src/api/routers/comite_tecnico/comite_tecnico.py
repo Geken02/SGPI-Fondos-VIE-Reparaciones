@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 from collections import defaultdict 
+from sqlalchemy import func
 
 from src.database import get_db
 from src.models.usuarios import Usuario
@@ -19,7 +20,7 @@ from src.models.escuelas import Escuela
 from src.models.subsanaciones import Subsanaciones, EstadosSubsanacion 
 from src.models.asignaciones_comite import AsignacionComite
 from src.models.dictamenes import Dictamenes
-from src.models.productos_academicos import ProductosAcademicos
+from src.models.productos_academicos import ProductosAcademicos, TiposProductosAcademicos
 
 from src.utils.dependencias import obtener_usuario_actual
 from src.utils.s3_client import obtener_url_documento
@@ -1105,70 +1106,93 @@ def descargar_rubrica_excel(
     db: Session = Depends(get_db)
 ):
     try:
-
-        
+        # 1. Obtener la propuesta y su modalidad REAL
         propuesta = db.query(Propuesta).filter(Propuesta.propuestaId == propuesta_id).first()
         if not propuesta:
             raise HTTPException(status_code=404, detail="Propuesta no encontrada")
         
-        # 2. Obtener la estructura de la rúbrica desde rubricas_data.py
-        # Asumiendo que propuesta.tipoRubrica tiene valores como "fortalecimiento", "basica_aplicada", "desarrollo_tecnologico"
-        tipo_modalidad = propuesta.tipoRubrica or "fortalecimiento"
+        modalidad = db.query(Modalidades).filter(Modalidades.modalidadId == propuesta.modalidadId).first()
+        if not modalidad:
+            raise HTTPException(status_code=400, detail="La propuesta no tiene una modalidad asignada")
         
-        try:
-            estructura_rubrica = obtener_rubrica(tipo_modalidad)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        
-        # 3. Construir rubrica_data para el generador
+        # Mapear el nombre de la modalidad a las claves de rubricas_data.py
+        nombre_modalidad_lower = modalidad.nombreModalidad.lower()
+        if "fortalecimiento" in nombre_modalidad_lower:
+            tipo_modalidad = "fortalecimiento"
+        elif "desarrollo" in nombre_modalidad_lower:
+            tipo_modalidad = "desarrollo_tecnologico"
+        else:
+            tipo_modalidad = "basica_aplicada" # Asumimos básica/aplicada por defecto si no es desarrollo
+
+        estructura_rubrica = obtener_rubrica(tipo_modalidad)
+
+        # 2. Calcular horas semanales REALES (Suma de la tabla IntegrantesEquipoPropuesta)
+        horas_totales = db.query(func.sum(IntegrantesEquipoPropuesta.horasSemanales)).filter(
+            IntegrantesEquipoPropuesta.propuestaId == propuesta_id
+        ).scalar() or 0
+
+        # 3. Obtener productos académicos REALES (Tablas ProductosAcademicos y TiposProductosAcademicos)
+        productos_query = db.query(ProductosAcademicos, TiposProductosAcademicos.nombreTipoProductoAcademico).join(
+            TiposProductosAcademicos, 
+            ProductosAcademicos.tipoProductoAcademicoId == TiposProductosAcademicos.tipoProductoAcademicoId
+        ).filter(ProductosAcademicos.propuestaId == propuesta_id).all()
+
+        tipos_seleccionados = [p.nombreTipoProductoAcademico for p in productos_query]
+        cantidad_productos = len(productos_query)
+
+        minimo_productos = calcular_minimo_productos(tipo_modalidad, horas_totales)
+
+        # 4. Obtener evaluaciones REALES (Tablas Evaluaciones y DetalleEvaluacion)
+        # Nota: En tu esquema no hay columna "nivel", se deriva del puntaje (0, 6, 8, 10)
+        evaluaciones_query = db.query(DetalleEvaluacion).join(
+            Evaluaciones, DetalleEvaluacion.evaluacionId == Evaluaciones.evaluacionId
+        ).filter(Evaluaciones.propuestaId == propuesta_id).all()
+
+        evaluaciones = {}
+        for det in evaluaciones_query:
+            puntaje = float(det.puntajeObtenido)
+            # Derivar nivel basado en la escala oficial
+            if puntaje == 0: nivel = "Deficiente"
+            elif puntaje == 6: nivel = "Regular"
+            elif puntaje == 8: nivel = "Bueno"
+            elif puntaje == 10: nivel = "Excelente"
+            else: nivel = ""
+
+            evaluaciones[str(det.criterioId)] = {
+                "nivel": nivel,
+                "puntaje": puntaje,
+                "justificacion": det.justificacion or ""
+            }
+
+        # 5. Construir el payload exacto para el generador
         rubrica_data = {
-            "titulo": propuesta.titulo or "",
-            "escuela": propuesta.escuela or "",
-            "codigoPropuesta": propuesta.codigoPropuesta or f"P-{propuesta_id}",
+            "titulo": propuesta.titulo,
+            "escuela": "Escuela asignada", # Si necesitas el nombre real, haz un JOIN con Escuelas
+            "codigoPropuesta": propuesta.codigoPropuesta,
             "nombreRubrica": estructura_rubrica["nombre"],
-            "minimoProductosRequeridos": calcular_minimo_productos(tipo_modalidad, propuesta.horasSemanales or 0),
+            "minimoProductosRequeridos": minimo_productos,
             "estructuraRubrica": {
                 "secciones": estructura_rubrica["secciones"],
                 "seccion_productos": estructura_rubrica.get("seccion_productos", {})
             }
         }
-        
-        # 4. Obtener evaluaciones previas (si existen)
-        # Ajusta esto según tus modelos reales
-        evaluaciones = {}
-        try:
 
-            
-            evals = db.query(DetalleEvaluacion).filter(
-                DetalleEvaluacion.propuestaId == propuesta_id
-            ).all()
-            
-            for e in evals:
-                evaluaciones[str(e.criterioId)] = {
-                    "nivel": e.nivel or "",
-                    "puntaje": e.puntaje,
-                    "justificacion": e.justificacion or ""
-                }
-        except Exception as e:
-            print(f"⚠️ No se pudieron cargar evaluaciones previas: {e}")
-        
-        # 5. Obtener productos (si existen)
-        productos = {
-            "horasSemanales": propuesta.horasSemanales or 0,
-            "cantidadPropuesta": propuesta.cantidadProductos or 0,
-            "tiposSeleccionados": propuesta.tiposProductos or []
+        productos_data = {
+            "horasSemanales": float(horas_totales),
+            "cantidadPropuesta": cantidad_productos,
+            "tiposSeleccionados": tipos_seleccionados
         }
+
+        # 6. Generar y descargar
+        excel_bytes = generar_rubrica_excel(rubrica_data, evaluaciones, productos_data)
         
-        # 6. Generar el Excel
-        excel_bytes = generar_rubrica_excel(rubrica_data, evaluaciones, productos)
-        
-        # 7. Retornar como descarga
-        filename = f"Rubrica_Oficial_{rubrica_data.get('codigoPropuesta', propuesta_id)}.xlsx"
+        filename = f"Rubrica_Oficial_{propuesta.codigoPropuesta}.xlsx"
         return StreamingResponse(
             BytesIO(excel_bytes),
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'}
         )
+
     except HTTPException:
         raise
     except Exception as e:
