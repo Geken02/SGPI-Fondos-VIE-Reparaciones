@@ -745,9 +745,19 @@ const guardarBorradorActual = async () => {
         console.log('✅ Documento guardado en BD y SeaweedFS:', respuesta);
         setMensajeGuardado(`Guardado y documento generado ${ahora}`);
 
-      } catch (err) {
+            } catch (err) {
         console.error('❌ Error al generar/subir el PDF:', err);
-        setMensajeGuardado(`Datos guardados, pero falló el PDF: ${err.message}`);
+        
+        // ✅ Esto imprime el detalle exacto que devuelve FastAPI
+        if (err.response?.status === 422) {
+          console.error('🔍 Detalle del error 422 de FastAPI:', err.response.data);
+        }
+        
+        const msg = err.response?.data?.detail 
+          ? JSON.stringify(err.response.data.detail) 
+          : (err.message || 'Error desconocido');
+          
+        setMensajeGuardado(`Datos guardados, pero falló el PDF: ${msg.substring(0, 80)}`);
       }
       // ========================================================================
 
