@@ -198,7 +198,7 @@ const VinculacionDetalleDictamen = () => {
                     <div className="checklist-item">✓ Contiene información confidencial</div>
                   )}
                   {!tieneDeclaraciones && (
-                    <div className="checklist-item" style={{ color: '#627d98' }}>
+                    <div className="checklist-item checklist-item-empty">
                       No se registraron declaraciones adicionales de PI o innovación para esta propuesta.
                     </div>
                   )}
@@ -224,7 +224,7 @@ const VinculacionDetalleDictamen = () => {
                     <span className="doc-download-icon">📥</span>
                   </div>
                 ) : (
-                  <div className="documento-adjunto-card" style={{ cursor: 'default', background: '#f8fafc', opacity: 0.85 }}>
+                  <div className="documento-adjunto-card doc-electronico-card" style={{ cursor: 'default' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ fontSize: '20px' }}>📝</span>
                       <div>

@@ -42,17 +42,20 @@ const VinculacionDashboard = () => {
               : p.nombreEscuela.split(' ').filter(w => w.length > 2).map(w => w[0]).join('').slice(0, 4).toUpperCase()
           ) : '—');
 
+          const tieneDictamen = !!(p.tieneDictamenVinculacion || p.dictamenId || p.numeroOficio);
+
           return {
             id: p.codigoPropuesta || (p.propuestaId ? `FVIE-${p.propuestaId}` : '—'),
             propuestaId: p.propuestaId,
             titulo: p.titulo || 'Sin título registrado',
-            estado: p.tieneDictamenVinculacion ? 'Completada' : 'Pendiente',
+            estado: tieneDictamen ? 'Completada' : 'Pendiente',
+            tieneDictamenVinculacion: tieneDictamen,
             escuela: escuelaAbbr,
             nombreEscuelaCompleto: p.nombreEscuela || '',
             investigador: p.investigadorCoordinador || 'No asignado',
             fecha: formatearFecha(p.fechaEnvio || p.fechaCreacion),
-            accion: p.tieneDictamenVinculacion ? 'Ver Dictamen' : 'Evaluar',
-            tipoAccion: p.tieneDictamenVinculacion ? 'outline' : 'primary'
+            accion: tieneDictamen ? 'Ver Dictamen' : 'Evaluar',
+            tipoAccion: tieneDictamen ? 'outline' : 'primary'
           };
         }));
       } else {
@@ -84,8 +87,8 @@ const VinculacionDashboard = () => {
   });
 
   const totalAsignadas = propuestas.length;
-  const pendientes = propuestas.filter(p => (p.estado || '').toLowerCase().includes('pend') || !p.tieneDictamenVinculacion).length;
-  const completadas = propuestas.filter(p => (p.estado || '').toLowerCase().includes('comp') || p.tieneDictamenVinculacion).length;
+  const pendientes = propuestas.filter(p => (p.estado || '').toLowerCase().includes('pend')).length;
+  const completadas = propuestas.filter(p => (p.estado || '').toLowerCase().includes('comp')).length;
 
   return (
     <div className="vinculacion-dashboard-container">
@@ -197,7 +200,7 @@ const VinculacionDashboard = () => {
                         {item.id}
                       </span>
                     </td>
-                    <td style={{ fontWeight: 500, color: '#002855', maxWidth: '320px' }}>
+                    <td className="propuesta-titulo-td" style={{ fontWeight: 500, maxWidth: '320px' }}>
                       {item.titulo}
                     </td>
                     <td>
@@ -227,7 +230,7 @@ const VinculacionDashboard = () => {
                   <td colSpan="7" style={{ textAlign: 'center', padding: '48px 20px', color: '#627d98' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                       <div style={{ fontSize: '28px', color: '#0369A1' }}>📋</div>
-                      <div style={{ fontSize: '16px', fontWeight: 500, color: '#002855' }}>
+                      <div className="empty-state-title" style={{ fontSize: '16px', fontWeight: 500 }}>
                         No hay propuestas asignadas actualmente
                       </div>
                       <div style={{ fontSize: '13px', color: '#829ab1', maxWidth: '460px', lineHeight: 1.4 }}>

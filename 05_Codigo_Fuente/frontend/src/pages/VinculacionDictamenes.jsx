@@ -204,7 +204,7 @@ const VinculacionDictamenes = () => {
                         {item.id}
                       </span>
                     </td>
-                    <td style={{ fontWeight: 500, color: '#002855' }}>
+                    <td className="propuesta-titulo-td" style={{ fontWeight: 500 }}>
                       {item.titulo}
                     </td>
                     <td>
@@ -234,7 +234,7 @@ const VinculacionDictamenes = () => {
                   <td colSpan="7" style={{ textAlign: 'center', padding: '48px 20px', color: '#627d98' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                       <div style={{ fontSize: '28px', color: '#0369A1' }}>📄</div>
-                      <div style={{ fontSize: '16px', fontWeight: 500, color: '#002855' }}>
+                      <div className="empty-state-title" style={{ fontSize: '16px', fontWeight: 500 }}>
                         No se han emitido dictámenes todavía
                       </div>
                       <div style={{ fontSize: '13px', color: '#829ab1', maxWidth: '460px', lineHeight: 1.4 }}>
