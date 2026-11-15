@@ -107,12 +107,12 @@ export const propuestaService = {
     return response.data;
   },
 
-  subirDocumentoFormulario: async (propuestaId, tipoDocumentoId, archivo) => {
+    subirDocumentoFormulario: async (propuestaId, tipoDocumentoId, archivo) => {
     const formData = new FormData();
-    
+    // El tercer parámetro (nombre) es crucial para que FormData lo trate como archivo
     formData.append('archivo', archivo, archivo.name || 'documento.pdf');
     formData.append('tipo_documento_id', String(tipoDocumentoId));
-
+    
     console.log('📤 Enviando al backend:', {
       propuestaId,
       tipoDocumentoId,
