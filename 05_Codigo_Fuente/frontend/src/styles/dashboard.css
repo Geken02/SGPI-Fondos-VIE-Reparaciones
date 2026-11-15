@@ -5873,3 +5873,190 @@ body.high-contrast-mode .switch input:checked + .slider {
 body.high-contrast-mode .vinculacion-table td {
   color: #FFFFFF !important;
 }
+
+/* ============================================================
+   CONVOCATORIAS: Tarjeta de Propuesta Activa y Documentos Modal
+   ============================================================ */
+.convocatoria-propuesta-activa-box {
+  margin: 12px 0;
+  padding: 10px 12px;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.convocatoria-propuesta-activa-box .propuesta-activa-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.convocatoria-propuesta-activa-box .propuesta-activa-code {
+  color: #1e40af;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.convocatoria-propuesta-activa-box .propuesta-activa-title {
+  color: #1e3a8a;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.badge-convocatoria-cerrada-label {
+  font-size: 11px;
+  color: #b91c1c;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+.convocatoria-modal-doc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+.convocatoria-modal-doc-item .doc-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #1e293b;
+}
+.btn-doc-download-action {
+  border: none;
+  background: #0369A1;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* ============================================================
+   ALTO CONTRASTE – MÓDULO DE CONVOCATORIAS
+   ============================================================ */
+
+/* Metadatos de la tarjeta de convocatoria */
+.high-contrast-mode .convocatoria-meta-block,
+body.high-contrast-mode .convocatoria-meta-block,
+body.high-contrast .convocatoria-meta-block {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .convocatoria-meta-block .meta-line,
+body.high-contrast-mode .convocatoria-meta-block .meta-line,
+body.high-contrast .convocatoria-meta-block .meta-line {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .convocatoria-meta-block .meta-bold-label,
+body.high-contrast-mode .convocatoria-meta-block .meta-bold-label,
+body.high-contrast .convocatoria-meta-block .meta-bold-label {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .convocatoria-meta-block .meta-muted-label,
+body.high-contrast-mode .convocatoria-meta-block .meta-muted-label,
+body.high-contrast .convocatoria-meta-block .meta-muted-label {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+/* Caja de Propuesta en Trámite / Activa */
+.high-contrast-mode .convocatoria-propuesta-activa-box,
+body.high-contrast-mode .convocatoria-propuesta-activa-box,
+body.high-contrast .convocatoria-propuesta-activa-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+.high-contrast-mode .convocatoria-propuesta-activa-box .propuesta-activa-code,
+body.high-contrast-mode .convocatoria-propuesta-activa-box .propuesta-activa-code,
+body.high-contrast .convocatoria-propuesta-activa-box .propuesta-activa-code {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .convocatoria-propuesta-activa-box .propuesta-activa-title,
+body.high-contrast-mode .convocatoria-propuesta-activa-box .propuesta-activa-title,
+body.high-contrast .convocatoria-propuesta-activa-box .propuesta-activa-title {
+  color: #FFFFFF !important;
+}
+
+/* Botones dentro de la tarjeta de convocatoria */
+.high-contrast-mode .btn-conv-aplicar,
+body.high-contrast-mode .btn-conv-aplicar,
+body.high-contrast .btn-conv-aplicar {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-conv-documentos,
+body.high-contrast-mode .btn-conv-documentos,
+body.high-contrast .btn-conv-documentos {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .btn-conv-documentos:hover,
+body.high-contrast-mode .btn-conv-documentos:hover,
+body.high-contrast .btn-conv-documentos:hover {
+  background-color: #222222 !important;
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-conv-proximamente,
+body.high-contrast-mode .btn-conv-proximamente,
+body.high-contrast .btn-conv-proximamente {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #CCCCCC !important;
+  border: 1.5px solid #777777 !important;
+  cursor: not-allowed !important;
+}
+
+.high-contrast-mode .badge-convocatoria-cerrada-label,
+body.high-contrast-mode .badge-convocatoria-cerrada-label {
+  color: #ff6b6b !important;
+  font-weight: 700 !important;
+}
+
+/* Modal de documentos en alto contraste */
+.high-contrast-mode .convocatoria-modal-doc-item,
+body.high-contrast-mode .convocatoria-modal-doc-item,
+body.high-contrast .convocatoria-modal-doc-item {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .convocatoria-modal-doc-item .doc-item-left,
+body.high-contrast-mode .convocatoria-modal-doc-item .doc-item-left {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-doc-download-action,
+body.high-contrast-mode .btn-doc-download-action {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
