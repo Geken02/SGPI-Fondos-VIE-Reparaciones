@@ -90,47 +90,50 @@ const handleDescargarOficial = async () => {
     alert('❌ Error al generar el Excel: ' + msg);
   }
 };
-  const handleCargarOficial = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+   const handleCargarOficial = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  try {
-    const resultado = await importarExcelOficial(file, rubricaData);
-    
-    if (resultado.errores.length > 0) {
-      alert(`⚠️ Hubo ${resultado.errores.length} errores de formato:\n${resultado.errores.slice(0, 5).join('\n')}`);
-    }
-
-    if (resultado.criteriosProcesados > 0) {
-      const evaluacionesValidas = {};
-      Object.entries(resultado.evaluaciones).forEach(([criterioId, ev]) => {
-        const puntajeNum = parseFloat(ev.puntaje);
-        if (!isNaN(puntajeNum) && [0, 6, 8, 10].includes(puntajeNum)) {
-          evaluacionesValidas[criterioId] = {
-            ...ev,
-            puntaje: puntajeNum,
-            justificacionRequerida: puntajeNum < 10 || 
-              rubricaData.estructuraRubrica.secciones
-                .flatMap(s => s.criterios)
-                .find(c => c.id === parseInt(criterioId))?.es_requisito_obligatorio
-          };
-        }
-      });
-
-      if (window.confirm(`Se encontraron ${Object.keys(evaluacionesValidas).length} criterios evaluados en el archivo.\n\n¿Desea aplicar estos datos a la rúbrica actual?`)) {
-        setEvaluaciones(prev => ({ ...prev, ...evaluacionesValidas }));
-        alert('✅ Rúbrica oficial cargada y aplicada correctamente.');
+    try {
+      // Asumiendo que importarExcelOficial está importado arriba
+      const resultado = await importarExcelOficial(file, rubricaData);
+      
+      if (resultado.errores && resultado.errores.length > 0) {
+        alert(`⚠️ Hubo ${resultado.errores.length} errores de formato:\n${resultado.errores.slice(0, 5).join('\n')}`);
       }
-    } else {
-      alert('No se encontraron criterios evaluados en el archivo.');
+
+      if (resultado.criteriosProcesados > 0) {
+        // Filtrar solo evaluaciones válidas
+        const evaluacionesValidas = {};
+        Object.entries(resultado.evaluaciones).forEach(([criterioId, ev]) => {
+          const puntajeNum = parseFloat(ev.puntaje);
+          if (!isNaN(puntajeNum) && [0, 6, 8, 10].includes(puntajeNum)) {
+            const criterioReal = rubricaData.estructuraRubrica.secciones
+              .flatMap(s => s.criterios)
+              .find(c => c.id === parseInt(criterioId));
+              
+            evaluacionesValidas[criterioId] = {
+              ...ev,
+              puntaje: puntajeNum,
+              justificacionRequerida: puntajeNum < 10 || criterioReal?.es_requisito_obligatorio
+            };
+          }
+        });
+
+        if (window.confirm(`Se encontraron ${Object.keys(evaluacionesValidas).length} criterios válidos. ¿Aplicar?`)) {
+          setEvaluaciones(prev => ({ ...prev, ...evaluacionesValidas }));
+          alert('✅ Rúbrica cargada correctamente.');
+        }
+      } else {
+        alert('No se encontraron criterios evaluados en el archivo.');
+      }
+    } catch (err) {
+      console.error('Error al leer Excel:', err);
+      alert('❌ Error al leer el archivo. Verifica la consola (F12).');
     }
-  } catch (err) {
-    console.error('Error al leer Excel:', err);
-    alert('❌ Error al leer el archivo. Asegúrese de que sea el formato oficial generado por el sistema.');
-  }
-  
-  e.target.value = '';
-};
+    
+    e.target.value = ''; // Limpiar input
+  };
   // =========================================================================
 
   const handleSeleccionar = (criterioId, nivel, puntaje) => {
