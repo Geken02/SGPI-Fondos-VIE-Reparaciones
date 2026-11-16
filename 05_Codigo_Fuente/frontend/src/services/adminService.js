@@ -11,12 +11,12 @@ export const adminService = {
 
   // === ROLES DE USUARIO ===
   obtenerRolesUsuario: (usuarioId) => api.get(`/api/admin/usuarios/${usuarioId}/roles`),
-  asignarRol: (usuarioId, data) => api.post(`/api/admin/usuarios/${usuarioId}/roles`, data),
+  asignarRol: (usuarioId, data) => api.post(`/api/admin/usuarios/${usuarioId}/roles/`, data),
   revocarRol: (usuarioId, usuarioRolId) => api.delete(`/api/admin/usuarios/${usuarioId}/roles/${usuarioRolId}`),
 
   // === CATÁLOGO DE ROLES ===
   listarRoles: (params = {}) => api.get('/api/admin/roles', { params }),
-  crearRol: (data) => api.post('/api/admin/roles', data),
+  crearRol: (data) => api.post('/api/admin/roles/', data),
   actualizarRol: (id, data) => api.patch(`/api/admin/roles/${id}`, data),
   cambiarEstadoRol: (id, activo) => api.put(`/api/admin/roles/${id}/estado`, { activo }),
 
