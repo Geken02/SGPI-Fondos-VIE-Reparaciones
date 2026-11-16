@@ -878,21 +878,19 @@ def propuestas_asignadas(
             
             # Verificar si existe dictamen
             try:
-                dictamen_existente = db.query(Dictamenes).filter(
-                    Dictamenes.propuestaId == p.propuestaId
+                dictamen_comite = db.query(Dictamenes).filter(
+                    Dictamenes.propuestaId == p.propuestaId,
+                    Dictamenes.tipoDictamenId == 2  # ← FILTRO CLAVE: solo Comité Técnico
                 ).first()
                 
-                ya_tiene_dictamen = dictamen_existente is not None
+                ya_tiene_dictamen = dictamen_comite is not None
                 
-                print(f"📝 Dictamen existente: {dictamen_existente}")
-                print(f"✅ Ya tiene dictamen: {ya_tiene_dictamen}")
+                print(f"📝 Dictamen Comité para propuesta {p.propuestaId}: {dictamen_comite}")
+                print(f"✅ Ya tiene dictamen de Comité: {ya_tiene_dictamen}")
                 
-                if ya_tiene_dictamen:
-                    print(f"🎯 Estado asignado: 'Dictamen Emitido'")
             except Exception as e:
                 print(f"❌ ERROR al consultar dictamenes: {str(e)}")
                 ya_tiene_dictamen = False
-                print(f"⚠️ Estado por error: 'Completada' (fallback)")
             
             # 7. Determinar el estado para la UI
             if es_gestor:
