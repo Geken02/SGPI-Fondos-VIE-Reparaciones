@@ -16,9 +16,12 @@ from src.api.schemas.consejo_escuela.acuerdos import (
     AcuerdoActualizar,
     AcuerdoRespuesta,
 )
+from src.models.propuesta_documentos import PropuestaDocumentos, TiposDocumento
 from src.services.consejo_escuela import acuerdo_service
 from src.services.acuerdo_generator import generar_acuerdo_word
 from src.utils.s3_client import s3_client, S3_BUCKET_NAME, obtener_url_documento
+import hashlib
+from src.utils.dependencias import obtener_usuario_actual
 
 router = APIRouter(
     prefix="/consejo-escuela/acuerdos",
@@ -102,34 +105,42 @@ def obtener_acuerdo(acuerdo_id: int, db: Session = Depends(get_db)):
     return acuerdo
 
 @router.post("/", response_model=AcuerdoRespuesta, status_code=status.HTTP_201_CREATED)
-def crear_acuerdo(datos: AcuerdoCrear, db: Session = Depends(get_db)):
+def crear_acuerdo(
+    datos: AcuerdoCrear,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obtener_usuario_actual)
+):
     """
-    Crea el acuerdo y genera automáticamente el documento Word (Form-07 o Form-08),
-    lo sube a S3 y actualiza el registro con la ruta del archivo.
+    Crea el acuerdo, genera el documento Word oficial (Form-07 o Form-08),
+    lo sube a S3 en la ruta de la propuesta, y REGISTRA en PropuestaDocumentos
+    para que sea visible en el expediente y otros módulos.
     """
+
+  
+    TIPO_DOC_ACUERDO = 7  # ← AJUSTA ESTE NÚMERO al ID real de tu BD
+
     try:
         # 1. Crear el acuerdo en la BD
         acuerdo = acuerdo_service.crear_acuerdo(db, datos)
-        
-        # 2. Generar el documento automáticamente
+
+        # 2. Obtener datos completos de la propuesta
         propuesta = db.query(Propuesta).filter(Propuesta.propuestaId == acuerdo.propuestaId).first()
         if not propuesta:
+            db.rollback()
             raise HTTPException(status_code=404, detail="Propuesta no encontrada")
-        
+
         escuela = db.query(Escuela).filter(Escuela.escuelaId == propuesta.escuelaId).first()
         modalidad = db.query(Modalidades).filter(Modalidades.modalidadId == propuesta.modalidadId).first()
-        tipo_acuerdo = db.query(TiposAcuerdo).filter(TiposAcuerdo.tipoAcuerdoId == acuerdo.tipoAcuerdoId).first()
-        
-        # Obtener integrantes
+
+        # 3. Obtener integrantes
         integrantes = db.query(IntegrantesEquipoPropuesta).filter(
             IntegrantesEquipoPropuesta.propuestaId == propuesta.propuestaId
         ).all()
-        
+
         integrantes_data = []
         for intg in integrantes:
             usuario_intg = db.query(Usuario).filter(Usuario.usuarioId == intg.usuarioId).first()
             tipo_hora = db.query(TiposHora).filter(TiposHora.tipoHoraId == intg.tipoHoraId).first()
-            
             integrantes_data.append({
                 "nombre": f"{usuario_intg.nombreUsuario} {usuario_intg.apellido1Usuario}" if usuario_intg else "Desconocido",
                 "escuela": escuela.nombreEscuela if escuela else "TEC",
@@ -138,12 +149,12 @@ def crear_acuerdo(datos: AcuerdoCrear, db: Session = Depends(get_db)):
                 "tipoHora": tipo_hora.codigoTipo if tipo_hora else "VIE",
                 "periodo": f"{propuesta.fechaInicio.year}-{propuesta.fechaFinalizacion.year}" if propuesta.fechaInicio else "2027-2029"
             })
-        
-        # Determinar si es Form-07 (coordinadora) o Form-08 (participante)
-        es_coordinadora = True  # Por defecto Form-07
-        tipo_formulario = "Form-07" if es_coordinadora else "Form-08"
-        
-        # 3. Generar el documento Word
+
+        # 4. Determinar Form-07 (coordinadora) o Form-08 (participante)
+        tipo_formulario = "Form-07"  # Por defecto
+        es_coordinadora = True
+
+        # 5. Generar el documento Word
         doc_bytes = generar_acuerdo_word({
             "numeroAcuerdo": acuerdo.numeroAcuerdo or f"AC-{acuerdo.acuerdoId}-2027",
             "fechaAcuerdo": acuerdo.fechaAcuerdo.isoformat() if acuerdo.fechaAcuerdo else None,
@@ -160,11 +171,14 @@ def crear_acuerdo(datos: AcuerdoCrear, db: Session = Depends(get_db)):
             "horasAprobadas": float(acuerdo.horasAprobadas) if acuerdo.horasAprobadas else 0,
             "tipoFormulario": tipo_formulario
         })
-        
-        # 4. Subir a S3
+
+        # 6. Calcular checksum
+        checksum = hashlib.sha256(doc_bytes).hexdigest()
+
+        # 7. SUBIR A S3 EN LA RUTA CORRECTA (misma carpeta que los demás documentos)
         nombre_archivo = f"{tipo_formulario}_{propuesta.codigoPropuesta}_{acuerdo.acuerdoId}.docx"
         ruta_s3 = f"propuestas/{propuesta.propuestaId}/{nombre_archivo}"
-        
+
         try:
             s3_client.put_object(
                 Bucket=S3_BUCKET_NAME,
@@ -172,21 +186,41 @@ def crear_acuerdo(datos: AcuerdoCrear, db: Session = Depends(get_db)):
                 Body=doc_bytes,
                 ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
-            print(f"✅ Documento subido a S3: {ruta_s3}")
+            print(f"Acuerdo subido a S3: {ruta_s3}")
         except Exception as e:
-            print(f"⚠️ Error al subir a S3: {e}")
-            # No fallamos la creación del acuerdo si falla S3
-        
-        # 5. Actualizar el registro con la ruta del archivo
+            print(f"Error al subir a S3: {e}")
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Fallo al subir documento a S3: {str(e)}")
+
+        # 8. REGISTRAR EN PropuestaDocumentos (PARA QUE APAREZCA EN EL EXPEDIENTE)
+        nuevo_documento = PropuestaDocumentos(
+            propuestaId=propuesta.propuestaId,
+            tipoDocumentoId=TIPO_DOC_ACUERDO,
+            rutaArchivo=ruta_s3,
+            nombreArchivo=nombre_archivo,
+            tamanioBytes=len(doc_bytes),
+            checksum=checksum,
+            usuarioCargaId=usuario.usuarioId,
+            activo=True,
+            usuarioAuditoriaId=usuario.usuarioId,
+            ultimaAuditoria=datetime.now(timezone.utc)
+        )
+        db.add(nuevo_documento)
+        print(f"Acuerdo registrado en PropuestaDocumentos (ID={nuevo_documento.documentoId}, tipo={TIPO_DOC_ACUERDO})")
+
+        # 9. Actualizar el registro del acuerdo con la ruta
         acuerdo.rutaArchivo = ruta_s3
+        acuerdo.usuarioAuditoriaId = usuario.usuarioId
         acuerdo.ultimaAuditoria = datetime.now(timezone.utc)
+
+        # 10. Commit final
         db.commit()
         db.refresh(acuerdo)
-        
-        # 6. Obtener URL pública
+        db.refresh(nuevo_documento)
+
+        # 11. Obtener URL pública
         url_publica = obtener_url_documento(ruta_s3)
-        
-        # 7. Retornar respuesta con la URL
+
         return {
             "acuerdoId": acuerdo.acuerdoId,
             "propuestaId": acuerdo.propuestaId,
@@ -199,20 +233,23 @@ def crear_acuerdo(datos: AcuerdoCrear, db: Session = Depends(get_db)):
             "presupuestoAprobado": acuerdo.presupuestoAprobado,
             "rutaArchivo": ruta_s3,
             "urlDescarga": url_publica,
+            "documentoId": nuevo_documento.documentoId,  
             "usuarioFirmaId": acuerdo.usuarioFirmaId,
             "creadoEn": acuerdo.creadoEn,
             "usuarioAuditoriaId": acuerdo.usuarioAuditoriaId,
             "ultimaAuditoria": acuerdo.ultimaAuditoria
         }
-        
+
     except ValueError as error:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(error),
-        ) from error
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
-        print(f"❌ Error al crear acuerdo: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al crear acuerdo: {str(e)}"
