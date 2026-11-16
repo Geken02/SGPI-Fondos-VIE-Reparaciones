@@ -88,6 +88,12 @@ class Dictamenes(Base):
     def setPropuestaId(self, valor):
         self.propuestaId = valor
 
+    def getTipoDictamenId(self):
+        return self.tipoDictamenId
+
+    def setTipoDictamenId(self, valor):
+        self.tipoDictamenId = valor
+
     def getNumeroOficio(self):
         return self.numeroOficio
 
