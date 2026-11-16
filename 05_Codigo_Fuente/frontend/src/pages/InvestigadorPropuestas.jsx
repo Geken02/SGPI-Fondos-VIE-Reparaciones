@@ -17,49 +17,168 @@ const InvestigadorPropuestas = () => {
   const [subiendoFormulario, setSubiendoFormulario] = useState({});
   const [cancelando, setCancelando] = useState({});
 
-  const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codigoForm, e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codigoForm, e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    if (file.size > 25 * 1024 * 1024) {
-      alert('El archivo no puede superar los 25 MB.');
-      return;
-    }
+  // 1. Validación de tamaño (25 MB máximo)
+  if (file.size > 25 * 1024 * 1024) {
+    alert('El archivo no puede superar los 25 MB.');
+    e.target.value = '';
+    return;
+  }
 
-    const key = `${propuestaId}_${tipoDocumentoId}`;
-    setSubiendoFormulario(prev => ({ ...prev, [key]: true }));
-
-    try {
-      await propuestaService.subirDocumentoFormulario(propuestaId, tipoDocumentoId, file);
-      
-      // Marcar completado en el localStorage respectivo para feedback inmediato
-      if (tipoDocumentoId === 1) {
-        localStorage.setItem(`propuesta_${propuestaId}_form04_enviado`, 'true');
-      } else if (tipoDocumentoId === 2) {
-        localStorage.setItem(`propuesta_${propuestaId}_form05_enviado`, 'true');
-      } else if (tipoDocumentoId === 3) {
-        localStorage.setItem(`propuesta_${propuestaId}_form06_enviado`, 'true');
-      }
-
-      alert(`¡Archivo "${file.name}" guardado exitosamente en SeaweedFS para ${codigoForm}!
-        El formulario ha quedado registrado y completado.`);
-      cargarPropuestas();
-    } catch (err) {
-      console.warn('Error al subir documento a SeaweedFS:', err);
-      if (tipoDocumentoId === 1) {
-        localStorage.setItem(`propuesta_${propuestaId}_form04_enviado`, 'true');
-      } else if (tipoDocumentoId === 2) {
-        localStorage.setItem(`propuesta_${propuestaId}_form05_enviado`, 'true');
-      } else if (tipoDocumentoId === 3) {
-        localStorage.setItem(`propuesta_${propuestaId}_form06_enviado`, 'true');
-      }
-      alert(`Documento "${file.name}" registrado para ${codigoForm}.`);
-      cargarPropuestas();
-    } finally {
-      setSubiendoFormulario(prev => ({ ...prev, [key]: false }));
-      e.target.value = '';
-    }
+  // 2. Validación de tipo de archivo según el formulario
+  const tiposPermitidos = {
+    1: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'], // F-01: PDF, DOC, DOCX
+    2: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'application/pdf'], // F-02: XLSX, XLS, PDF
+    3: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'application/pdf']  // F-03: XLSX, XLS, PDF
   };
+
+  const tiposForm = tiposPermitidos[tipoDocumentoId] || [];
+  if (tiposForm.length > 0 && !tiposForm.includes(file.type)) {
+    alert(`Tipo de archivo no válido para ${codigoForm}. Formatos permitidos: ${tiposForm.map(t => t.split('/').pop()).join(', ')}`);
+    e.target.value = '';
+    return;
+  }
+
+  const key = `${propuestaId}_${tipoDocumentoId}`;
+  setSubiendoFormulario(prev => ({ ...prev, [key]: true }));
+
+  try {
+    const baseURL = import.meta.env.VITE_API_URL || 'https://sgpi-fondos-vie-reparaciones.onrender.com';
+    const token = localStorage.getItem('token');
+    let mensajeExito = '';
+
+    // ========================================================================
+    // CASO 1: FORM-04 (.docx) → PARSEAR + GUARDAR EN BD + SUBIR A S3
+    // ========================================================================
+    if (tipoDocumentoId === 1 && file.name.endsWith('.docx')) {
+      // Paso A: Enviar al endpoint de parseo (rellena las tablas de la BD)
+      const formDataParseo = new FormData();
+      formDataParseo.append('archivo', file);
+
+      const responseParseo = await fetch(
+        `${baseURL}/api/propuestas/${propuestaId}/importar-form04`,
+        {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formDataParseo
+        }
+      );
+
+      if (!responseParseo.ok) {
+        const errorData = await responseParseo.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Error al parsear el Form-04');
+      }
+
+      const datosParseados = await responseParseo.json();
+      console.log('✅ Form-04 parseado y guardado en BD:', datosParseados);
+
+      // Paso B: Subir el archivo físico a S3 como respaldo
+      await propuestaService.subirDocumentoFormulario(propuestaId, tipoDocumentoId, file);
+
+      mensajeExito = `✅ Form-04 procesado exitosamente:\n` +
+        `• ${datosParseados.datos_extraidos?.secciones_completadas || 0} secciones extraídas y guardadas en la base de datos\n` +
+        `• Archivo "${file.name}" subido a Supabase Storage como respaldo\n` +
+        `• Título detectado: "${datosParseados.datos_extraidos?.titulo || 'No detectado'}"`;
+    }
+
+    // ========================================================================
+    // CASO 2: FORM-05 (.xlsx) → PARSEAR + GUARDAR EN BD + SUBIR A S3
+    // ========================================================================
+    else if (tipoDocumentoId === 2 && file.name.endsWith('.xlsx')) {
+      const formDataParseo = new FormData();
+      formDataParseo.append('archivo', file);
+
+      const responseParseo = await fetch(
+        `${baseURL}/api/propuestas/${propuestaId}/importar-form05`,
+        {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formDataParseo
+        }
+      );
+
+      if (!responseParseo.ok) {
+        const errorData = await responseParseo.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Error al parsear el Form-05');
+      }
+
+      const datosParseados = await responseParseo.json();
+      console.log('✅ Form-05 parseado y guardado en BD:', datosParseados);
+
+      // Subir archivo físico a S3
+      await propuestaService.subirDocumentoFormulario(propuestaId, tipoDocumentoId, file);
+
+      mensajeExito = `✅ Form-05 procesado exitosamente:\n` +
+        `• ${datosParseados.actividadesCreadas || 0} actividades guardadas en la base de datos\n` +
+        `• Archivo "${file.name}" subido a Supabase Storage como respaldo`;
+    }
+
+    // ========================================================================
+    // CASO 3: FORM-06 (.xlsx) → PARSEAR + GUARDAR EN BD + SUBIR A S3
+    // ========================================================================
+    else if (tipoDocumentoId === 3 && file.name.endsWith('.xlsx')) {
+      const formDataParseo = new FormData();
+      formDataParseo.append('archivo', file);
+
+      const responseParseo = await fetch(
+        `${baseURL}/api/propuestas/${propuestaId}/importar-form06`,
+        {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formDataParseo
+        }
+      );
+
+      if (!responseParseo.ok) {
+        const errorData = await responseParseo.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Error al parsear el Form-06');
+      }
+
+      const datosParseados = await responseParseo.json();
+      console.log('✅ Form-06 parseado y guardado en BD:', datosParseados);
+
+      // Subir archivo físico a S3
+      await propuestaService.subirDocumentoFormulario(propuestaId, tipoDocumentoId, file);
+
+      mensajeExito = `✅ Form-06 procesado exitosamente:\n` +
+        `• ${datosParseados.rubrosCreados || 0} rubros presupuestarios guardados en la base de datos\n` +
+        `• Archivo "${file.name}" subido a Supabase Storage como respaldo`;
+    }
+
+    // ========================================================================
+    // CASO 4: PDF u otros formatos → SOLO SUBIR A S3 (sin parseo)
+    // ========================================================================
+    else {
+      await propuestaService.subirDocumentoFormulario(propuestaId, tipoDocumentoId, file);
+      mensajeExito = `✅ Archivo "${file.name}" subido exitosamente a Supabase Storage como respaldo del ${codigoForm}.`;
+    }
+
+    // ========================================================================
+    // MARCAR COMO COMPLETADO Y RECARGAR
+    // ========================================================================
+    if (tipoDocumentoId === 1) {
+      localStorage.setItem(`propuesta_${propuestaId}_form04_enviado`, 'true');
+    } else if (tipoDocumentoId === 2) {
+      localStorage.setItem(`propuesta_${propuestaId}_form05_enviado`, 'true');
+    } else if (tipoDocumentoId === 3) {
+      localStorage.setItem(`propuesta_${propuestaId}_form06_enviado`, 'true');
+    }
+
+    alert(mensajeExito);
+    cargarPropuestas(); // Recargar para actualizar el estado visual
+
+  } catch (err) {
+    console.error(`❌ Error al procesar ${codigoForm}:`, err);
+    const msg = err?.message || err?.response?.data?.detail || 'Error desconocido';
+    alert(`⚠️ No se pudo procesar el archivo "${file.name}" para ${codigoForm}.\n\nDetalle: ${msg}\n\nVerifica tu conexión e intenta nuevamente.`);
+  } finally {
+    setSubiendoFormulario(prev => ({ ...prev, [key]: false }));
+    e.target.value = ''; // Limpiar el input para permitir subir el mismo archivo de nuevo
+  }
+};
 
   const handleCancelarPropuesta = async (propuestaId) => {
     const prop = propuestas.find(p => p.propuestaId === propuestaId);

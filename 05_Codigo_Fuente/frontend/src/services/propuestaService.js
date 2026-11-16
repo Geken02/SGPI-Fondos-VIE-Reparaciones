@@ -109,17 +109,15 @@ export const propuestaService = {
 
   subirDocumentoFormulario: async (propuestaId, tipoDocumentoId, archivo) => {
     const formData = new FormData();
-    // El tercer parámetro (nombre) es crucial para que el backend lo reconozca como archivo
-    formData.append('archivo', archivo, archivo.name || 'documento.pdf');
+    
+    const nombreSeguro = archivo.name || `archivo_tipo_${tipoDocumentoId}`;
+    
+    formData.append('archivo', archivo, nombreSeguro);
     formData.append('tipo_documento_id', String(tipoDocumentoId));
 
-    // Obtenemos la URL base de tu configuración de Axios para mantener la consistencia
-    const baseURL = api.defaults.baseURL || 'https://sgpi-fondos-vie-reparaciones.onrender.com';
-    
-    // Obtenemos el token manualmente (ajusta 'token' si lo guardas como 'access_token' u otro nombre)
+    const baseURL = import.meta.env.VITE_API_URL || 'https://sgpi-fondos-vie-reparaciones.onrender.com';
     const token = localStorage.getItem('token');
 
-    // Usamos fetch nativo para evitar que los interceptores de Axios corrompan el FormData
     const response = await fetch(`${baseURL}/api/propuestas/${propuestaId}/archivos`, {
       method: 'POST',
       headers: {
@@ -130,8 +128,7 @@ export const propuestaService = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      // Lanzamos el error en el mismo formato que Axios para que tu catch lo maneje igual
-      throw { response: { status: response.status, data: errorData } };
+      throw new Error(errorData.detail || 'Error al subir el archivo a Supabase S3');
     }
 
     return await response.json();

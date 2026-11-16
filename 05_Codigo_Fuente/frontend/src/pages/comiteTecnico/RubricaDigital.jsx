@@ -110,7 +110,7 @@ export default function RubricaDigital() {
         // Si en tu tabla TiposDocumento es otro número, cámbialo aquí.
         await propuestaService.subirDocumentoFormulario(
           propuestaId,
-          5, 
+          16, 
           blob,
           `Rubrica_Borrador_${rubricaData.codigoPropuesta || propuestaId}.xlsx`
         );
