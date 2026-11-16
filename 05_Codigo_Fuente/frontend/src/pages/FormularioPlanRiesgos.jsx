@@ -506,8 +506,8 @@ const FormularioPlanRiesgos = () => {
                 {integrantes.map((int, i) => (
                   <tr key={int.id}>
                     <td><strong>{int.nombre}</strong></td>
-                    <td><span className="propuesta-codigo-pill" style={{ background: '#f1f5f9', color: '#1e293b' }}>{int.iniciales}</span></td>
-                    <td style={{ color: '#475569' }}>{int.rol}</td>
+                    <td><span className="propuesta-codigo-pill" >{int.iniciales}</span></td>
+                    <td>{int.rol}</td>
                     <td style={{ textAlign: 'center' }}>
                       {i > 0 && (
                         <button type="button" className="btn-icon-action btn-icon-delete" onClick={() => setIntegrantes(integrantes.filter(item => item.id !== int.id))} title="Remover participante">🗑</button>
@@ -551,7 +551,7 @@ const FormularioPlanRiesgos = () => {
                   <tr key={act.id}>
                     <td>
                       {objetivosEspecificos.length > 0 ? (
-                        <select value={act.objetivo || ''} className="form-table-input" style={{ background: '#ffffff', cursor: 'pointer', fontSize: '12px' }} onChange={(e) => { const copia = [...actividades]; copia[i].objetivo = e.target.value; setActividades(copia); }}>
+                        <select value={act.objetivo || ''} className="form-table-input" style={{ cursor: 'pointer', fontSize: '12px' }} onChange={(e) => { const copia = [...actividades]; copia[i].objetivo = e.target.value; setActividades(copia); }}>
                           <option value="">— OE —</option>
                           {objetivosEspecificos.map((oe, idx) => {
                             const tLimpio = (oe || '').trim();

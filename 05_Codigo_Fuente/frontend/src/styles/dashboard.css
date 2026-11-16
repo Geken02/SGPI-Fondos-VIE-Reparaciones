@@ -1,4 +1,4 @@
-﻿/* src/styles/dashboard.css */
+/* src/styles/dashboard.css */
 /* ============================================================
    SGPI - FONDOS VIE (TEC) - SISTEMA DE DISEÑO OFICIAL
    ============================================================ */
@@ -7395,4 +7395,894 @@ body.high-contrast-mode .ayuda-soporte-card {
   background-color: #000000 !important;
   border: 2px solid #FFFFFF !important;
   color: #FFFFFF !important;
+}
+
+/* ============================================================
+   MODO ALTO CONTRASTE - REPARACIÓN ESPECÍFICA FORMS 04, 05 Y 06
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1. FORM 04: BOTONES DE SELECCIÓN DE TIPO / MODALIDAD (PASO 1)
+   ------------------------------------------------------------ */
+.high-contrast-mode .modalidades-grid-cards,
+body.high-contrast-mode .modalidades-grid-cards {
+  background: transparent !important;
+}
+
+.high-contrast-mode .modalidad-card-option,
+body.high-contrast-mode .modalidad-card-option {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+.high-contrast-mode .modalidad-card-option:hover,
+body.high-contrast-mode .modalidad-card-option:hover {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+  background-color: #1a1a1a !important;
+}
+
+.high-contrast-mode .modalidad-card-option.is-selected,
+body.high-contrast-mode .modalidad-card-option.is-selected {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2.5px solid #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+  box-shadow: 0 0 10px rgba(255, 255, 0, 0.4) !important;
+}
+
+.high-contrast-mode .modalidad-name,
+body.high-contrast-mode .modalidad-name {
+  color: #FFFF00 !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .modalidad-desc,
+body.high-contrast-mode .modalidad-desc {
+  color: #FFFFFF !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+.high-contrast-mode .modalidad-radio-circle,
+body.high-contrast-mode .modalidad-radio-circle {
+  border: 2px solid #FFFFFF !important;
+  background: #000000 !important;
+}
+
+.high-contrast-mode .modalidad-card-option.is-selected .modalidad-radio-circle {
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .modalidad-radio-circle .inner-dot,
+body.high-contrast-mode .modalidad-radio-circle .inner-dot {
+  background-color: #FFFF00 !important;
+}
+
+/* ------------------------------------------------------------
+   2. FORM 05: PLAN DE ACCIÓN Y GESTIÓN DE RIESGOS (FORM 5)
+   ------------------------------------------------------------ */
+.high-contrast-mode .form-section-box,
+body.high-contrast-mode .form-section-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+.high-contrast-mode .form-section-box .section-title-h2,
+body.high-contrast-mode .form-section-box .section-title-h2,
+.high-contrast-mode .section-title-h2,
+body.high-contrast-mode .section-title-h2 {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .propuesta-codigo-pill,
+body.high-contrast-mode .propuesta-codigo-pill {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .int-nombre-cell,
+body.high-contrast-mode .int-nombre-cell,
+.high-contrast-mode .int-rol-cell,
+body.high-contrast-mode .int-rol-cell {
+  color: #FFFFFF !important;
+}
+
+/* Modal de Agregar Integrante en Form 5 */
+.high-contrast-mode .crear-propuesta-modal-overlay,
+body.high-contrast-mode .crear-propuesta-modal-overlay {
+  background: rgba(0, 0, 0, 0.85) !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card,
+body.high-contrast-mode .crear-propuesta-modal-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card header,
+body.high-contrast-mode .crear-propuesta-modal-card header,
+.high-contrast-mode .crear-propuesta-modal-card > div:first-child {
+  background: #000000 !important;
+  border-bottom: 2px solid #FFFFFF !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-body,
+body.high-contrast-mode .crear-propuesta-modal-body {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+/* ------------------------------------------------------------
+   3. FORM 06: FORMULACIÓN PRESUPUESTARIA (PRESUPUESTO)
+   ------------------------------------------------------------ */
+.high-contrast-mode .project-badge-tag,
+body.high-contrast-mode .project-badge-tag {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.8px !important;
+}
+
+.high-contrast-mode .presupuesto-project-title,
+body.high-contrast-mode .presupuesto-project-title {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .regimen-badge,
+body.high-contrast-mode .regimen-badge {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tab-year-btn,
+body.high-contrast-mode .tab-year-btn {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .tab-year-btn:hover,
+body.high-contrast-mode .tab-year-btn:hover {
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .tab-year-btn.active,
+body.high-contrast-mode .tab-year-btn.active {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .og-detalle-cell,
+body.high-contrast-mode .og-detalle-cell,
+.high-contrast-mode .og-detalle-cell strong,
+body.high-contrast-mode .og-detalle-cell strong {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .og-monto-cell,
+body.high-contrast-mode .og-monto-cell {
+  color: #00FF66 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .og-justificacion-cell,
+body.high-contrast-mode .og-justificacion-cell {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-dashed-add-row,
+body.high-contrast-mode .btn-dashed-add-row {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px dashed #FFFF00 !important;
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-dashed-add-row:hover,
+body.high-contrast-mode .btn-dashed-add-row:hover {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .presupuesto-summary-footer-box,
+body.high-contrast-mode .presupuesto-summary-footer-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .categories-breakdown,
+body.high-contrast-mode .categories-breakdown {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .categories-breakdown strong,
+body.high-contrast-mode .categories-breakdown strong {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .categories-breakdown .sep,
+body.high-contrast-mode .categories-breakdown .sep {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .grand-total-amount,
+body.high-contrast-mode .grand-total-amount {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .grand-total-amount strong,
+body.high-contrast-mode .grand-total-amount strong {
+  color: #00FF66 !important;
+  font-size: 19px !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .new-expense-card-panel,
+body.high-contrast-mode .new-expense-card-panel {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .new-expense-header,
+body.high-contrast-mode .new-expense-header {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .modal-form-label,
+body.high-contrast-mode .modal-form-label {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .modal-form-select,
+body.high-contrast-mode .modal-form-select,
+.high-contrast-mode .modal-form-input,
+body.high-contrast-mode .modal-form-input {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .auto-calc-box,
+body.high-contrast-mode .auto-calc-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .calc-title,
+body.high-contrast-mode .calc-title {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .calc-label,
+body.high-contrast-mode .calc-label {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .calc-amount,
+body.high-contrast-mode .calc-amount {
+  color: #00FF66 !important;
+  font-weight: 700 !important;
+}
+
+/* ------------------------------------------------------------
+   4. LABELS GENERALES Y RECORDATORIOS
+   ------------------------------------------------------------ */
+.high-contrast-mode .limited-input-label,
+body.high-contrast-mode .limited-input-label,
+.high-contrast-mode .form-field-label,
+body.high-contrast-mode .form-field-label {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .form-field-hint,
+body.high-contrast-mode .form-field-hint {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .vie-reminder-box,
+body.high-contrast-mode .vie-reminder-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .reminder-text strong,
+body.high-contrast-mode .reminder-text strong {
+  color: #FFFF00 !important;
+}
+
+/* ==========================================================================
+   ALTO CONTRASTE ESPECÍFICO (FONDOS VIE - REPARACIONES)
+   1. Formulario 04: Paso 1 (Modalidades, Títulos, Inputs Fecha) y Paso 7 (Equipos)
+   2. Formulario 05: Plan de Riesgos y Cronograma + Modal Añadir Integrante
+   3. Formulario 06: Módulo Presupuestario (Filas, Resumen Footer, Tabs)
+   4. Gestión de Equipos: Etiquetas Escuela/Rol y Modal Agregar Miembro
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. FORM 04 - PASO 1: MODALIDAD DEL PROYECTO, LABELS E INPUTS DE FECHA
+   -------------------------------------------------------------------------- */
+.high-contrast-mode .modalidades-grid-cards,
+body.high-contrast-mode .modalidades-grid-cards {
+  background: transparent !important;
+}
+
+.high-contrast-mode .modalidad-card-option,
+body.high-contrast-mode .modalidad-card-option {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: none !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .modalidad-card-option:hover,
+body.high-contrast-mode .modalidad-card-option:hover,
+.high-contrast-mode .modalidad-card-option:focus,
+body.high-contrast-mode .modalidad-card-option:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+  background-color: #111111 !important;
+}
+
+.high-contrast-mode .modalidad-card-option.is-selected,
+body.high-contrast-mode .modalidad-card-option.is-selected {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2.5px solid #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+  box-shadow: 0 0 12px rgba(255, 255, 0, 0.5) !important;
+}
+
+.high-contrast-mode .modalidad-name,
+body.high-contrast-mode .modalidad-name {
+  color: #FFFF00 !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .modalidad-desc,
+body.high-contrast-mode .modalidad-desc {
+  color: #FFFFFF !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+.high-contrast-mode .modalidad-radio-circle,
+body.high-contrast-mode .modalidad-radio-circle {
+  border: 2px solid #FFFFFF !important;
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+.high-contrast-mode .modalidad-card-option.is-selected .modalidad-radio-circle {
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .modalidad-radio-circle .inner-dot,
+body.high-contrast-mode .modalidad-radio-circle .inner-dot {
+  background-color: #FFFF00 !important;
+}
+
+/* Inputs de fecha nativos en Paso 1 */
+.high-contrast-mode input[type="date"],
+body.high-contrast-mode input[type="date"] {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  color-scheme: dark !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode input[type="date"]::-webkit-calendar-picker-indicator,
+body.high-contrast-mode input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) !important;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   2. FORM 04 - PASO 7: EQUIPO DE INVESTIGACIÓN (CUADROS 2 Y 3)
+   -------------------------------------------------------------------------- */
+.high-contrast-mode .form-table-input-readonly,
+body.high-contrast-mode .form-table-input-readonly {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .step-content-pane h3,
+body.high-contrast-mode .step-content-pane h3 {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-link-action,
+body.high-contrast-mode .btn-link-action {
+  color: #FFFF00 !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. GESTIÓN DE EQUIPOS (InvestigadorEquipos.jsx): ETIQUETAS ESCUELA Y ROL
+   -------------------------------------------------------------------------- */
+.high-contrast-mode .school-tag-pill,
+body.high-contrast-mode .school-tag-pill {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .rol-tag-pill,
+body.high-contrast-mode .rol-tag-pill {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .rol-tag-pill.rol-lider,
+body.high-contrast-mode .rol-tag-pill.rol-lider {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .member-avatar-circle,
+body.high-contrast-mode .member-avatar-circle {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .institucional-data-table td span[style*="002855"],
+body.high-contrast-mode .institucional-data-table td span[style*="002855"] {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .institucional-data-table td[style*="475569"],
+body.high-contrast-mode .institucional-data-table td[style*="475569"] {
+  color: #CCCCCC !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. MODAL AÑADIR MIEMBRO (Tanto en Form 05 como en InvestigadorEquipos.jsx)
+   -------------------------------------------------------------------------- */
+/* Cabecera del modal (remueve el gradiente azul inline) */
+.high-contrast-mode .crear-propuesta-modal-card > div:first-child,
+body.high-contrast-mode .crear-propuesta-modal-card > div:first-child {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  background-image: none !important;
+  border-bottom: 2px solid #FFFFFF !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card > div:first-child h3,
+body.high-contrast-mode .crear-propuesta-modal-card > div:first-child h3 {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card > div:first-child div,
+body.high-contrast-mode .crear-propuesta-modal-card > div:first-child div {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card > div:first-child button,
+body.high-contrast-mode .crear-propuesta-modal-card > div:first-child button {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+/* Pestañas de tipo miembro (Investigador TEC / Colaborador Externo) */
+.high-contrast-mode .crear-propuesta-modal-card > div:nth-child(2),
+body.high-contrast-mode .crear-propuesta-modal-card > div:nth-child(2) {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card > div:nth-child(2) button,
+body.high-contrast-mode .crear-propuesta-modal-card > div:nth-child(2) button {
+  background: transparent !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card > div:nth-child(2) button[style*="002855"],
+body.high-contrast-mode .crear-propuesta-modal-card > div:nth-child(2) button[style*="002855"] {
+  color: #FFFF00 !important;
+  border-bottom: 3px solid #FFFF00 !important;
+}
+
+/* Banner informativo azul en modal */
+.high-contrast-mode .crear-propuesta-modal-card div[style*="f0f9ff"],
+body.high-contrast-mode .crear-propuesta-modal-card div[style*="f0f9ff"] {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #00FFFF !important;
+  color: #FFFFFF !important;
+}
+.high-contrast-mode .crear-propuesta-modal-card div[style*="f0f9ff"] *,
+body.high-contrast-mode .crear-propuesta-modal-card div[style*="f0f9ff"] * {
+  color: #FFFFFF !important;
+}
+
+/* Cuerpo del formulario del modal */
+.high-contrast-mode .crear-propuesta-modal-card form > div:first-child,
+body.high-contrast-mode .crear-propuesta-modal-card form > div:first-child {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+/* Labels en modal */
+.high-contrast-mode .crear-propuesta-modal-card label,
+body.high-contrast-mode .crear-propuesta-modal-card label {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card span[style*="64748b"],
+body.high-contrast-mode .crear-propuesta-modal-card span[style*="64748b"] {
+  color: #CCCCCC !important;
+}
+
+/* Inputs de texto y números dentro del modal */
+.high-contrast-mode .crear-propuesta-modal-card input,
+body.high-contrast-mode .crear-propuesta-modal-card input {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card input::placeholder,
+body.high-contrast-mode .crear-propuesta-modal-card input::placeholder {
+  color: #AAAAAA !important;
+}
+
+/* Selects dentro del modal */
+.high-contrast-mode .crear-propuesta-modal-card select,
+body.high-contrast-mode .crear-propuesta-modal-card select {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card select option,
+body.high-contrast-mode .crear-propuesta-modal-card select option {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+/* Tarjeta preview de investigador seleccionado */
+.high-contrast-mode .crear-propuesta-modal-card form div[style*="f0fdf4"],
+.high-contrast-mode .crear-propuesta-modal-card form div[style*="10b981"],
+body.high-contrast-mode .crear-propuesta-modal-card form div[style*="f0fdf4"],
+body.high-contrast-mode .crear-propuesta-modal-card form div[style*="10b981"] {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #00FF66 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card form div[style*="f0fdf4"] *,
+.high-contrast-mode .crear-propuesta-modal-card form div[style*="10b981"] *,
+body.high-contrast-mode .crear-propuesta-modal-card form div[style*="f0fdf4"] *,
+body.high-contrast-mode .crear-propuesta-modal-card form div[style*="10b981"] * {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card form div[style*="166534"],
+.high-contrast-mode .crear-propuesta-modal-card form span[style*="15803d"],
+body.high-contrast-mode .crear-propuesta-modal-card form div[style*="166534"],
+body.high-contrast-mode .crear-propuesta-modal-card form span[style*="15803d"] {
+  color: #00FF66 !important;
+}
+
+/* Avatar de iniciales en modal preview */
+.high-contrast-mode .crear-propuesta-modal-card form div[style*="002855"],
+body.high-contrast-mode .crear-propuesta-modal-card form div[style*="002855"] {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+/* Caja de error modal */
+.high-contrast-mode .crear-propuesta-modal-card div[style*="fef2f2"],
+body.high-contrast-mode .crear-propuesta-modal-card div[style*="fef2f2"] {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FF5555 !important;
+  color: #FF5555 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card div[style*="fef2f2"] *,
+body.high-contrast-mode .crear-propuesta-modal-card div[style*="fef2f2"] * {
+  color: #FF5555 !important;
+}
+
+/* Footer del modal */
+.high-contrast-mode .crear-propuesta-modal-card form > div:last-child,
+body.high-contrast-mode .crear-propuesta-modal-card form > div:last-child {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border-top: 2px solid #FFFFFF !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. FORM 05: PLAN DE RIESGOS Y CRONOGRAMA
+   -------------------------------------------------------------------------- */
+.high-contrast-mode .form-section-box,
+body.high-contrast-mode .form-section-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .section-title-h2,
+body.high-contrast-mode .section-title-h2 {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .propuesta-codigo-pill,
+body.high-contrast-mode .propuesta-codigo-pill {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-nueva-propuesta,
+body.high-contrast-mode .btn-nueva-propuesta {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-nueva-propuesta:hover,
+body.high-contrast-mode .btn-nueva-propuesta:hover {
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  border-color: #FFFF00 !important;
+}
+
+/* Botón de eliminar fila en tablas */
+.high-contrast-mode .btn-icon-delete,
+body.high-contrast-mode .btn-icon-delete {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FF5555 !important;
+  border: 1.5px solid #FF5555 !important;
+}
+
+.high-contrast-mode .btn-icon-delete:hover,
+body.high-contrast-mode .btn-icon-delete:hover {
+  background: #FF5555 !important;
+  background-color: #FF5555 !important;
+  color: #000000 !important;
+}
+
+/* Checkboxes de meses en cronograma */
+.high-contrast-mode input[type="checkbox"],
+body.high-contrast-mode input[type="checkbox"] {
+  accent-color: #FFFF00 !important;
+  cursor: pointer;
+}
+
+/* Global form-table-input para tablas de Form 04 y Form 05 */
+.high-contrast-mode .form-table-input,
+body.high-contrast-mode .form-table-input {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .form-table-input:focus,
+body.high-contrast-mode .form-table-input:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .form-table-input option,
+body.high-contrast-mode .form-table-input option {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. FORM 06: MÓDULO DE FORMULACIÓN PRESUPUESTARIA
+   -------------------------------------------------------------------------- */
+.high-contrast-mode .tab-year-btn,
+body.high-contrast-mode .tab-year-btn {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .tab-year-btn:hover,
+body.high-contrast-mode .tab-year-btn:hover {
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .tab-year-btn.active,
+body.high-contrast-mode .tab-year-btn.active {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .og-detalle-cell,
+body.high-contrast-mode .og-detalle-cell,
+.high-contrast-mode .og-detalle-cell *,
+body.high-contrast-mode .og-detalle-cell * {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .og-monto-cell,
+body.high-contrast-mode .og-monto-cell,
+.high-contrast-mode .og-monto-cell *,
+body.high-contrast-mode .og-monto-cell * {
+  color: #00FF66 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .og-justificacion-cell,
+body.high-contrast-mode .og-justificacion-cell,
+.high-contrast-mode .og-justificacion-cell *,
+body.high-contrast-mode .og-justificacion-cell * {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-dashed-add-row,
+body.high-contrast-mode .btn-dashed-add-row {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px dashed #FFFF00 !important;
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-dashed-add-row:hover,
+body.high-contrast-mode .btn-dashed-add-row:hover {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* Footer de resumen presupuestario */
+.high-contrast-mode .presupuesto-summary-footer-box,
+body.high-contrast-mode .presupuesto-summary-footer-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .categories-breakdown,
+body.high-contrast-mode .categories-breakdown,
+.high-contrast-mode .categories-breakdown span,
+body.high-contrast-mode .categories-breakdown span {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .categories-breakdown strong,
+body.high-contrast-mode .categories-breakdown strong {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .categories-breakdown .sep,
+body.high-contrast-mode .categories-breakdown .sep {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .grand-total-amount,
+body.high-contrast-mode .grand-total-amount {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .grand-total-amount strong,
+body.high-contrast-mode .grand-total-amount strong {
+  color: #00FF66 !important;
+  font-size: 19px !important;
+  font-weight: 800 !important;
+}
+
+/* Panel de inserción de nuevo gasto */
+.high-contrast-mode .new-expense-card-panel,
+body.high-contrast-mode .new-expense-card-panel {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .new-expense-header,
+body.high-contrast-mode .new-expense-header {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .modal-form-label,
+body.high-contrast-mode .modal-form-label {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .modal-form-select,
+body.high-contrast-mode .modal-form-select,
+.high-contrast-mode .modal-form-input,
+body.high-contrast-mode .modal-form-input {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .auto-calc-box,
+body.high-contrast-mode .auto-calc-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .calc-title,
+body.high-contrast-mode .calc-title {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .calc-label,
+body.high-contrast-mode .calc-label {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .calc-amount,
+body.high-contrast-mode .calc-amount {
+  color: #00FF66 !important;
+  font-weight: 700 !important;
 }
