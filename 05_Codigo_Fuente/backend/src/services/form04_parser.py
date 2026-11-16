@@ -1,29 +1,29 @@
-# src/services/form04_parser.py
+import re
 from docx import Document
 from docx.table import Table
 from io import BytesIO
-import re
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+
 
 def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
     """
-    Extrae todos los datos del Form-04 oficial (.docx):
-    - Texto de secciones narrativas (resumen, problema, objetivos, etc.)
-    - Tablas (Cuadro 2: Investigadores TEC, Cuadro 3: Colaboradores, Cuadro 4: Presupuesto, Cuadro 5: Financiamiento)
-    - Checkboxes (Sección 1: Preguntas generales, Sección 13: Resguardo, Sección 15: Aspectos éticos)
+    Parser robusto para Form-04 que maneja:
+    - Checkboxes como símbolos Unicode (☑, ✓, ✔, ☒)
+    - Checkboxes como texto ("Sí", "No")
+    - Variaciones en formato de secciones
+    - Tablas con diferentes estructuras
     """
     try:
         doc = Document(BytesIO(archivo_bytes))
-        texto_completo = "\n".join([p.text.strip() for p in doc.paragraphs if p.text.strip()])
+        
+        # Extraer TODO el texto del documento de forma estructurada
+        texto_completo = extraer_texto_completo(doc)
         
         datos = {
-            # Datos básicos
             "titulo": "",
             "fecha_inicio": "",
             "fecha_fin": "",
             "modalidad": "",
-            
-            # Sección 1: Preguntas generales (checkboxes)
             "seccion1": {
                 "otras_fuentes": {"aplica": False, "detalle": ""},
                 "vinculacion_tecnica": {"aplica": False, "detalle": ""},
@@ -36,8 +36,6 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
                 "posee_innovacion": {"aplica": False, "tipo": ""},
                 "trl": 1
             },
-            
-            # Secciones narrativas
             "resumen": "",
             "palabras_clave": "",
             "abstract": "",
@@ -47,26 +45,14 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
             "objetivos_especificos": [],
             "estado_arte": "",
             "metodologia": "",
-            "hoja_ruta": "",
-            "referencias": "",
-            
-            # Cuadro 2: Investigadores TEC
             "investigadores_tec": [],
-            
-            # Cuadro 3: Colaboradores externos
             "colaboradores_externos": [],
-            
-            # Cuadro 4: Presupuesto por año
             "presupuesto_anual": [],
-            
-            # Cuadro 5: Financiamiento adicional
             "financiamiento_adicional": {
                 "externo": {"ano1": 0, "ano2": 0, "ano3": 0, "oficio": ""},
                 "contrapartida": {"ano1": 0, "ano2": 0, "ano3": 0, "oficio": ""},
                 "cofinanciamiento": {"ano1": 0, "ano2": 0, "ano3": 0, "oficio": ""}
             },
-            
-            # Sección 12: Productos académicos
             "productos_14a": {
                 "rango_horas": "",
                 "opcion1": {"check": False, "cantidad": 0, "objetivo": ""},
@@ -90,22 +76,16 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
                 "paquete": {"check": False, "cantidad": 0, "objetivo": ""},
                 "norma": {"check": False, "cantidad": 0, "objetivo": ""}
             },
-            
-            # Sección 13: Resguardo (checkboxes)
             "resguardo": {
                 "resguardo_compromiso": False,
                 "resguardo_software": False
             },
-            
-            # Sección 14: Divulgación
             "divulgacion": {
                 "cientifica": "",
                 "canales_institucionales": "",
                 "socializacion": "",
                 "medios_masivos": ""
             },
-            
-            # Sección 15: Aspectos éticos (checkboxes)
             "aspectos_eticos": {
                 "seres_humanos": False,
                 "biodiversidad": False,
@@ -113,8 +93,8 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
                 "comunidades_indigenas": False,
                 "acuerdo_comision": ""
             },
-            
-            # Sección 18: Firma
+            "hoja_ruta": "",
+            "referencias": "",
             "firma": {
                 "nombre": "",
                 "cedula": "",
@@ -122,266 +102,84 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
             }
         }
         
-        # ====================================================================
-        # 1. EXTRAER DATOS BÁSICOS (Título, fechas)
-        # ====================================================================
-        # Buscar en las primeras tablas o párrafos
-        for table in doc.tables[:3]:  # Revisar las primeras 3 tablas
-            for row in table.rows:
-                cells = [cell.text.strip() for cell in row.cells]
-                if len(cells) >= 2:
-                    if "Nombre del proyecto" in cells[0]:
-                        datos["titulo"] = cells[1] if len(cells) > 1 else ""
-                    elif "Fecha de inicio" in cells[0]:
-                        datos["fecha_inicio"] = cells[1] if len(cells) > 1 else ""
-                    elif "Fecha de finalización" in cells[0]:
-                        datos["fecha_fin"] = cells[1] if len(cells) > 1 else ""
+        # 1. DATOS BÁSICOS
+        datos["titulo"] = buscar_en_tabla_inicial(doc, "Nombre del proyecto")
+        datos["fecha_inicio"] = buscar_en_tabla_inicial(doc, "Fecha de inicio")
+        datos["fecha_fin"] = buscar_en_tabla_inicial(doc, "Fecha de finalización") or \
+                          buscar_en_tabla_inicial(doc, "Fecha de finalizacion")
         
-        # ====================================================================
-        # 2. EXTRAER SECCIÓN 1: PREGUNTAS GENERALES (CHECKBOXES)
-        # ====================================================================
-        # 1.a Modalidad
-        match_modalidad = re.search(
-            r"1\.a\.\s+La modalidad.*?(?:☑|✔|✓)\s*(investigación básica|investigación aplicada|investigación básica y aplicada|desarrollo tecnológico)",
-            texto_completo,
-            re.IGNORECASE | re.DOTALL
-        )
-        if match_modalidad:
-            datos["modalidad"] = match_modalidad.group(1).strip().title()
+        # 2. SECCIÓN 1: PREGUNTAS GENERALES
+        parsear_seccion1_checkboxes(texto_completo, datos["seccion1"])
         
-        # 1.b Otras fuentes de financiamiento
-        match_fuentes = re.search(
-            r"1\.b\.\s+.*?(?:☑|✔|✓)\s*Sí\s*(.*?)(?:1\.c\.|$)",
-            texto_completo,
-            re.IGNORECASE | re.DOTALL
-        )
-        if match_fuentes:
-            datos["seccion1"]["otras_fuentes"]["aplica"] = True
-            datos["seccion1"]["otras_fuentes"]["detalle"] = match_fuentes.group(1).strip()
+        # 3. SECCIONES NARRATIVAS
+        datos["resumen"] = extraer_seccion_robusta(texto_completo, r"2\.\s+Resumen", r"Palabras claves?")
+        datos["palabras_clave"] = extraer_seccion_robusta(texto_completo, r"Palabras claves?", r"Abstract")
+        datos["abstract"] = extraer_seccion_robusta(texto_completo, r"Abstract", r"Keywords?")
+        datos["keywords"] = extraer_seccion_robusta(texto_completo, r"Keywords?", r"3\.\s+Equipo")
+        datos["problema_investigacion"] = extraer_seccion_robusta(texto_completo, r"4\.\s+Problema de investigación", r"5\.\s+Objetivo general")
+        datos["objetivo_general"] = extraer_seccion_robusta(texto_completo, r"5\.\s+Objetivo general", r"6\.\s+Objetivos específicos")
         
-        # 1.c Vinculación técnica
-        match_vinculacion = re.search(
-            r"1\.c\.\s+.*?(?:☑|✔|✓)\s*Sí\s*(.*?)(?:1\.d\.|$)",
-            texto_completo,
-            re.IGNORECASE | re.DOTALL
-        )
-        if match_vinculacion:
-            datos["seccion1"]["vinculacion_tecnica"]["aplica"] = True
-            datos["seccion1"]["vinculacion_tecnica"]["detalle"] = match_vinculacion.group(1).strip()
-        
-        # 1.d Problemas nacionales
-        match_problemas = re.search(
-            r"1\.d\.\s+.*?(?:☑|✔|✓)\s*Sí\s*(.*?)(?:1\.e\.|$)",
-            texto_completo,
-            re.IGNORECASE | re.DOTALL
-        )
-        if match_problemas:
-            datos["seccion1"]["problemas_nacionales"]["aplica"] = True
-            datos["seccion1"]["problemas_nacionales"]["detalle"] = match_problemas.group(1).strip()
-        
-        # 1.e Instrumento jurídico
-        match_instrumento = re.search(
-            r"1\.e\.\s+.*?(?:☑|✔|✓)\s*Sí\s*(.*?)(?:1\.f\.|$)",
-            texto_completo,
-            re.IGNORECASE | re.DOTALL
-        )
-        if match_instrumento:
-            datos["seccion1"]["instrumento_juridico"]["aplica"] = True
-            texto = match_instrumento.group(1).strip()
-            if "Convenio Internacional" in texto:
-                datos["seccion1"]["instrumento_juridico"]["tipo"] = "Convenio Internacional"
-            else:
-                datos["seccion1"]["instrumento_juridico"]["tipo"] = "Convenio Nacional"
-        
-        # 1.f Convenio marco
-        match_convenio = re.search(
-            r"1\.f\.\s+.*?(?:☑|✔|✓)\s*Sí\s*(.*?)(?:1\.g\.|$)",
-            texto_completo,
-            re.IGNORECASE | re.DOTALL
-        )
-        if match_convenio:
-            datos["seccion1"]["convenio_marco"]["aplica"] = True
-            datos["seccion1"]["convenio_marco"]["nombre"] = match_convenio.group(1).strip()
-        
-        # 1.g Base posgrado
-        match_posgrado = re.search(
-            r"1\.g\.\s+.*?(?:☑|✔|✓)\s*(Sí parcial|Sí totalmente)\s*(.*?)(?:1\.h\.|$)",
-            texto_completo,
-            re.IGNORECASE | re.DOTALL
-        )
-        if match_posgrado:
-            datos["seccion1"]["base_posgrado"]["aplica"] = match_posgrado.group(1).strip()
-            # Extraer datos del posgrado (candidato, programa, universidad)
-            texto_posgrado = match_posgrado.group(2).strip()
-            # Buscar patrones como "1. Nombre:", "2. Programa:", "3. Universidad:"
-            match_candidato = re.search(r"1\.\s*Nombre.*?:\s*(.*?)(?:2\.|$)", texto_posgrado, re.IGNORECASE)
-            match_programa = re.search(r"2\.\s*Programa.*?:\s*(.*?)(?:3\.|$)", texto_posgrado, re.IGNORECASE)
-            match_universidad = re.search(r"3\.\s*Universidad.*?:\s*(.*?)(?:1\.h\.|$)", texto_posgrado, re.IGNORECASE)
-            
-            if match_candidato:
-                datos["seccion1"]["base_posgrado"]["candidato"] = match_candidato.group(1).strip()
-            if match_programa:
-                datos["seccion1"]["base_posgrado"]["programa"] = match_programa.group(1).strip()
-            if match_universidad:
-                datos["seccion1"]["base_posgrado"]["universidad"] = match_universidad.group(1).strip()
-        
-        # 1.h Información confidencial
-        match_confidencial = re.search(
-            r"1\.h\.\s+.*?(?:☑|✔|✓)\s*Sí\s*(.*?)(?:1\.i\.|$)",
-            texto_completo,
-            re.IGNORECASE | re.DOTALL
-        )
-        if match_confidencial:
-            datos["seccion1"]["info_confidencial"]["aplica"] = True
-            datos["seccion1"]["info_confidencial"]["detalle"] = match_confidencial.group(1).strip()
-        
-        # 1.i Potencial PI
-        match_pi = re.search(
-            r"1\.i\.\s+.*?(?:☑|✔|✓)\s*Sí\s*(.*?)(?:1\.j\.|$)",
-            texto_completo,
-            re.IGNORECASE | re.DOTALL
-        )
-        if match_pi:
-            datos["seccion1"]["potencial_pi"]["aplica"] = True
-            # Buscar número de oficio
-            match_oficio = re.search(r"(?:oficio|dictamen)[:\s]*([A-Z]{2,}-\w+-\d{4}-\d+)", match_pi.group(1), re.IGNORECASE)
-            if match_oficio:
-                datos["seccion1"]["potencial_pi"]["oficio_dictamen"] = match_oficio.group(1).strip()
-        
-        # 1.j Innovación
-        match_innovacion = re.search(
-            r"1\.j\.\s+.*?(?:☑|✔|✓)\s*Sí\s*(.*?)(?:1\.k\.|Cuadro 1|$)",
-            texto_completo,
-            re.IGNORECASE | re.DOTALL
-        )
-        if match_innovacion:
-            datos["seccion1"]["posee_innovacion"]["aplica"] = True
-            texto = match_innovacion.group(1).strip()
-            if "de Producto" in texto:
-                datos["seccion1"]["posee_innovacion"]["tipo"] = "de Producto"
-            else:
-                datos["seccion1"]["posee_innovacion"]["tipo"] = "de Proceso"
-        
-        # 1.k TRL (solo para desarrollo tecnológico)
-        match_trl = re.search(
-            r"(?:TRL|nivel de madurez).*?(?:☑|✔|✓|seleccionado).*?(\d)",
-            texto_completo,
-            re.IGNORECASE
-        )
-        if match_trl:
-            datos["seccion1"]["trl"] = int(match_trl.group(1))
-        
-        # ====================================================================
-        # 3. EXTRAER SECCIONES NARRATIVAS (2-11, 14, 16-17)
-        # ====================================================================
-        def extraer_seccion(inicio: str, fin: str) -> str:
-            patron = rf"{inicio}.*?\n(.*?)(?={fin}|\Z)"
-            match = re.search(patron, texto_completo, re.IGNORECASE | re.DOTALL)
-            if match:
-                return match.group(1).strip()
-            return ""
-        
-        datos["resumen"] = extraer_seccion("2\.\s+Resumen", "Palabras claves?:")
-        datos["palabras_clave"] = extraer_seccion("Palabras claves?:", "Abstract")
-        datos["abstract"] = extraer_seccion("Abstract", "Keywords?:")
-        datos["keywords"] = extraer_seccion("Keywords?:", "3\.\s+Equipo")
-        datos["problema_investigacion"] = extraer_seccion("4\.\s+Problema de investigación", "5\.\s+Objetivo general")
-        datos["objetivo_general"] = extraer_seccion("5\.\s+Objetivo general", "6\.\s+Objetivos específicos")
-        
-        # Objetivos específicos (lista numerada)
-        texto_oe = extraer_seccion("6\.\s+Objetivos específicos", "7\.\s+Estado del arte")
+        texto_oe = extraer_seccion_robusta(texto_completo, r"6\.\s+Objetivos específicos", r"7\.\s+Estado del arte")
         if texto_oe:
             objetivos = [linea.strip() for linea in texto_oe.split('\n') if re.match(r'^\d+\.', linea.strip())]
             datos["objetivos_especificos"] = [re.sub(r'^\d+\.\s*', '', obj) for obj in objetivos]
         
-        datos["estado_arte"] = extraer_seccion("7\.\s+Estado del arte", "8\.\s+Metodología")
-        datos["metodologia"] = extraer_seccion("8\.\s+Metodología", "9\.\s+Plan de acción")
-        datos["hoja_ruta"] = extraer_seccion("16\.\s+Hoja de ruta", "17\.\s+Referencias")
-        datos["referencias"] = extraer_seccion("17\.\s+Referencias", "18\.\s+Declaración jurada")
+        datos["estado_arte"] = extraer_seccion_robusta(texto_completo, r"7\.\s+Estado del arte", r"8\.\s+Metodología")
+        datos["metodologia"] = extraer_seccion_robusta(texto_completo, r"8\.\s+Metodología", r"9\.\s+Plan de acción")
+        datos["hoja_ruta"] = extraer_seccion_robusta(texto_completo, r"16\.\s+Hoja de ruta", r"17\.\s+Referencias")
+        datos["referencias"] = extraer_seccion_robusta(texto_completo, r"17\.\s+Referencias", r"18\.\s+Declaración jurada")
         
-        # ====================================================================
-        # 4. EXTRAER TABLAS (Cuadro 2, 3, 4, 5)
-        # ====================================================================
+        # 4. TABLAS
         for table in doc.tables:
-            # Cuadro 2: Investigadores TEC
-            if _es_tabla_investigadores_tec(table):
-                datos["investigadores_tec"] = _parsear_tabla_investigadores_tec(table)
-            
-            # Cuadro 3: Colaboradores externos
-            elif _es_tabla_colaboradores(table):
-                datos["colaboradores_externos"] = _parsear_tabla_colaboradores(table)
-            
-            # Cuadro 4: Presupuesto por año
-            elif _es_tabla_presupuesto(table):
-                datos["presupuesto_anual"] = _parsear_tabla_presupuesto(table)
-            
-            # Cuadro 5: Financiamiento adicional
-            elif _es_tabla_financiamiento(table):
-                datos["financiamiento_adicional"] = _parsear_tabla_financiamiento(table)
+            if es_tabla_investigadores_tec(table):
+                datos["investigadores_tec"] = parsear_tabla_investigadores_tec(table)
+            elif es_tabla_colaboradores(table):
+                datos["colaboradores_externos"] = parsear_tabla_colaboradores(table)
+            elif es_tabla_presupuesto(table):
+                datos["presupuesto_anual"] = parsear_tabla_presupuesto(table)
+            elif es_tabla_financiamiento(table):
+                datos["financiamiento_adicional"] = parsear_tabla_financiamiento(table)
+            elif es_tabla_firma(table):
+                datos["firma"] = parsear_tabla_firma(table)
         
-        # ====================================================================
-        # 5. EXTRAER SECCIÓN 13: RESGUARDO (CHECKBOXES)
-        # ====================================================================
-        match_resguardo1 = re.search(
-            r"13\.\s+Resguardo.*?1\.\s+Declaro conocer.*?(?:☑|✔|✓)\s*Sí",
-            texto_completo,
-            re.IGNORECASE | re.DOTALL
+        # 5. SECCIÓN 13: RESGUARDO
+        datos["resguardo"]["resguardo_compromiso"] = detectar_checkbox(
+            texto_completo, 
+            r"13\.\s+Resguardo.*?1\.\s+Declaro conocer.*?Repositorio Institucional"
         )
-        if match_resguardo1:
-            datos["resguardo"]["resguardo_compromiso"] = True
-        
-        match_resguardo2 = re.search(
-            r"13\.\s+Resguardo.*?2\.\s+En caso de desarrollar.*?(?:☑|✔|✓)\s*Sí",
+        datos["resguardo"]["resguardo_software"] = detectar_checkbox(
             texto_completo,
-            re.IGNORECASE | re.DOTALL
+            r"13\.\s+Resguardo.*?2\.\s+En caso de desarrollar software"
         )
-        if match_resguardo2:
-            datos["resguardo"]["resguardo_software"] = True
         
-        # ====================================================================
-        # 6. EXTRAER SECCIÓN 14: DIVULGACIÓN
-        # ====================================================================
-        datos["divulgacion"]["cientifica"] = extraer_seccion("14\.\s+Estrategia.*?1\.a\.\s+Divulgación científica", "1\.b\.\s+Canales Institucionales")
-        datos["divulgacion"]["canales_institucionales"] = extraer_seccion("1\.b\.\s+Canales Institucionales", "1\.c\.\s+Eventos de Socialización")
-        datos["divulgacion"]["socializacion"] = extraer_seccion("1\.c\.\s+Eventos de Socialización", "1\.d\.\s+Medios Masivos")
-        datos["divulgacion"]["medios_masivos"] = extraer_seccion("1\.d\.\s+Medios Masivos", "15\.\s+Aspectos Éticos")
-        
-        # ====================================================================
-        # 7. EXTRAER SECCIÓN 15: ASPECTOS ÉTICOS (CHECKBOXES)
-        # ====================================================================
-        match_etica1 = re.search(
-            r"15\.\s+Aspectos Éticos.*?1\.\s+.*?seres humanos.*?(?:☑|✔|✓)\s*Sí",
-            texto_completo,
-            re.IGNORECASE | re.DOTALL
+        # 6. SECCIÓN 14: DIVULGACIÓN
+        datos["divulgacion"]["cientifica"] = extraer_seccion_robusta(
+            texto_completo, r"1\.a\.\s+Divulgación científica", r"1\.b\.\s+Canales Institucionales"
         )
-        if match_etica1:
-            datos["aspectos_eticos"]["seres_humanos"] = True
-        
-        match_etica2 = re.search(
-            r"15\.\s+Aspectos Éticos.*?2\.\s+.*?biodiversidad.*?(?:☑|✔|✓)\s*Sí",
-            texto_completo,
-            re.IGNORECASE | re.DOTALL
+        datos["divulgacion"]["canales_institucionales"] = extraer_seccion_robusta(
+            texto_completo, r"1\.b\.\s+Canales Institucionales", r"1\.c\.\s+Eventos de Socialización"
         )
-        if match_etica2:
-            datos["aspectos_eticos"]["biodiversidad"] = True
-        
-        match_etica3 = re.search(
-            r"15\.\s+Aspectos Éticos.*?3\.\s+.*?animales.*?(?:☑|✔|✓)\s*Sí",
-            texto_completo,
-            re.IGNORECASE | re.DOTALL
+        datos["divulgacion"]["socializacion"] = extraer_seccion_robusta(
+            texto_completo, r"1\.c\.\s+Eventos de Socialización", r"1\.d\.\s+Medios Masivos"
         )
-        if match_etica3:
-            datos["aspectos_eticos"]["animales"] = True
-        
-        match_etica4 = re.search(
-            r"15\.\s+Aspectos Éticos.*?4\.\s+.*?indígenas.*?(?:☑|✔|✓)\s*Sí",
-            texto_completo,
-            re.IGNORECASE | re.DOTALL
+        datos["divulgacion"]["medios_masivos"] = extraer_seccion_robusta(
+            texto_completo, r"1\.d\.\s+Medios Masivos", r"15\.\s+Aspectos Éticos"
         )
-        if match_etica4:
-            datos["aspectos_eticos"]["comunidades_indigenas"] = True
         
-        # Justificación de exención
+        # 7. SECCIÓN 15: ASPECTOS ÉTICOS
+        datos["aspectos_eticos"]["seres_humanos"] = detectar_checkbox(
+            texto_completo, r"15\.\s+Aspectos Éticos.*?1\.\s+.*?seres humanos"
+        )
+        datos["aspectos_eticos"]["biodiversidad"] = detectar_checkbox(
+            texto_completo, r"15\.\s+Aspectos Éticos.*?2\.\s+.*?biodiversidad"
+        )
+        datos["aspectos_eticos"]["animales"] = detectar_checkbox(
+            texto_completo, r"15\.\s+Aspectos Éticos.*?3\.\s+.*?animales"
+        )
+        datos["aspectos_eticos"]["comunidades_indigenas"] = detectar_checkbox(
+            texto_completo, r"15\.\s+Aspectos Éticos.*?4\.\s+.*?indígenas"
+        )
+        
         match_exencion = re.search(
             r"15\.a\.\s+Declaración de exención.*?razones:\s*(.*?)(?:15\.b\.|16\.\s+Hoja de ruta|$)",
             texto_completo,
@@ -390,14 +188,6 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
         if match_exencion:
             datos["aspectos_eticos"]["acuerdo_comision"] = match_exencion.group(1).strip()
         
-        # ====================================================================
-        # 8. EXTRAER SECCIÓN 18: FIRMA
-        # ====================================================================
-        for table in doc.tables:
-            if _es_tabla_firma(table):
-                datos["firma"] = _parsear_tabla_firma(table)
-                break
-        
         return datos
     
     except Exception as e:
@@ -405,23 +195,207 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
 
 
 # ============================================================================
-# FUNCIONES AUXILIARES PARA TABLAS
+# FUNCIONES AUXILIARES ROBUSTAS
 # ============================================================================
 
-def _es_tabla_investigadores_tec(table: Table) -> bool:
-    """Verifica si la tabla es el Cuadro 2 (Investigadores TEC)"""
+def extraer_texto_completo(doc: Document) -> str:
+    """Extrae todo el texto del documento normalizando espacios y saltos de línea"""
+    parrafos = []
+    for para in doc.paragraphs:
+        texto = para.text.strip()
+        if texto:
+            parrafos.append(texto)
+    
+    texto = "\n\n".join(parrafos)
+    texto = re.sub(r'[ \t]+', ' ', texto)
+    
+    return texto
+
+
+def buscar_en_tabla_inicial(doc: Document, campo: str) -> str:
+    """Busca un valor en las primeras tablas del documento"""
+    for table in doc.tables[:5]:
+        for row in table.rows:
+            cells = [cell.text.strip() for cell in row.cells]
+            if len(cells) >= 2:
+                if campo.lower() in cells[0].lower():
+                    return cells[1] if len(cells) > 1 else ""
+    return ""
+
+
+def detectar_checkbox(texto: str, patron_contexto: str) -> bool:
+    """
+    Detecta si un checkbox está marcado usando múltiples estrategias:
+    1. Busca símbolos Unicode (☑, ✓, ✔, ☒)
+    2. Busca la palabra "Sí" cerca del contexto
+    3. Analiza el patrón de respuesta
+    """
+    match_contexto = re.search(patron_contexto, texto, re.IGNORECASE | re.DOTALL)
+    if not match_contexto:
+        return False
+    
+    inicio = match_contexto.end()
+    fin = min(inicio + 500, len(texto))
+    texto_cercano = texto[inicio:fin]
+    
+    # Estrategia 1: Buscar símbolos Unicode de checkbox marcado
+    simbolos_marcados = ['☑', '✓', '✔', '☒', '✅']
+    for simbolo in simbolos_marcados:
+        if simbolo in texto_cercano:
+            if 'Sí' in texto_cercano or 'sí' in texto_cercano:
+                return True
+    
+    # Estrategia 2: Buscar patrón "☐ No ☑ Sí"
+    patron_si_marcado = r'[☐☑✓✔☒✅]\s*(?:No|Sí|si)[\s\n]+[☐☑✓✔☒✅]\s*(?:Sí|si)'
+    if re.search(patron_si_marcado, texto_cercano, re.IGNORECASE):
+        return True
+    
+    # Estrategia 3: Buscar "Sí" como respuesta única
+    lineas = texto_cercano.split('\n')
+    for linea in lineas[:10]:
+        linea_limpia = linea.strip()
+        if re.match(r'^[☑✓✔☒✅]?\s*Sí\s*$', linea_limpia, re.IGNORECASE):
+            return True
+    
+    return False
+
+
+def parsear_seccion1_checkboxes(texto: str, seccion1: Dict[str, Any]):
+    """Parsea todas las preguntas de la sección 1"""
+    
+    # 1.a Modalidad
+    match_modalidad = re.search(
+        r"1\.a\.\s+La modalidad.*?(investigación básica|investigación aplicada|investigación básica y aplicada|desarrollo tecnológico)",
+        texto,
+        re.IGNORECASE | re.DOTALL
+    )
+    if match_modalidad:
+        contexto = texto[match_modalidad.start():match_modalidad.end()+100]
+        if any(s in contexto for s in ['☑', '✓', '✔', '☒', '✅']):
+            seccion1["modalidad"] = match_modalidad.group(1).strip().title()
+    
+    # 1.b Otras fuentes
+    if detectar_checkbox(texto, r"1\.b\.\s+.*?otras fuentes de financiamiento"):
+        seccion1["otras_fuentes"]["aplica"] = True
+        detalle = extraer_detalle_despues_checkbox(texto, r"1\.b\.\s+.*?otras fuentes")
+        seccion1["otras_fuentes"]["detalle"] = detalle
+    
+    # 1.c Vinculación técnica
+    if detectar_checkbox(texto, r"1\.c\.\s+.*?vinculación técnica"):
+        seccion1["vinculacion_tecnica"]["aplica"] = True
+        detalle = extraer_detalle_despues_checkbox(texto, r"1\.c\.\s+.*?vinculación")
+        seccion1["vinculacion_tecnica"]["detalle"] = detalle
+    
+    # 1.d Problemas nacionales
+    if detectar_checkbox(texto, r"1\.d\.\s+.*?problemas prioritarios"):
+        seccion1["problemas_nacionales"]["aplica"] = True
+        detalle = extraer_detalle_despues_checkbox(texto, r"1\.d\.\s+.*?problemas")
+        seccion1["problemas_nacionales"]["detalle"] = detalle
+    
+    # 1.e Instrumento jurídico
+    if detectar_checkbox(texto, r"1\.e\.\s+.*?instrumento jurídico"):
+        seccion1["instrumento_juridico"]["aplica"] = True
+        if "Convenio Internacional" in texto:
+            seccion1["instrumento_juridico"]["tipo"] = "Convenio Internacional"
+        elif "Convenio Nacional" in texto:
+            seccion1["instrumento_juridico"]["tipo"] = "Convenio Nacional"
+    
+    # 1.f Convenio marco
+    if detectar_checkbox(texto, r"1\.f\.\s+.*?convenio marco"):
+        seccion1["convenio_marco"]["aplica"] = True
+        nombre = extraer_detalle_despues_checkbox(texto, r"1\.f\.\s+.*?convenio marco")
+        seccion1["convenio_marco"]["nombre"] = nombre
+    
+    # 1.g Base posgrado
+    match_posgrado = re.search(r"1\.g\.\s+.*?(Sí parcial|Sí totalmente)", texto, re.IGNORECASE | re.DOTALL)
+    if match_posgrado and detectar_checkbox(texto, r"1\.g\.\s+.*?grado académico"):
+        seccion1["base_posgrado"]["aplica"] = match_posgrado.group(1).strip()
+        texto_posgrado = extraer_detalle_despues_checkbox(texto, r"1\.g\.\s+.*?posgrado")
+        match_candidato = re.search(r"1\.\s*Nombre.*?:\s*(.*?)(?:2\.|$)", texto_posgrado, re.IGNORECASE)
+        match_programa = re.search(r"2\.\s*Programa.*?:\s*(.*?)(?:3\.|$)", texto_posgrado, re.IGNORECASE)
+        match_universidad = re.search(r"3\.\s*Universidad.*?:\s*(.*?)(?:1\.h\.|$)", texto_posgrado, re.IGNORECASE)
+        
+        if match_candidato:
+            seccion1["base_posgrado"]["candidato"] = match_candidato.group(1).strip()
+        if match_programa:
+            seccion1["base_posgrado"]["programa"] = match_programa.group(1).strip()
+        if match_universidad:
+            seccion1["base_posgrado"]["universidad"] = match_universidad.group(1).strip()
+    
+    # 1.h Información confidencial
+    if detectar_checkbox(texto, r"1\.h\.\s+.*?información sensible"):
+        seccion1["info_confidencial"]["aplica"] = True
+        detalle = extraer_detalle_despues_checkbox(texto, r"1\.h\.\s+.*?confidencial")
+        seccion1["info_confidencial"]["detalle"] = detalle
+    
+    # 1.i Potencial PI
+    if detectar_checkbox(texto, r"1\.i\.\s+.*?propiedad intelectual"):
+        seccion1["potencial_pi"]["aplica"] = True
+        match_oficio = re.search(r"(?:oficio|dictamen)[:\s]*([A-Z]{2,}-\w+-\d{4}-\d+)", texto, re.IGNORECASE)
+        if match_oficio:
+            seccion1["potencial_pi"]["oficio_dictamen"] = match_oficio.group(1).strip()
+    
+    # 1.j Innovación
+    if detectar_checkbox(texto, r"1\.j\.\s+.*?innovación"):
+        seccion1["posee_innovacion"]["aplica"] = True
+        if "de Producto" in texto:
+            seccion1["posee_innovacion"]["tipo"] = "de Producto"
+        elif "de Proceso" in texto:
+            seccion1["posee_innovacion"]["tipo"] = "de Proceso"
+    
+    # 1.k TRL
+    match_trl = re.search(r"(?:TRL|nivel de madurez).*?(?:☑|✔|✓|seleccionado).*?(\d)", texto, re.IGNORECASE)
+    if match_trl:
+        seccion1["trl"] = int(match_trl.group(1))
+
+
+def extraer_detalle_despues_checkbox(texto: str, patron: str) -> str:
+    """Extrae el texto de detalle que viene después de un checkbox marcado"""
+    match = re.search(patron, texto, re.IGNORECASE | re.DOTALL)
+    if not match:
+        return ""
+    
+    inicio = match.end()
+    limite = re.search(r'(?:1\.[a-z]\.|2\.\s+Resumen)', texto[inicio:], re.IGNORECASE)
+    if limite:
+        fin = inicio + limite.start()
+    else:
+        fin = min(inicio + 1000, len(texto))
+    
+    detalle = texto[inicio:fin].strip()
+    detalle = re.sub(r'[☐☑✓✔☒✅]', '', detalle).strip()
+    
+    return detalle
+
+
+def extraer_seccion_robusta(texto: str, inicio_patron: str, fin_patron: str) -> str:
+    """Extrae una sección de texto de manera robusta"""
+    patron = rf"{inicio_patron}.*?\n(.*?)(?={fin_patron}|\Z)"
+    match = re.search(patron, texto, re.IGNORECASE | re.DOTALL)
+    if match:
+        contenido = match.group(1).strip()
+        contenido = re.sub(r'\n{3,}', '\n\n', contenido)
+        return contenido
+    return ""
+
+
+# ============================================================================
+# FUNCIONES PARA TABLAS
+# ============================================================================
+
+def es_tabla_investigadores_tec(table: Table) -> bool:
     try:
         header_text = ' '.join([cell.text for cell in table.rows[0].cells]).lower()
         return 'nombre y apellidos' in header_text and 'orcid' in header_text
     except IndexError:
         return False
 
-def _parsear_tabla_investigadores_tec(table: Table) -> List[Dict[str, str]]:
-    """Extrae datos del Cuadro 2"""
+
+def parsear_tabla_investigadores_tec(table: Table) -> List[Dict[str, str]]:
     investigadores = []
-    for row in table.rows[1:]:  # Saltar encabezado
+    for row in table.rows[1:]:
         cells = [cell.text.strip() for cell in row.cells]
-        if len(cells) >= 5 and cells[0] and cells[0] != '[Inserte las filas':
+        if len(cells) >= 5 and cells[0] and not cells[0].startswith('[Inserte'):
             investigadores.append({
                 'nombre': cells[0],
                 'orcid': cells[1] if len(cells) > 1 else '',
@@ -432,20 +406,20 @@ def _parsear_tabla_investigadores_tec(table: Table) -> List[Dict[str, str]]:
             })
     return investigadores
 
-def _es_tabla_colaboradores(table: Table) -> bool:
-    """Verifica si la tabla es el Cuadro 3 (Colaboradores externos)"""
+
+def es_tabla_colaboradores(table: Table) -> bool:
     try:
         header_text = ' '.join([cell.text for cell in table.rows[0].cells]).lower()
         return 'colaborador externo' in header_text and 'institución' in header_text
     except IndexError:
         return False
 
-def _parsear_tabla_colaboradores(table: Table) -> List[Dict[str, str]]:
-    """Extrae datos del Cuadro 3"""
+
+def parsear_tabla_colaboradores(table: Table) -> List[Dict[str, str]]:
     colaboradores = []
     for row in table.rows[1:]:
         cells = [cell.text.strip() for cell in row.cells]
-        if len(cells) >= 3 and cells[0] and cells[0] != '[Inserte las filas':
+        if len(cells) >= 3 and cells[0] and not cells[0].startswith('[Inserte'):
             colaboradores.append({
                 'nombre': cells[0],
                 'orcid': cells[1] if len(cells) > 1 else '',
@@ -453,16 +427,16 @@ def _parsear_tabla_colaboradores(table: Table) -> List[Dict[str, str]]:
             })
     return colaboradores
 
-def _es_tabla_presupuesto(table: Table) -> bool:
-    """Verifica si la tabla es el Cuadro 4 (Presupuesto por año)"""
+
+def es_tabla_presupuesto(table: Table) -> bool:
     try:
         header_text = ' '.join([cell.text for cell in table.rows[0].cells]).lower()
         return 'año' in header_text and ('operativo' in header_text or 'duradero' in header_text)
     except IndexError:
         return False
 
-def _parsear_tabla_presupuesto(table: Table) -> List[Dict[str, Any]]:
-    """Extrae datos del Cuadro 4"""
+
+def parsear_tabla_presupuesto(table: Table) -> List[Dict[str, Any]]:
     presupuesto = []
     for row in table.rows[1:]:
         cells = [cell.text.strip() for cell in row.cells]
@@ -470,8 +444,8 @@ def _parsear_tabla_presupuesto(table: Table) -> List[Dict[str, Any]]:
             try:
                 anio = cells[0]
                 if anio in ['2027', '2028', '2029', 'Total']:
-                    operativo = _parsear_monto(cells[1]) if len(cells) > 1 else 0
-                    duradero = _parsear_monto(cells[2]) if len(cells) > 2 else 0
+                    operativo = parsear_monto(cells[1]) if len(cells) > 1 else 0
+                    duradero = parsear_monto(cells[2]) if len(cells) > 2 else 0
                     presupuesto.append({
                         'ano': f'Año {anio}' if anio != 'Total' else 'Total',
                         'operativo': operativo,
@@ -481,16 +455,16 @@ def _parsear_tabla_presupuesto(table: Table) -> List[Dict[str, Any]]:
                 continue
     return presupuesto
 
-def _es_tabla_financiamiento(table: Table) -> bool:
-    """Verifica si la tabla es el Cuadro 5 (Financiamiento adicional)"""
+
+def es_tabla_financiamiento(table: Table) -> bool:
     try:
         header_text = ' '.join([cell.text for cell in table.rows[0].cells]).lower()
         return 'desglose' in header_text and ('año 1' in header_text or 'oficio' in header_text)
     except IndexError:
         return False
 
-def _parsear_tabla_financiamiento(table: Table) -> Dict[str, Any]:
-    """Extrae datos del Cuadro 5"""
+
+def parsear_tabla_financiamiento(table: Table) -> Dict[str, Any]:
     financiamiento = {
         'externo': {'ano1': 0, 'ano2': 0, 'ano3': 0, 'oficio': ''},
         'contrapartida': {'ano1': 0, 'ano2': 0, 'ano3': 0, 'oficio': ''},
@@ -502,33 +476,33 @@ def _parsear_tabla_financiamiento(table: Table) -> Dict[str, Any]:
         if len(cells) >= 5:
             fuente = cells[0].lower()
             if 'financiamiento externo' in fuente:
-                financiamiento['externo']['ano1'] = _parsear_monto(cells[1]) if len(cells) > 1 else 0
-                financiamiento['externo']['ano2'] = _parsear_monto(cells[2]) if len(cells) > 2 else 0
-                financiamiento['externo']['ano3'] = _parsear_monto(cells[3]) if len(cells) > 3 else 0
+                financiamiento['externo']['ano1'] = parsear_monto(cells[1]) if len(cells) > 1 else 0
+                financiamiento['externo']['ano2'] = parsear_monto(cells[2]) if len(cells) > 2 else 0
+                financiamiento['externo']['ano3'] = parsear_monto(cells[3]) if len(cells) > 3 else 0
                 financiamiento['externo']['oficio'] = cells[4] if len(cells) > 4 else ''
             elif 'contrapartida' in fuente:
-                financiamiento['contrapartida']['ano1'] = _parsear_monto(cells[1]) if len(cells) > 1 else 0
-                financiamiento['contrapartida']['ano2'] = _parsear_monto(cells[2]) if len(cells) > 2 else 0
-                financiamiento['contrapartida']['ano3'] = _parsear_monto(cells[3]) if len(cells) > 3 else 0
+                financiamiento['contrapartida']['ano1'] = parsear_monto(cells[1]) if len(cells) > 1 else 0
+                financiamiento['contrapartida']['ano2'] = parsear_monto(cells[2]) if len(cells) > 2 else 0
+                financiamiento['contrapartida']['ano3'] = parsear_monto(cells[3]) if len(cells) > 3 else 0
                 financiamiento['contrapartida']['oficio'] = cells[4] if len(cells) > 4 else ''
             elif 'cofinanciamiento' in fuente:
-                financiamiento['cofinanciamiento']['ano1'] = _parsear_monto(cells[1]) if len(cells) > 1 else 0
-                financiamiento['cofinanciamiento']['ano2'] = _parsear_monto(cells[2]) if len(cells) > 2 else 0
-                financiamiento['cofinanciamiento']['ano3'] = _parsear_monto(cells[3]) if len(cells) > 3 else 0
+                financiamiento['cofinanciamiento']['ano1'] = parsear_monto(cells[1]) if len(cells) > 1 else 0
+                financiamiento['cofinanciamiento']['ano2'] = parsear_monto(cells[2]) if len(cells) > 2 else 0
+                financiamiento['cofinanciamiento']['ano3'] = parsear_monto(cells[3]) if len(cells) > 3 else 0
                 financiamiento['cofinanciamiento']['oficio'] = cells[4] if len(cells) > 4 else ''
     
     return financiamiento
 
-def _es_tabla_firma(table: Table) -> bool:
-    """Verifica si la tabla es la de firma (Sección 18)"""
+
+def es_tabla_firma(table: Table) -> bool:
     try:
         header_text = ' '.join([cell.text for cell in table.rows[0].cells]).lower()
         return 'nombre completo' in header_text and 'cédula' in header_text
     except IndexError:
         return False
 
-def _parsear_tabla_firma(table: Table) -> Dict[str, Any]:
-    """Extrae datos de la firma"""
+
+def parsear_tabla_firma(table: Table) -> Dict[str, Any]:
     firma = {'nombre': '', 'cedula': '', 'firmado_digital': False}
     for row in table.rows:
         cells = [cell.text.strip() for cell in row.cells]
@@ -541,8 +515,8 @@ def _parsear_tabla_firma(table: Table) -> Dict[str, Any]:
                 firma['firmado_digital'] = 'sí' in cells[1].lower() or '✓' in cells[1] or '✔' in cells[1]
     return firma
 
-def _parsear_monto(texto: str) -> float:
-    """Convierte texto de monto (₡ 1,500,000) a float"""
+
+def parsear_monto(texto: str) -> float:
     texto_limpio = re.sub(r'[₡,\s]', '', texto)
     try:
         return float(texto_limpio)
