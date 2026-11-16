@@ -79,6 +79,16 @@ export const propuestaService = {
     return response.data;
   },
 
+  listarDocumentosPropuesta: async (propuestaId) => {
+    try {
+      const response = await api.get(`/api/comite-tecnico/evaluador/${propuestaId}/documentos`);
+      return response.data?.documentos || [];
+    } catch (error) {
+      console.warn('Error al listar documentos de la propuesta:', error);
+      return [];
+    }
+  },
+
   obtenerSubsanaciones: async (propuestaId) => {
     try {
       const response = await api.get(`/investigador/propuestas/${propuestaId}/subsanaciones`);
