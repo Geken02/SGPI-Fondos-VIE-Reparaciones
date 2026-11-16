@@ -989,8 +989,8 @@ def obtener_expediente_completo(
     usuario: Usuario = Depends(obtener_usuario_actual)
 ):
     try:
+        # 1. Validaciones de rol y asignación (se mantienen igual)
         rol_usuario = usuario.rol if hasattr(usuario, 'rol') else None
-        
         if not rol_usuario:
             from src.models.roles import UsuarioRol, RolesSistema
             rol_asignado = db.query(UsuarioRol).filter(UsuarioRol.usuarioId == usuario.usuarioId).first()
@@ -998,20 +998,20 @@ def obtener_expediente_completo(
                 rol_obj = db.query(RolesSistema).filter(RolesSistema.rolId == rol_asignado.rolId).first()
                 rol_usuario = rol_obj.nombreRol if rol_obj else None
         
-        roles_que_requieren_evaluacion = ['MiembroComiteTecnico', 'DirectorEscuela']
+        roles_que_requieren_evaluacion = ['MiembroComiteTecnico', 'DirectorEscuela', 'EvaluadorComiteTecnico']
         requiere_evaluacion_asignada = rol_usuario in roles_que_requieren_evaluacion
         
-        # 3. ✅ NUEVO: Si requiere evaluación, verificar que esté ASIGNADO en la nueva tabla
         if requiere_evaluacion_asignada:
+            from src.models.asignaciones_comite import AsignacionComite
             asignacion = db.query(AsignacionComite).filter(
                 AsignacionComite.propuestaId == propuesta_id,
                 AsignacionComite.evaluadorId == usuario.usuarioId,
                 AsignacionComite.activo == True
             ).first()
-            
             if not asignacion:
                 raise HTTPException(status_code=403, detail="No tiene asignada esta propuesta para evaluación")
         
+        # 2. Datos básicos de la propuesta
         propuesta = db.query(Propuesta).filter(Propuesta.propuestaId == propuesta_id).first()
         if not propuesta:
             raise HTTPException(status_code=404, detail="Propuesta no encontrada")
@@ -1020,10 +1020,9 @@ def obtener_expediente_completo(
         escuela = db.query(Escuela).filter(Escuela.escuelaId == propuesta.escuelaId).first()
         modalidad = db.query(Modalidades).filter(Modalidades.modalidadId == propuesta.modalidadId).first()
         
-        estado_propuesta = None
-        if propuesta.estadoId:
-            estado_propuesta = db.query(EstadosPropuesta).filter(EstadosPropuesta.estadoPropuestaId == propuesta.estadoId).first()
+        estado_propuesta = db.query(EstadosPropuesta).filter(EstadosPropuesta.estadoPropuestaId == propuesta.estadoId).first() if propuesta.estadoId else None
         
+        # 3. Documentos
         documentos = db.query(PropuestaDocumentos).filter(
             PropuestaDocumentos.propuestaId == propuesta_id,
             PropuestaDocumentos.activo == True
@@ -1040,6 +1039,8 @@ def obtener_expediente_completo(
                 "urlDescarga": obtener_url_documento(doc.rutaArchivo) if hasattr(doc, 'rutaArchivo') and doc.rutaArchivo else None
             })
         
+        # 4. Integrantes y cálculo de horas
+        from src.models.propuesta_equipo import IntegrantesEquipoPropuesta
         integrantes = db.query(IntegrantesEquipoPropuesta).filter(IntegrantesEquipoPropuesta.propuestaId == propuesta_id).all()
         
         integrantes_data = []
@@ -1048,7 +1049,6 @@ def obtener_expediente_completo(
             usuario_intg = db.query(Usuario).filter(Usuario.usuarioId == intg.usuarioId).first()
             horas = float(intg.horasSemanales) if hasattr(intg, 'horasSemanales') and intg.horasSemanales else 0
             total_horas += horas
-            
             es_coordinador = (intg.usuarioId == propuesta.investigadorCoordId)
             
             integrantes_data.append({
@@ -1059,20 +1059,43 @@ def obtener_expediente_completo(
                 "horasSemanales": horas
             })
         
+        # 5. ✅ CORRECCIÓN: Obtener el desglose presupuestario REAL de la tabla Presupuestopropuesta
+        from src.models.presupuesto import PresupuestoPropuesta
+        partidas_presupuesto = db.query(PresupuestoPropuesta).filter(
+            PresupuestoPropuesta.propuestaId == propuesta_id
+        ).all()
+        
+        # Agrupar por año para enviarlo estructurado al frontend
+        presupuesto_por_anio = {}
+        for partida in partidas_presupuesto:
+            anio = str(partida.anioEjecucion)
+            if anio not in presupuesto_por_anio:
+                presupuesto_por_anio[anio] = {"operativo": 0.0, "duradero": 0.0, "total": 0.0}
+            
+            monto = float(partida.montoSolicitado) if partida.montoSolicitado else 0.0
+            if partida.esDuradero:
+                presupuesto_por_anio[anio]["duradero"] += monto
+            else:
+                presupuesto_por_anio[anio]["operativo"] += monto
+            
+            presupuesto_por_anio[anio]["total"] += monto
+        
+        # Calcular el gran total para compatibilidad con campos antiguos
+        presupuesto_total = sum(info["total"] for info in presupuesto_por_anio.values())
+        
+        # 6. Estado de evaluación del usuario actual
         ya_evaluado = False
-        if rol_usuario in ['MiembroComiteTecnico', 'DirectorEscuela']:
+        if rol_usuario in ['MiembroComiteTecnico', 'DirectorEscuela', 'EvaluadorComiteTecnico']:
             eval_existente = db.query(Evaluaciones).filter(
                 Evaluaciones.propuestaId == propuesta_id,
                 Evaluaciones.evaluadorId == usuario.usuarioId
             ).first()
-            
             if eval_existente and eval_existente.estadoEvaluacionId:
                 estado_eval = db.query(EstadosEvaluacion).filter(EstadosEvaluacion.estadoEvaluacionId == eval_existente.estadoEvaluacionId).first()
                 if estado_eval and estado_eval.nombreEstadoEvaluacion == "Completada":
                     ya_evaluado = True
 
-        presupuesto_total = getattr(propuesta, 'presupuestoSolicitado', 0) or 0
-        
+        # 7. Retornar respuesta con el presupuesto estructurado
         return {
             "propuestaId": propuesta.propuestaId,
             "codigoPropuesta": propuesta.codigoPropuesta or f"FVIE-{propuesta.propuestaId}",
@@ -1082,9 +1105,10 @@ def obtener_expediente_completo(
             "investigadorCoordId": propuesta.investigadorCoordId,
             "escuela": escuela.nombreEscuela if escuela else "Sin escuela",
             "modalidad": modalidad.nombreModalidad if modalidad else "No especificada",
-            "periodo": "2027-2028",
-            "presupuestoSolicitado": presupuesto_total,
-            "totalHorasSemanales": total_horas,
+            "periodo": "2027-2029", 
+            "presupuestoTotal": round(presupuesto_total, 2), 
+            "presupuestoDesglose": presupuesto_por_anio, 
+            "totalHorasSemanales": round(total_horas, 1),
             "estado": estado_propuesta.nombreEstadoPropuesta if estado_propuesta else "Desconocido",
             "fechaEnvio": propuesta.fechaEnvio.isoformat() if getattr(propuesta, 'fechaEnvio', None) else None,
             "documentos": documentos_data,
@@ -1096,7 +1120,9 @@ def obtener_expediente_completo(
     except HTTPException:
         raise
     except Exception as e:
+        import traceback
         print(f"ERROR en obtener_expediente_completo: {str(e)}")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
