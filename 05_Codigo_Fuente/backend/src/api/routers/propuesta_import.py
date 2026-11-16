@@ -11,7 +11,7 @@ from src.models.usuarios import Usuario
 from src.models.catalogos import Modalidades
 from src.models.propuestas import Propuesta
 from src.models.propuesta_contenido import PropuestaContenido
-from src.models.propuesta_contenido import PropuestaDeclaraciones  # ⚠️ Verifica este import
+from src.models.propuesta_contenido import PropuestaDeclaraciones  
 from src.services.form04_parser import parsear_form04_docx
 
 router = APIRouter(prefix="/api/propuestas", tags=["Importación de Formularios"])

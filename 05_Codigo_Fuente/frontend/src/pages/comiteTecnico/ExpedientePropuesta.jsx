@@ -5,21 +5,10 @@ import { comiteTecnicoService } from '../../services/comiteTecnicoService';
 import '../../styles/ExpedientePropuesta.css';
 
 // ============================================================================
-// ICONOS SVG
+// ICONOS SVG (Sin cambios)
 // ============================================================================
 const Icon = ({ path, size = 18, color = 'currentColor' }) => (
-  <svg 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke={color} 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round"
-    aria-hidden="true"
-    focusable="false"
-  >
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
     {path}
   </svg>
 );
@@ -83,7 +72,7 @@ export default function ExpedientePropuesta() {
   const modalidad = propuesta?.modalidad || '';
   const topePresupuesto = modalidad.includes('Fortalecimiento') ? 2000000 : 
                          modalidad.includes('Desarrollo') ? 5000000 : 4000000;
-  const presupuesto = propuesta?.presupuestoSolicitado || 0;
+  const presupuesto = propuesta?.presupuestoTotal || 0;
   const presupuestoValido = presupuesto <= topePresupuesto;
 
   const puedeEvaluar = ['MiembroComiteTecnico', 'DirectorEscuela', 'SuperAdministrador', 'Administrador'].includes(rolActivo);
@@ -131,38 +120,16 @@ export default function ExpedientePropuesta() {
         return (
           <div>
             <h2 className="exp-section-title">Resumen Ejecutivo</h2>
-            
             <div className="exp-meta-grid">
-              <MetaCard 
-                icon={<Icon path={ICONS.reloj} size={16} />}
-                label="Período"
-                value={propuesta.periodo || '2027-2028'}
-              />
-              <MetaCard 
-                icon={<Icon path={ICONS.usuario} size={16} />}
-                label="Integrantes"
-                value={`${propuesta.totalIntegrantes || 0} investigadores`}
-              />
-              <MetaCard 
-                icon={<Icon path={ICONS.etiqueta} size={16} />}
-                label="Modalidad"
-                value={propuesta.modalidad || 'No especificada'}
-              />
+              <MetaCard icon={<Icon path={ICONS.reloj} size={16} />} label="Período" value={propuesta.periodo || '2027-2029'} />
+              <MetaCard icon={<Icon path={ICONS.usuario} size={16} />} label="Integrantes" value={`${propuesta.totalIntegrantes || 0} investigadores`} />
+              <MetaCard icon={<Icon path={ICONS.etiqueta} size={16} />} label="Modalidad" value={propuesta.modalidad || 'No especificada'} />
             </div>
-
             <div className="exp-text-block">
-              <p>
-                {propuesta.resumen || 'El resumen de la propuesta no está disponible en este momento. Por favor, consulte el documento Form-04 adjunto.'}
+              <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+                {propuesta.resumen || 'El resumen de la propuesta no está disponible en este momento.'}
               </p>
             </div>
-
-            <div className="exp-info-box">
-              <Icon path={ICONS.info} size={16} color="#0284c7" />
-              <div>
-                <strong>Disposición 2.3.1:</strong> Todas las iniciativas deben ingresarse a través del sistema Orión. Es requisito indispensable adjuntar la documentación de respaldo completa, utilizando los formatos vigentes aprobados por el CIE.
-              </div>
-            </div>
-
             <DocumentosRelacionados documentos={propuesta.documentos || []} />
             <NotasRevision notas={notasRevision} setNotas={setNotasRevision} />
           </div>
@@ -172,20 +139,11 @@ export default function ExpedientePropuesta() {
         return (
           <div>
             <h2 className="exp-section-title">Fundamentación y Justificación</h2>
-            
             <div className="exp-text-block">
-              <p>
-                La fundamentación y justificación detallada de esta propuesta se encuentra en el documento Form-04 adjunto. El Comité Técnico evaluará la definición y justificación del problema, estado del arte, y coherencia entre problema y objetivos.
+              <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+                {propuesta.resumen || 'La fundamentación detallada se encuentra en el documento Form-04 adjunto.'}
               </p>
             </div>
-
-            <div className="exp-info-box">
-              <Icon path={ICONS.info} size={16} color="#0284c7" />
-              <div>
-                <strong>Disposición 2.11.1.a:</strong> El Comité Técnico evaluará la definición y justificación del problema, estado del arte, y coherencia entre problema y objetivos.
-              </div>
-            </div>
-
             <DocumentosRelacionados documentos={propuesta.documentos || []} />
             <NotasRevision notas={notasRevision} setNotas={setNotasRevision} />
           </div>
@@ -195,20 +153,17 @@ export default function ExpedientePropuesta() {
         return (
           <div>
             <h2 className="exp-section-title">Objetivos</h2>
-            
             <div className="exp-text-block">
-              <p>
-                Los objetivos general y específicos de esta propuesta se encuentran detallados en el documento Form-04 adjunto. Los objetivos deben ser coherentes con la problemática planteada y la metodología propuesta.
-              </p>
+              {propuesta.objetivosEspecificos ? (
+                <ul className="exp-list">
+                  {propuesta.objetivosEspecificos.split(';\n').filter(Boolean).map((obj, idx) => (
+                    <li key={idx} style={{ marginBottom: '8px', lineHeight: '1.5' }}>{obj.trim()}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>Los objetivos específicos no están disponibles en este momento.</p>
+              )}
             </div>
-
-            <div className="exp-info-box">
-              <Icon path={ICONS.info} size={16} color="#0284c7" />
-              <div>
-                <strong>Disposición 2.11.1.a:</strong> Se evaluará la coherencia entre el problema planteado y los objetivos propuestos, tanto general como específicos.
-              </div>
-            </div>
-
             <DocumentosRelacionados documentos={propuesta.documentos || []} />
             <NotasRevision notas={notasRevision} setNotas={setNotasRevision} />
           </div>
@@ -218,20 +173,11 @@ export default function ExpedientePropuesta() {
         return (
           <div>
             <h2 className="exp-section-title">Metodología</h2>
-            
             <div className="exp-text-block">
-              <p>
-                La metodología detallada de esta propuesta se encuentra en el documento Form-04 adjunto. El Comité Técnico evaluará el rigor metodológico, incluyendo enfoque, alcance, diseño de la investigación, y población de estudio.
+              <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+                {propuesta.metodologia || 'La metodología detallada se encuentra en el documento Form-04 adjunto.'}
               </p>
             </div>
-
-            <div className="exp-info-box">
-              <Icon path={ICONS.info} size={16} color="#0284c7" />
-              <div>
-                <strong>Disposición 2.11.1.a:</strong> Se evaluará el rigor metodológico (enfoque, alcance, diseño de la investigación), población de estudio o definición de usuarios.
-              </div>
-            </div>
-
             <DocumentosRelacionados documentos={propuesta.documentos || []} />
             <NotasRevision notas={notasRevision} setNotas={setNotasRevision} />
           </div>
@@ -241,20 +187,15 @@ export default function ExpedientePropuesta() {
         return (
           <div>
             <h2 className="exp-section-title">Plan de Acción y Cronograma</h2>
-            
             <div className="exp-text-block">
-              <p>
-                El plan de acción y cronograma detallado de esta propuesta se encuentra en el documento Form-04 adjunto. El cronograma debe mostrar claridad en las actividades, planificación detallada y trazabilidad de los resultados.
-              </p>
+              <p>El plan de acción y cronograma detallado se encuentra en el documento <strong>Form-05 (Plan de Acción y Riesgos)</strong> adjunto a este expediente.</p>
             </div>
-
             <div className="exp-info-box">
               <Icon path={ICONS.info} size={16} color="#0284c7" />
               <div>
                 <strong>Disposición 2.3.8:</strong> El equipo proponente deberá considerar dentro de la planificación, el realizar la gestión de las compras internacionales y de equipo, en el primer semestre del proyecto.
               </div>
             </div>
-
             <DocumentosRelacionados documentos={propuesta.documentos || []} />
             <NotasRevision notas={notasRevision} setNotas={setNotasRevision} />
           </div>
@@ -273,31 +214,43 @@ export default function ExpedientePropuesta() {
               <div className="exp-alert-content">
                 <strong>Modalidad:</strong> {modalidad}<br/>
                 <strong>Tope máximo según disposición:</strong> ₡{topePresupuesto.toLocaleString()}<br/>
-                <strong>Presupuesto solicitado:</strong> ₡{presupuesto.toLocaleString()}<br/>
+                <strong>Presupuesto total solicitado:</strong> ₡{presupuesto.toLocaleString()}<br/>
                 <div className="exp-alert-divider">
                   <strong>Estado: {presupuestoValido ? '✓ Dentro del límite permitido' : '✗ Excede el límite establecido'}</strong>
                 </div>
               </div>
             </div>
 
-            {presupuesto > 0 && (
+            {propuesta.presupuestoDesglose && Object.keys(propuesta.presupuestoDesglose).length > 0 && (
               <div className="exp-summary-box">
-                <h3 className="exp-summary-title">Resumen Presupuestario</h3>
-                <div className="exp-summary-row">
-                  <span className="exp-summary-label">Presupuesto total solicitado</span>
-                  <span className="exp-summary-value">₡{presupuesto.toLocaleString()}</span>
-                </div>
-                <div className="exp-summary-row">
-                  <span className="exp-summary-label">Tope máximo permitido</span>
-                  <span className={`exp-summary-value ${presupuestoValido ? 'success' : 'danger'}`}>₡{topePresupuesto.toLocaleString()}</span>
-                </div>
+                <h3 className="exp-summary-title">Desglose por Año de Ejecución</h3>
+                <table className="exp-table-simple">
+                  <thead>
+                    <tr>
+                      <th>Año</th>
+                      <th>Operativo</th>
+                      <th>Bienes Duraderos</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(propuesta.presupuestoDesglose).map(([anio, datos]) => (
+                      <tr key={anio}>
+                        <td><strong>{anio}</strong></td>
+                        <td>₡{datos.operativo.toLocaleString()}</td>
+                        <td>₡{datos.duradero.toLocaleString()}</td>
+                        <td><strong>₡{datos.total.toLocaleString()}</strong></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
 
             <div className="exp-info-box">
               <Icon path={ICONS.info} size={16} color="#0284c7" />
               <div>
-                <strong>Disposición 2.3.9:</strong> El presupuesto debe ser coherente con los montos máximos establecidos. Toda compra en bienes duraderos debe formularse obligatoriamente para el primer año de ejecución del proyecto.
+                <strong>Disposición 2.3.9:</strong> Toda compra en bienes duraderos debe formularse obligatoriamente para el primer año de ejecución del proyecto.
               </div>
             </div>
 
@@ -325,18 +278,6 @@ export default function ExpedientePropuesta() {
               </div>
             </div>
 
-            <div className="exp-summary-box">
-              <h3 className="exp-summary-title">Opciones de productos según modalidad</h3>
-              <p style={{margin: '0 0 12px 0', fontSize: '13px', color: '#475569', lineHeight: '1.6'}}>
-                Los productos académicos comprometidos deberán seleccionarse de las listas de opciones definidas según la modalidad:
-              </p>
-              <ul className="exp-list">
-                <li><strong>Fortalecimiento:</strong> Diagnóstico, estudio de mercado, factibilidad, ensayo de laboratorio, propuesta de línea de investigación, formulación de proyecto, o artículo científico (Sección 3.6)</li>
-                <li><strong>Investigación básica/aplicada:</strong> Artículo WoS/Scopus, 2 artículos SciELO/Redalyc, o libro/capítulo de libro (Sección 4.4)</li>
-                <li><strong>Desarrollo tecnológico:</strong> Producto de propiedad industrial + productos académicos (Sección 5.5)</li>
-              </ul>
-            </div>
-
             <div className="exp-info-box">
               <Icon path={ICONS.info} size={16} color="#0284c7" />
               <div>
@@ -353,20 +294,15 @@ export default function ExpedientePropuesta() {
         return (
           <div>
             <h2 className="exp-section-title">Plan de Administración de Riesgos</h2>
-            
             <div className="exp-text-block">
-              <p>
-                El plan de administración de riesgos detallado de esta propuesta se encuentra en el documento Form-04 adjunto. El plan debe incluir identificación de riesgos, medidas de mitigación y responsables de la gestión.
-              </p>
+              <p>El plan de administración de riesgos detallado se encuentra en el documento <strong>Form-05 (Plan de Acción y Riesgos)</strong> adjunto a este expediente.</p>
             </div>
-
             <div className="exp-info-box">
               <Icon path={ICONS.info} size={16} color="#0284c7" />
               <div>
-                <strong>Disposición 1.6:</strong> El equipo investigador debe identificar al menos un riesgo por cada actividad definida en el plan de acción. Las medidas de mitigación deben ser prácticas, medibles y coherentes con los recursos disponibles.
+                <strong>Disposición 1.6:</strong> El equipo investigador debe identificar al menos un riesgo por cada actividad definida en el plan de acción.
               </div>
             </div>
-
             <DocumentosRelacionados documentos={propuesta.documentos || []} />
             <NotasRevision notas={notasRevision} setNotas={setNotasRevision} />
           </div>
@@ -376,13 +312,6 @@ export default function ExpedientePropuesta() {
         return (
           <div>
             <h2 className="exp-section-title">Aspectos Éticos y Permisos</h2>
-            
-            <div className="exp-text-block">
-              <p>
-                Los aspectos éticos y permisos requeridos para esta propuesta se encuentran detallados en el documento Form-04 adjunto. La ejecución técnica de las actividades que requieran permisos no podrá iniciar hasta que se cuente con la autorización respectiva.
-              </p>
-            </div>
-
             <div className="exp-alert-box warning">
               <h3 style={{margin: '0 0 12px 0', fontSize: '14px', color: 'inherit', fontWeight: '600'}}>
                 Marco Legal Aplicable (Disp. 2.10.2)
@@ -393,14 +322,6 @@ export default function ExpedientePropuesta() {
                 <li><strong>Ley 7451 (2017):</strong> Bienestar Animal - Requiere aprobación de CICUA o COBAB</li>
               </ul>
             </div>
-
-            <div className="exp-info-box">
-              <Icon path={ICONS.info} size={16} color="#0284c7" />
-              <div>
-                <strong>Disposición 2.10.2:</strong> La ejecución técnica de las actividades que requieran estos permisos no podrá iniciar hasta que se cuente con la autorización respectiva. El Comité Técnico es responsable de verificar que estos requisitos estén debidamente planteados.
-              </div>
-            </div>
-
             <DocumentosRelacionados documentos={propuesta.documentos || []} />
             <NotasRevision notas={notasRevision} setNotas={setNotasRevision} />
           </div>
@@ -492,7 +413,6 @@ export default function ExpedientePropuesta() {
 
       {/* MAIN 2-COLUMN LAYOUT */}
       <div className="exp-grid">
-        
         {/* LEFT: NAVIGATION */}
         <div className="exp-panel">
           <h3 className="exp-panel-title">SECCIONES DEL FORM-04</h3>
@@ -513,9 +433,7 @@ export default function ExpedientePropuesta() {
           
           {propuesta.integrantes?.length > 0 && (
             <div className="exp-team-section">
-              <h4 className="exp-team-title">
-                EQUIPO INVESTIGADOR ({propuesta.integrantes.length})
-              </h4>
+              <h4 className="exp-team-title">EQUIPO INVESTIGADOR ({propuesta.integrantes.length})</h4>
               <div className="exp-team-list">
                 {propuesta.integrantes.map((intg, idx) => (
                   <div key={idx} className={`exp-team-item ${intg.esCoordinador ? 'coordinador' : ''}`}>
@@ -554,7 +472,6 @@ export default function ExpedientePropuesta() {
             {renderContenido()}
           </div>
         </div>
-
       </div>
     </div>
   );
@@ -578,9 +495,7 @@ const DocumentosRelacionados = ({ documentos }) => {
     return (
       <div className="exp-docs-section">
         <h3 className="exp-docs-title">Documentos relacionados</h3>
-        <div className="exp-docs-empty">
-          No hay documentos adjuntos disponibles
-        </div>
+        <div className="exp-docs-empty">No hay documentos adjuntos disponibles</div>
       </div>
     );
   }
