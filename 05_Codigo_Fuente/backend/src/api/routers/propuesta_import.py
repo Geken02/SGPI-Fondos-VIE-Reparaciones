@@ -6,9 +6,10 @@ import json
 from src.database import get_db
 from src.utils.dependencias import obtener_usuario_activo
 from src.models.usuarios import Usuario
-from src.models.propuestas import Propuestas, Modalidades
+from src.models.catalogos import Modalidades
+from src.models.propuestas import Propuesta
 from src.models.propuesta_contenido import PropuestaContenido
-from src.models.propuesta_declaraciones import PropuestaDeclaraciones
+from src.models.propuesta_contenido import PropuestaDeclaraciones
 from src.services.form04_parser import parsear_form04_docx
 
 router = APIRouter(prefix="/api/propuestas", tags=["Importación de Formularios"])
@@ -29,7 +30,7 @@ async def importar_form04(
         datos = parsear_form04_docx(contenido)
         
         # 2. Actualizar tabla Propuestas (Cabecera)
-        propuesta = sesion.query(Propuestas).filter(Propuestas.propuestaId == propuesta_id).first()
+        propuesta = sesion.query(Propuesta).filter(Propuesta.propuestaId == propuesta_id).first()
         if not propuesta:
             raise HTTPException(status_code=404, detail="Propuesta no encontrada")
             
