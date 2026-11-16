@@ -49,20 +49,6 @@ export default function BandejaDeCompletitud() {
     }
   };
 
-  const handleAprobarCompletitud = async (propuestaId) => {
-    if (!window.confirm('¿Está seguro de aprobar la completitud de esta propuesta?')) {
-      return;
-    }
-    try {
-      await comiteTecnicoService.aprobarCompletitud(propuestaId);
-      alert('Completitud aprobada');
-      cargarPropuestas();
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error al aprobar');
-    }
-  };
-
   const handleAsignarEvaluador = async () => {
     cargarPropuestas();
   };
@@ -134,12 +120,12 @@ export default function BandejaDeCompletitud() {
                       {propuesta.documentosFaltantes?.includes(1) && <span className="doc-falta">✗ Form-04</span>}
                       {propuesta.documentosFaltantes?.includes(2) && <span className="doc-falta">✗ Form-05</span>}
                       {propuesta.documentosFaltantes?.includes(3) && <span className="doc-falta">✗ Form-06</span>}
-                      {propuesta.documentosFaltantes?.includes(5) && <span className="doc-falta">✗ Presupuesto</span>}
+                      {propuesta.documentosFaltantes?.includes(5) && <span className="doc-falta">✗ Dictamen de Vinculación</span>}
                       
                       {!propuesta.documentosFaltantes?.includes(1) && <span className="doc-ok">✓ Form-04</span>}
                       {!propuesta.documentosFaltantes?.includes(2) && <span className="doc-ok">✓ Form-05</span>}
                       {!propuesta.documentosFaltantes?.includes(3) && <span className="doc-ok">✓ Form-06</span>}
-                      {!propuesta.documentosFaltantes?.includes(5) && <span className="doc-ok">✓ Presupuesto</span>}
+                      {!propuesta.documentosFaltantes?.includes(5) && <span className="doc-ok">✓ Dictamen de Vinculación</span>}
                     </div>
                   </td>
                   <td>
@@ -150,20 +136,12 @@ export default function BandejaDeCompletitud() {
                   <td>
                     <div className="acciones-cell">
                       {propuesta.esCompleta ? (
-                        <>
-                          <button
-                            onClick={() => setModalAsignacion({ abierto: true, propuesta })}
-                            className="btn-asignar"
-                          >
-                            👥 Asignar
-                          </button>
-                          <button
-                            onClick={() => handleAprobarCompletitud(propuesta.propuestaId)}
-                            className="btn-aprobar"
-                          >
-                            ✓ Aprobar
-                          </button>
-                        </>
+                        <button
+                          onClick={() => setModalAsignacion({ abierto: true, propuesta })}
+                          className="btn-asignar"
+                        >
+                          👥 Asignar
+                        </button>
                       ) : (
                         <button
                           onClick={() => setModalSubsanacion({ abierto: true, propuesta })}
