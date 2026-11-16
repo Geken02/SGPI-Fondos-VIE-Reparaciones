@@ -117,7 +117,7 @@ def crear_acuerdo(
     """
 
   
-    TIPO_DOC_ACUERDO = 7  # ← AJUSTA ESTE NÚMERO al ID real de tu BD
+    TIPO_DOC_ACUERDO = 8  # ← AJUSTA ESTE NÚMERO al ID real de tu BD
 
     try:
         # 1. Crear el acuerdo en la BD
