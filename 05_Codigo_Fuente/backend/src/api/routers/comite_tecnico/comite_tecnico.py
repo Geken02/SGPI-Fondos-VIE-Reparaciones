@@ -877,22 +877,15 @@ def propuestas_asignadas(
             print(f"📊 Total asignaciones: {total_asignadas}")
             
             # Verificar si existe dictamen
+            # Verificar si existe dictamen DEL COMITÉ TÉCNICO (tipoDictamenId = 2)
+# Filtrar explícitamente para ignorar dictámenes de Vinculación (tipo 1) o corruptos (null)
             try:
                 dictamen_comite = db.query(Dictamenes).filter(
                     Dictamenes.propuestaId == p.propuestaId,
-                    Dictamenes.tipoDictamenId == 2  # Solo Comité Técnico
+                    Dictamenes.tipoDictamenId == 2  # ← FILTRO CLAVE: solo Comité Técnico
                 ).first()
                 
                 ya_tiene_dictamen = dictamen_comite is not None
-                
-                # DEBUG: Si existe un dictamen pero sin tipo, mostrar advertencia
-                if not ya_tiene_dictamen:
-                    dictamen_sin_tipo = db.query(Dictamenes).filter(
-                        Dictamenes.propuestaId == p.propuestaId,
-                        Dictamenes.tipoDictamenId == None
-                    ).first()
-                    if dictamen_sin_tipo:
-                        print(f"⚠️ ADVERTENCIA: Propuesta {p.propuestaId} tiene dictamen ID={dictamen_sin_tipo.dictamenId} pero sin tipoDictamenId (es null). No cuenta como dictamen de Comité.")
                 
                 print(f"📝 Dictamen Comité para propuesta {p.propuestaId}: {dictamen_comite}")
                 print(f"✅ Ya tiene dictamen de Comité: {ya_tiene_dictamen}")
@@ -900,7 +893,7 @@ def propuestas_asignadas(
             except Exception as e:
                 print(f"❌ ERROR al consultar dictamenes: {str(e)}")
                 ya_tiene_dictamen = False
-            
+                        
             # 7. Determinar el estado para la UI
             if es_gestor:
                 if total_asignadas == 0:
