@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from src.database import get_db
 from src.utils.dependencias import obtener_usuario_activo
 from src.models.usuarios import Usuario
-from src.models.propuestas import Propuestas
+from src.models.propuestas import Propuesta
 from src.models.propuesta_contenido import PropuestaContenido, PropuestaDeclaraciones
 from src.models.propuesta_documentos import PropuestaDocumentos, TiposDocumento
 from src.services.form04_parser import parsear_form04_docx
@@ -34,7 +34,7 @@ async def importar_form04(
     
     # Actualizar título de la propuesta si se extrajo
     if datos.get("titulo"):
-        propuesta = sesion.query(Propuestas).filter(Propuestas.propuestaId == propuesta_id).first()
+        propuesta = sesion.query(Propuesta).filter(Propuesta.propuestaId == propuesta_id).first()
         if propuesta:
             propuesta.titulo = datos["titulo"]
     
