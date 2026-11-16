@@ -101,6 +101,30 @@ const FormularioPlanRiesgos = () => {
     return periodo;
   };
 
+  // Rellena los checkboxes de periodo segun mes de inicio y duracion (misma tabla que el Form-04)
+  const actualizarPeriodoDesdeMeses = (act, mesIni, durMeses) => {
+    const inicio = parseInt(mesIni, 10);
+    const duracion = parseInt(durMeses, 10);
+    if (isNaN(inicio) || inicio < 1) return;
+    const dur = !isNaN(duracion) && duracion >= 1 ? duracion : 1;
+    const fin = inicio + dur - 1;
+    if (!act.periodoEjecucion) act.periodoEjecucion = crearPeriodoVacio();
+    for (let a = 1; a <= 3; a++) {
+      for (let m = 1; m <= 12; m++) {
+        act.periodoEjecucion[`a${a}`][`m${m}`] = false;
+      }
+    }
+    act.a1 = false; act.a2 = false; act.a3 = false;
+    for (let mesAbs = inicio; mesAbs <= fin && mesAbs <= 36; mesAbs++) {
+      const a = Math.floor((mesAbs - 1) / 12) + 1;
+      const m = ((mesAbs - 1) % 12) + 1;
+      if (a <= 3) {
+        act.periodoEjecucion[`a${a}`][`m${m}`] = true;
+        act[`a${a}`] = true;
+      }
+    }
+  };
+
   useEffect(() => {
     if (usuario?.nombre && integrantes.length === 0) {
       const nombreCompleto = `${usuario.nombre} ${usuario.apellido1 || ''}`.trim();
@@ -589,8 +613,8 @@ const FormularioPlanRiesgos = () => {
                         {integrantes.map(int => (<option key={int.id} value={int.iniciales}>{int.iniciales} — {int.nombre} ({int.rol})</option>))}
                       </select>
                     </td>
-                    <td><input type="number" min="1" max="36" className="form-table-input" style={{ width: '50px', textAlign: 'center' }} value={act.mesInicio || ''} onChange={(e) => { const copia = [...actividades]; copia[i].mesInicio = e.target.value; setActividades(copia); }} /></td>
-                    <td><input type="number" min="1" max="36" className="form-table-input" style={{ width: '50px', textAlign: 'center' }} value={act.duracionMesesAct || ''} onChange={(e) => { const copia = [...actividades]; copia[i].duracionMesesAct = e.target.value; setActividades(copia); }} /></td>
+                    <td><input type="number" min="1" max="36" className="form-table-input" style={{ width: '50px', textAlign: 'center' }} value={act.mesInicio || ''} onChange={(e) => { const copia = [...actividades]; copia[i].mesInicio = e.target.value; actualizarPeriodoDesdeMeses(copia[i], e.target.value, copia[i].duracionMesesAct); setActividades(copia); }} /></td>
+                    <td><input type="number" min="1" max="36" className="form-table-input" style={{ width: '50px', textAlign: 'center' }} value={act.duracionMesesAct || ''} onChange={(e) => { const copia = [...actividades]; copia[i].duracionMesesAct = e.target.value; actualizarPeriodoDesdeMeses(copia[i], copia[i].mesInicio, e.target.value); setActividades(copia); }} /></td>
                     {Array.from({ length: numAnios }, (_, a) => Array.from({ length: 12 }, (_, m) => {
                       const checked = act.periodoEjecucion?.[`a${a+1}`]?.[`m${m+1}`] || false;
                       return (<td key={`${act.id}-a${a+1}-m${m+1}`} style={{ textAlign: 'center', padding: '1px' }}><input type="checkbox" checked={checked} aria-label={`Actividad ${i + 1}, Año ${a + 1}, Mes ${m + 1}`} onChange={() => handleTogglePeriodo(i, a + 1, m + 1)} style={{ cursor: 'pointer', width: '14px', height: '14px' }} /></td>);

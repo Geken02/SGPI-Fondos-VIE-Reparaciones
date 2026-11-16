@@ -151,9 +151,10 @@ def crear_dictamen_vinculacion(
             detail="No puede evaluar una propuesta de la cual usted es el investigador coordinador"
         )
 
-    # Crear el registro del dictamen usando los setters de la clase
+    # Tipo 1 de TiposDictamen: Vinculacion
     dictamen = Dictamenes()
     dictamen.setPropuestaId(datos.propuestaId)
+    dictamen.setTipoDictamenId(1)
     dictamen.setNumeroOficio(datos.numeroOficio)
     dictamen.setContenido(datos.contenido)
     dictamen.setRutaArchivo(datos.rutaArchivo)
