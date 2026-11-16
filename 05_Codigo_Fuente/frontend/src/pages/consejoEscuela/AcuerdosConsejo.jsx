@@ -19,6 +19,8 @@ export default function AcuerdosConsejo() {
   const { rolesUsuario = [] } = useAuth();
   const esDirectorEscuela = rolesUsuario.includes("DirectorEscuela");
   const [acuerdos, setAcuerdos] = useState([]);
+  const [propuestas, setPropuestas] = useState([]);
+  const [cargandoPropuestas, setCargandoPropuestas] = useState(false);
   const [formulario, setFormulario] = useState(estadoInicial);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [cargando, setCargando] = useState(true);
@@ -48,6 +50,30 @@ export default function AcuerdosConsejo() {
   useEffect(() => {
     cargarAcuerdos();
   }, []);
+
+  useEffect(() => {
+    if (!esDirectorEscuela) return;
+
+    const cargarPropuestas = async () => {
+      try {
+        setCargandoPropuestas(true);
+        const respuesta = await consejoEscuelaService.listarPropuestas();
+        const lista = Array.isArray(respuesta)
+          ? respuesta
+          : respuesta?.items ?? respuesta?.data ?? [];
+        setPropuestas(lista);
+      } catch (err) {
+        console.error("Error al cargar propuestas para el acuerdo:", err);
+        setError(
+          "No fue posible cargar las propuestas disponibles para registrar el acuerdo."
+        );
+      } finally {
+        setCargandoPropuestas(false);
+      }
+    };
+
+    cargarPropuestas();
+  }, [esDirectorEscuela]);
 
   const manejarCambio = (event) => {
     const { name, value } = event.target;
@@ -198,15 +224,32 @@ export default function AcuerdosConsejo() {
           <form onSubmit={manejarGuardar}>
             <div className="acuerdos-formulario-grid">
               <label>
-                ID de propuesta *
-                <input
-                  type="number"
+                Propuesta *
+                <select
                   name="propuestaId"
-                  min="1"
                   value={formulario.propuestaId}
                   onChange={manejarCambio}
                   required
-                />
+                  disabled={cargandoPropuestas || propuestas.length === 0}
+                >
+                  <option value="">
+                    {cargandoPropuestas
+                      ? "Cargando propuestas..."
+                      : propuestas.length === 0
+                        ? "No hay propuestas disponibles"
+                        : "Seleccione una propuesta"}
+                  </option>
+                  {propuestas.map((propuesta) => (
+                    <option
+                      key={propuesta.propuestaId}
+                      value={propuesta.propuestaId}
+                    >
+                      {propuesta.codigoPropuesta
+                        ? `${propuesta.codigoPropuesta} - ${propuesta.titulo}`
+                        : `${propuesta.propuestaId} - ${propuesta.titulo}`}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <label>

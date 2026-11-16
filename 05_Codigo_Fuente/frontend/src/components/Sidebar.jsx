@@ -260,10 +260,6 @@ const Sidebar = () => {
       return (
         <>
           <div className="sidebar-group-title">Consejo de Profesores</div>
-          <NavLink to="/dashboard/asignaciones-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
-            <span className="sidebar-pill-icon">{IconoUsuarios}</span>
-            <span className="sidebar-pill-label">Asignación de Miembros</span>
-          </NavLink>
           <NavLink to="/dashboard/propuestas-consejo" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
             <span className="sidebar-pill-icon">{IconoDocumento}</span>
             <span className="sidebar-pill-label">Propuestas y Rúbrica-02</span>
