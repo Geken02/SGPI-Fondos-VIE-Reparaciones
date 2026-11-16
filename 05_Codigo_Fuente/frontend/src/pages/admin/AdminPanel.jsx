@@ -75,9 +75,9 @@ export default function AdminPanel() {
   const getPorcentaje = (cantidad) => totalPropuestas === 0 ? 0 : Math.round((cantidad / totalPropuestas) * 100);
 
   // Máximos reales para calcular porcentajes honestos (ajusta a tu sistema)
-  const MAX_PROPUESTAS = 12;
-  const MAX_ESCUELAS = 11;
-  const MAX_USUARIOS = 30;
+  const MAX_PROPUESTAS = 1000;
+  const MAX_ESCUELAS = 100;
+  const MAX_USUARIOS = 100;
   const calcPct = (valor, max) => Math.min(100, Math.round((valor / max) * 100));
 
   const coloresEstado = {
