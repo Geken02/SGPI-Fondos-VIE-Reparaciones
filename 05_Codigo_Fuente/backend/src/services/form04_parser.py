@@ -5,7 +5,6 @@ from docx.table import Table
 from io import BytesIO
 from typing import Dict, Any, List
 
-
 def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
     """
     Parser robusto para Form-04 con MODO DEBUG activado.
