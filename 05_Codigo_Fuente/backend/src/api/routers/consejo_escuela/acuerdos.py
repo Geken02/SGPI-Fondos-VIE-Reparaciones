@@ -163,7 +163,7 @@ def crear_acuerdo(datos: AcuerdoCrear, db: Session = Depends(get_db)):
         
         # 4. Subir a S3
         nombre_archivo = f"{tipo_formulario}_{propuesta.codigoPropuesta}_{acuerdo.acuerdoId}.docx"
-        ruta_s3 = f"acuerdos/{propuesta.propuestaId}/{nombre_archivo}"
+        ruta_s3 = f"propuestas/{propuesta.propuestaId}/{nombre_archivo}"
         
         try:
             s3_client.put_object(
