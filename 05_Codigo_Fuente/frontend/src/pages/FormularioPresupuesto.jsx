@@ -299,9 +299,9 @@ const FormularioPresupuesto = () => {
                 filasActuales.map((f) => (
                   <tr key={f.id}>
                     <td><span className="propuesta-codigo-pill">{f.codigo}</span></td>
-                    <td style={{ fontWeight: 600, color: '#002855' }}>{f.detalle}</td>
-                    <td style={{ fontWeight: 700, color: '#0369A1', fontSize: '15px' }}>₡ {Number(f.monto || 0).toLocaleString('es-CR')},00</td>
-                    <td style={{ fontSize: '13px', color: '#475569' }}>{f.justificacion}</td>
+                    <td className="og-detalle-cell"><strong>{f.detalle}</strong></td>
+                    <td className="og-monto-cell">₡ {Number(f.monto || 0).toLocaleString('es-CR')},00</td>
+                    <td className="og-justificacion-cell">{f.justificacion}</td>
                     <td style={{ textAlign: 'center' }}><button type="button" className="btn-icon-action btn-icon-delete" onClick={() => handleEliminarFila(f.id)} title="Eliminar partida">✕</button></td>
                   </tr>
                 ))
