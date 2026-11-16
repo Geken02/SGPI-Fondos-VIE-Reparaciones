@@ -30,6 +30,7 @@ from src.api.routers.vie import miembro_cie
 from src.api.routers import direccion_investigacion
 from src.api.routers.vie import expedientes, subsanaciones, preferencias
 from src.api.routers import archivos
+from src.api.routers import propuesta_import 
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware 
@@ -71,6 +72,7 @@ app.include_router(preferencias.router)
 app.include_router(archivos.router)
 app.include_router(asignaciones.router)
 app.include_router(asignacion_router)
+app.include_router(propuesta_import.router)
 
 
 @app.get("/")
