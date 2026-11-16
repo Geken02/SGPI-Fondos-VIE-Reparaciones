@@ -2,11 +2,28 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+// Rutas de Configuración y Ayuda según el rol activo.
+// VIE y Dirección tienen sus propias ventanas; el CIE usa las generales del sistema.
+const RUTAS_CUENTA = {
+  gestora: { configuracion: '/gestora/configuracion', ayuda: '/gestora/ayuda' },
+  direccion: { configuracion: '/direccion/configuracion', ayuda: '/direccion/ayuda' },
+  cie: { configuracion: '/dashboard/configuracion', ayuda: '/dashboard/ayuda' }
+};
+
+// Helper para agrupar roles específicos en categorías de enrutamiento
+const obtenerGrupoRol = (rol) => {
+  if (rol === 'GestoraVIE' || rol === 'CoordinadoraGestora') return 'gestora';
+  if (rol === 'DireccionInvestigacion' || rol === 'DirectorInvestigacion' || rol === 'SubdirectorInvestigacion') return 'direccion';
+  if (rol === 'MiembroCIE' || rol === 'CoordinadorCIE' || rol === 'PresidenteCIE') return 'cie';
+  return null;
+};
+
 const ProfileDropdown = ({ isOpen, onClose }) => {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const { usuario, logout, rolActivo, cambiarRol, rolesUsuario, formatearNombreRol } = useAuth();
 
+  // Manejo de clic fuera del dropdown para cerrarlo
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -24,15 +41,20 @@ const ProfileDropdown = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  // Lista de roles para el selector:
-  // Exclusivamente los roles reales que el usuario tiene asignados en la base de datos
+  // Lista de roles deduplicada
   const rolesDisponibles = Array.isArray(rolesUsuario) ? Array.from(new Set(rolesUsuario)) : [];
 
+  // Datos del usuario con valores por defecto (fallback)
   const nombreMostrar = usuario?.nombre 
     ? `${usuario.nombre} ${usuario.apellido1 || ''}`.trim() 
     : 'Dr. Andrés Vargas';
 
   const correoMostrar = usuario?.correo || usuario?.correo_institucional || 'andres.vargas@itcr.ac.cr';
+
+  // Lógica de enrutamiento dinámico según el rol activo
+  const grupoRol = obtenerGrupoRol(rolActivo);
+  const rutasCuenta = grupoRol ? RUTAS_CUENTA[grupoRol] : null;
+  const rutaConfiguracion = rutasCuenta?.configuracion || '/dashboard/configuracion';
 
   return (
     <div className="profile-popover" ref={dropdownRef}>
@@ -50,7 +72,7 @@ const ProfileDropdown = ({ isOpen, onClose }) => {
           <div className="profile-popover-name">{nombreMostrar}</div>
           <div className="profile-popover-email">{correoMostrar}</div>
           {rolActivo && (
-            <div style={{ fontSize: '12px', color: '#627d98', marginTop: '2px' }}>
+            <div style={{ fontSize: '12px', color: '#486581', marginTop: '2px' }}>
               {formatearNombreRol(rolActivo)}
             </div>
           )}
@@ -59,7 +81,7 @@ const ProfileDropdown = ({ isOpen, onClose }) => {
 
       <div className="profile-popover-divider" />
 
-      {/* Selector de Roles: solo se muestra si la cuenta tiene varios roles asignados en la BD */}
+      {/* Selector de Roles: solo se muestra si la cuenta tiene varios roles asignados */}
       {rolesDisponibles.length > 1 && (
         <>
           <div className="profile-popover-roles-section">
@@ -104,7 +126,7 @@ const ProfileDropdown = ({ isOpen, onClose }) => {
         </>
       )}
 
-      {/* Enlaces de Menú (Perfil y Configuración compartidos entre roles) */}
+      {/* Enlaces de Menú */}
       <div className="profile-popover-menu">
         <button 
           className="profile-menu-item" 
@@ -115,20 +137,34 @@ const ProfileDropdown = ({ isOpen, onClose }) => {
         >
           <span>Mi perfil</span>
         </button>
+        
         <button 
           className="profile-menu-item"
           onClick={() => {
             onClose();
-            navigate('/dashboard/configuracion');
+            navigate(rutaConfiguracion);
           }}
         >
           <span>Configuración</span>
         </button>
+        
+        {/* Opción de Ayuda condicional según el rol */}
+        {rutasCuenta && (
+          <button 
+            className="profile-menu-item"
+            onClick={() => {
+              onClose();
+              navigate(rutasCuenta.ayuda);
+            }}
+          >
+            <span>Ayuda</span>
+          </button>
+        )}
       </div>
 
       <div className="profile-popover-divider" />
 
-      {/* Cerrar Sesión en Rojo EF3340 */}
+      {/* Cerrar Sesión */}
       <button 
         className="profile-popover-logout" 
         onClick={() => {

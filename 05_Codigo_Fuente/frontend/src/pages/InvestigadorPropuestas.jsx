@@ -59,7 +59,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
       formDataParseo.append('archivo', file);
 
       const responseParseo = await fetch(
-        `${baseURL}/api/propuestas/${propuestaId}/importar-form04`,
+        `${baseURL}/api/propuestas/${propuestaId}/parse-form04`,
         {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` },
