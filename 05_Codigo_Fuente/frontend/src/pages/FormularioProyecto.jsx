@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
@@ -82,6 +82,21 @@ const FormularioProyecto = () => {
   const isInitialMount = useRef(true);
   const lastSyncedActividades = useRef('');
 
+
+  // Sincronizar riesgosMitigacion automaticamente desde actividadesCronograma (Item 2 desde Tabla 1)
+  useEffect(() => {
+    const riesgosDeMatriz = actividadesCronograma
+      .filter(act => act.riesgo && act.riesgo.trim() !== '')
+      .map(act => ({
+        id: act.id,
+        riesgo: act.riesgo || '',
+        mitigacion: act.mitigacion || '',
+        responsable: act.responsableGestion || act.responsable || ''
+      }));
+    if (riesgosDeMatriz.length > 0) {
+      setRiesgosMitigacion(riesgosDeMatriz);
+    }
+  }, [actividadesCronograma]);
   // Paso 13: Presupuesto Plurianual Solicitado (Recursos VIE)
   const [presupuestoAnual, setPresupuestoAnual] = useState([
     { ano: 'Año 1', operativo: '', duradero: '' },
@@ -160,6 +175,34 @@ const FormularioProyecto = () => {
     }
     return sum > 0 ? sum : 12;
   }, [investigadoresTEC]);
+
+  // Opciones de objetivos específicos provenientes de la matriz de actividades (Paso 14 dropdown)
+  const opcionesObjetivosMatriz = useMemo(() => {
+    const lista = [];
+    const vistos = new Set();
+
+    // 1. OEs registrados en objetivosEspecificos (Paso 9 / Matriz)
+    objetivosEspecificos.forEach((oe, idx) => {
+      const texto = (oe || '').trim();
+      if (texto) {
+        const clave = 'OE ' + (idx + 1);
+        vistos.add(clave);
+        const tCorto = texto.length > 50 ? (texto.substring(0, 50) + '...') : texto;
+        lista.push({ valor: clave, label: clave + ': ' + tCorto, labelCompleto: clave + ': ' + texto });
+      }
+    });
+
+    // 2. OEs adicionales usados en actividades de la matriz
+    actividadesCronograma.forEach(act => {
+      const clave = (act.obj || act.objetivo || '').trim();
+      if (clave && !vistos.has(clave)) {
+        vistos.add(clave);
+        lista.push({ valor: clave, label: clave, labelCompleto: clave });
+      }
+    });
+
+    return lista;
+  }, [objetivosEspecificos, actividadesCronograma]);
 
   // Inicializar coordinador cuando carga el usuario
   
@@ -470,6 +513,29 @@ const FormularioProyecto = () => {
     }
   }, [pasoParam]);
 
+  // Helper: rellenar checkboxes de periodo segun mes de inicio y duracion
+  const actualizarPeriodoDesdeMeses = (act, mesIni, durMeses) => {
+    const inicio = parseInt(mesIni, 10);
+    const duracion = parseInt(durMeses, 10);
+    if (isNaN(inicio) || inicio < 1) return;
+    const dur = !isNaN(duracion) && duracion >= 1 ? duracion : 1;
+    const fin = inicio + dur - 1;
+    if (!act.periodoEjecucion) act.periodoEjecucion = crearPeriodoVacio();
+    for (let a = 1; a <= 3; a++) {
+      for (let m = 1; m <= 12; m++) {
+        act.periodoEjecucion[`a${a}`][`m${m}`] = false;
+      }
+    }
+    act.a1 = false; act.a2 = false; act.a3 = false;
+    for (let mesAbs = inicio; mesAbs <= fin && mesAbs <= 36; mesAbs++) {
+      const a = Math.floor((mesAbs - 1) / 12) + 1;
+      const m = ((mesAbs - 1) % 12) + 1;
+      if (a <= 3) {
+        act.periodoEjecucion[`a${a}`][`m${m}`] = true;
+        act[`a${a}`] = true;
+      }
+    }
+  };
   // Helper: crear objeto vacío de periodo de ejecución por meses (Form 05)
   const crearPeriodoVacio = () => {
     const periodo = {};
@@ -1631,10 +1697,10 @@ const guardarBorradorActual = async () => {
                         <tr 
                           key={item.nivel} 
                           onClick={() => setTrlSeleccionado(item.nivel)}
-                          style={{ cursor: 'pointer', backgroundColor: trlSeleccionado === item.nivel ? '#f0fdf4' : 'transparent' }}
+                          className={`trl-table-row ${trlSeleccionado === item.nivel ? 'is-selected' : ''}`} style={{ cursor: 'pointer' }}
                         >
-                          <td style={{ fontWeight: 600, color: '#002855' }}>{item.label}</td>
-                          <td style={{ fontSize: '13px', color: '#475569' }}>{item.desc}</td>
+                          <td className="trl-label-cell"><strong>{item.label}</strong></td>
+                          <td className="trl-desc-cell">{item.desc}</td>
                           <td style={{ textAlign: 'center' }}>
                             <input 
                               type="radio" 
@@ -1766,7 +1832,7 @@ const guardarBorradorActual = async () => {
                                 value={inv.nombre}
                                 readOnly
                                 title="Investigador Coordinador responsable de la propuesta"
-                                style={{ backgroundColor: '#f8fafc', fontWeight: 600, color: '#002855' }}
+                                className="form-table-input form-table-input-readonly"
                               />
                             ) : (
                               <select
@@ -2072,25 +2138,13 @@ const guardarBorradorActual = async () => {
                     + Agregar Objetivo Específico
                   </button>
 
-                  <div style={{
-                    marginTop: '16px',
-                    padding: '12px 16px',
-                    backgroundColor: '#f0fdf4',
-                    border: '1px solid #bbf7d0',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '10px'
-                  }}>
-                    <span style={{ fontSize: '13px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div className="oe-vinculo-cronograma-callout">
+                    <span className="oe-vinculo-text">
                       <span>🔗</span> Los objetivos específicos definidos aquí están vinculados directamente con el <strong>Paso 12 (Plan de Acción y Cronograma)</strong>.
                     </span>
                     <button
                       type="button"
-                      className="btn-link-action"
-                      style={{ fontSize: '12px', color: '#15803d', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                      className="btn-link-action oe-vinculo-btn"
                       onClick={() => setPasoActual(12)}
                     >
                       Ir a Paso 12 (Cronograma) →
@@ -2165,21 +2219,14 @@ const guardarBorradorActual = async () => {
                 </div>
 
                 {/* Panel de Objetivos Específicos Vinculados desde Paso 9 */}
-                <div style={{
-                  marginBottom: '16px',
-                  padding: '14px 18px',
-                  backgroundColor: '#f0f9ff',
-                  border: '1px solid #bae6fd',
-                  borderRadius: '8px'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ fontWeight: 700, fontSize: '14px', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div className="oe-vinculados-panel">
+                  <div className="oe-vinculados-header">
+                    <div className="oe-vinculados-title">
                       <span>🎯</span> Objetivos Específicos Vinculados (Paso 9)
                     </div>
                     <button 
                       type="button" 
-                      className="btn-link-action"
-                      style={{ fontSize: '12px', color: '#0284c7', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontWeight: 600 }}
+                      className="btn-link-action oe-vinculados-edit-btn"
                       onClick={() => setPasoActual(9)}
                       title="Ir a Paso 9 para agregar o editar los objetivos específicos"
                     >
@@ -2187,40 +2234,25 @@ const guardarBorradorActual = async () => {
                     </button>
                   </div>
                   {objetivosEspecificos.filter(o => o && o.trim()).length === 0 ? (
-                    <div style={{ fontSize: '13px', color: '#64748b', fontStyle: 'italic', padding: '6px 0' }}>
+                    <div className="oe-vinculados-empty">
                       ⚠️ Aún no se han redactado objetivos específicos en el <strong>Paso 9</strong>. Haga clic en <em>"Editar objetivos en Paso 9"</em> para agregarlos y vincularlos a cada actividad del cronograma.
                     </div>
                   ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
+                    <div className="oe-vinculados-grid">
                       {objetivosEspecificos.map((oe, idx) => {
                         const texto = (oe || '').trim();
                         if (!texto) return null;
                         const clave = `OE ${idx + 1}`;
                         const cant = actividadesCronograma.filter(a => (a.obj || a.objetivo) === clave).length;
                         return (
-                          <div key={idx} style={{
-                            backgroundColor: '#ffffff',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: '6px',
-                            padding: '10px 12px',
-                            fontSize: '12px',
-                            lineHeight: 1.45,
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
-                          }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                              <strong style={{ color: '#002855', fontSize: '13px' }}>{clave}</strong>
-                              <span style={{
-                                fontSize: '11px',
-                                backgroundColor: cant > 0 ? '#dcfce7' : '#fef3c7',
-                                color: cant > 0 ? '#166534' : '#92400e',
-                                padding: '2px 8px',
-                                borderRadius: '12px',
-                                fontWeight: 600
-                              }}>
+                          <div key={idx} className="oe-vinculados-card">
+                            <div className="oe-vinculados-card-top">
+                              <strong className="oe-vinculados-clave">{clave}</strong>
+                              <span className={`oe-vinculados-badge ${cant > 0 ? 'badge-ok' : 'badge-vacio'}`}>
                                 {cant} {cant === 1 ? 'actividad' : 'actividades'}
                               </span>
                             </div>
-                            <div style={{ color: '#334155' }}>{texto}</div>
+                            <div className="oe-vinculados-desc">{texto}</div>
                           </div>
                         );
                       })}
@@ -2228,7 +2260,7 @@ const guardarBorradorActual = async () => {
                   )}
                 </div>
 
-                <div className="table-responsive-container" style={{ overflowX: 'auto', marginBottom: '14px' }}>
+                <div className="table-responsive-container" style={{ overflowX: 'auto', width: '100%', maxWidth: '100%', boxSizing: 'border-box', marginBottom: '14px' }}>
                   <table className="institucional-data-table" style={{ minWidth: numAniosCronograma === 3 ? '2200px' : numAniosCronograma === 2 ? '1800px' : '1400px' }}>
                     <thead>
                       <tr>
@@ -2454,6 +2486,7 @@ const guardarBorradorActual = async () => {
                                 onChange={(e) => {
                                   const copia = [...actividadesCronograma];
                                   copia[i].mesInicio = e.target.value;
+                                  actualizarPeriodoDesdeMeses(copia[i], e.target.value, copia[i].duracionMesesAct);
                                   setActividadesCronograma(copia);
                                 }} 
                               />
@@ -2471,6 +2504,7 @@ const guardarBorradorActual = async () => {
                                 onChange={(e) => {
                                   const copia = [...actividadesCronograma];
                                   copia[i].duracionMesesAct = e.target.value;
+                                  actualizarPeriodoDesdeMeses(copia[i], copia[i].mesInicio, e.target.value);
                                   setActividadesCronograma(copia);
                                 }} 
                               />
@@ -2551,6 +2585,7 @@ const guardarBorradorActual = async () => {
                       <tr>
                         <th>Riesgo Identificado (Técnico / Operativo / Financiero)</th>
                         <th>Estrategia de mitigación / Plan de contingencia</th>
+                        <th style={{ width: '130px' }}>Responsable</th>
                         <th style={{ width: '48px', textAlign: 'center' }}>Acción</th>
                       </tr>
                     </thead>
@@ -2714,7 +2749,7 @@ const guardarBorradorActual = async () => {
                           </tr>
                         );
                       })}
-                      <tr style={{ backgroundColor: '#f8fafc', fontWeight: 700 }}>
+                      <tr className="table-total-row">
                         <td>TOTAL</td>
                         <td>₡ {presupuestoAnual.reduce((acc, p) => acc + (Number(String(p.operativo || 0).replace(/\s+/g, '')) || 0), 0).toLocaleString('es-CR')}</td>
                         <td>₡ {presupuestoAnual.reduce((acc, p) => acc + (Number(String(p.duradero || 0).replace(/\s+/g, '')) || 0), 0).toLocaleString('es-CR')}</td>
@@ -2902,25 +2937,12 @@ const guardarBorradorActual = async () => {
                     </div>
                   </div>
                 ) : (
-                  <div 
-                    style={{
-                      marginTop: '20px',
-                      padding: '16px',
-                      border: '1px dashed #cbd5e1',
-                      borderRadius: '6px',
-                      backgroundColor: '#f8fafc',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => fileInputPlanRef.current && fileInputPlanRef.current.click()}
-                  >
+                  <div className="adjuntar-plan-box" onClick={() => fileInputPlanRef.current && fileInputPlanRef.current.click()}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ fontSize: '22px' }}>📊</span>
                       <div>
-                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#002855' }}>+ Adjuntar Plan de Acción y Gestión de Riesgos</div>
-                        <div style={{ fontSize: '12px', color: '#64748b' }}>Formatos aceptados: Excel (.xlsx, .xls) o PDF firmado (Máx. 10MB)</div>
+                        <div className="adjuntar-plan-title">+ Adjuntar Plan de Acción y Gestión de Riesgos</div>
+                        <div className="adjuntar-plan-hint">Formatos aceptados: Excel (.xlsx, .xls) o PDF firmado (Máx. 10MB)</div>
                       </div>
                     </div>
                     <button type="button" className="btn-table-action btn-table-action-primary">
@@ -3051,18 +3073,24 @@ const guardarBorradorActual = async () => {
                           <strong>Opción 1:</strong> Un (1) artículo científico sometido en revista o conferencia indexada en Web of Science (WoS) o Scopus
                         </td>
                         <td>
-                          <LimitedInput 
-                            type="text"
-                            className="form-table-input"
-                            maxLength={150}
-                            showCounter={false}
-                            placeholder="Escriba objetivo específico o consecutivo..."
+                          <select
+                            className="form-table-input select-compromiso-oe"
                             value={productos14a.opcion1?.objetivo || ''}
                             onChange={(e) => setProductos14a({
                               ...productos14a,
                               opcion1: { ...productos14a.opcion1, objetivo: e.target.value }
                             })}
-                          />
+                          >
+                            <option value="">— Seleccionar Objetivo —</option>
+                            {opcionesObjetivosMatriz.map((opt) => (
+                              <option key={opt.valor} value={opt.valor} title={opt.labelCompleto || opt.label}>
+                                {opt.label}
+                              </option>
+                            ))}
+                            {productos14a.opcion1?.objetivo && !opcionesObjetivosMatriz.some(o => o.valor === productos14a.opcion1.objetivo) && (
+                              <option value={productos14a.opcion1.objetivo}>{productos14a.opcion1.objetivo}</option>
+                            )}
+                          </select>
                         </td>
                       </tr>
                       <tr>
@@ -3107,18 +3135,24 @@ const guardarBorradorActual = async () => {
                           <strong>Opción 2:</strong> Dos (2) artículos científicos sometidos en revistas indexadas en SciELO, Redalyc, ESCI, DOAJ, o memorias con Consejo Editorial
                         </td>
                         <td>
-                          <LimitedInput 
-                            type="text"
-                            className="form-table-input"
-                            maxLength={150}
-                            showCounter={false}
-                            placeholder="Escriba objetivo específico o consecutivo..."
+                          <select
+                            className="form-table-input select-compromiso-oe"
                             value={productos14a.opcion2?.objetivo || ''}
                             onChange={(e) => setProductos14a({
                               ...productos14a,
                               opcion2: { ...productos14a.opcion2, objetivo: e.target.value }
                             })}
-                          />
+                          >
+                            <option value="">— Seleccionar Objetivo —</option>
+                            {opcionesObjetivosMatriz.map((opt) => (
+                              <option key={opt.valor} value={opt.valor} title={opt.labelCompleto || opt.label}>
+                                {opt.label}
+                              </option>
+                            ))}
+                            {productos14a.opcion2?.objetivo && !opcionesObjetivosMatriz.some(o => o.valor === productos14a.opcion2.objetivo) && (
+                              <option value={productos14a.opcion2.objetivo}>{productos14a.opcion2.objetivo}</option>
+                            )}
+                          </select>
                         </td>
                       </tr>
                       <tr>
@@ -3163,18 +3197,24 @@ const guardarBorradorActual = async () => {
                           <strong>Opción 3:</strong> Un (1) Libro o Capítulo de libro técnico especializado publicado por editorial de reconocido prestigio
                         </td>
                         <td>
-                          <LimitedInput 
-                            type="text"
-                            className="form-table-input"
-                            maxLength={150}
-                            showCounter={false}
-                            placeholder="Escriba objetivo específico o consecutivo..."
+                          <select
+                            className="form-table-input select-compromiso-oe"
                             value={productos14a.opcion3?.objetivo || ''}
                             onChange={(e) => setProductos14a({
                               ...productos14a,
                               opcion3: { ...productos14a.opcion3, objetivo: e.target.value }
                             })}
-                          />
+                          >
+                            <option value="">— Seleccionar Objetivo —</option>
+                            {opcionesObjetivosMatriz.map((opt) => (
+                              <option key={opt.valor} value={opt.valor} title={opt.labelCompleto || opt.label}>
+                                {opt.label}
+                              </option>
+                            ))}
+                            {productos14a.opcion3?.objetivo && !opcionesObjetivosMatriz.some(o => o.valor === productos14a.opcion3.objetivo) && (
+                              <option value={productos14a.opcion3.objetivo}>{productos14a.opcion3.objetivo}</option>
+                            )}
+                          </select>
                         </td>
                       </tr>
                     </tbody>
@@ -3221,7 +3261,7 @@ const guardarBorradorActual = async () => {
             {pasoActual === 14 && esDesarrolloTecnologico && (
               <div className="step-content-pane">
                 <h1 className="step-main-title">1. Compromisos de producción académica y tecnológica</h1>
-                <div className="step-subheading-tag" style={{ backgroundColor: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}>
+                <div className="step-subheading-tag step-subheading-tag-tech">
                   1.1. Para proyectos de desarrollo tecnológico
                 </div>
                 <p className="form-field-hint" style={{ marginBottom: '18px' }}>
@@ -3435,18 +3475,24 @@ const guardarBorradorActual = async () => {
                               <strong>{prod.opcion.split(':')[0]}:</strong>{prod.opcion.slice(prod.opcion.indexOf(':') + 1)}
                             </td>
                             <td>
-                              <LimitedInput 
-                                type="text"
-                                className="form-table-input"
-                                maxLength={150}
-                                showCounter={false}
-                                placeholder="Escriba objetivo específico asociado..."
+                              <select
+                                className="form-table-input select-compromiso-oe"
                                 value={data.objetivo || ''}
                                 onChange={(e) => setProductos14b({
                                   ...productos14b,
                                   [prod.key]: { ...data, objetivo: e.target.value }
                                 })}
-                              />
+                              >
+                                <option value="">— Seleccionar Objetivo —</option>
+                                {opcionesObjetivosMatriz.map((opt) => (
+                                  <option key={opt.valor} value={opt.valor} title={opt.labelCompleto || opt.label}>
+                                    {opt.label}
+                                  </option>
+                                ))}
+                                {data.objetivo && !opcionesObjetivosMatriz.some(o => o.valor === data.objetivo) && (
+                                  <option value={data.objetivo}>{data.objetivo}</option>
+                                )}
+                              </select>
                             </td>
                           </tr>
                         );
@@ -3502,8 +3548,8 @@ const guardarBorradorActual = async () => {
                     { key: 'animales', label: 'c. ¿Involucra uso o experimentación con animales vertebrados? (Reglamento CICUA)' },
                     { key: 'comunidadesIndigenas', label: 'd. ¿Involucra trabajo en o con territorios o comunidades indígenas?' }
                   ].map((item) => (
-                    <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-                      <span style={{ fontSize: '13px', color: '#1e293b' }}>{item.label}</span>
+                    <div key={item.key} className="aspecto-etico-row">
+                      <span className="aspecto-etico-label">{item.label}</span>
                       <div className="toggle-btn-group">
                         <button 
                           type="button" 

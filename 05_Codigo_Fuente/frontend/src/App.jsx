@@ -92,6 +92,7 @@ import PreviewCie from './pages/PreviewCie';
 // ESTILOS
 import './styles/global.css';
 import './styles/comite-tecnico.css';
+import './styles/dashboard.css';
 
 // ============================================================================
 // COMPONENTE: RUTA PROTEGIDA

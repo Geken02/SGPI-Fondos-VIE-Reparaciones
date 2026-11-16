@@ -1,4 +1,4 @@
-/* src/styles/dashboard.css */
+﻿/* src/styles/dashboard.css */
 /* ============================================================
    SGPI - FONDOS VIE (TEC) - SISTEMA DE DISEÑO OFICIAL
    ============================================================ */
@@ -36,6 +36,9 @@ body, input, button, select, textarea {
 .dashboard-layout {
   display: flex;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   background-color: var(--tec-azul-principal);
 }
 
@@ -160,13 +163,19 @@ body, input, button, select, textarea {
   flex-direction: column;
   background-color: var(--tec-bg-pagina);
   min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .main-body {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 32px;
   background-color: var(--tec-bg-pagina);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 
@@ -2336,6 +2345,16 @@ input:checked + .slider:before { transform: translateX(20px); }
 /* ============================================================
    TABLAS INSTITUCIONALES COMPARTIDAS
    ============================================================ */
+
+/* Contenedor que confina el scroll horizontal de tablas anchas a su propia caja */
+.table-responsive-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+
 .institucional-data-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
 
 .institucional-data-table th {
@@ -2447,7 +2466,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 /* ============================================================
    ESTILOS INSTITUCIONALES PARA FORMULARIOS
    ============================================================ */
-.formulario-proyecto-master-wrapper { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; }
+.formulario-proyecto-master-wrapper { max-width: 1240px; width: 100%; min-width: 0; box-sizing: border-box; margin: 0 auto; display: flex; flex-direction: column; overflow-x: hidden; }
 
 .form-top-banner {
   background-color: var(--tec-azul-principal);
@@ -2486,6 +2505,11 @@ input:checked + .slider:before { transform: translateX(20px); }
   border-bottom-right-radius: 8px;
   padding: 32px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .step-counter-label {
@@ -2510,7 +2534,7 @@ input:checked + .slider:before { transform: translateX(20px); }
   margin-bottom: 12px;
 }
 
-.step-content-pane { min-height: 480px; }
+.step-content-pane { min-height: 480px; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; overflow-x: hidden; }
 
 .form-group-block { margin-bottom: 18px; }
 .form-field-label { display: block; font-size: 14px; font-weight: 600; color: var(--tec-texto-dark); margin-bottom: 6px; }
@@ -6386,5 +6410,989 @@ body.high-contrast .propuesta-titulo-td {
 .high-contrast-mode .empty-state-title,
 body.high-contrast-mode .empty-state-title,
 body.high-contrast .empty-state-title {
+  color: #FFFFFF !important;
+}
+
+
+/* ============================================================
+   PANEL DE OBJETIVOS ESPECÍFICOS VINCULADOS (FORM-04 PASO 12)
+   ============================================================ */
+.oe-vinculados-panel {
+  margin-bottom: 16px;
+  padding: 14px 18px;
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.oe-vinculados-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.oe-vinculados-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: #0369a1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.oe-vinculados-edit-btn {
+  font-size: 12px;
+  color: #0284c7;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.oe-vinculados-empty {
+  font-size: 13px;
+  color: #64748b;
+  font-style: italic;
+  padding: 6px 0;
+}
+
+.oe-vinculados-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.oe-vinculados-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+}
+
+.oe-vinculados-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.oe-vinculados-clave {
+  color: #002855;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.oe-vinculados-desc {
+  color: #334155;
+}
+
+.oe-vinculados-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.oe-vinculados-badge.badge-ok {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.oe-vinculados-badge.badge-vacio {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+/* Modo Alto Contraste */
+.high-contrast-mode .oe-vinculados-panel,
+body.high-contrast-mode .oe-vinculados-panel {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .oe-vinculados-title,
+body.high-contrast-mode .oe-vinculados-title {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .oe-vinculados-edit-btn,
+body.high-contrast-mode .oe-vinculados-edit-btn {
+  color: #00FFFF !important;
+}
+
+.high-contrast-mode .oe-vinculados-empty,
+body.high-contrast-mode .oe-vinculados-empty {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .oe-vinculados-card,
+body.high-contrast-mode .oe-vinculados-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+.high-contrast-mode .oe-vinculados-clave,
+body.high-contrast-mode .oe-vinculados-clave {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .oe-vinculados-desc,
+body.high-contrast-mode .oe-vinculados-desc {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .oe-vinculados-badge.badge-ok,
+body.high-contrast-mode .oe-vinculados-badge.badge-ok {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #00FF66 !important;
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .oe-vinculados-badge.badge-vacio,
+body.high-contrast-mode .oe-vinculados-badge.badge-vacio {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+/* ============================================================
+   SELECT PARA OBJETIVOS ESPECÍFICOS EN PASO 14 (COMPROMISOS)
+   ============================================================ */
+select.select-compromiso-oe {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 4px;
+  background-color: #ffffff;
+  color: #002855;
+  border: 1px solid var(--tec-borde);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+select.select-compromiso-oe:focus {
+  outline: none;
+  border-color: #0369A1;
+}
+
+/* Modo Alto Contraste */
+.high-contrast-mode select.select-compromiso-oe,
+body.high-contrast-mode select.select-compromiso-oe {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode select.select-compromiso-oe:focus,
+body.high-contrast-mode select.select-compromiso-oe:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode select.select-compromiso-oe option,
+body.high-contrast-mode select.select-compromiso-oe option {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+/* ============================================================
+   MODO ALTO CONTRASTE - CENTRO DE AYUDA Y SOPORTE (AYUDA.JSX)
+   ============================================================ */
+
+/* Buscador de Ayuda */
+.high-contrast-mode .ayuda-search-box,
+body.high-contrast-mode .ayuda-search-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .ayuda-search-box:focus-within,
+body.high-contrast-mode .ayuda-search-box:focus-within {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .ayuda-search-input,
+body.high-contrast-mode .ayuda-search-input {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .ayuda-search-input::placeholder,
+body.high-contrast-mode .ayuda-search-input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+.high-contrast-mode .ayuda-search-box svg,
+body.high-contrast-mode .ayuda-search-box svg {
+  stroke: #FFFF00 !important;
+}
+
+/* Guías Rápidas por Tema */
+.high-contrast-mode .ayuda-guia-card,
+body.high-contrast-mode .ayuda-guia-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .ayuda-guia-card:hover,
+body.high-contrast-mode .ayuda-guia-card:hover {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .guia-title,
+body.high-contrast-mode .guia-title {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .guia-sub,
+body.high-contrast-mode .guia-sub {
+  color: #e2e8f0 !important;
+}
+
+.high-contrast-mode .help-link,
+body.high-contrast-mode .help-link {
+  color: #FFFF00 !important;
+  font-weight: 600 !important;
+  text-decoration: underline !important;
+}
+
+/* Preguntas Frecuentes Relevantes (Acordeón) */
+.high-contrast-mode .faq-accordion-item,
+body.high-contrast-mode .faq-accordion-item {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  margin-bottom: 10px !important;
+}
+
+.high-contrast-mode .faq-accordion-item.open,
+body.high-contrast-mode .faq-accordion-item.open {
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .faq-accordion-header,
+body.high-contrast-mode .faq-accordion-header {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: none !important;
+}
+
+.high-contrast-mode .faq-question-text,
+body.high-contrast-mode .faq-question-text {
+  color: #FFFFFF !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .faq-accordion-item.open .faq-question-text,
+body.high-contrast-mode .faq-accordion-item.open .faq-question-text {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .faq-icon-arrow,
+body.high-contrast-mode .faq-icon-arrow {
+  color: #FFFF00 !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .faq-accordion-body,
+body.high-contrast-mode .faq-accordion-body {
+  background: #0d0d0d !important;
+  background-color: #0d0d0d !important;
+  border-top: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .faq-accordion-body p,
+body.high-contrast-mode .faq-accordion-body p {
+  color: #FFFFFF !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.high-contrast-mode .faq-accordion-body a.help-link,
+body.high-contrast-mode .faq-accordion-body a.help-link {
+  color: #00FFFF !important;
+  text-decoration: underline !important;
+}
+
+/* Plantillas y Formularios */
+.high-contrast-mode .plantilla-item-card,
+body.high-contrast-mode .plantilla-item-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .plantilla-item-card:hover,
+body.high-contrast-mode .plantilla-item-card:hover {
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .plantilla-name,
+body.high-contrast-mode .plantilla-name {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .plantilla-sub,
+body.high-contrast-mode .plantilla-sub {
+  color: #e2e8f0 !important;
+}
+
+/* Tarjeta de Soporte Humano Directo */
+.high-contrast-mode .soporte-humano-card,
+body.high-contrast-mode .soporte-humano-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .soporte-humano-card h3,
+body.high-contrast-mode .soporte-humano-card h3 {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .soporte-humano-card p,
+body.high-contrast-mode .soporte-humano-card p {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .gestora-avatar-circle,
+body.high-contrast-mode .gestora-avatar-circle {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .gestora-nombre,
+body.high-contrast-mode .gestora-nombre {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .gestora-rol,
+body.high-contrast-mode .gestora-rol {
+  color: #e2e8f0 !important;
+}
+
+.high-contrast-mode .btn-contactar-gestora,
+body.high-contrast-mode .btn-contactar-gestora {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-contactar-gestora:hover,
+body.high-contrast-mode .btn-contactar-gestora:hover {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .soporte-horario-text,
+body.high-contrast-mode .soporte-horario-text {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-soporte-secundario,
+body.high-contrast-mode .btn-soporte-secundario {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-soporte-secundario:hover,
+body.high-contrast-mode .btn-soporte-secundario:hover {
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+/* ============================================================
+   MODO ALTO CONTRASTE - PASO 14 COMPROMISOS (FORMULARIO 04)
+   ============================================================ */
+
+/* Tag de subtítulo del paso (1.1 Para proyectos de investigación...) */
+.high-contrast-mode .step-subheading-tag,
+body.high-contrast-mode .step-subheading-tag {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+/* Encabezados de sección (a. Compromiso de productos..., b. Selección...) */
+.high-contrast-mode .compromiso-section-header,
+body.high-contrast-mode .compromiso-section-header {
+  color: #FFFF00 !important;
+}
+
+/* Contenedores de tablas de compromiso */
+.high-contrast-mode .compromiso-table-wrapper,
+body.high-contrast-mode .compromiso-table-wrapper {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+/* Tablas de compromisos (Cuadro a y Cuadro b) */
+.high-contrast-mode .compromiso-grid-table,
+body.high-contrast-mode .compromiso-grid-table {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border-collapse: collapse !important;
+}
+
+.high-contrast-mode .compromiso-grid-table th,
+body.high-contrast-mode .compromiso-grid-table th {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFFFF !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .compromiso-grid-table td,
+body.high-contrast-mode .compromiso-grid-table td {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .compromiso-grid-table tr:hover td,
+body.high-contrast-mode .compromiso-grid-table tr:hover td,
+.high-contrast-mode .compromiso-grid-table tr.clickable-row:hover td,
+body.high-contrast-mode .compromiso-grid-table tr.clickable-row:hover td {
+  background-color: #1a1a1a !important;
+}
+
+/* Fila seleccionada en Cuadro a */
+.high-contrast-mode .compromiso-grid-table tr.is-selected,
+body.high-contrast-mode .compromiso-grid-table tr.is-selected,
+.high-contrast-mode .compromiso-grid-table tr.is-selected td,
+body.high-contrast-mode .compromiso-grid-table tr.is-selected td {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .compromiso-grid-table tr.is-selected td strong,
+body.high-contrast-mode .compromiso-grid-table tr.is-selected td strong {
+  color: #FFFF00 !important;
+}
+
+/* Indicadores de radio seleccionados */
+.high-contrast-mode .compromiso-selection-radio,
+body.high-contrast-mode .compromiso-selection-radio {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .compromiso-selection-radio.selected,
+body.high-contrast-mode .compromiso-selection-radio.selected {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .compromiso-selection-radio.unselected,
+body.high-contrast-mode .compromiso-selection-radio.unselected {
+  color: #94a3b8 !important;
+}
+
+/* Inputs numéricos dentro de tablas de compromiso */
+.high-contrast-mode .compromiso-grid-table input.form-table-input,
+body.high-contrast-mode .compromiso-grid-table input.form-table-input {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .compromiso-grid-table input.form-table-input:focus,
+body.high-contrast-mode .compromiso-grid-table input.form-table-input:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+/* Texto destacado dentro de las opciones de producto */
+.high-contrast-mode .compromiso-grid-table td strong,
+body.high-contrast-mode .compromiso-grid-table td strong {
+  color: #FFFF00 !important;
+}
+
+/* Callout informativo (Requisito Institucional de Cierre) */
+.high-contrast-mode .compromiso-callout-card,
+body.high-contrast-mode .compromiso-callout-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .compromiso-callout-card strong,
+body.high-contrast-mode .compromiso-callout-card strong {
+  color: #FFFF00 !important;
+}
+
+/* Sección c: Resultados complementarios */
+.high-contrast-mode .adicionales-container,
+body.high-contrast-mode .adicionales-container {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .adicional-item-row,
+body.high-contrast-mode .adicional-item-row {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .adicional-label,
+body.high-contrast-mode .adicional-label {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .adicionales-container input.form-table-input,
+body.high-contrast-mode .adicionales-container input.form-table-input {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .adicionales-container input.form-table-input:focus,
+body.high-contrast-mode .adicionales-container input.form-table-input:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+/* ============================================================
+   ESTILOS BASE PARA ELEMENTOS ACTUALIZADOS (FORM 04)
+   ============================================================ */
+
+.trl-table-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.trl-table-row.is-selected {
+  background-color: #f0fdf4;
+}
+.trl-label-cell strong {
+  color: #002855;
+  font-size: 13px;
+}
+.trl-desc-cell {
+  font-size: 13px;
+  color: #475569;
+}
+
+.form-table-input-readonly {
+  background-color: #f8fafc;
+  font-weight: 600;
+  color: #002855;
+}
+
+.oe-vinculo-cronograma-callout {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.oe-vinculo-text {
+  font-size: 13px;
+  color: #166534;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.oe-vinculo-btn {
+  font-size: 12px;
+  color: #15803d;
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.table-total-row {
+  background-color: #f8fafc;
+  font-weight: 700;
+}
+
+.adjuntar-plan-box {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background-color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.adjuntar-plan-box:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
+.adjuntar-plan-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #002855;
+}
+.adjuntar-plan-hint {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.step-subheading-tag-tech {
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.aspecto-etico-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+.aspecto-etico-label {
+  font-size: 13px;
+  color: #1e293b;
+}
+
+/* ============================================================
+   MODO ALTO CONTRASTE - BOTONES, TOGGLES, TARGETS Y FORM 04
+   ============================================================ */
+
+/* Grupos y Botones Toggle (Sí / No en Paso 2, 3, 4, 15) */
+.high-contrast-mode .toggle-btn-group,
+body.high-contrast-mode .toggle-btn-group {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  padding: 2px !important;
+  border-radius: 6px !important;
+}
+
+.high-contrast-mode .btn-toggle-option,
+body.high-contrast-mode .btn-toggle-option {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1px solid transparent !important;
+}
+
+.high-contrast-mode .btn-toggle-option:hover,
+body.high-contrast-mode .btn-toggle-option:hover {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-toggle-option.active,
+body.high-contrast-mode .btn-toggle-option.active {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+/* Selector Pills (de Proceso / de Producto en Paso 4) */
+.high-contrast-mode .btn-selector-pill,
+body.high-contrast-mode .btn-selector-pill {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-selector-pill:hover,
+body.high-contrast-mode .btn-selector-pill:hover {
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-selector-pill.active,
+body.high-contrast-mode .btn-selector-pill.active {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+/* Fila de Coordinador Read-Only (Paso 7) */
+.high-contrast-mode .form-table-input-readonly,
+body.high-contrast-mode .form-table-input-readonly {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+/* Botones de acción en tablas y listas (+ Insertar fila, + Agregar Objetivo) */
+.high-contrast-mode .btn-add-table-row,
+body.high-contrast-mode .btn-add-table-row {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px dashed #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-add-table-row:hover,
+body.high-contrast-mode .btn-add-table-row:hover {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* Botones de eliminar filas (✕) */
+.high-contrast-mode .btn-remove-table-row,
+body.high-contrast-mode .btn-remove-table-row,
+.high-contrast-mode .btn-icon-delete,
+body.high-contrast-mode .btn-icon-delete,
+.high-contrast-mode .btn-delete-oe,
+body.high-contrast-mode .btn-delete-oe {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FF5555 !important;
+  border: 1.5px solid #FF5555 !important;
+}
+
+.high-contrast-mode .btn-remove-table-row:hover,
+body.high-contrast-mode .btn-remove-table-row:hover,
+.high-contrast-mode .btn-icon-delete:hover,
+body.high-contrast-mode .btn-icon-delete:hover,
+.high-contrast-mode .btn-delete-oe:hover,
+body.high-contrast-mode .btn-delete-oe:hover {
+  background: #FF5555 !important;
+  background-color: #FF5555 !important;
+  color: #000000 !important;
+}
+
+/* Botones y enlaces con estilo link (+ Añadir miembro, etc.) */
+.high-contrast-mode .btn-link-action,
+body.high-contrast-mode .btn-link-action {
+  color: #00FFFF !important;
+  text-decoration: underline !important;
+}
+
+/* Tabla TRL (Paso 5) */
+.high-contrast-mode .trl-table-row,
+body.high-contrast-mode .trl-table-row {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+.high-contrast-mode .trl-table-row.is-selected td,
+body.high-contrast-mode .trl-table-row.is-selected td {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .trl-label-cell strong,
+body.high-contrast-mode .trl-label-cell strong {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .trl-desc-cell,
+body.high-contrast-mode .trl-desc-cell {
+  color: #FFFFFF !important;
+}
+
+/* Banner de Vinculación con Paso 12 en Paso 9 */
+.high-contrast-mode .oe-vinculo-cronograma-callout,
+body.high-contrast-mode .oe-vinculo-cronograma-callout {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .oe-vinculo-text,
+body.high-contrast-mode .oe-vinculo-text {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .oe-vinculo-text strong,
+body.high-contrast-mode .oe-vinculo-text strong {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .oe-vinculo-btn,
+body.high-contrast-mode .oe-vinculo-btn {
+  color: #00FFFF !important;
+}
+
+/* Fila de Total en Tablas de Presupuesto (Paso 13) */
+.high-contrast-mode .table-total-row td,
+body.high-contrast-mode .table-total-row td {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+/* Caja de Adjuntar Plan en Presupuesto (Paso 13) */
+.high-contrast-mode .adjuntar-plan-box,
+body.high-contrast-mode .adjuntar-plan-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px dashed #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .adjuntar-plan-box:hover,
+body.high-contrast-mode .adjuntar-plan-box:hover {
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .adjuntar-plan-title,
+body.high-contrast-mode .adjuntar-plan-title {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .adjuntar-plan-hint,
+body.high-contrast-mode .adjuntar-plan-hint {
+  color: #FFFFFF !important;
+}
+
+/* Filas de Aspectos Éticos (Paso 15) */
+.high-contrast-mode .aspecto-etico-row,
+body.high-contrast-mode .aspecto-etico-row {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .aspecto-etico-label,
+body.high-contrast-mode .aspecto-etico-label {
+  color: #FFFFFF !important;
+}
+
+/* Subheading tags alternativos (Paso 14b) */
+.high-contrast-mode .step-subheading-tag-tech,
+body.high-contrast-mode .step-subheading-tag-tech {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+/* Inputs Radio y Checkbox en alto contraste */
+.high-contrast-mode input[type="radio"],
+body.high-contrast-mode input[type="radio"],
+.high-contrast-mode input[type="checkbox"],
+body.high-contrast-mode input[type="checkbox"] {
+  accent-color: #FFFF00 !important;
+}
+
+/* Títulos y subtítulos dentro de panes */
+.high-contrast-mode .step-content-pane h1,
+body.high-contrast-mode .step-content-pane h1,
+.high-contrast-mode .step-content-pane h2,
+body.high-contrast-mode .step-content-pane h2,
+.high-contrast-mode .step-content-pane h3,
+body.high-contrast-mode .step-content-pane h3,
+.high-contrast-mode .section-title-h2,
+body.high-contrast-mode .section-title-h2 {
+  color: #FFFF00 !important;
+}
+
+/* Barra de pasos superior (Stepper) */
+.high-contrast-mode .form-stepper-scroll-strip::-webkit-scrollbar,
+body.high-contrast-mode .form-stepper-scroll-strip::-webkit-scrollbar {
+  height: 6px;
+}
+.high-contrast-mode .form-stepper-scroll-strip::-webkit-scrollbar-track,
+body.high-contrast-mode .form-stepper-scroll-strip::-webkit-scrollbar-track {
+  background: #000000 !important;
+}
+.high-contrast-mode .form-stepper-scroll-strip::-webkit-scrollbar-thumb,
+body.high-contrast-mode .form-stepper-scroll-strip::-webkit-scrollbar-thumb {
+  background: #FFFF00 !important;
+  border-radius: 3px;
+}
+
+/* Acordeón de preguntas frecuentes en Ayuda (Image 4) */
+.high-contrast-mode .faq-accordion-item,
+body.high-contrast-mode .faq-accordion-item,
+.high-contrast-mode .faq-accordion-header,
+body.high-contrast-mode .faq-accordion-header,
+.high-contrast-mode button.faq-accordion-header,
+body.high-contrast-mode button.faq-accordion-header {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .faq-question-text,
+body.high-contrast-mode .faq-question-text {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .faq-accordion-item.open .faq-question-text,
+body.high-contrast-mode .faq-accordion-item.open .faq-question-text {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .ayuda-soporte-card,
+body.high-contrast-mode .ayuda-soporte-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
   color: #FFFFFF !important;
 }
