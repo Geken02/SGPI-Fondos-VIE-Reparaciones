@@ -65,6 +65,7 @@ class PropuestaVinculacionDetalle(BaseModel):
 class DictamenCreate(BaseModel):
     """Esquema para emitir un Dictamen Técnico de Vinculación."""
     propuestaId: int = Field(..., description="ID de la propuesta a dictaminar")
+    tipoDictamenId: int = Field(1, description="Tipo de dictamen. En vinculación siempre es 1 (Vinculacion)")
     numeroOficio: Optional[str] = Field(None, max_length=50, description="Número de oficio institucional (ej: VINC-2027-015)")
     contenido: str = Field(..., min_length=10, description="Cuerpo y conclusiones del dictamen de vinculación")
     rutaArchivo: Optional[str] = Field(None, max_length=500, description="Ruta o enlace al documento PDF firmado")

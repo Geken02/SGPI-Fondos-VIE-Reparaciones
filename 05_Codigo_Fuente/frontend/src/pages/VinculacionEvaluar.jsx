@@ -121,6 +121,7 @@ const VinculacionEvaluar = () => {
 
       const payload = {
         propuestaId: Number(propuestaId),
+        tipoDictamenId: 1,
         numeroOficio: `VINC-${anioActual}-${codigoSufijo}`,
         contenido: textoContenido,
         rutaArchivo: rutaSeaweed || archivoParaGuardar?.name || null
