@@ -1,5 +1,5 @@
-import json
 import re
+import json
 from docx import Document
 from docx.table import Table
 from io import BytesIO
@@ -8,12 +8,13 @@ from typing import Dict, Any, List
 
 def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
     """
-    Parser del Form-04 con modo DEBUG activo para ver qué se extrae.
+    Parser robusto para Form-04 con MODO DEBUG activado.
+    Extrae datos estructurados e imprime en consola lo que detecta para facilitar la depuración.
     """
     try:
         doc = Document(BytesIO(archivo_bytes))
         
-        # Extraer TODO el texto del documento
+        # Extraer TODO el texto del documento normalizando espacios
         parrafos = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
         texto_completo = "\n".join(parrafos)
         
@@ -22,7 +23,7 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
         # =========================================================================
         print("\n" + "="*80)
         print("🔍 DEBUG: TEXTO CRUDO EXTRAÍDO DEL WORD (Primeros 1500 caracteres):")
-        print(texto_completo[:1500].replace('\n', ' | ')) # Reemplazamos saltos para que se vea en una línea
+        print(texto_completo[:1500].replace('\n', ' | '))
         print("="*80 + "\n")
 
         datos = {
@@ -55,9 +56,9 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
             "colaboradores_externos": [],
             "presupuesto_anual": [],
             "financiamiento_adicional": {
-                "externo": {"ano1": 0, "ano2": 0, "ano3": 0, "oficio": ""},
-                "contrapartida": {"ano1": 0, "ano2": 0, "ano3": 0, "oficio": ""},
-                "cofinanciamiento": {"ano1": 0, "ano2": 0, "ano3": 0, "oficio": ""}
+                "externo": {"ano1": 0.0, "ano2": 0.0, "ano3": 0.0, "oficio": ""},
+                "contrapartida": {"ano1": 0.0, "ano2": 0.0, "ano3": 0.0, "oficio": ""},
+                "cofinanciamiento": {"ano1": 0.0, "ano2": 0.0, "ano3": 0.0, "oficio": ""}
             },
             "productos_14a": {
                 "rango_horas": "",
@@ -108,7 +109,9 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
             }
         }
 
-        # 1. Datos básicos (Tablas iniciales)
+        # =========================================================================
+        # 1. DATOS BÁSICOS (Tablas iniciales)
+        # =========================================================================
         for table in doc.tables[:3]:
             for row in table.rows:
                 cells = [cell.text.strip() for cell in row.cells]
@@ -120,7 +123,9 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
                     elif "Fecha de finalización" in cells[0] or "Fecha de finalizacion" in cells[0]:
                         datos["fecha_fin"] = cells[1]
 
-        # 2. Sección 1: Preguntas generales (Checkboxes)
+        # =========================================================================
+        # 2. SECCIÓN 1: PREGUNTAS GENERALES (Checkboxes)
+        # =========================================================================
         match_modalidad = re.search(
             r"1\.a\.\s+La modalidad.*?(investigación básica|investigación aplicada|investigación básica y aplicada|desarrollo tecnológico)",
             texto_completo,
@@ -129,14 +134,12 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
         if match_modalidad:
             contexto = texto_completo[match_modalidad.start():match_modalidad.end()+100]
             if any(s in contexto for s in ['☑', '✓', '✔', '☒', '✅', 'X', 'x']):
-                datos["seccion1"]["modalidad"] = match_modalidad.group(1).strip().title()
+                datos["modalidad"] = match_modalidad.group(1).strip().title()
 
-        # Función auxiliar para detectar checkboxes de forma más robusta
         def detectar_checkbox(texto: str, patron: str) -> bool:
             match = re.search(patron, texto, re.IGNORECASE | re.DOTALL)
             if not match:
                 return False
-            # Buscar en los 300 caracteres siguientes si hay un símbolo de check o la palabra "Sí"
             contexto = texto[match.start():match.start()+400]
             return any(s in contexto for s in ['☑', '✓', '✔', '☒', '✅', 'X', 'x']) or re.search(r'☑\s*Sí|✔\s*Sí|X\s*Sí', contexto, re.IGNORECASE)
 
@@ -207,7 +210,9 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
         if match_trl:
             datos["seccion1"]["trl"] = int(match_trl.group(1))
 
-        # 3. Secciones narrativas
+        # =========================================================================
+        # 3. SECCIONES NARRATIVAS
+        # =========================================================================
         def extraer_seccion(inicio_patron: str, fin_patron: str) -> str:
             patron = rf"{inicio_patron}.*?\n(.*?)(?={fin_patron}|\Z)"
             match = re.search(patron, texto_completo, re.IGNORECASE | re.DOTALL)
@@ -232,12 +237,14 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
         datos["hoja_ruta"] = extraer_seccion(r"16\.\s+Hoja de ruta", r"17\.\s+Referencias")
         datos["referencias"] = extraer_seccion(r"17\.\s+Referencias", r"18\.\s+Declaración jurada")
 
-        # 4. Tablas (Investigadores, Colaboradores, Presupuesto, Financiamiento)
+        # =========================================================================
+        # 4. TABLAS (Investigadores, Colaboradores, Presupuesto, Financiamiento)
+        # =========================================================================
         for table in doc.tables:
             try:
                 header_text = ' '.join([cell.text.strip().lower() for cell in table.rows[0].cells])
                 
-                if 'nombre y apellidos' in header_text and 'orcid' in header_text:
+                if "nombre y apellidos" in header_text and "orcid" in header_text:
                     for row in table.rows[1:]:
                         cells = [cell.text.strip() for cell in row.cells]
                         if len(cells) >= 5 and cells[0] and not cells[0].startswith('[Inserte'):
@@ -247,7 +254,7 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
                                 'horas': cells[4] if len(cells) > 4 else '', 'nombramiento': cells[5] if len(cells) > 5 else ''
                             })
                 
-                elif 'colaborador externo' in header_text and 'institución' in header_text:
+                elif "colaborador externo" in header_text and "institución" in header_text:
                     for row in table.rows[1:]:
                         cells = [cell.text.strip() for cell in row.cells]
                         if len(cells) >= 3 and cells[0] and not cells[0].startswith('[Inserte'):
@@ -256,7 +263,7 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
                                 'institucion': cells[2] if len(cells) > 2 else ''
                             })
                 
-                elif 'año' in header_text and ('operativo' in header_text or 'duradero' in header_text):
+                elif "año" in header_text and ("operativo" in header_text or "duradero" in header_text):
                     for row in table.rows[1:]:
                         cells = [cell.text.strip() for cell in row.cells]
                         if len(cells) >= 3:
@@ -266,11 +273,11 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
                                     return float(re.sub(r'[₡,\s]', '', texto)) if re.sub(r'[₡,\s]', '', texto) else 0.0
                                 datos["presupuesto_anual"].append({
                                     'ano': f'Año {anio}' if anio != 'Total' else 'Total',
-                                    'operativo': limpiar_monto(cells[1]) if len(cells) > 1 else 0,
-                                    'duradero': limpiar_monto(cells[2]) if len(cells) > 2 else 0
+                                    'operativo': limpiar_monto(cells[1]) if len(cells) > 1 else 0.0,
+                                    'duradero': limpiar_monto(cells[2]) if len(cells) > 2 else 0.0
                                 })
                 
-                elif 'desglose' in header_text and ('año 1' in header_text or 'oficio' in header_text):
+                elif "desglose" in header_text and "año 1" in header_text:
                     for row in table.rows[1:]:
                         cells = [cell.text.strip() for cell in row.cells]
                         if len(cells) >= 5:
@@ -278,42 +285,48 @@ def parsear_form04_docx(archivo_bytes: bytes) -> Dict[str, Any]:
                             def limpiar_monto(texto):
                                 return float(re.sub(r'[₡,\s]', '', texto)) if re.sub(r'[₡,\s]', '', texto) else 0.0
                             
-                            if 'financiamiento externo' in fuente:
+                            if "financiamiento externo" in fuente:
                                 datos["financiamiento_adicional"]["externo"] = {
                                     'ano1': limpiar_monto(cells[1]), 'ano2': limpiar_monto(cells[2]),
                                     'ano3': limpiar_monto(cells[3]), 'oficio': cells[4] if len(cells) > 4 else ''
                                 }
-                            elif 'contrapartida' in fuente:
+                            elif "contrapartida" in fuente:
                                 datos["financiamiento_adicional"]["contrapartida"] = {
                                     'ano1': limpiar_monto(cells[1]), 'ano2': limpiar_monto(cells[2]),
                                     'ano3': limpiar_monto(cells[3]), 'oficio': cells[4] if len(cells) > 4 else ''
                                 }
-            except Exception:
-                continue # Ignorar tablas que no coinciden con el formato esperado
+                            elif "cofinanciamiento" in fuente:
+                                datos["financiamiento_adicional"]["cofinanciamiento"] = {
+                                    'ano1': limpiar_monto(cells[1]), 'ano2': limpiar_monto(cells[2]),
+                                    'ano3': limpiar_monto(cells[3]), 'oficio': cells[4] if len(cells) > 4 else ''
+                                }
+            except Exception as e:
+                print(f"⚠️ Error procesando tabla: {e}")
+                continue
 
-        # 5. Sección 13: Resguardo
-        if detectar_checkbox(texto_completo, r"13\.\s+Resguardo.*?1\.\s+Declaro conocer.*?Repositorio Institucional"):
-            datos["resguardo"]["resguardo_compromiso"] = True
-        if detectar_checkbox(texto_completo, r"13\.\s+Resguardo.*?2\.\s+En caso de desarrollar software"):
-            datos["resguardo"]["resguardo_software"] = True
+        # =========================================================================
+        # 5. SECCIÓN 13: RESGUARDO
+        # =========================================================================
+        datos["resguardo"]["resguardo_compromiso"] = bool(re.search(r"1\.\s*Declaro conocer.*?☑\s*Sí", texto_completo, re.IGNORECASE | re.DOTALL))
+        datos["resguardo"]["resguardo_software"] = bool(re.search(r"2\.\s*En caso de desarrollar software.*?☑\s*Sí", texto_completo, re.IGNORECASE | re.DOTALL))
 
-        # 6. Sección 14: Divulgación
-        datos["divulgacion"]["cientifica"] = extraer_seccion(r"1\.a\.\s+Divulgación científica", r"1\.b\.\s+Canales Institucionales")
-        datos["divulgacion"]["canales_institucionales"] = extraer_seccion(r"1\.b\.\s+Canales Institucionales", r"1\.c\.\s+Eventos de Socialización")
-        datos["divulgacion"]["socializacion"] = extraer_seccion(r"1\.c\.\s+Eventos de Socialización", r"1\.d\.\s+Medios Masivos")
-        datos["divulgacion"]["medios_masivos"] = extraer_seccion(r"1\.d\.\s+Medios Masivos", r"15\.\s+Aspectos Éticos")
+        # =========================================================================
+        # 6. SECCIÓN 14: DIVULGACIÓN
+        # =========================================================================
+        datos["divulgacion"]["cientifica"] = extraer_seccion(r"1\.a\.\s+Divulgación científica", r"1\.b\.")
+        datos["divulgacion"]["canales_institucionales"] = extraer_seccion(r"1\.b\.\s+Canales Institucionales", r"1\.c\.")
+        datos["divulgacion"]["socializacion"] = extraer_seccion(r"1\.c\.\s+Eventos de Socialización", r"1\.d\.")
+        datos["divulgacion"]["medios_masivos"] = extraer_seccion(r"1\.d\.\s+Medios Masivos", r"15\.")
 
-        # 7. Sección 15: Aspectos Éticos
-        if detectar_checkbox(texto_completo, r"15\.\s+Aspectos Éticos.*?1\.\s+.*?seres humanos.*?Sí"):
-            datos["aspectos_eticos"]["seres_humanos"] = True
-        if detectar_checkbox(texto_completo, r"15\.\s+Aspectos Éticos.*?2\.\s+.*?biodiversidad.*?Sí"):
-            datos["aspectos_eticos"]["biodiversidad"] = True
-        if detectar_checkbox(texto_completo, r"15\.\s+Aspectos Éticos.*?3\.\s+.*?animales.*?Sí"):
-            datos["aspectos_eticos"]["animales"] = True
-        if detectar_checkbox(texto_completo, r"15\.\s+Aspectos Éticos.*?4\.\s+.*?indígenas.*?Sí"):
-            datos["aspectos_eticos"]["comunidades_indigenas"] = True
-            
-        match_exencion = re.search(r"15\.a\.\s+Declaración de exención.*?razones:\s*(.*?)(?:15\.b\.|16\.\s+Hoja de ruta|$)", texto_completo, re.IGNORECASE | re.DOTALL)
+        # =========================================================================
+        # 7. SECCIÓN 15: ASPECTOS ÉTICOS
+        # =========================================================================
+        datos["aspectos_eticos"]["seres_humanos"] = bool(re.search(r"1\.\s*¿Involucra.*?seres humanos.*?☑\s*Sí", texto_completo, re.IGNORECASE | re.DOTALL))
+        datos["aspectos_eticos"]["biodiversidad"] = bool(re.search(r"2\.\s*¿Involucra.*?biodiversidad.*?☑\s*Sí", texto_completo, re.IGNORECASE | re.DOTALL))
+        datos["aspectos_eticos"]["animales"] = bool(re.search(r"3\.\s*¿Involucra.*?animales.*?☑\s*Sí", texto_completo, re.IGNORECASE | re.DOTALL))
+        datos["aspectos_eticos"]["comunidades_indigenas"] = bool(re.search(r"4\.\s*¿Involucra.*?indígenas.*?☑\s*Sí", texto_completo, re.IGNORECASE | re.DOTALL))
+        
+        match_exencion = re.search(r"15\.a\.\s+Declaración de exención.*?razones:\s*(.*?)(?=15\.b\.|16\.)", texto_completo, re.IGNORECASE | re.DOTALL)
         if match_exencion:
             datos["aspectos_eticos"]["acuerdo_comision"] = match_exencion.group(1).strip()
 

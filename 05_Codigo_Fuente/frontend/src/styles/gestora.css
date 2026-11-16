@@ -1,5 +1,5 @@
 :root {
-  --gv-azul: #1d4ed8;
+  --gv-azul: #002855;
   --gv-gris: #64748b;
   --gv-texto: #1e293b;
   --gv-borde: #e2e8f0;
@@ -196,7 +196,7 @@
 
 .gv-menu-item:hover,
 .gv-menu-item.activo {
-  background: #eff4ff;
+  background: #e6edf5;
   color: var(--gv-azul);
 }
 
@@ -255,7 +255,7 @@
 }
 
 .gv-btn-primario:hover {
-  background: #1e40af;
+  background: #003570;
 }
 
 .gv-resumen-icono {
@@ -265,7 +265,7 @@
   width: 44px;
   height: 44px;
   border-radius: 10px;
-  background: #dbeafe;
+  background: #e6edf5;
   color: var(--gv-azul);
 }
 
@@ -302,7 +302,7 @@
   height: 48px;
   flex: none;
   border-radius: 10px;
-  background: #eff4ff;
+  background: #e6edf5;
   color: var(--gv-azul);
 }
 
@@ -394,7 +394,7 @@
 .gv-paso.actual .gv-paso-numero,
 .gv-paso.hecho .gv-paso-numero {
   border-color: var(--gv-azul);
-  background: #eff4ff;
+  background: #e6edf5;
 }
 
 @media (max-width: 900px) {

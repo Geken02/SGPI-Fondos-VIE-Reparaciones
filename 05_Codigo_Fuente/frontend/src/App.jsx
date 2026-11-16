@@ -11,7 +11,7 @@ import ResetPassword from './pages/ResetPassword';
 // 2. DASHBOARD GENERAL Y LAYOUTS
 import DashboardLayout from './components/DashboardLayout';
 
-// 2.1 CONSEJO DE ESCUELA (Incluye la adición de Deryan)
+// 2.1 CONSEJO DE ESCUELA
 import PropuestasConsejo from './pages/consejoEscuela/PropuestasConsejo';
 import AsignacionesConsejo from './pages/consejoEscuela/AsignacionesConsejo';
 import VotacionesConsejo from './pages/consejoEscuela/VotacionesConsejo';
@@ -134,21 +134,34 @@ const DashboardRedirect = () => {
   if (rolActivo === 'SuperAdministrador' || rolActivo === 'Administrador') {
     return <Navigate to="/dashboard/admin" replace />;
   }
-  if (rolActivo === 'DirectorInvestigacion' || rolActivo === 'SubdirectorInvestigacion') {
-    return <Navigate to="/direccion/dictamenes" replace />;
+  
+  // CORRECCIÓN CRÍTICA: Se incluye 'DireccionInvestigacion' (rol real de la BD).
+  // Se mantiene 'DirectorInvestigacion' por compatibilidad con datos legacy.
+  // Sin esto, el rol caía en el redirect por defecto (Investigador).
+  if (
+    rolActivo === 'DireccionInvestigacion' ||
+    rolActivo === 'DirectorInvestigacion' ||
+    rolActivo === 'SubdirectorInvestigacion'
+  ) {
+    return <Navigate to="/direccion" replace />;
   }
+  
   if (rolActivo === 'GestoraVIE' || rolActivo === 'CoordinadoraGestora') {
     return <Navigate to="/gestora/expedientes" replace />;
   }
+  
   if (rolActivo === 'MiembroCIE' || rolActivo === 'CoordinadorCIE' || rolActivo === 'PresidenteCIE') {
     return <Navigate to="/cie/bandeja" replace />;
   }
+  
   if (rolActivo === 'MiembroComiteTecnico' || rolActivo === 'CoordinadorComiteTecnico' || rolActivo === 'DirectorEscuela') {
     return <Navigate to="/comite-tecnico/propuestas-asignadas" replace />;
   }
+  
   if (rolActivo === 'AsistenteComiteTecnico') {
     return <Navigate to="/comite-tecnico/bandeja-completitud" replace />;
   }
+  
   if (rolActivo === 'EvaluadorVinculacion' || rolActivo === 'Vinculacion' || rolActivo === 'CoordinadorVinculacion') {
     return <Navigate to="/dashboard/vinculacion" replace />;
   }
@@ -163,6 +176,7 @@ const DashboardRedirect = () => {
     return <Navigate to="/dashboard/inicio" replace />;
   }
   
+  // Fallback final
   return <Navigate to="/dashboard/inicio" replace />;
 };
 
@@ -221,13 +235,13 @@ const App = () => {
             <Route path="configuracion" element={<Configuracion />} />
             <Route path="ayuda" element={<Ayuda />} />
 
-            {/* Rutas Módulo Consejo de Escuela (Fusionado con Deryan) */}
+            {/* Rutas Módulo Consejo de Escuela */}
             <Route path="propuestas-consejo" element={<PropuestasConsejo />} />
             <Route path="votaciones-consejo" element={<VotacionesConsejo />} />
             <Route path="acuerdos-consejo" element={<AcuerdosConsejo />} />
             <Route path="asignaciones-consejo" element={<AsignacionesConsejo />} />
 
-            {/* Rutas Módulo Investigador (Limpio y sin duplicados) */}
+            {/* Rutas Módulo Investigador */}
             <Route path="inicio" element={<InvestigadorDashboard />} />
             <Route path="propuestas" element={<InvestigadorPropuestas />} />
             <Route path="convocatorias" element={<InvestigadorConvocatorias />} />
@@ -284,7 +298,7 @@ const App = () => {
             <Route path="rubrica/:propuestaId" element={<RubricaDigital />} />
           </Route>
 
-          {/* MÓDULO CIE (Con rolesPermitidos y rutas parametrizadas completas) */}
+          {/* MÓDULO CIE */}
           <Route path="/cie" element={
             <RutaProtegida rolesPermitidos={['MiembroCIE', 'CoordinadorCIE', 'PresidenteCIE', 'SuperAdministrador', 'Administrador']}>
               <LayoutCie />
@@ -299,7 +313,7 @@ const App = () => {
             <Route path="resoluciones" element={<ResolucionesCie />} />
           </Route>
 
-          {/* MÓDULO GESTORA VIE (Con rolesPermitidos y rutas parametrizadas completas) */}
+          {/* MÓDULO GESTORA VIE */}
           <Route path="/gestora" element={
             <RutaProtegida rolesPermitidos={['GestoraVIE', 'CoordinadoraGestora', 'SuperAdministrador', 'Administrador']}>
               <LayoutGestora />
@@ -320,7 +334,7 @@ const App = () => {
             <Route path="ayuda" element={<AyudaGestora />} />
           </Route>
 
-          {/* MÓDULO DIRECCIÓN DE INVESTIGACIÓN (Con rolesPermitidos y rutas parametrizadas completas) */}
+          {/* MÓDULO DIRECCIÓN DE INVESTIGACIÓN */}
           <Route path="/direccion" element={
             <RutaProtegida rolesPermitidos={['DireccionInvestigacion', 'SubdirectorInvestigacion', 'SuperAdministrador', 'Administrador']}>
               <LayoutDireccion />

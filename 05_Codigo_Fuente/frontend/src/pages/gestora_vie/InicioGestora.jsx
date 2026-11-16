@@ -15,7 +15,7 @@ export default function InicioGestora() {
     <EncabezadoPagina titulo="Inicio" subtitulo="Panel de trabajo de la Persona Gestora VIE. Accede a las tareas de validación y seguimiento de expedientes."/>
     <section className="gestora-bienvenida gv-card" aria-label="Bienvenida al panel de gestora">
       <div className="gestora-bienvenida-icono" aria-hidden="true"><Icono nombre="home" tamano={26}/></div>
-      <div><span className="gestora-eyebrow">PANEL DE TRABAJO · FONDOS VIE 2027</span><h2>Bienvenida, {nombre}</h2><p>Desde aquí puedes acceder a la revisión normativa, consultar expedientes y dar seguimiento a las subsanaciones.</p></div>
+      <div><span className="gestora-eyebrow">Panel de trabajo · Fondos VIE 2027</span><h2>Bienvenida, {nombre}</h2><p>Desde aquí puedes acceder a la revisión normativa, consultar expedientes y dar seguimiento a las subsanaciones.</p></div>
     </section>
     <div className="gestora-seccion-cabecera"><div><h2>Accesos rápidos</h2><p>Selecciona el proceso que necesitas atender.</p></div></div>
     <section className="gestora-accesos" aria-label="Accesos rápidos a módulos">
