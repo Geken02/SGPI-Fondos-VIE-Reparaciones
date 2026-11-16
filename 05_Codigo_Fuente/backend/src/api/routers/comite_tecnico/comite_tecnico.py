@@ -716,8 +716,8 @@ def emitir_dictamen(
     usuario: Usuario = Depends(obtener_usuario_actual)
 ):
     """
-    El coordinador emite el dictamen final:
-    1. Crea el registro en la tabla dictamenes
+    El coordinador emite el dictamen final del Comité Técnico:
+    1. Crea el registro en la tabla dictamenes con tipoDictamenId = 2 (Comité Técnico)
     2. Cambia el estado de la propuesta a EN_CONSEJO
     3. Devuelve confirmación
     """
@@ -735,30 +735,37 @@ def emitir_dictamen(
         if not contenido:
             raise HTTPException(status_code=400, detail="El contenido del dictamen es obligatorio")
         
-        # 3. Verificar que NO exista ya un dictamen para esta propuesta
+        # 3. Verificar que NO exista ya un dictamen DEL COMITÉ TÉCNICO para esta propuesta
         dictamen_existente = db.query(Dictamenes).filter(
-            Dictamenes.propuestaId == propuesta_id
+            Dictamenes.propuestaId == propuesta_id,
+            Dictamenes.tipoDictamenId == 2  
         ).first()
         
         if dictamen_existente:
             raise HTTPException(
                 status_code=400, 
-                detail="Ya existe un dictamen emitido para esta propuesta. No se puede emitir un nuevo dictamen."
+                detail="Ya existe un dictamen del Comité Técnico emitido para esta propuesta. No se puede emitir un nuevo dictamen."
             )
         
-        # 4. Combinar contenido con observaciones
+        # 4. Combinar contenido con observaciones y recomendación
         texto_final = contenido
         if observaciones:
             texto_final += f"\n\n--- OBSERVACIONES ADICIONALES ---\n{observaciones}"
         
-        # 5. Determinar el tipo de dictamen (ajusta los IDs según tu tabla tiposdictamen)
-        # Ejecuta: SELECT "tipodictamenid", "nombretipodictamen" FROM "tiposdictamen";
-        tipo_dictamen_id = 1 if recomienda else 2  # ⚠️ AJUSTA ESTOS IDs
+        # Agregar recomendación al contenido
+        texto_final += f"\n\n--- RECOMENDACIÓN DEL COMITÉ TÉCNICO ---\n{'RECOMIENDA' if recomienda else 'NO RECOMIENDA'}"
+        
+        # 5. Tipo de dictamen SIEMPRE es 2 (Comité Técnico)
+        # La tabla TiposDictamen tiene:
+        # 1 = Vinculacion
+        # 2 = ComiteTecnico
+        # 3 = CIE
+        TIPO_DICTAMEN_COMITE_TECNICO = 2
         
         # 6. Crear el registro en la tabla dictamenes
         nuevo_dictamen = Dictamenes(
             propuestaId=propuesta_id,
-            tipoDictamenId=tipo_dictamen_id,
+            tipoDictamenId=TIPO_DICTAMEN_COMITE_TECNICO,  
             contenido=texto_final,
             usuarioRemitenteId=usuario.usuarioId,
             fechaEmision=datetime.now(timezone.utc),
@@ -768,7 +775,7 @@ def emitir_dictamen(
         )
         db.add(nuevo_dictamen)
         
-       
+        # 7. Cambiar estado de la propuesta a EN_CONSEJO
         estado_consejo = db.query(EstadosPropuesta).filter(
             EstadosPropuesta.codigoEstadoPropuesta == "EN_CONSEJO"
         ).first()
@@ -784,11 +791,12 @@ def emitir_dictamen(
         
         return {
             "success": True,
-            "message": f"Dictamen emitido exitosamente: {'RECOMIENDA' if recomienda else 'NO RECOMIENDA'}",
+            "message": f"Dictamen del Comité Técnico emitido exitosamente: {'RECOMIENDA' if recomienda else 'NO RECOMIENDA'}",
             "dictamenId": nuevo_dictamen.dictamenId,
             "propuestaId": propuesta_id,
             "codigoPropuesta": propuesta.codigoPropuesta,
             "recomienda": recomienda,
+            "tipoDictamenId": TIPO_DICTAMEN_COMITE_TECNICO,
             "nuevoEstado": "EN_CONSEJO"
         }
         
