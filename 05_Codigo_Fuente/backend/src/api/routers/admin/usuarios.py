@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Request, status, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from src.api.schemas.admin.comunes import EstadoToggle
 from src.api.schemas.admin import usuarios as esquemas
@@ -141,26 +141,60 @@ def _envoltura(items: list, metadatos: dict, esquema_item: type) -> dict:
 # CRUD DE USUARIOS
 # ============================================================================
 
-@router.get("/usuarios", tags=["Administración - Usuarios"], summary="Listar usuarios del sistema", dependencies=[depende_admin])
 def listar_usuarios(
-    sesion: Session = Depends(get_db),
-    pagina: int = Query(default=1, ge=1),
-    tamanoPagina: int = Query(default=50, ge=1, le=200),
-    busqueda: Optional[str] = Query(default=None, max_length=100),
-    escuelaId: Optional[int] = None,
-    rolId: Optional[int] = None,
-    activo: Optional[bool] = None,  # ✅ NUEVO: Filtro por estado activo/inactivo
+    sesion: Session,
+    pagina: int = 1,
+    tamano_pagina: int = 50,
+    busqueda: str | None = None,
+    escuela_id: int | None = None,
+    rol_id: int | None = None,
+    incluir_inactivos: bool = False,
+    activo: bool | None = None,
 ):
-    items, metadatos = usuario_service.listar_usuarios(
-        sesion, 
-        pagina=pagina, 
-        tamano_pagina=tamanoPagina, 
-        busqueda=busqueda,
-        escuela_id=escuelaId, 
-        rol_id=rolId, 
-        activo=activo,  # ✅ Pasamos el filtro al servicio
+    # Cargamos las relaciones 'roles' y 'escuela' para evitar consultas N+1
+    query = sesion.query(Usuario).options(
+        selectinload(Usuario.roles).selectinload(UsuarioRol.rol),
+        selectinload(Usuario.escuela)
     )
-    return _envoltura(items, metadatos, esquemas.UsuarioResponse)
+    
+    # Filtro de búsqueda por nombre o correo
+    if busqueda:
+        query = query.filter(
+            (Usuario.nombreUsuario.ilike(f"%{busqueda}%")) |
+            (Usuario.apellido1Usuario.ilike(f"%{busqueda}%")) |
+            (Usuario.correoInstitucional.ilike(f"%{busqueda}%"))
+        )
+    
+    # Filtro por escuela
+    if escuela_id is not None:
+        query = query.filter(Usuario.escuelaId == escuela_id)
+        
+    # Filtro por rol (requiere JOIN con UsuarioRol)
+    if rol_id is not None:
+        query = query.join(UsuarioRol).filter(UsuarioRol.rolId == rol_id, UsuarioRol.activo == True)
+
+    if activo is not None:
+        # Si el frontend envía explícitamente True o False, filtramos por eso
+        query = query.filter(Usuario.activo == activo)
+    elif not incluir_inactivos:
+        # Comportamiento por defecto: si no se pide incluir inactivos, solo mostrar activos
+        query = query.filter(Usuario.activo == True)
+
+    # Contar total de registros para la paginación (después de aplicar filtros)
+    total = query.count()
+    
+    # Aplicar paginación
+    offset = (pagina - 1) * tamano_pagina
+    items = query.offset(offset).limit(tamano_pagina).all()
+    
+    metadatos = {
+        "total": total,
+        "pagina": pagina,
+        "tamanoPagina": tamano_pagina,
+        "totalPaginas": (total + tamano_pagina - 1) // tamano_pagina
+    }
+    
+    return items, metadatos
 
 
 @router.post("/usuarios", tags=["Administración - Usuarios"], summary="Crear usuario", status_code=status.HTTP_201_CREATED, dependencies=[depende_admin, Depends(verificar_permiso("usuarios.crear"))])
