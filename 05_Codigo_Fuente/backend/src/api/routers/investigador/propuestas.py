@@ -103,8 +103,9 @@ def obtener_catalogos_formulario(
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(obtener_usuario_activo)
 ):
-    from src.models.convocatorias import Convocatorias
-    from src.models.escuelas import Escuela
+    from src.models.convocatorias import Convocatorias, EstadosPropuesta
+    from src.models.escuelas import Escuela, Campus
+    from src.models.catalogos import NivelesTrl
     from src.models.usuarios import Usuario
     from src.models.propuesta_equipo import RolesEquipo
     from datetime import date
@@ -112,6 +113,11 @@ def obtener_catalogos_formulario(
     hoy = date.today()
     convocatorias = db.query(Convocatorias).order_by(Convocatorias.fechaCierre.desc()).all()
     escuelas = db.query(Escuela).filter(Escuela.activo == True).order_by(Escuela.nombreEscuela).all()
+    campus = db.query(Campus).filter(Campus.activo == True).order_by(Campus.nombreCampus).all()
+    estados_propuesta = db.query(EstadosPropuesta).filter(
+        EstadosPropuesta.activo == True
+    ).order_by(EstadosPropuesta.orden).all()
+    niveles_trl = db.query(NivelesTrl).filter(NivelesTrl.activo == True).order_by(NivelesTrl.nivelTrlId).all()
     investigadores = db.query(Usuario).filter(Usuario.activo == True).order_by(Usuario.nombreUsuario).all()
     roles_equipo = db.query(RolesEquipo).filter(RolesEquipo.activo == True).all()
 
@@ -134,8 +140,31 @@ def obtener_catalogos_formulario(
             {
                 "escuelaId": e.escuelaId,
                 "nombreEscuela": e.nombreEscuela,
-                "codigoEscuela": e.codigoEscuela
+                "codigoEscuela": e.codigoEscuela,
+                "campusId": e.campusId,
+                "nombreCampus": e.campus.nombreCampus if e.campus else None
             } for e in escuelas
+        ],
+        "campus": [
+            {
+                "campusId": c.campusId,
+                "nombreCampus": c.nombreCampus
+            } for c in campus
+        ],
+        "estadosPropuesta": [
+            {
+                "estadoPropuestaId": es.estadoPropuestaId,
+                "codigoEstadoPropuesta": es.codigoEstadoPropuesta,
+                "nombreEstadoPropuesta": es.nombreEstadoPropuesta,
+                "esFinal": bool(es.esFinal),
+                "orden": es.orden
+            } for es in estados_propuesta
+        ],
+        "nivelesTrl": [
+            {
+                "nivelTrlId": n.nivelTrlId,
+                "descripcionNivel": n.descripcionNivel
+            } for n in niveles_trl
         ],
         "investigadores": [
             {

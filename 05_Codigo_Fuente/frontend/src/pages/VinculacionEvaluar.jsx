@@ -36,6 +36,25 @@ const VinculacionEvaluar = () => {
   // Validación de auto-evaluación
   const [esAutoEvaluacion, setEsAutoEvaluacion] = useState(false);
 
+  // Catálogo de Niveles TRL obtenido desde la base de datos
+  const [nivelesTrl, setNivelesTrl] = useState([]);
+  const [cargandoNivelesTrl, setCargandoNivelesTrl] = useState(true);
+
+  useEffect(() => {
+    const cargarNivelesTrl = async () => {
+      try {
+        setCargandoNivelesTrl(true);
+        const dataCatalogos = await propuestaService.obtenerCatalogosFormulario();
+        setNivelesTrl(dataCatalogos?.nivelesTrl || []);
+      } catch (_err) {
+        setNivelesTrl([]);
+      } finally {
+        setCargandoNivelesTrl(false);
+      }
+    };
+    cargarNivelesTrl();
+  }, []);
+
   useEffect(() => {
     const cargarExpediente = async () => {
       if (propuestaId) {
@@ -285,12 +304,20 @@ const VinculacionEvaluar = () => {
                       onChange={(e) => setTrlEsperado(e.target.value)}
                       className="modal-select"
                       required
+                      disabled={cargandoNivelesTrl}
                     >
-                      <option value="">— Seleccione un nivel TRL —</option>
-                      <option value="Nivel 4 (Validación de componentes en laboratorio)">Nivel 4 (Validación de componentes en laboratorio)</option>
-                      <option value="Nivel 5 (Validación en entorno relevante)">Nivel 5 (Validación en entorno relevante)</option>
-                      <option value="Nivel 6 (Demostración de prototipo en entorno relevante)">Nivel 6 (Demostración de prototipo en entorno relevante)</option>
-                      <option value="Nivel 7 (Demostración de sistema en entorno operacional)">Nivel 7 (Demostración de sistema en entorno operacional)</option>
+                      <option value="">
+                        {cargandoNivelesTrl
+                          ? 'Cargando niveles TRL…'
+                          : nivelesTrl.length === 0
+                            ? 'No hay niveles TRL disponibles'
+                            : '— Seleccione un nivel TRL —'}
+                      </option>
+                      {nivelesTrl.map(n => (
+                        <option key={n.nivelTrlId} value={String(n.nivelTrlId)}>
+                          {`Nivel ${n.nivelTrlId} (${n.descripcionNivel})`}
+                        </option>
+                      ))}
                     </select>
                     {expediente?.nivelTrlActual && (
                       <span className="form-caption-subtext">

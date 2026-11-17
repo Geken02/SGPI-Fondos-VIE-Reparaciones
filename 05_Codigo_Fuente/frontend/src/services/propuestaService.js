@@ -35,7 +35,7 @@ export const propuestaService = {
       const response = await api.get('/investigador/propuestas/catalogos/formulario');
       return response.data;
     } catch (_err) {
-      return { convocatorias: [], escuelas: [] };
+      return { convocatorias: [], escuelas: [], campus: [], estadosPropuesta: [], nivelesTrl: [] };
     }
   },
 

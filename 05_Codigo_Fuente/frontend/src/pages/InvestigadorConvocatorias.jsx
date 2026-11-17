@@ -4,6 +4,7 @@ import { useModal } from '../context/ModalContext';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from '../components/LimitedInput';
 import IconoCie from '../components/cie/IconoCie';
+import { claseBadgeEstado, etiquetaEstado } from '../data/estadosPropuesta';
 
 // Metadatos institucionales limpios sin datos inventados ni hardcodeados
 const formatearFechaApertura = (fechaStr) => {
@@ -118,11 +119,15 @@ const InvestigadorConvocatorias = () => {
     setFiltroArea('Todas');
   };
 
+  // Opciones de filtro derivadas de las convocatorias reales de la BD
+  const tiposFondoDisponibles = Array.from(new Set(convocatorias.map(c => c.tipoFondo).filter(Boolean)));
+  const areasDisponibles = Array.from(new Set(convocatorias.map(c => c.area).filter(Boolean)));
+
   const convocatoriasFiltradas = convocatorias.filter((c) => {
     const coincideTexto = c.nombre.toLowerCase().includes(filtroTexto.toLowerCase()) ||
                           c.tipoFondo.toLowerCase().includes(filtroTexto.toLowerCase()) ||
                           c.dirigidoA.toLowerCase().includes(filtroTexto.toLowerCase());
-    const coincideTipo = filtroTipo === 'Todos' || c.tipoFondo.includes(filtroTipo);
+    const coincideTipo = filtroTipo === 'Todos' || c.tipoFondo === filtroTipo;
     const coincideArea = filtroArea === 'Todas' || c.area === filtroArea;
     return coincideTexto && coincideTipo && coincideArea;
   });
@@ -187,13 +192,12 @@ const InvestigadorConvocatorias = () => {
             onChange={(e) => setFiltroTipo(e.target.value)}
             className="filter-select"
             aria-label="Filtrar convocatorias por tipo de fondo"
+            disabled={cargando}
           >
             <option value="Todos">Tipo de Fondo: Todos ▾</option>
-            <option value="TRADICIONAL">Fondo Tradicional</option>
-            <option value="EXTERNOS">Fondos Externos</option>
-            <option value="ESPECIAL">Fondo Especial</option>
-            <option value="CONARE">Fondos CONARE (FEES)</option>
-            <option value="TÉCNICO">Equipamiento Técnico</option>
+            {tiposFondoDisponibles.map((tipo) => (
+              <option key={tipo} value={tipo}>{tipo}</option>
+            ))}
           </select>
 
           <select 
@@ -201,11 +205,12 @@ const InvestigadorConvocatorias = () => {
             onChange={(e) => setFiltroArea(e.target.value)}
             className="filter-select"
             aria-label="Filtrar convocatorias por área de conocimiento"
+            disabled={cargando}
           >
             <option value="Todas">Área Conocimiento: Todas ▾</option>
-            <option value="Ingeniería y Tecnología">Ingeniería y Tecnología</option>
-            <option value="Ciencias Naturales y Exactas">Ciencias Naturales y Exactas</option>
-            <option value="Ciencias Sociales">Ciencias Sociales</option>
+            {areasDisponibles.map((area) => (
+              <option key={area} value={area}>{area}</option>
+            ))}
           </select>
 
           <button 
@@ -273,8 +278,8 @@ const InvestigadorConvocatorias = () => {
                         <span className="propuesta-activa-code">
                           <span><IconoCie nombre="clipboard" tamano={14} /></span> En trámite: {propActiva.codigoPropuesta}
                         </span>
-                        <span className="badge-status badge-warning">
-                          {propActiva.nombreEstado || 'Borrador'}
+                        <span className={claseBadgeEstado(propActiva.estadoId, propActiva.nombreEstado)}>
+                          {etiquetaEstado(propActiva.estadoId, propActiva.nombreEstado)}
                         </span>
                       </div>
                       <div className="propuesta-activa-title">
