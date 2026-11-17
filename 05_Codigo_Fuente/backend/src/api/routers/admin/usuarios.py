@@ -141,6 +141,7 @@ def _envoltura(items: list, metadatos: dict, esquema_item: type) -> dict:
 # CRUD DE USUARIOS
 # ============================================================================
 
+@router.get("/usuarios", tags=["Administración - Usuarios"], summary="Listar usuarios del sistema", dependencies=[depende_admin])
 def listar_usuarios(
     sesion: Session,
     pagina: int = 1,
@@ -149,7 +150,7 @@ def listar_usuarios(
     escuela_id: int | None = None,
     rol_id: int | None = None,
     incluir_inactivos: bool = False,
-    activo: bool | None = None,
+    activo: bool | None = None,  # ✅ NUEVO PARÁMETRO AGREGADO
 ):
     # Cargamos las relaciones 'roles' y 'escuela' para evitar consultas N+1
     query = sesion.query(Usuario).options(
@@ -173,6 +174,7 @@ def listar_usuarios(
     if rol_id is not None:
         query = query.join(UsuarioRol).filter(UsuarioRol.rolId == rol_id, UsuarioRol.activo == True)
 
+    # LÓGICA DE FILTRO DE ESTADO ACTUALIZADA
     if activo is not None:
         # Si el frontend envía explícitamente True o False, filtramos por eso
         query = query.filter(Usuario.activo == activo)
