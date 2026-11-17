@@ -312,6 +312,9 @@ const FormularioProyecto = () => {
           if (l.colaboradoresExternos && Array.isArray(l.colaboradoresExternos)) {
             setColaboradoresExternos(l.colaboradoresExternos);
           }
+          if (l.cartasCompromiso && typeof l.cartasCompromiso === 'object') {
+            setCartasCompromiso(l.cartasCompromiso);
+          }
           let actsCargadas = null;
           if (l.actividadesCronograma && Array.isArray(l.actividadesCronograma) && l.actividadesCronograma.length > 0) {
             actsCargadas = l.actividadesCronograma;
@@ -690,6 +693,7 @@ const guardarBorradorActual = async () => {
     actividadesCronograma, riesgosMitigacion,
     rangoHorasCompromiso, firmaCoordinador,
     productos14a, productos14b,
+    cartasCompromiso,
     fechaGuardado: new Date().toISOString()
   };
 
