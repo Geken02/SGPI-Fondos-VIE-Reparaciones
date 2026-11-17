@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useModal } from '../context/ModalContext';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from '../components/LimitedInput';
+import IconoCie from '../components/cie/IconoCie';
 
 const InvestigadorDashboard = () => {
   const navigate = useNavigate();
@@ -485,7 +486,7 @@ const InvestigadorDashboard = () => {
                 onClick={() => navigate('/dashboard/convocatorias')}
                 aria-label={convocatoriaCercana ? `${convocatoriaCercana.nombre}. Cierra el ${formatearFechaCierre(convocatoriaCercana.fechaCierre)}. Haga clic para consultar las bases.` : 'Ver convocatorias disponibles'}
               >
-                <div className="quick-card-icon" aria-hidden="true">📅</div>
+                <div className="quick-card-icon" aria-hidden="true"><IconoCie nombre="calendar" tamano={24} /></div>
                 <div className="quick-card-content">
                   <div className="quick-card-title">
                     {convocatoriaCercana ? convocatoriaCercana.nombre : 'Convocatoria más cercana'}
@@ -507,7 +508,7 @@ const InvestigadorDashboard = () => {
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos VIE)...'); } }}
                 onClick={() => alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos VIE)...')}
               >
-                <div className="quick-card-icon" aria-hidden="true">🧩</div>
+                <div className="quick-card-icon" aria-hidden="true"><IconoCie nombre="fileText" tamano={24} /></div>
                 <div className="quick-card-content">
                   <div className="quick-card-title">Plantillas de Presupuesto</div>
                   <div className="quick-card-sub">Descargar formato oficial F02</div>
@@ -523,7 +524,7 @@ const InvestigadorDashboard = () => {
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alert('Abriendo Reglamento General de Investigación y Extensión del ITCR.'); } }}
                 onClick={() => alert('Abriendo Reglamento General de Investigación y Extensión del ITCR.')}
               >
-                <div className="quick-card-icon" aria-hidden="true">📖</div>
+                <div className="quick-card-icon" aria-hidden="true"><IconoCie nombre="book" tamano={24} /></div>
                 <div className="quick-card-content">
                   <div className="quick-card-title">Reglamento de Investigación</div>
                   <div className="quick-card-sub">Guía y normativa vigente</div>

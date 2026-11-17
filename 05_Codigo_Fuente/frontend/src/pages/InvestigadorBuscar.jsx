@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from '../components/LimitedInput';
+import IconoCie from '../components/cie/IconoCie';
 
 const InvestigadorBuscar = () => {
   const navigate = useNavigate();
@@ -154,7 +155,7 @@ const InvestigadorBuscar = () => {
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '16px' }}
                 title="Limpiar campo"
               >
-                ✕
+                <IconoCie nombre="close" tamano={16} />
               </button>
             )}
           </div>
@@ -284,7 +285,7 @@ const InvestigadorBuscar = () => {
               ))
             ) : (
               <div className="proposals-empty-state">
-                <div className="empty-icon-circle">🔍</div>
+                <div className="empty-icon-circle"><IconoCie nombre="search" tamano={24} /></div>
                 <h3 className="empty-title">No se encontraron resultados</h3>
                 <p className="empty-description">
                   {queryActivo.trim() 
@@ -324,7 +325,7 @@ const InvestigadorBuscar = () => {
                       setQueryActivo(item.query);
                     }}
                   >
-                    🔍 {item.label}
+                    <IconoCie nombre="search" tamano={14} /> {item.label}
                   </button>
                 ))}
               </div>
@@ -356,7 +357,7 @@ const InvestigadorBuscar = () => {
                       if (fil.estado) setFiltroEstado(fil.estado);
                     }}
                   >
-                    ⚡ {fil.label}
+                    <IconoCie nombre="zap" tamano={13} /> {fil.label}
                   </button>
                 ))}
               </div>

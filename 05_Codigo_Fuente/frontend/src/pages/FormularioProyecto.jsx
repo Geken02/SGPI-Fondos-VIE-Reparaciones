@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedInput, LimitedTextarea } from '../components/LimitedInput';
 import { exportarForm04PDF, generarBlobForm04PDF } from '../utils/exportUtils';
+import IconoCie from '../components/cie/IconoCie';
 
 const FormularioProyecto = () => {
   const { usuario } = useAuth();
@@ -1144,7 +1145,7 @@ const guardarBorradorActual = async () => {
       <div className="form-paper-container">
         {envioExitoso ? (
           <div className="envio-exitoso-splash">
-            <div className="success-icon-badge">✓</div>
+            <div className="success-icon-badge"><IconoCie nombre="check" tamano={28} /></div>
             <h1 className="success-modal-title">¡Formulario Form-04 Guardado con Éxito!</h1>
             <p className="success-modal-subtitle">
               El Formulario Form-04 ha sido completado y guardado en el expediente. Recuerde que el envío oficial a la Unidad de Vinculación se realiza desde la sección "Mis Propuestas" mediante el botón de envío correspondiente.
@@ -1175,11 +1176,11 @@ const guardarBorradorActual = async () => {
                     <span>Ventana {pasoActual} de 16: <strong>{PASOS_CONFIG[pasoActual - 1]?.titulo}</strong></span>
                     {estadosPasos[pasoActual]?.completo ? (
                       <span className="stepper-status-badge badge-completo">
-                        ✓ Parte completa
+                        <IconoCie nombre="check" tamano={12} /> Parte completa
                       </span>
                     ) : (
                       <span className="stepper-status-badge badge-incompleto">
-                        ⚠ Incompleta ({estadosPasos[pasoActual]?.faltantes?.length || 0} pendiente{estadosPasos[pasoActual]?.faltantes?.length === 1 ? '' : 's'})
+                        <IconoCie nombre="alertTriangle" tamano={12} /> Incompleta ({estadosPasos[pasoActual]?.faltantes?.length || 0} pendiente{estadosPasos[pasoActual]?.faltantes?.length === 1 ? '' : 's'})
                       </span>
                     )}
                   </div>
@@ -1213,7 +1214,7 @@ const guardarBorradorActual = async () => {
                       title={`Ventana ${p.num}: ${p.titulo} - ${estaCompleto ? 'Completa' : 'Incompleta'}`}
                     >
                       <div className="step-tab-num">
-                        {estaCompleto ? '✓' : p.num}
+                        {estaCompleto ? <IconoCie nombre="check" tamano={12} /> : p.num}
                       </div>
                       <div className="step-tab-info">
                         <span className="step-tab-short-name">{p.num}. {p.corto}</span>
@@ -1331,7 +1332,7 @@ const guardarBorradorActual = async () => {
                         className={`btn-toggle-option ${otrasFuentes.aplica ? 'active' : ''}`}
                         onClick={() => setOtrasFuentes({ ...otrasFuentes, aplica: true })}
                       >
-                        ✔ Sí
+                        <IconoCie nombre="check" tamano={12} /> Sí
                       </button>
                     </div>
                   </div>
@@ -1365,7 +1366,7 @@ const guardarBorradorActual = async () => {
                         className={`btn-toggle-option ${vinculacionTecnica.aplica ? 'active' : ''}`}
                         onClick={() => setVinculacionTecnica({ ...vinculacionTecnica, aplica: true })}
                       >
-                        ✔ Sí
+                        <IconoCie nombre="check" tamano={12} /> Sí
                       </button>
                     </div>
                   </div>
@@ -1399,7 +1400,7 @@ const guardarBorradorActual = async () => {
                         className={`btn-toggle-option ${problemasNacionales.aplica ? 'active' : ''}`}
                         onClick={() => setProblemasNacionales({ ...problemasNacionales, aplica: true })}
                       >
-                        ✔ Sí
+                        <IconoCie nombre="check" tamano={12} /> Sí
                       </button>
                     </div>
                   </div>
@@ -1443,7 +1444,7 @@ const guardarBorradorActual = async () => {
                         className={`btn-toggle-option ${requiereInstrumento.aplica ? 'active' : ''}`}
                         onClick={() => setRequiereInstrumento({ ...requiereInstrumento, aplica: true })}
                       >
-                        ✔ Sí
+                        <IconoCie nombre="check" tamano={12} /> Sí
                       </button>
                     </div>
                   </div>
@@ -1484,7 +1485,7 @@ const guardarBorradorActual = async () => {
                         className={`btn-toggle-option ${convenioMarco.aplica ? 'active' : ''}`}
                         onClick={() => setConvenioMarco({ ...convenioMarco, aplica: true })}
                       >
-                        ✔ Sí
+                        <IconoCie nombre="check" tamano={12} /> Sí
                       </button>
                     </div>
                   </div>
@@ -1575,7 +1576,7 @@ const guardarBorradorActual = async () => {
                         className={`btn-toggle-option ${infoConfidencial.aplica ? 'active' : ''}`}
                         onClick={() => setInfoConfidencial({ ...infoConfidencial, aplica: true })}
                       >
-                        ✔ Sí
+                        <IconoCie nombre="check" tamano={12} /> Sí
                       </button>
                     </div>
                   </div>
@@ -1610,7 +1611,7 @@ const guardarBorradorActual = async () => {
                         className={`btn-toggle-option ${potencialPI.aplica ? 'active' : ''}`}
                         onClick={() => setPotencialPI({ ...potencialPI, aplica: true })}
                       >
-                        ✔ Sí
+                        <IconoCie nombre="check" tamano={12} /> Sí
                       </button>
                     </div>
                   </div>
@@ -1646,7 +1647,7 @@ const guardarBorradorActual = async () => {
                         className={`btn-toggle-option ${poseeInnovacion.aplica ? 'active' : ''}`}
                         onClick={() => setPoseeInnovacion({ ...poseeInnovacion, aplica: true })}
                       >
-                        ✔ Sí
+                        <IconoCie nombre="check" tamano={12} /> Sí
                       </button>
                     </div>
                   </div>
@@ -1959,7 +1960,7 @@ const guardarBorradorActual = async () => {
                                 }
                               }}
                             >
-                              ✕
+                              <IconoCie nombre="close" tamano={14} />
                             </button>
                           </td>
                         </tr>
@@ -2084,7 +2085,7 @@ const guardarBorradorActual = async () => {
                               />
                               {cartaInfo && cartaInfo.subido ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                                  <span style={{ fontSize: '18px' }}>✅</span>
+                                  <span style={{ fontSize: '18px' }}><IconoCie nombre="checkCircle" tamano={18} /></span>
                                   <span style={{ fontSize: '11px', color: '#166534', fontWeight: 600, maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={cartaInfo.nombre}>
                                     {cartaInfo.nombre}
                                   </span>
@@ -2100,7 +2101,7 @@ const guardarBorradorActual = async () => {
                                 <span style={{ fontSize: '12px', color: '#1e4080' }}>Subiendo…</span>
                               ) : cartaInfo && cartaInfo.error ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                                  <span style={{ fontSize: '11px', color: '#dc2626' }} title={cartaInfo.error}>⚠️ Error</span>
+                                  <span style={{ fontSize: '11px', color: '#dc2626' }} title={cartaInfo.error}><IconoCie nombre="alertTriangle" tamano={12} /> Error</span>
                                   <button
                                     type="button"
                                     className="btn-carta-compromiso error"
@@ -2116,7 +2117,7 @@ const guardarBorradorActual = async () => {
                                   title="Subir carta de compromiso de este colaborador (PDF, DOC, DOCX)"
                                   onClick={() => cartaInputRefs.current[colKey] && cartaInputRefs.current[colKey].click()}
                                 >
-                                  📎 Subir carta
+                                  <IconoCie nombre="paperclip" tamano={14} /> Subir carta
                                 </button>
                               )}
                             </td>
@@ -2136,7 +2137,7 @@ const guardarBorradorActual = async () => {
                                   });
                                 }}
                               >
-                                ✕
+                                <IconoCie nombre="close" tamano={14} />
                               </button>
                             </td>
                           </tr>
@@ -2154,7 +2155,7 @@ const guardarBorradorActual = async () => {
                 </button>
                 {colaboradoresExternos.length > 0 && (
                   <p style={{ fontSize: '12px', color: '#475569', marginTop: '10px', marginBottom: '0' }}>
-                    <strong>📌 Nota:</strong> Cada colaborador externo debe adjuntar su Carta de Compromiso (PDF, DOC o DOCX). La carta se sube directamente a la propuesta al momento de seleccionar el archivo.
+                    <strong><IconoCie nombre="info" tamano={14} /> Nota:</strong> Cada colaborador externo debe adjuntar su Carta de Compromiso (PDF, DOC o DOCX). La carta se sube directamente a la propuesta al momento de seleccionar el archivo.
                   </p>
                 )}
               </div>
@@ -2230,7 +2231,7 @@ const guardarBorradorActual = async () => {
                             }}
                             title="Eliminar objetivo"
                           >
-                            🗑
+                            <IconoCie nombre="trash" tamano={14} />
                           </button>
                         )}
                       </div>
@@ -2246,7 +2247,7 @@ const guardarBorradorActual = async () => {
 
                   <div className="oe-vinculo-cronograma-callout">
                     <span className="oe-vinculo-text">
-                      <span>🔗</span> Los objetivos específicos definidos aquí están vinculados directamente con el <strong>Paso 12 (Plan de Acción y Cronograma)</strong>.
+                      <span><IconoCie nombre="link" tamano={14} /></span> Los objetivos específicos definidos aquí están vinculados directamente con el <strong>Paso 12 (Plan de Acción y Cronograma)</strong>.
                     </span>
                     <button
                       type="button"
@@ -2279,7 +2280,7 @@ const guardarBorradorActual = async () => {
                 />
                 <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
                   <span className="badge-status badge-success" style={{ padding: '6px 12px' }}>
-                    ✔ Mínimo 15 referencias (Scopus/WoS)
+                    <IconoCie nombre="check" tamano={12} /> Mínimo 15 referencias (Scopus/WoS)
                   </span>
                   <span className="badge-status badge-info" style={{ padding: '6px 12px' }}>
                     Muestra Completa
@@ -2328,7 +2329,7 @@ const guardarBorradorActual = async () => {
                 <div className="oe-vinculados-panel">
                   <div className="oe-vinculados-header">
                     <div className="oe-vinculados-title">
-                      <span>🎯</span> Objetivos Específicos Vinculados (Paso 9)
+                      <span><IconoCie nombre="target" tamano={14} /></span> Objetivos Específicos Vinculados (Paso 9)
                     </div>
                     <button 
                       type="button" 
@@ -2336,12 +2337,12 @@ const guardarBorradorActual = async () => {
                       onClick={() => setPasoActual(9)}
                       title="Ir a Paso 9 para agregar o editar los objetivos específicos"
                     >
-                      ✏️ Editar objetivos en Paso 9
+                      <IconoCie nombre="edit" tamano={14} /> Editar objetivos en Paso 9
                     </button>
                   </div>
                   {objetivosEspecificos.filter(o => o && o.trim()).length === 0 ? (
                     <div className="oe-vinculados-empty">
-                      ⚠️ Aún no se han redactado objetivos específicos en el <strong>Paso 9</strong>. Haga clic en <em>"Editar objetivos en Paso 9"</em> para agregarlos y vincularlos a cada actividad del cronograma.
+                      <IconoCie nombre="alertTriangle" tamano={14} /> Aún no se han redactado objetivos específicos en el <strong>Paso 9</strong>. Haga clic en <em>"Editar objetivos en Paso 9"</em> para agregarlos y vincularlos a cada actividad del cronograma.
                     </div>
                   ) : (
                     <div className="oe-vinculados-grid">
@@ -2643,7 +2644,7 @@ const guardarBorradorActual = async () => {
                                 aria-label={`Eliminar fila de actividad ${i + 1}`}
                                 onClick={() => handleEliminarActividad(act.id || i)}
                               >
-                                <span aria-hidden="true">✕</span>
+                                <span aria-hidden="true"><IconoCie nombre="close" tamano={14} /></span>
                                 <span className="sr-only">Eliminar actividad</span>
                               </button>
                             </td>
@@ -2665,7 +2666,7 @@ const guardarBorradorActual = async () => {
 
                 {/* Recordatorio VIE */}
                 <div className="vie-reminder-box" style={{ marginTop: '14px' }}>
-                  <span className="reminder-icon">💡</span>
+                  <span className="reminder-icon"><IconoCie nombre="info" tamano={14} /></span>
                   <div className="reminder-text">
                     <strong>Recordatorio VIE:</strong> Dentro de la programación de actividades se deben incluir obligatoriamente las giras de campo y los informes de avance. Además, deberá registrarse cualquier pasantía nacional o internacional que se requiera para el desarrollo del proyecto.
                   </div>
@@ -2769,7 +2770,7 @@ const guardarBorradorActual = async () => {
                                   setRiesgosMitigacion(riesgosMitigacion.filter((_, idx) => idx !== i));
                                 }}
                               >
-                                ✕
+                                <IconoCie nombre="close" tamano={14} />
                               </button>
                             </td>
                           </tr>
@@ -3019,7 +3020,7 @@ const guardarBorradorActual = async () => {
                 {archivoPlanRiesgos ? (
                   <div style={{ marginTop: '20px', padding: '14px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '20px' }}>📊</span>
+                      <span style={{ fontSize: '20px' }}><IconoCie nombre="barChart" tamano={20} /></span>
                       <div>
                         <div style={{ fontSize: '13px', fontWeight: 600, color: '#002855' }}>{archivoPlanRiesgos.nombre}</div>
                         <div style={{ fontSize: '12px', color: '#64748b' }}>Archivo adjunto ({archivoPlanRiesgos.tamano})</div>
@@ -3045,7 +3046,7 @@ const guardarBorradorActual = async () => {
                 ) : (
                   <div className="adjuntar-plan-box" onClick={() => fileInputPlanRef.current && fileInputPlanRef.current.click()}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '22px' }}>📊</span>
+                      <span style={{ fontSize: '22px' }}><IconoCie nombre="barChart" tamano={22} /></span>
                       <div>
                         <div className="adjuntar-plan-title">+ Adjuntar Plan de Acción y Gestión de Riesgos</div>
                         <div className="adjuntar-plan-hint">Formatos aceptados: Excel (.xlsx, .xls) o PDF firmado (Máx. 10MB)</div>
@@ -3669,7 +3670,7 @@ const guardarBorradorActual = async () => {
                           className={`btn-toggle-option ${aspectosEticos[item.key] ? 'active' : ''}`}
                           onClick={() => setAspectosEticos({ ...aspectosEticos, [item.key]: true })}
                         >
-                          ✔ Sí
+                          <IconoCie nombre="check" tamano={12} /> Sí
                         </button>
                       </div>
                     </div>
@@ -3788,7 +3789,7 @@ const guardarBorradorActual = async () => {
                           }
                         }}
                       >
-                        {firmaCoordinador.firmadoDigital ? '✔ Firmado con BCCR / GAUDI' : '🔏 Firmar con BCCR / GAUDI'}
+                        {firmaCoordinador.firmadoDigital ? <><IconoCie nombre="check" tamano={14} /> Firmado con BCCR / GAUDI</> : <><IconoCie nombre="lock" tamano={14} /> Firmar con BCCR / GAUDI</>}
                       </button>
                     </div>
                   </div>

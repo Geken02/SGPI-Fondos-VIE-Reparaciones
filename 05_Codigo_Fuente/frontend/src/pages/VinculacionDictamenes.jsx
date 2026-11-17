@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { vinculacionService } from '../services/vinculacionService';
 import { LimitedInput } from '../components/LimitedInput';
+import IconoCie from '../components/cie/IconoCie';
 
 const VinculacionDictamenes = () => {
   const navigate = useNavigate();
@@ -111,7 +112,7 @@ const VinculacionDictamenes = () => {
             <div className="kpi-card-label">DICTÁMENES EMITIDOS</div>
             <div className="kpi-stat-row">
               <span className="kpi-big-number">{totalDictamenes}</span>
-              <span className="kpi-stat-icon">📄</span>
+              <span className="kpi-stat-icon"><IconoCie nombre="fileText" tamano={20} /></span>
             </div>
           </div>
 
@@ -119,7 +120,7 @@ const VinculacionDictamenes = () => {
             <div className="kpi-card-label">DICTÁMENES REGISTRADOS</div>
             <div className="kpi-stat-row">
               <span className="kpi-big-number">{recomendados}</span>
-              <span className="kpi-stat-icon" style={{ color: '#16a34a' }}>✓</span>
+              <span className="kpi-stat-icon" style={{ color: '#16a34a' }}><IconoCie nombre="checkCircle" tamano={20} /></span>
             </div>
           </div>
 
@@ -127,7 +128,7 @@ const VinculacionDictamenes = () => {
             <div className="kpi-card-label">NO RECOMENDADOS</div>
             <div className="kpi-stat-row">
               <span className="kpi-big-number">{noRecomendados}</span>
-              <span className="kpi-stat-icon" style={{ color: '#EF3340' }}>✕</span>
+              <span className="kpi-stat-icon" style={{ color: '#EF3340' }}><IconoCie nombre="close" tamano={20} /></span>
             </div>
           </div>
         </div>
@@ -233,7 +234,7 @@ const VinculacionDictamenes = () => {
                 <tr>
                   <td colSpan="7" style={{ textAlign: 'center', padding: '48px 20px', color: '#627d98' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ fontSize: '28px', color: '#0369A1' }}>📄</div>
+                      <div style={{ color: '#0369A1' }}><IconoCie nombre="fileText" tamano={28} /></div>
                       <div className="empty-state-title" style={{ fontSize: '16px', fontWeight: 500 }}>
                         No se han emitido dictámenes todavía
                       </div>

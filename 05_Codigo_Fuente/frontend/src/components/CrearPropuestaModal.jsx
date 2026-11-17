@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from './LimitedInput';
+import IconoCie from './cie/IconoCie';
 
 const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
   const { usuario } = useAuth();
@@ -159,14 +160,14 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
             onClick={onClose}
             aria-label="Cerrar modal"
           >
-            ✕
+            <IconoCie nombre="close" tamano={16} />
           </button>
         </div>
 
         {/* Vista de éxito */}
         {creadaExitosa ? (
           <div className="crear-propuesta-success-body">
-            <div className="success-icon-badge">✓</div>
+            <div className="success-icon-badge"><IconoCie nombre="check" tamano={28} /></div>
             <h2 className="success-modal-title">¡Propuesta Creada con Éxito!</h2>
             <p className="success-modal-subtitle">
               Se ha registrado formalmente el nuevo borrador de investigación en la base de datos de la VIE.

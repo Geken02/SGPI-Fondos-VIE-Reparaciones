@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { descargarPropuestaPDF } from '../utils/exportUtils';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedTextarea } from '../components/LimitedInput';
+import IconoCie from '../components/cie/IconoCie';
 
 const VinculacionEvaluar = () => {
   const navigate = useNavigate();
@@ -194,7 +195,7 @@ const VinculacionEvaluar = () => {
             background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px',
             padding: '14px 18px', marginTop: '12px', display: 'flex', alignItems: 'center', gap: '10px'
           }}>
-            <span style={{ fontSize: '20px' }}>⚠️</span>
+            <span style={{ color: '#dc2626', display: 'inline-flex' }}><IconoCie nombre="alertTriangle" tamano={20} /></span>
             <div>
               <div style={{ fontWeight: 600, color: '#991b1b', fontSize: '14px' }}>Auto-evaluación no permitida</div>
               <div style={{ fontSize: '13px', color: '#b91c1c' }}>
@@ -248,7 +249,7 @@ const VinculacionEvaluar = () => {
                 style={{ width: '100%', marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 onClick={() => descargarPropuestaPDF(propuestaId, propuestaService)}
               >
-                📥 Descargar Form-04 completo (PDF)
+                <IconoCie nombre="download" tamano={16} />Descargar Form-04 completo (PDF)
               </button>
             </div>
           </div>
@@ -355,7 +356,7 @@ const VinculacionEvaluar = () => {
                     {archivoAdjunto ? (
                       <div className="archivo-firmado-box">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '18px' }}>📄</span>
+                          <IconoCie nombre="fileText" tamano={18} />
                           <span className="archivo-firmado-nombre" style={{ fontSize: '13px', fontWeight: 500 }}>{archivoAdjunto.name}</span>
                           <span style={{ fontSize: '12px', color: '#627d98' }}>({formatFileSize(archivoAdjunto.size)})</span>
                         </div>
@@ -369,7 +370,7 @@ const VinculacionEvaluar = () => {
                           }}
                           title="Eliminar archivo"
                         >
-                          ✕
+                          <IconoCie nombre="close" tamano={16} />
                         </button>
                       </div>
                     ) : (
@@ -417,7 +418,7 @@ const VinculacionEvaluar = () => {
                 {archivoSubida ? (
                   <div className="archivo-firmado-box" style={{ padding: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '24px' }}>📄</span>
+                      <IconoCie nombre="fileText" tamano={24} />
                       <div>
                         <div className="archivo-firmado-nombre" style={{ fontWeight: 600 }}>{archivoSubida.name}</div>
                         <div style={{ fontSize: '13px', color: '#627d98' }}>{formatFileSize(archivoSubida.size)}</div>
@@ -433,7 +434,7 @@ const VinculacionEvaluar = () => {
                       }}
                       title="Eliminar archivo"
                     >
-                      ✕
+                      <IconoCie nombre="close" tamano={16} />
                     </button>
                   </div>
                 ) : (
@@ -469,7 +470,7 @@ const VinculacionEvaluar = () => {
                     background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px',
                     padding: '12px 16px', marginTop: '16px', fontSize: '13px', color: '#991b1b'
                   }}>
-                    ⚠️ No puede emitir un dictamen sobre su propia propuesta.
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconoCie nombre="alertTriangle" tamano={14} />No puede emitir un dictamen sobre su propia propuesta.</span>
                   </div>
                 )}
 
