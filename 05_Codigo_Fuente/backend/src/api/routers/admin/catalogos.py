@@ -100,11 +100,22 @@ def _serializar(clave: str, registro, esquema_item: type):
         # Si falla, usar los datos raw
         datos = datos_raw
     
-    # Enriquecimiento específico para escuelas
-    if clave == "escuelas" and getattr(registro, "campus", None) is not None:
-        datos["nombreCampus"] = registro.campus.nombreCampus
+
+    if clave == "escuelas":
+        # registro.campus ahora es una lista (InstrumentedList) de objetos Campus
+        campus_list = getattr(registro, "campus", [])
+        
+        # Mapeamos la lista de objetos a una lista de diccionarios que coincida con CampusResumen
+        datos["campus"] = [
+            {"campusId": c.campusId, "nombreCampus": c.nombreCampus}
+            for c in campus_list
+        ]
+        
+        # Eliminamos 'nombreCampus' si existía en datos_raw para evitar conflictos con el esquema Pydantic
+        if "nombreCampus" in datos:
+            del datos["nombreCampus"]
     
-    # Si falta el campo "nombre" o similar, buscarlo en los datos raw
+    # Si falta el campo "nombre" o similar, buscarlo en los datos raw (para otros catálogos)
     campos_nombre_posibles = ['nombre', 'nombreLinea', 'nombrelinea', 'nombreRol', 'nombrerol', 
                               'nombreModalidad', 'nombremodalidad', 'descripcion', 'descripcionNivel',
                               'descripcionnivel', 'codigoTipo', 'codigotipo', 'claveConfig', 'claveconfig']
