@@ -42,7 +42,7 @@ export default function Usuarios() {
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [filtroRol, setFiltroRol] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState(''); // 'activo', 'inactivo', o ''
   const [pagina, setPagina] = useState(1);
   const [totalRegistros, setTotalRegistros] = useState(0);
   const [tamanoPagina] = useState(10);
@@ -57,6 +57,7 @@ export default function Usuarios() {
     cargarDatos();
     cargarRoles();
     cargarEscuelas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagina, busqueda, filtroRol, filtroEstado]);
 
   const cargarRoles = async () => {
@@ -81,21 +82,24 @@ export default function Usuarios() {
     setCargando(true);
     try {
       const rolSeleccionado = filtroRol ? roles.find(r => r.nombreRol === filtroRol) : null;
+      
+      // ✅ CORRECCIÓN: Mapear el filtro de estado a un booleano para el backend
+      let filtroActivo = undefined;
+      if (filtroEstado === 'activo') filtroActivo = true;
+      if (filtroEstado === 'inactivo') filtroActivo = false;
+
       const params = {
         pagina,
         tamanoPagina,
         busqueda: busqueda || undefined,
         rolId: rolSeleccionado ? rolSeleccionado.rolId : undefined,
-        incluirInactivos: true,
+        activo: filtroActivo, // ✅ Enviamos el filtro al backend
       };
+
       const response = await adminService.listarUsuarios(params);
-      let usuariosFiltrados = response.data.items || [];
-      if (filtroEstado === 'activo') {
-        usuariosFiltrados = usuariosFiltrados.filter(u => u.activo === true);
-      } else if (filtroEstado === 'inactivo') {
-        usuariosFiltrados = usuariosFiltrados.filter(u => u.activo === false);
-      }
-      setUsuarios(usuariosFiltrados);
+      
+      // ✅ Eliminamos el filtrado local. Confiamos 100% en lo que devuelve el backend paginado.
+      setUsuarios(response.data.items || []);
       setTotalRegistros(response.data.total || 0);
     } catch (error) {
       console.error('Error cargando usuarios:', error);

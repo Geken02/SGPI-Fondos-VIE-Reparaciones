@@ -23,7 +23,6 @@ from src.utils.permisos import verificar_permiso
 
 ROLES_ADMIN = ["SuperAdministrador", "Administrador"]
 
-# ✅ CORRECCIÓN: Eliminado el "router = APIRouter()" duplicado que había aquí
 router = APIRouter()
 depende_admin = Depends(requerir_rol(ROLES_ADMIN))
 
@@ -150,11 +149,16 @@ def listar_usuarios(
     busqueda: Optional[str] = Query(default=None, max_length=100),
     escuelaId: Optional[int] = None,
     rolId: Optional[int] = None,
-    incluirInactivos: bool = False,
+    activo: Optional[bool] = None,  # ✅ NUEVO: Filtro por estado activo/inactivo
 ):
     items, metadatos = usuario_service.listar_usuarios(
-        sesion, pagina=pagina, tamano_pagina=tamanoPagina, busqueda=busqueda,
-        escuela_id=escuelaId, rol_id=rolId, incluir_inactivos=incluirInactivos,
+        sesion, 
+        pagina=pagina, 
+        tamano_pagina=tamanoPagina, 
+        busqueda=busqueda,
+        escuela_id=escuelaId, 
+        rol_id=rolId, 
+        activo=activo,  # ✅ Pasamos el filtro al servicio
     )
     return _envoltura(items, metadatos, esquemas.UsuarioResponse)
 
@@ -229,7 +233,6 @@ def roles_usuario(usuario_id: int, sesion: Session = Depends(get_db)):
     return [_rol_resumen(a) for a in asignaciones]
 
 
-# ✅ CORRECCIÓN CLAVE: Endpoint de asignar rol limpio y sin conflictos
 @router.post(
     "/usuarios/{usuario_id}/roles", 
     tags=["Administración - Usuarios"], 
