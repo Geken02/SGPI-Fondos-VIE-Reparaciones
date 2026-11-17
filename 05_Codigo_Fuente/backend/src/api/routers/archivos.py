@@ -24,16 +24,14 @@ async def guardar_archivo_propuesta(
     sesion: Session = Depends(get_db)
 ):
     """
-    Recibe un archivo, lo sube a Supabase Storage y guarda/actualiza el registro en PropuestaDocumentos.
-    Si ya existe un documento activo del mismo tipo, se ACTUALIZA el registro existente (ahorrando IDs).
-    SI es un .docx del Form-04 (tipo 1), también lo parsea y actualiza las tablas de la propuesta.
+    Recibe un archivo, lo sube a Supabase Storage y actualiza el registro en PropuestaDocumentos.
+    S3 sobrescribe automáticamente si la ruta es la misma, evitando duplicados.
     """
     # 1. Validar que el tipo de documento existe y está activo
     tipo_doc = sesion.query(TiposDocumento).filter(
         TiposDocumento.tipoDocumentoId == tipo_documento_id,
         TiposDocumento.activo == True
     ).first()
-    
     if not tipo_doc:
         raise HTTPException(status_code=400, detail="El tipo de documento especificado no es válido o está inactivo.")
 
@@ -41,19 +39,17 @@ async def guardar_archivo_propuesta(
     contenido = await archivo.read()
     tamanio_bytes = len(contenido)
     
-    # 3. Calcular checksum (SHA-256) para garantizar la integridad
+    # 3. Calcular checksum (SHA-256)
     checksum = hashlib.sha256(contenido).hexdigest()
 
-    # =========================================================================
-    # 3.5. LÓGICA DE REEMPLAZO (UPDATE): Verificar si ya existe un documento activo
-    # =========================================================================
+    # 4. Verificar si ya existe un documento activo del mismo tipo
     documento_existente = sesion.query(PropuestaDocumentos).filter(
         PropuestaDocumentos.propuestaId == propuesta_id,
         PropuestaDocumentos.tipoDocumentoId == tipo_documento_id,
         PropuestaDocumentos.activo == True
     ).first()
 
-    # Si existe y el checksum es idéntico, no hacemos nada (ahorra tiempo, ancho de banda y espacio)
+    # Si existe y el checksum es idéntico, no hacemos nada
     if documento_existente and documento_existente.checksum == checksum:
         return {
             "mensaje": "El archivo es idéntico al ya registrado. No se realizaron cambios.",
@@ -66,10 +62,11 @@ async def guardar_archivo_propuesta(
             "reemplazado": False
         }
 
-    # 4. Definir ruta organizada en Supabase Storage para el archivo
+    # 5. Definir ruta en Supabase Storage (S3 sobrescribe automáticamente si ya existe)
     ruta_s3 = f"propuestas/{propuesta_id}/{archivo.filename}"
     
-    # 5. Subir a Supabase Storage usando boto3
+    # 6. Subir a S3 (sobrescribe si la ruta es la misma)
+    print(f"📤 Subiendo archivo a S3: {ruta_s3}")
     try:
         s3_client.put_object(
             Bucket=S3_BUCKET_NAME,
@@ -77,43 +74,25 @@ async def guardar_archivo_propuesta(
             Body=contenido,
             ContentType=archivo.content_type or "application/octet-stream"
         )
-        print(f"Archivo subido a S3: {ruta_s3}")
+        print(f"✅ Archivo subido a S3 exitosamente.")
     except Exception as e:
+        print(f"❌ ERROR al subir a S3: {e}")
         raise HTTPException(status_code=500, detail=f"Fallo al subir a Supabase Storage: {str(e)}")
 
-    # =========================================================================
-    # 6. ACTUALIZAR o CREAR el registro en la BD (Verdadero UPSERT)
-    # =========================================================================
-    fue_reemplazo = False
-    
+    # 7. Actualizar o crear el registro en la BD
     if documento_existente:
-        print(f"🔄 Actualizando documento existente (ID: {documento_existente.documentoId})")
-        fue_reemplazo = True
-        
-        # A. Eliminar el archivo viejo de S3 para ahorrar espacio
-        try:
-            s3_client.delete_object(
-                Bucket=S3_BUCKET_NAME,
-                Key=documento_existente.rutaArchivo
-            )
-            print(f"Archivo anterior eliminado de S3 exitosamente.")
-        except Exception as e:
-            print(f"No se pudo eliminar el archivo anterior de S3: {e}")
-            # Continuamos, no queremos que un fallo en S3 bloquee la actualización de la BD
-        
-        # B. Actualizar los campos del registro existente (MISMO documentoId)
+        print(f"🔄 Actualizando documento existente en BD (ID: {documento_existente.documentoId})")
         documento_existente.rutaArchivo = ruta_s3
         documento_existente.nombreArchivo = archivo.filename
         documento_existente.tamanioBytes = tamanio_bytes
         documento_existente.checksum = checksum
         documento_existente.usuarioCargaId = usuario_actual.usuarioId
-        documento_existente.fechaCarga = datetime.now(timezone.utc) # Actualizamos la fecha a la nueva carga
+        documento_existente.fechaCarga = datetime.now(timezone.utc)
         documento_existente.usuarioAuditoriaId = usuario_actual.usuarioId
         documento_existente.ultimaAuditoria = datetime.now(timezone.utc)
-        
         documento_a_retornar = documento_existente
     else:
-        # Crear nuevo registro solo si no existía ninguno
+        print(f"🆕 Creando nuevo registro de documento en BD")
         documento_a_retornar = PropuestaDocumentos(
             propuestaId=propuesta_id,
             tipoDocumentoId=tipo_documento_id,
@@ -128,15 +107,12 @@ async def guardar_archivo_propuesta(
         )
         sesion.add(documento_a_retornar)
 
-    # =========================================================================
-    # 7. LÓGICA ESPECIAL: Si es Form-04 (.docx), parsear y guardar en la BD
-    # =========================================================================
+    # 8. Si es Form-04 (.docx), parsear y actualizar las tablas de la propuesta
     if tipo_documento_id == 1 and archivo.filename.lower().endswith('.docx'):
         try:
-            print(f"🔍 Detectado Form-04 (.docx). Iniciando parseo para propuesta {propuesta_id}...")
+            print(f"🔍 Detectado Form-04 (.docx). Iniciando parseo...")
             datos = parsear_form04_docx(contenido)
             
-            # A. Actualizar tabla Propuestas (Cabecera)
             propuesta = sesion.query(Propuesta).filter(Propuesta.propuestaId == propuesta_id).first()
             if propuesta:
                 if datos.get("titulo"): propuesta.titulo = datos["titulo"]
@@ -151,7 +127,6 @@ async def guardar_archivo_propuesta(
                     if mod_obj: propuesta.modalidadId = mod_obj.modalidadId
                 propuesta.ultimaAuditoria = datetime.now(timezone.utc)
 
-            # B. Actualizar o Crear PropuestaContenido
             contenido_db = sesion.query(PropuestaContenido).filter(PropuestaContenido.propuestaId == propuesta_id).first()
             if not contenido_db:
                 contenido_db = PropuestaContenido(propuestaId=propuesta_id)
@@ -168,7 +143,6 @@ async def guardar_archivo_propuesta(
             if datos.get("hoja_ruta"): contenido_db.hojaRuta = datos["hoja_ruta"]
             contenido_db.ultimaAuditoria = datetime.now(timezone.utc)
 
-            # C. Actualizar o Crear PropuestaDeclaraciones
             decl_db = sesion.query(PropuestaDeclaraciones).filter(PropuestaDeclaraciones.propuestaId == propuesta_id).first()
             if not decl_db:
                 decl_db = PropuestaDeclaraciones(propuestaId=propuesta_id)
@@ -184,54 +158,28 @@ async def guardar_archivo_propuesta(
             decl_db.poseeInnovacion = bool(s1.get("posee_innovacion", {}).get("aplica"))
             decl_db.aceptaResguardoRepositorio = bool(datos.get("resguardo", {}).get("resguardo_compromiso"))
             decl_db.ultimaAuditoria = datetime.now(timezone.utc)
-            
-            print("Form-04 parseado y tablas actualizadas exitosamente.")
+            print("✅ Form-04 parseado y tablas actualizadas.")
             
         except Exception as e:
-            print(f"ADVERTENCIA: No se pudo parsear el Form-04. El archivo se subió, pero no se rellenaron las tablas. Error: {e}")
+            print(f"⚠️ ADVERTENCIA: No se pudo parsear el Form-04. Error: {e}")
 
-    # 8. Confirmar cambios en la base de datos
+    # 9. Confirmar cambios en la base de datos
     sesion.commit()
     sesion.refresh(documento_a_retornar)
 
-    # 9. Construir mensaje de respuesta
     mensaje_base = "Archivo guardado exitosamente en Supabase y registrado en la base de datos"
-    if fue_reemplazo:
-        mensaje_base += " (Se actualizó el registro existente y se eliminó la versión anterior de S3)."
+    if documento_existente:
+        mensaje_base += " (Se actualizó el registro existente)."
     if tipo_documento_id == 1 and archivo.filename.lower().endswith('.docx'):
         mensaje_base += " (Datos del Form-04 extraídos y guardados en tablas)."
-
-    url_publica = obtener_url_documento(documento_a_retornar.rutaArchivo)
 
     return {
         "mensaje": mensaje_base,
         "documentoId": documento_a_retornar.documentoId,
         "nombre": documento_a_retornar.nombreArchivo,
         "ruta": documento_a_retornar.rutaArchivo,
-        "urlDescarga": url_publica,
+        "urlDescarga": obtener_url_documento(documento_a_retornar.rutaArchivo),
         "tamanioBytes": documento_a_retornar.tamanioBytes,
         "checksum": documento_a_retornar.checksum,
-        "reemplazado": fue_reemplazo
+        "reemplazado": documento_existente is not None
     }
-
-
-@router.get("/{propuesta_id}/archivos/{nombre_archivo:path}")
-async def descargar_archivo_propuesta(
-    propuesta_id: int,
-    nombre_archivo: str,
-    sesion: Session = Depends(get_db)
-):
-    """Redirige a la URL pública de Supabase para descargar el archivo."""
-    from fastapi.responses import RedirectResponse
-
-    doc = sesion.query(PropuestaDocumentos).filter(
-        PropuestaDocumentos.propuestaId == propuesta_id,
-        PropuestaDocumentos.nombreArchivo == nombre_archivo,
-        PropuestaDocumentos.activo == True
-    ).first()
-
-    if not doc:
-        raise HTTPException(status_code=404, detail="Registro del archivo no encontrado o no está activo en la base de datos")
-
-    url_publica = obtener_url_documento(doc.rutaArchivo)
-    return RedirectResponse(url=url_publica, status_code=302)
