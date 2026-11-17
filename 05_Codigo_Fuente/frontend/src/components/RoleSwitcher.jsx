@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import api from '../../services/api'; // ✅ IMPORTAR EL CLIENTE AXIOS CONFIGURADO
+import api from '../services/api'; // ✅ IMPORTAR EL CLIENTE AXIOS CONFIGURADO
 import '../styles/role-switcher.css';
 
 const ROLES_DISPONIBLES = [
