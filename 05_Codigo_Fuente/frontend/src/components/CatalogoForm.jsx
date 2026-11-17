@@ -1,5 +1,5 @@
-// src/components/CatalogoForm.jsx
 import { useState, useEffect } from 'react';
+import { catalogoService } from '../services/catalogoService';
 
 // Configuración de campos por tipo de catálogo con límites exactos de la BD
 const CONFIG_CAMPOS = {
@@ -7,12 +7,8 @@ const CONFIG_CAMPOS = {
     campos: [
       { nombre: 'codigoEscuela', label: 'Código', tipo: 'text', requerido: true, placeholder: 'ESC-001', maxLength: 10 },
       { nombre: 'nombreEscuela', label: 'Nombre de la Escuela', tipo: 'text', requerido: true, placeholder: 'Escuela de Ingeniería en Computación', maxLength: 150 },
-      { nombre: 'campusId', label: 'Campus', tipo: 'select', requerido: true, opciones: [
-        { valor: 1, texto: 'Campus Central Cartago' },
-        { valor: 2, texto: 'Campus San Carlos' },
-        { valor: 3, texto: 'Campus Limón' },
-        { valor: 4, texto: 'Sede Interuniversitaria de San José' },
-      ]},
+      // ✅ CAMBIADO: De campusId (select) a campusIds (multi-checkbox)
+      { nombre: 'campusIds', label: 'Campus asociados', tipo: 'multi-checkbox', requerido: true },
     ]
   },
   'lineas-investigacion': {
@@ -76,16 +72,44 @@ const CONFIG_CAMPOS = {
 export default function CatalogoForm({ catalogo, datosExistentes, onSubmit, onCancel, cargando }) {
   const [formData, setFormData] = useState({});
   const [errores, setErrores] = useState({});
+  const [opcionesCampus, setOpcionesCampus] = useState([]);
 
   const config = CONFIG_CAMPOS[catalogo] || { campos: [] };
 
+  // Cargar opciones de campus dinámicamente si es el formulario de escuelas
+  useEffect(() => {
+    if (catalogo === 'escuelas') {
+      catalogoService.listar('campus', { tamanoPagina: 100, incluirInactivos: false })
+        .then(res => {
+          const campusActivos = (res.data.items || []).map(c => ({
+            valor: c.campusId,
+            texto: c.nombreCampus
+          }));
+          setOpcionesCampus(campusActivos);
+        })
+        .catch(err => console.error("Error cargando campus:", err));
+    }
+  }, [catalogo]);
+
   useEffect(() => {
     if (datosExistentes) {
-      setFormData(datosExistentes);
+      // ✅ Adaptar datos existentes: convertir array de objetos campus a array de IDs
+      const datosAdaptados = { ...datosExistentes };
+      if (catalogo === 'escuelas' && datosExistentes.campus && Array.isArray(datosExistentes.campus)) {
+        datosAdaptados.campusIds = datosExistentes.campus.map(c => c.campusId);
+        delete datosAdaptados.campus; // Eliminar la propiedad anidada para no confundir al form
+      }
+      setFormData(datosAdaptados);
     } else {
       const defaults = {};
       config.campos.forEach(campo => {
-        defaults[campo.nombre] = campo.tipo === 'checkbox' ? false : (campo.min !== undefined ? campo.min : '');
+        if (campo.tipo === 'multi-checkbox') {
+          defaults[campo.nombre] = [];
+        } else if (campo.tipo === 'checkbox') {
+          defaults[campo.nombre] = false;
+        } else {
+          defaults[campo.nombre] = campo.min !== undefined ? campo.min : '';
+        }
       });
       setFormData(defaults);
     }
@@ -103,11 +127,39 @@ export default function CatalogoForm({ catalogo, datosExistentes, onSubmit, onCa
     }
   };
 
+  // ✅ Manejador específico para checkboxes múltiples (arrays)
+  const handleMultiCheckboxChange = (nombre, valor, isChecked) => {
+    setFormData(prev => {
+      const currentArray = prev[nombre] || [];
+      if (isChecked) {
+        return { ...prev, [nombre]: [...currentArray, valor] };
+      } else {
+        return { ...prev, [nombre]: currentArray.filter(v => v !== valor) };
+      }
+    });
+    if (errores[nombre]) {
+      setErrores(prev => {
+        const nuevos = { ...prev };
+        delete nuevos[nombre];
+        return nuevos;
+      });
+    }
+  };
+
   const validar = () => {
     const nuevosErrores = {};
     
     config.campos.forEach(campo => {
       const valor = formData[campo.nombre];
+      
+      // Validación para arrays (multi-checkbox)
+      if (campo.tipo === 'multi-checkbox') {
+        if (campo.requerido && (!valor || valor.length === 0)) {
+          nuevosErrores[campo.nombre] = 'Debe seleccionar al menos una opción';
+        }
+        return;
+      }
+
       const valorStr = valor ? valor.toString().trim() : '';
 
       if (campo.requerido && !valorStr) {
@@ -116,7 +168,6 @@ export default function CatalogoForm({ catalogo, datosExistentes, onSubmit, onCa
       }
 
       if (valorStr) {
-        // Validación específica: Niveles TRL (1 a 9)
         if (campo.nombre === 'nivelTrlId') {
           const num = parseInt(valorStr, 10);
           if (isNaN(num) || num < 1 || num > 9) {
@@ -124,7 +175,6 @@ export default function CatalogoForm({ catalogo, datosExistentes, onSubmit, onCa
           }
         }
 
-        // Validación específica: Lógica de fechas en Convocatorias
         if (catalogo === 'convocatorias') {
           if (campo.nombre === 'fechaCierre' && formData.fechaApertura) {
             if (new Date(valor) < new Date(formData.fechaApertura)) {
@@ -164,11 +214,37 @@ export default function CatalogoForm({ catalogo, datosExistentes, onSubmit, onCa
   const renderizarCampo = (campo) => {
     const valor = formData[campo.nombre] !== undefined ? formData[campo.nombre] : '';
     const error = errores[campo.nombre];
-    const valorStr = valor ? valor.toString() : '';
+    const valorStr = Array.isArray(valor) ? '' : (valor ? valor.toString() : '');
     const porcentaje = campo.maxLength > 0 ? (valorStr.length / campo.maxLength) * 100 : 0;
     
     const colorContador = porcentaje >= 100 ? 'text-red-600 font-bold' : porcentaje >= 80 ? 'text-amber-600 font-semibold' : 'text-gray-500';
     const claseBorde = error ? 'error' : porcentaje >= 100 ? 'border-red-500' : porcentaje >= 80 ? 'border-amber-500' : '';
+
+    // ✅ NUEVO TIPO: Multi-checkbox para relación N a N
+    if (campo.tipo === 'multi-checkbox') {
+      return (
+        <div className="multi-checkbox-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+          {opcionesCampus.length === 0 ? (
+            <span style={{ fontSize: '13px', color: '#666' }}>Cargando opciones...</span>
+          ) : (
+            opcionesCampus.map(op => {
+              const isChecked = Array.isArray(valor) && valor.includes(op.valor);
+              return (
+                <label key={op.valor} className="form-checkbox" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 'normal' }}>
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={(e) => handleMultiCheckboxChange(campo.nombre, op.valor, e.target.checked)}
+                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                  <span>{op.texto}</span>
+                </label>
+              );
+            })
+          )}
+        </div>
+      );
+    }
 
     switch (campo.tipo) {
       case 'textarea':
@@ -212,21 +288,16 @@ export default function CatalogoForm({ catalogo, datosExistentes, onSubmit, onCa
             value={valor}
             onChange={(e) => {
               let val = e.target.value;
-              
-              // PREVENCIÓN ACTIVA: Si es el campo TRL, forzamos que sea estrictamente 1 dígito entre 1 y 9
               if (campo.nombre === 'nivelTrlId') {
                 if (val === '') {
                   handleChange(campo.nombre, '');
                 } else {
                   const num = parseInt(val, 10);
-                  // Si el usuario escribe algo fuera de rango, lo corregimos o ignoramos el cambio
                   if (num >= 1 && num <= 9) {
                     handleChange(campo.nombre, num);
                   }
-                  // Si escribe "10", el input se queda en "1" (el último valor válido)
                 }
               } else {
-                // Para otros campos numéricos (como 'orden'), comportamiento normal
                 handleChange(campo.nombre, val);
               }
             }}
@@ -275,7 +346,13 @@ export default function CatalogoForm({ catalogo, datosExistentes, onSubmit, onCa
     <form onSubmit={handleSubmit}>
       {config.campos.map(campo => (
         <div key={campo.nombre} className="form-group">
-          {campo.tipo !== 'checkbox' && (
+          {campo.tipo !== 'checkbox' && campo.tipo !== 'multi-checkbox' && (
+            <label className="form-label">
+              {campo.label}
+              {campo.requerido && <span style={{ color: '#dc2626' }}> *</span>}
+            </label>
+          )}
+          {campo.tipo === 'multi-checkbox' && (
             <label className="form-label">
               {campo.label}
               {campo.requerido && <span style={{ color: '#dc2626' }}> *</span>}

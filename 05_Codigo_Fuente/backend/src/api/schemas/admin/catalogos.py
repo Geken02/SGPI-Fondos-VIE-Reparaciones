@@ -332,25 +332,28 @@ class CampusResponse(CatalogoBase):
     campusId: int
     nombreCampus: str
 
+# ---------------------------------------------------------------- Campus Resumen (para anidar en Escuela)
+class CampusResumen(BaseModel):
+    campusId: int
+    nombreCampus: str
+    model_config = ConfigDict(from_attributes=True)
 
-# ---------------------------------------------------------------- Escuelas
+# ---------------------------------------------------------------- Escuelas (ACTUALIZADO A N a N)
 class EscuelaCreate(BaseModel):
     codigoEscuela: str = Field(min_length=1, max_length=10)
     nombreEscuela: str = Field(min_length=3, max_length=150)
-    campusId: int
+    campusIds: list[int] = Field(min_length=1, description="Lista de IDs de campus asociados")
 
 class EscuelaUpdate(BaseModel):
     codigoEscuela: Optional[str] = Field(default=None, min_length=1, max_length=10)
     nombreEscuela: Optional[str] = Field(default=None, min_length=3, max_length=150)
-    campusId: Optional[int] = None
+    campusIds: Optional[list[int]] = Field(default=None, description="Lista de IDs de campus asociados")
 
 class EscuelaResponse(CatalogoBase):
     escuelaId: int
     codigoEscuela: str
     nombreEscuela: str
-    campusId: int
-    nombreCampus: Optional[str] = None
-
+    campus: list[CampusResumen] = []
 
 # ---------------------------------------------------------------- EstadosPropuesta
 class EstadoPropuestaCreate(BaseModel):

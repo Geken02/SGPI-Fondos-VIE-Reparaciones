@@ -19,7 +19,7 @@ const NOMBRES_CATALOGOS = {
 };
 
 const CAMPOS_TABLA = {
-  'escuelas': { id: 'escuelaId', clave: 'codigoEscuela', nombre: 'nombreEscuela', campus: 'nombreCampus' },
+  'escuelas': { id: 'escuelaId', clave: 'codigoEscuela', nombre: 'nombreEscuela' }, // ✅ 'campus' eliminado de aquí, se maneja especial
   'lineas-investigacion': { id: 'lineaId', clave: 'lineaId', nombre: 'nombreLinea' },
   'roles-equipo': { id: 'rolEquipoId', clave: 'rolEquipoId', nombre: 'nombreRol' },
   'niveles-trl': { id: 'nivelTrlId', clave: 'nivelTrlId', nombre: 'descripcionNivel' },
@@ -175,7 +175,6 @@ export default function Catalogos() {
 
   return (
     <div className="catalogos-container">
-      {/* ✅ 1. TOAST: role="status" para que el narrador lo anuncie sin interrumpir bruscamente */}
       {toast && (
         <div className={`toast ${toast.tipo}`} role="status" aria-live="polite">
           <span className="toast-icon" aria-hidden="true">{toast.tipo === 'success' ? '✓' : '✕'}</span>
@@ -183,7 +182,6 @@ export default function Catalogos() {
         </div>
       )}
 
-      {/* ✅ 2. BREADCRUMBS: Navegación semántica con <nav> y <ol> */}
       <nav className="breadcrumbs" aria-label="Ruta de navegación">
         <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '8px', alignItems: 'center' }}>
           <li><Link to="/dashboard">Inicio</Link></li>
@@ -197,7 +195,6 @@ export default function Catalogos() {
         <p>Administrar los catálogos base del sistema.</p>
       </header>
 
-      {/* ✅ 3. TABS: role="tablist" y aria-selected para que el narrador sepa cuál está activo */}
       <div className="catalogos-tabs" role="tablist" aria-label="Categorías de catálogos">
         {Object.keys(NOMBRES_CATALOGOS).map((clave) => (
           <button
@@ -219,7 +216,6 @@ export default function Catalogos() {
         ))}
       </div>
 
-      {/* ✅ 4. PANEL DE CONTENIDO: role="tabpanel" vinculado al tab activo */}
       <div
         id="panel-catalogos"
         role="tabpanel"
@@ -265,7 +261,6 @@ export default function Catalogos() {
 
         <div className="tabla-container">
           {cargando ? (
-            /* ✅ 5. LOADING: role="status" para anunciar carga */
             <div className="tabla-loading" role="status" aria-live="polite">
               <div className="spinner"></div>
               <p>Cargando datos...</p>
@@ -275,14 +270,15 @@ export default function Catalogos() {
               <p>No se encontraron registros</p>
             </div>
           ) : (
-            /* ✅ 6. TABLA: aria-label descriptivo y scope="col" en los th */
             <table className="tabla-datos" aria-label={`Registros de ${NOMBRES_CATALOGOS[catalogoActivo]}`}>
               <thead>
                 <tr>
                   <th scope="col">CLAVE</th>
                   <th scope="col">NOMBRE</th>
                   <th scope="col">ESTATUS</th>
-                  {config.campus && <th scope="col">CAMPUS</th>}
+                  {/* ✅ Renderizado condicional de la columna Campus solo si no es el catálogo de escuelas (que lo maneja especial) o si se quiere mantener para otros */}
+                  {config.campus && catalogoActivo !== 'escuelas' && <th scope="col">CAMPUS</th>}
+                  {catalogoActivo === 'escuelas' && <th scope="col">CAMPUS ASOCIADOS</th>}
                   <th scope="col">ACCIONES</th>
                 </tr>
               </thead>
@@ -304,12 +300,28 @@ export default function Catalogos() {
                           {registro.activo ? 'Activo' : 'Inactivo'}
                         </span>
                       </td>
-                      {config.campus && (
+                      
+                      {/* ✅ LÓGICA ESPECIAL PARA MOSTRAR MÚLTIPLES CAMPUS EN ESCUELAS */}
+                      {catalogoActivo === 'escuelas' ? (
+                        <td>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                            {registro.campus && registro.campus.length > 0 ? (
+                              registro.campus.map((c) => (
+                                <span key={c.campusId} className="clave-badge" style={{ fontSize: '12px', padding: '2px 8px' }}>
+                                  {c.nombreCampus}
+                                </span>
+                              ))
+                            ) : (
+                              <span style={{ color: '#999', fontSize: '13px' }}>Sin asignar</span>
+                            )}
+                          </div>
+                        </td>
+                      ) : config.campus ? (
                         <td>{obtenerValor(registro, config.campus)}</td>
-                      )}
+                      ) : null}
+
                       <td>
                         <div className="acciones-celda">
-                          {/* ✅ 7. BOTONES DE ACCIÓN: aria-label explícito con el nombre del registro (el atributo title NO lo leen bien los narradores) */}
                           <button
                             className="btn-accion"
                             aria-label={`Editar ${nombreRegistro}`}
@@ -353,7 +365,6 @@ export default function Catalogos() {
           )}
         </div>
 
-        {/* ✅ 8. PAGINACIÓN: role="navigation" y aria-current="page" en el botón activo */}
         <div className="paginacion" role="navigation" aria-label="Paginación de registros">
           <div className="paginacion-info">
             Mostrando {datos.length > 0 ? ((pagina - 1) * tamanoPagina + 1) : 0}-

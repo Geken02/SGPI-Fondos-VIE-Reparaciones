@@ -137,7 +137,6 @@ def registrar_rutas_catalogo(clave: str) -> None:
     esquema_crear, esquema_actualizar, esquema_response = MAPEO_ESQUEMAS[clave]
     depende_admin = Depends(requerir_rol(ROLES_ADMIN))
     
-    # ✅ NUEVA DEPENDENCIA: Verificación de permiso granular
     depende_permiso = Depends(verificar_permiso("catalogos.gestionar"))
 
     # Eventos de auditoría específicos según el catálogo
@@ -188,7 +187,10 @@ def registrar_rutas_catalogo(clave: str) -> None:
                     sesion: Session = Depends(get_db)):
         datos = cuerpo.model_dump(exclude_unset=True)
         _validaciones_especificas(clave, datos, sesion)
-        registro = catalogo_service.crear(sesion, descriptor, datos, usuario.usuarioId)
+        if clave == "escuelas":
+            registro = catalogo_service.crear_escuela(sesion, datos, usuario.usuarioId)
+        else:
+            registro = catalogo_service.crear(sesion, descriptor, datos, usuario.usuarioId)
         
         print(f"\n{'='*60}")
         print(f"🔍 DIAGNÓSTICO DE LOG - Catálogo: {clave}")
@@ -199,7 +201,7 @@ def registrar_rutas_catalogo(clave: str) -> None:
             severidad="INFO", source="API_Backend",
             descripcion=f"{usuario.correoInstitucional} creó {descriptor.nombre} #{getattr(registro, descriptor.pk)} en catálogo '{clave}'",
             usuario_id=usuario.usuarioId, objeto1="Usuario", referencia_id_1=getattr(registro, descriptor.pk),
-            datos_nuevos=_jsonable(datos),  # 👈 SOLUCIÓN: Usar la función que ya tienes
+            datos_nuevos=_jsonable(datos), 
         )
         
         print(f"registrar_log_request retornó: {log_result}")
@@ -245,7 +247,10 @@ def registrar_rutas_catalogo(clave: str) -> None:
         _validaciones_especificas(clave, datos, sesion, existente)
         
         antes = {k: getattr(existente, k, None) for k in datos}
-        registro = catalogo_service.actualizar(sesion, descriptor, registro_id, datos, usuario.usuarioId)
+        if clave == "escuelas":
+            registro = catalogo_service.actualizar_escuela(sesion, registro_id, datos, usuario.usuarioId)
+        else:
+            registro = catalogo_service.actualizar(sesion, descriptor, registro_id, datos, usuario.usuarioId)
         
         log_result = registrar_log_request(
             sesion, request, 
@@ -275,7 +280,7 @@ def registrar_rutas_catalogo(clave: str) -> None:
     # -------------------------------------------------------------------------
     @router.put(f"/{clave}/{{registro_id}}/estado", tags=["Administración - Catálogos"],
                  summary=f"Activar/desactivar {descriptor.nombre} (soft-delete)", 
-                 dependencies=[depende_admin, depende_permiso])  # ✅ DOBLE VERIFICACIÓN
+                 dependencies=[depende_admin, depende_permiso]) 
     def cambiar_estado(
         request: Request, 
         registro_id: int, 

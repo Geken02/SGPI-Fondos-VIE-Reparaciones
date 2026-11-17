@@ -280,7 +280,6 @@ DESCRIPTORES: dict[str, CatalogoDescriptor] = {
     "campus": CatalogoDescriptor(
         clase=Campus, nombre="Campus", pk="campusId",
         campos_busqueda=["nombreCampus"], campo_orden="nombreCampus",
-        relaciones=[(Escuela, "campusId")],
     ),
     "escuelas": CatalogoDescriptor(
         clase=Escuela, nombre="Escuela", pk="escuelaId",
@@ -365,4 +364,81 @@ def validar_escuela_campus(escuela_id: int, sesion: Session) -> Escuela:
     escuela = sesion.get(Escuela, escuela_id)
     if escuela is None:
         raise HTTPException(status_code=422, detail=f"La escuela {escuela_id} no existe")
+    return escuela
+
+# ... (mantén todo el código anterior: dataclass, _obtener_o_404, _validar_unicidad, listar, obtener, crear, actualizar, cambiar_activo) ...
+
+# ============================================================================
+# FUNCIONES ESPECIALIZADAS PARA ESCUELA (Relación N a N)
+# ============================================================================
+from src.models.escuelas import Escuela, EscuelaCampus
+
+def crear_escuela(sesion: Session, datos: dict, usuario_id: int):
+    """Crea una escuela y sus asociaciones N a N con campus."""
+    # Extraemos los campus antes de crear la escuela para que no falle el **datos
+    campus_ids = datos.pop("campusIds", [])
+    
+    _validar_unicidad(sesion, DESCRIPTORES["escuelas"], datos)
+    
+    escuela = Escuela(**datos)
+    escuela.usuarioAuditoriaId = usuario_id
+    escuela.ultimaAuditoria = datetime.now(timezone.utc)
+    
+    # Creamos las relaciones intermedias
+    for c_id in campus_ids:
+        relacion = EscuelaCampus(
+            campusId=c_id,
+            usuarioAuditoriaId=usuario_id,
+            ultimaAuditoria=datetime.now(timezone.utc)
+        )
+        escuela.escuela_campus_rel.append(relacion)
+        
+    sesion.add(escuela)
+    try:
+        sesion.commit()
+    except IntegrityError:
+        sesion.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Conflicto de integridad al crear la escuela")
+    
+    sesion.refresh(escuela)
+    return escuela
+
+
+def actualizar_escuela(sesion: Session, registro_id: int, datos: dict, usuario_id: int):
+    """Actualiza una escuela y sincroniza sus asociaciones N a N con campus."""
+    escuela = _obtener_o_404(sesion, DESCRIPTORES["escuelas"], registro_id)
+    datos = {k: v for k, v in datos.items() if v is not None}
+    
+    # Extraemos campusIds si viene en la petición
+    campus_ids = datos.pop("campusIds", None)
+    
+    _validar_unicidad(sesion, DESCRIPTORES["escuelas"], datos, excluir_id=registro_id)
+    
+    # Actualizar campos simples
+    for clave, valor in datos.items():
+        setattr(escuela, clave, valor)
+        
+    escuela.usuarioAuditoriaId = usuario_id
+    escuela.ultimaAuditoria = datetime.now(timezone.utc)
+    
+    # Sincronizar relaciones N a N si se enviaron campusIds
+    if campus_ids is not None:
+        # 1. Eliminar asociaciones anteriores (Hard delete está bien aquí por ON DELETE CASCADE en la BD, 
+        #    o podrías hacer soft-delete poniendo activo=False, pero hard delete es más limpio para N a N)
+        sesion.query(EscuelaCampus).filter(
+            EscuelaCampus.escuelaId == registro_id
+        ).delete()
+        
+        # 2. Crear las nuevas asociaciones
+        for c_id in campus_ids:
+            relacion = EscuelaCampus(
+                escuelaId=registro_id,
+                campusId=c_id,
+                usuarioAuditoriaId=usuario_id,
+                ultimaAuditoria=datetime.now(timezone.utc)
+            )
+            sesion.add(relacion)
+    
+    sesion.commit()
+    sesion.refresh(escuela)
     return escuela
