@@ -151,10 +151,17 @@ def listar_usuarios(
     escuelaId: Optional[int] = None,
     rolId: Optional[int] = None,
     incluirInactivos: bool = False,
+    activo: Optional[bool] = None,
 ):
     items, metadatos = usuario_service.listar_usuarios(
-        sesion, pagina=pagina, tamano_pagina=tamanoPagina, busqueda=busqueda,
-        escuela_id=escuelaId, rol_id=rolId, incluir_inactivos=incluirInactivos,
+        sesion, 
+        pagina=pagina, 
+        tamano_pagina=tamanoPagina, 
+        busqueda=busqueda,
+        escuela_id=escuelaId, 
+        rol_id=rolId, 
+        incluir_inactivos=incluirInactivos,
+        activo=activo,
     )
     return _envoltura(items, metadatos, esquemas.UsuarioResponse)
 

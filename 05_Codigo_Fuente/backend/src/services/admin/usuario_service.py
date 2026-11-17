@@ -34,51 +34,48 @@ def _usuario_o_404(sesion: Session, usuario_id: int) -> Usuario:
         raise HTTPException(status_code=404, detail=f"Usuario con id {usuario_id} no encontrado")
     return usuario
 
+from sqlalchemy.orm import Session, selectinload
+
 def listar_usuarios(
     sesion: Session,
-    *,
     pagina: int = 1,
     tamano_pagina: int = 50,
-    busqueda: Optional[str] = None,
-    escuela_id: Optional[int] = None,
-    rol_id: Optional[int] = None,
+    busqueda: str | None = None,
+    escuela_id: int | None = None,
+    rol_id: int | None = None,
     incluir_inactivos: bool = False,
-) -> tuple[list[Usuario], dict]:
-    
-    consulta = select(Usuario).options(
+    activo: bool | None = None, 
+):
+    query = sesion.query(Usuario).options(
         selectinload(Usuario.roles).selectinload(UsuarioRol.rol),
-        selectinload(Usuario.escuela) 
+        selectinload(Usuario.escuela)
     )
-
-    if not incluir_inactivos:
-        consulta = consulta.where(Usuario.activo.is_(True))
+    
     if busqueda:
-        consulta = consulta.where(
-            or_(
-                Usuario.correoInstitucional.ilike(f"%{busqueda}%"),
-                Usuario.nombreUsuario.ilike(f"%{busqueda}%"),
-                Usuario.apellido1Usuario.ilike(f"%{busqueda}%"),
-            )
+        query = query.filter(
+            (Usuario.nombreUsuario.ilike(f"%{busqueda}%")) |
+            (Usuario.correoInstitucional.ilike(f"%{busqueda}%"))
         )
-    if escuela_id:
-        consulta = consulta.where(Usuario.escuelaId == escuela_id)
-    if rol_id:
-        consulta = consulta.where(
-            Usuario.usuarioId.in_(
-                select(UsuarioRol.usuarioId).where(UsuarioRol.rolId == rol_id, UsuarioRol.activo.is_(True))
-            )
-        )
-
-    total = sesion.execute(select(func.count()).select_from(consulta.subquery())).scalar_one()
-    total_paginas = max(1, -(-total // tamano_pagina))
-
-    registros = sesion.execute(
-        consulta.order_by(Usuario.apellido1Usuario, Usuario.nombreUsuario)
-        .offset((pagina - 1) * tamano_pagina)
-        .limit(tamano_pagina)
-    ).scalars().all()
-
-    return list(registros), {"total": total, "pagina": pagina, "tamanoPagina": tamano_pagina, "totalPaginas": total_paginas}
+    if escuela_id is not None:
+        query = query.filter(Usuario.escuelaId == escuela_id)
+    if rol_id is not None:
+        query = query.join(UsuarioRol).filter(UsuarioRol.rolId == rol_id, UsuarioRol.activo == True)
+        
+    if activo is not None:
+        query = query.filter(Usuario.activo == activo)
+    elif not incluir_inactivos:
+        query = query.filter(Usuario.activo == True)
+        
+    total = query.count()
+    offset = (pagina - 1) * tamano_pagina
+    items = query.offset(offset).limit(tamano_pagina).all()
+    
+    return items, {
+        "total": total,
+        "pagina": pagina,
+        "tamanoPagina": tamano_pagina,
+        "totalPaginas": (total + tamano_pagina - 1) // tamano_pagina
+    }
 
 def obtener_usuario(sesion: Session, usuario_id: int) -> Usuario:
     return _usuario_o_404(sesion, usuario_id)
