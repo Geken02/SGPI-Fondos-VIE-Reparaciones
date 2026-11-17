@@ -184,8 +184,14 @@ def obtener_catalogos_formulario(
                 "escuelaId": e.escuelaId,
                 "nombreEscuela": e.nombreEscuela,
                 "codigoEscuela": e.codigoEscuela,
-                "campusId": e.campusId,
-                "nombreCampus": e.campus.nombreCampus if e.campus else None
+                # Escuela↔Campus es N-a-N (tabla intermedia escuelacampus):
+                # la relación Escuela.campus devuelve una LISTA de Campus, no un objeto único.
+                "campusId": e.campus[0].campusId if e.campus else None,
+                "nombreCampus": e.campus[0].nombreCampus if e.campus else None,
+                "campus": [
+                    {"campusId": c.campusId, "nombreCampus": c.nombreCampus}
+                    for c in e.campus
+                ]
             } for e in escuelas
         ],
         "campus": [

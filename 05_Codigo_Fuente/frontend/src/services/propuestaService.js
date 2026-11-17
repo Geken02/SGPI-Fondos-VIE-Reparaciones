@@ -34,7 +34,8 @@ export const propuestaService = {
     try {
       const response = await api.get('/investigador/propuestas/catalogos/formulario');
       return response.data;
-    } catch (_err) {
+    } catch (error) {
+      console.error('Error al obtener catálogos del formulario:', error?.response?.status, error?.message);
       return { convocatorias: [], escuelas: [], campus: [], estadosPropuesta: [], nivelesTrl: [] };
     }
   },
