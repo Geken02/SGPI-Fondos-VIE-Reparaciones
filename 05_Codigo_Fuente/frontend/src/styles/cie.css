@@ -2,7 +2,7 @@
    El layout, tablas, badges, pasos y botones principales reutilizan las clases gv-* de gestora.css. */
 
 /* Tarjeta de resumen: ícono rojo (gestora.css solo trae azul, naranja y verde) */
-.gv-resumen-icono.rojo { background: #fde2e2; color: #d64545; }
+.gv-resumen-icono.rojo { background: #fde2e2; color: #b91c1c; }
 
 .cie-meta { display: flex; flex-wrap: wrap; gap: 18px; font-size: 12px; color: var(--gv-gris); }
 .cie-meta span { display: inline-flex; align-items: center; gap: 6px; }
@@ -15,10 +15,10 @@
 /* Botón secundario */
 .cie-btn-outline {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 18px;
-  background: #fff; border: 1px solid #c9d3e6; border-radius: 8px; color: #1d4ed8;
+  background: #fff; border: 1px solid #c3d1e2; border-radius: 8px; color: #002855;
   font-size: 13px; font-weight: 600; cursor: pointer;
 }
-.cie-btn-outline:hover { background: #eff4ff; }
+.cie-btn-outline:hover { background: #e6edf5; }
 .cie-acciones { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
 .cie-acciones .gv-btn-primario { align-self: auto; }
 
@@ -28,7 +28,7 @@
   background: none; border: none; padding: 10px 2px; font-size: 13px; color: var(--gv-gris);
   cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap;
 }
-.cie-tabs button.activa { color: #1d4ed8; font-weight: 700; border-bottom-color: #1d4ed8; }
+.cie-tabs button.activa { color: #002855; font-weight: 700; border-bottom-color: #002855; }
 
 .cie-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
 .cie-grid-eval { grid-template-columns: 1.05fr 1fr; }
@@ -48,11 +48,11 @@
 .cie-checklist li > span { display: inline-flex; align-items: center; gap: 8px; color: var(--gv-texto); }
 .cie-nota {
   display: flex; gap: 10px; align-items: flex-start; margin: 4px 20px 18px; padding: 12px 14px;
-  background: #eef5fe; border: 1px solid #cfe1f9; border-radius: 8px; color: #1d4ed8; font-size: 12px;
+  background: #e6edf5; border: 1px solid #c3d1e2; border-radius: 8px; color: #002855; font-size: 12px;
 }
 .cie-cuerpo .cie-nota { margin: 14px 0 0; }
 .cie-nota p { margin: 2px 0 0; color: var(--gv-gris); }
-.cie-nota strong { font-size: 13px; color: #1d4ed8; }
+.cie-nota strong { font-size: 13px; color: #002855; }
 
 /* Rúbrica */
 .cie-criterios { margin: 0 20px 20px; border: 1px solid var(--gv-borde); border-radius: 8px; overflow: hidden; font-size: 13px; }
@@ -63,21 +63,21 @@
   height: 34px; border: 1px solid #d6dbe8; border-radius: 6px; padding: 0 8px; font-size: 13px;
   color: var(--gv-texto); background: #fff; cursor: pointer;
 }
-.cie-promedio { display: flex; justify-content: space-between; padding: 12px 14px; background: #e3eeff; color: #1d4ed8; }
+.cie-promedio { display: flex; justify-content: space-between; padding: 12px 14px; background: #e6edf5; color: #002855; }
 
 .cie-textarea-wrap { position: relative; }
 .cie-textarea-wrap textarea {
   width: 100%; min-height: 130px; resize: vertical; border: 1px solid #d6dbe8; border-radius: 8px;
   padding: 12px; font-size: 13px; font-family: inherit; color: var(--gv-texto); outline: none; background: #fff;
 }
-.cie-textarea-wrap textarea:focus { border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12); }
+.cie-textarea-wrap textarea:focus { border-color: #002855; box-shadow: 0 0 0 3px rgba(0, 40, 85, 0.14); }
 .cie-textarea-wrap textarea.invalido { border-color: #d64545; }
 .cie-contador { position: absolute; right: 12px; bottom: 8px; font-size: 11px; color: var(--gv-gris); }
-.cie-error { margin: 8px 0 0; font-size: 12px; color: #d64545; font-weight: 600; }
+.cie-error { margin: 8px 0 0; font-size: 12px; color: #b91c1c; font-weight: 600; }
 
 .cie-radios { display: flex; flex-direction: column; gap: 12px; padding-top: 6px; }
 .cie-radio { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; color: var(--gv-texto); }
-.cie-radio input { accent-color: #1d4ed8; width: 16px; height: 16px; margin: 0; }
+.cie-radio input { accent-color: #002855; width: 16px; height: 16px; margin: 0; }
 
 /* Resolución */
 .cie-resultado { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; padding: 6px 20px 20px; }
@@ -89,10 +89,10 @@
 .cie-resumen-criterios { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 240px; font-size: 13px; }
 .cie-resumen-criterios li { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #eef0f6; color: var(--gv-texto); }
 .cie-resumen-criterios li > span { display: inline-flex; align-items: center; gap: 10px; }
-.cie-resumen-criterios li > span svg { color: #2f9e6b; background: #dcf3e8; border-radius: 50%; padding: 3px; box-sizing: content-box; }
-.cie-resumen-criterios b { background: #dcf3e8; color: #2f9e6b; border-radius: 4px; padding: 2px 10px; font-size: 12px; }
-.cie-consideraciones { background: #eef5fe; border-color: #cfe1f9; }
-.cie-consideraciones .gv-subcard-titulo { display: flex; align-items: center; gap: 8px; color: #1d4ed8; }
+.cie-resumen-criterios li > span svg { color: #166534; background: #dcf3e8; border-radius: 50%; padding: 3px; box-sizing: content-box; }
+.cie-resumen-criterios b { background: #dcf3e8; color: #166534; border-radius: 4px; padding: 2px 10px; font-size: 12px; }
+.cie-consideraciones { background: #e6edf5; border-color: #c3d1e2; }
+.cie-consideraciones .gv-subcard-titulo { display: flex; align-items: center; gap: 8px; color: #002855; }
 .cie-consideraciones ul { margin: 0; padding: 0 20px 18px 38px; font-size: 13px; color: var(--gv-gris); display: flex; flex-direction: column; gap: 10px; }
 
 @media (max-width: 1100px) {
@@ -106,12 +106,12 @@
 .cie-fila-detalle td { background: #fafbfe; padding: 0 !important; }
 .cie-detalle { padding: 16px 20px 18px; font-size: 13px; color: var(--gv-texto); }
 .cie-detalle p { margin: 6px 0 10px; color: var(--gv-gris); line-height: 1.5; }
-.cie-enlace { color: #1d4ed8; font-weight: 600; text-decoration: none; }
+.cie-enlace { color: #002855; font-weight: 600; text-decoration: none; }
 .cie-enlace:hover { text-decoration: underline; }
 
 /* Estados de carga / error y detalles de la versión conectada a la API */
 .cie-estado { text-align: center; padding: 32px 20px; color: var(--gv-gris); font-size: 13px; }
-.cie-estado-error { color: #d64545; }
+.cie-estado-error { color: #b91c1c; }
 .cie-estado-error p { margin: 0 0 12px; }
 .cie-error-pagina { margin: 14px 0 0; }
 .cie-pad { padding: 0 20px 14px; margin: 0; }
@@ -254,9 +254,9 @@
   justify-content: center;
   min-height: 34px;
   padding: 7px 11px;
-  border: 1px solid #bfdbfe;
+  border: 1px solid #c3d1e2;
   border-radius: 7px;
-  background: #eff6ff;
+  background: #e6edf5;
   color: var(--gv-azul);
   font-size: 12px;
   font-weight: 600;
@@ -265,7 +265,7 @@
 }
 
 .gv-btn-ver:hover {
-  background: #dbeafe;
+  background: #e6edf5;
 }
 
 .gv-sin-resultados {
@@ -368,12 +368,12 @@
 
 /* Tema institucional TEC para el menu CIE */
 .gv-layout {
-  --gv-azul: #003366;
+  --gv-azul: #002855;
   --gv-fondo: #f0f3fb;
 }
 
 .gv-sidebar {
-  background: #003366;
+  background: #002855;
   border-right: 0;
   color: #ffffff;
 }
@@ -400,12 +400,12 @@
 .gv-menu-item.activo {
   background: #ffffff;
   border-left-color: #60a5fa;
-  color: #003366;
+  color: #002855;
   font-weight: 700;
 }
 
 .gv-menu-item.activo svg {
-  color: #003366;
+  color: #002855;
 }
 
 .gv-sidebar-inferior {
@@ -445,7 +445,7 @@
 }
 
 .cie-inicio-acceso:hover {
-  border-color: #003366;
+  border-color: #002855;
   transform: translateY(-2px);
   box-shadow: 0 5px 16px rgb(0 51 102 / 8%);
 }
@@ -459,8 +459,8 @@
   width: 44px;
   height: 44px;
   border-radius: 10px;
-  background: #e8eef7;
-  color: #003366;
+  background: #e6edf5;
+  color: #002855;
 }
 
 .cie-inicio-acceso-texto {
@@ -506,7 +506,7 @@
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
-  color: #003366;
+  color: #002855;
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
@@ -584,11 +584,11 @@
 
 /* Encabezado institucional azul para CIE */
 .gv-layout {
-  --gv-azul: #003366;
+  --gv-azul: #002855;
 }
 
 .gv-header {
-  background: #003366;
+  background: #002855;
   color: #ffffff;
   border-bottom: 1px solid #164675;
 }
@@ -655,3 +655,153 @@
 .gv-header-marca img {
   filter: brightness(0) invert(1);
 }
+
+/* ============================================================
+   MODO DE ALTO CONTRASTE — MIEMBRO DEL CIE
+   ============================================================ */
+.high-contrast-mode .cie-cuerpo,
+.high-contrast-mode .cie-criterios,
+.high-contrast-mode .cie-inicio-acceso,
+.high-contrast-mode .cie-inicio-recientes,
+.high-contrast-mode .cie-inicio-fila,
+.high-contrast-mode .cie-tarjeta,
+.high-contrast-mode .cie-estado,
+.high-contrast-mode .cie-detalle,
+.high-contrast-mode .cie-fila-detalle td {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-inicio-acceso {
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-inicio-acceso:hover,
+.high-contrast-mode .cie-inicio-fila:hover {
+  border-color: #FFFF00 !important;
+  outline: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-consideraciones,
+.high-contrast-mode .cie-nota,
+.high-contrast-mode .cie-aviso {
+  background: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-consideraciones .gv-subcard-titulo,
+.high-contrast-mode .cie-nota strong,
+.high-contrast-mode .cie-nota p,
+.high-contrast-mode .cie-obs {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-criterios-head {
+  background: #0d0d0d !important;
+  color: #FFFF00 !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-criterio {
+  border-top: 1px solid #444444 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-criterio select,
+.high-contrast-mode .cie-textarea-wrap textarea {
+  background: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-criterio select:focus,
+.high-contrast-mode .cie-textarea-wrap textarea:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-promedio {
+  background: #000000 !important;
+  border-top: 2px solid #FFFFFF !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-tabs button {
+  color: #FFFFFF !important;
+  border-bottom: 2px solid transparent !important;
+}
+
+.high-contrast-mode .cie-tabs button.activa {
+  color: #FFFF00 !important;
+  border-bottom-color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .cie-dl dt {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-dl dd {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-meta,
+.high-contrast-mode .cie-ayuda,
+.high-contrast-mode .cie-peso,
+.high-contrast-mode .cie-donut-centro span {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-donut-centro strong {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-resumen-criterios li {
+  border-bottom: 1px solid #444444 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-resumen-criterios b {
+  background: #000000 !important;
+  border: 1px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-btn-outline {
+  background: #000000 !important;
+  border: 1px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .cie-btn-outline:hover {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .cie-enlace {
+  color: #FFFF00 !important;
+  text-decoration: underline !important;
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .cie-cuerpo,
+  .cie-criterios,
+  .cie-inicio-acceso,
+  .cie-inicio-recientes,
+  .cie-tarjeta,
+  .cie-consideraciones,
+  .cie-nota {
+    border: 2px solid ButtonText !important;
+  }
+}
+
+/* ==========================================================================
+   Clases del CIE y de la Dirección que no tenían estilos.
+   ========================================================================== */
+.cie-inicio { min-width: 0; }
+.cie-texto-documento { margin: 0; color: var(--gv-texto); font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cie-obligatorio { color: #b91c1c; font-weight: 600; }

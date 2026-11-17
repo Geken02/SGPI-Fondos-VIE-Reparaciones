@@ -33,22 +33,22 @@ const RevisionDictamen = () => {
       <EncabezadoPagina titulo="Revisión de dictamen"
         subtitulo="Consulta el detalle del dictamen y la información de la propuesta." />
 
-      <section className="gv-card gv-expediente-info">
-        <div className="gv-expediente-icono"><Icono nombre="fileText" size={26} /></div>
+      <section className="gv-card gv-expediente-info" aria-label="Información del dictamen">
+        <div className="gv-expediente-icono" aria-hidden="true"><Icono nombre="fileText" size={26} /></div>
         <div className="gv-expediente-datos">
           <div className="gv-expediente-codigo">{d.codigo}</div>
           <div className="gv-expediente-titulo">{d.titulo}</div>
           <div className="cie-meta">
-            <span><Icono nombre="usuario" size={14} />{d.investigador}</span>
-            <span><Icono nombre="escuela" size={14} />{d.escuela}</span>
-            <span><Icono nombre="calendar" size={14} />{formatearFechaHora(d.fechaDictamen)}</span>
+            <span><Icono nombre="usuario" size={14} aria-hidden="true" />{d.investigador}</span>
+            <span><Icono nombre="escuela" size={14} aria-hidden="true" />{d.escuela}</span>
+            <span><Icono nombre="calendar" size={14} aria-hidden="true" />{formatearFechaHora(d.fechaDictamen)}</span>
           </div>
         </div>
         <div className="gv-expediente-lateral"><EstadoTramiteBadge estado={d.estado} /></div>
       </section>
 
-      <section className="gv-card dir-panel">
-        <div className="cie-tabs" role="tablist">
+      <section className="gv-card dir-panel" aria-label="Detalle del dictamen">
+        <div className="cie-tabs" role="tablist" aria-label="Pestañas de revisión de dictamen">
           {TABS.map((t) => (
             <button key={t} type="button" role="tab" aria-selected={tab === t}
               className={tab === t ? 'activa' : ''} onClick={() => setTab(t)}>{t}</button>
@@ -132,15 +132,15 @@ const RevisionDictamen = () => {
       </section>
 
       <div className="cie-acciones">
-        <button type="button" className="cie-btn-outline" onClick={() => navigate(`${RUTA_BASE}/dictamenes`)}>
-          <Icono nombre="arrowLeft" size={15} />Volver a la bandeja
+        <button type="button" className="cie-btn-outline" onClick={() => navigate(`${RUTA_BASE}/dictamenes`)} aria-label="Volver a la bandeja de dictámenes">
+          <Icono nombre="arrowLeft" size={15} aria-hidden="true" />Volver a la bandeja
         </button>
         <div className="dir-acciones-der">
           {d.estado === 'completado' ? (
-            <span className="dir-nota-estado"><Icono nombre="checkCircle" size={16} />Este dictamen ya fue notificado.</span>
+            <span className="dir-nota-estado"><Icono nombre="checkCircle" size={16} aria-hidden="true" />Este dictamen ya fue notificado.</span>
           ) : (
-            <button type="button" className="gv-btn-primario" onClick={() => navigate(`${RUTA_BASE}/documentos-oficiales/${d.codigo}`)}>
-              Generar documento oficial <Icono nombre="arrowRight" size={16} />
+            <button type="button" className="gv-btn-primario" onClick={() => navigate(`${RUTA_BASE}/documentos-oficiales/${d.codigo}`)} aria-label="Generar documento oficial para esta propuesta">
+              Generar documento oficial <Icono nombre="arrowRight" size={16} aria-hidden="true" />
             </button>
           )}
         </div>

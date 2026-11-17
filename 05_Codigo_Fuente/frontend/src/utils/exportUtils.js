@@ -2,19 +2,10 @@ import jsPDF from 'jspdf';
 import autoTable, { applyPlugin } from 'jspdf-autotable';
 import ExcelJS from 'exceljs';
 
-// Inicializar plugin autoTable en prototipo de jsPDF
 try {
   applyPlugin(jsPDF);
-} catch (_e) {
-  // Ignorado si ya se encuentra aplicado
-}
+} catch (_e) {}
 
-/* ═══════════════════════════════════════════════════════════════════════
-   UTILIDADES DE EXPORTACIÓN — PDF (Form-04) y Excel (Form-05 / Form-06)
-   Instituto Tecnológico de Costa Rica — Vicerrectoría de Investigación
-   ═══════════════════════════════════════════════════════════════════════ */
-
-/* ──────────────── helpers compartidos ──────────────── */
 const hoy = () => new Date().toLocaleDateString('es-CR', { day: '2-digit', month: 'long', year: 'numeric' });
 
 function descargarBlob(blob, nombre) {
@@ -34,15 +25,10 @@ function safe(v, fallback = '') {
   return String(v);
 }
 
-/* Estilos reutilizables para ExcelJS */
 const HEADER_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002855' } };
 const HEADER_FONT = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
 const TITLE_FONT  = { bold: true, size: 14, color: { argb: 'FF002855' } };
-const SUB_FONT    = { bold: true, size: 11, color: { argb: 'FF002855' } };
-const BORDER_THIN = {
-  top: { style: 'thin' }, bottom: { style: 'thin' },
-  left: { style: 'thin' }, right: { style: 'thin' }
-};
+const BORDER_THIN = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
 
 function applyHeaderRow(ws, rowNum, colCount) {
   const row = ws.getRow(rowNum);
@@ -70,9 +56,8 @@ async function guardarWorkbook(wb, nombre) {
   descargarBlob(blob, nombre);
 }
 
-
 /* ═══════════════════════════════════════════════════════════════
-   1.  EXPORTAR FORM-04  (Formulario de Proyecto)  →  PDF
+   1. EXPORTAR FORM-04 (Formulario de Proyecto) → PDF
    ═══════════════════════════════════════════════════════════════ */
 export function exportarForm04PDF(datos, codigo = '') {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
@@ -85,54 +70,38 @@ export function exportarForm04PDF(datos, codigo = '') {
   const checkPage = (need = 30) => { if (y + need > 265) addPage(); };
 
   const renderTable = (options) => {
-    try {
-      if (typeof doc.autoTable === 'function') {
-        doc.autoTable(options);
-        return;
-      }
-    } catch (_e) {}
-    try {
-      autoTable(doc, options);
-    } catch (err) {
-      console.warn('Error al renderizar tabla con autoTable:', err);
-    }
+    try { if (typeof doc.autoTable === 'function') { doc.autoTable(options); return; } } catch (_e) {}
+    try { autoTable(doc, options); } catch (err) { console.warn('Error autoTable:', err); }
   };
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10); doc.setFont('helvetica', 'normal');
   doc.text('Instituto Tecnológico de Costa Rica', margin, y);
   doc.text('Vicerrectoría de Investigación y Extensión', margin, y + 4);
   y += 10;
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14); doc.setFont('helvetica', 'bold');
   doc.text('FORMULARIO F-04 — FORMULARIO DE PROYECTO', margin, y);
   y += 6;
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
   doc.text(`Código: ${safe(codigo, 'Sin código')}  |  Generado: ${hoy()}`, margin, y);
   y += 10;
 
   const section = (title) => {
     checkPage(20);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold');
     doc.setFillColor(0, 40, 85);
     doc.rect(margin, y - 4, contentW, 7, 'F');
     doc.setTextColor(255, 255, 255);
     doc.text(title, margin + 3, y);
     doc.setTextColor(0, 0, 0);
     y += 7;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
   };
 
   const formatVal = (v) => {
     if (v === null || v === undefined) return '';
     if (typeof v === 'boolean') return v ? 'Sí' : 'No';
     if (typeof v === 'object') {
-      if (v.aplica === true) {
-        return `Sí${v.detalle ? ` — ${v.detalle}` : (v.tipo ? ` — ${v.tipo}` : (v.nombre ? ` — ${v.nombre}` : (v.oficioDictamen ? ` — Oficio: ${v.oficioDictamen}` : '')))}`;
-      }
+      if (v.aplica === true) return `Sí${v.detalle ? ` — ${v.detalle}` : (v.tipo ? ` — ${v.tipo}` : (v.nombre ? ` — ${v.nombre}` : (v.oficioDictamen ? ` — Oficio: ${v.oficioDictamen}` : '')))}`;
       if (v.aplica === false) return 'No aplica';
       if (v.aplica === 'Sí') return `Sí${v.programa ? ` — Programa: ${v.programa}, Universidad: ${v.universidad || ''}` : ''}`;
       if (v.aplica === 'No') return 'No';
@@ -145,38 +114,27 @@ export function exportarForm04PDF(datos, codigo = '') {
 
   const field = (label, value) => {
     checkPage(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${label}:`, margin, y);
+    doc.setFont('helvetica', 'bold'); doc.text(`${label}:`, margin, y);
     doc.setFont('helvetica', 'normal');
     const valStr = formatVal(value);
     if (valStr) {
       const lines = doc.splitTextToSize(valStr, contentW - 4);
       doc.text(lines, margin + 2, y + 4.5);
       y += 4.5 + lines.length * 4.2 + 2;
-    } else {
-      // Si no hay respuesta, se deja la pregunta sola con espacio limpio
-      y += 6;
-    }
+    } else { y += 6; }
   };
 
   const multiField = (label, value) => {
     const valStr = formatVal(value);
     const lines = valStr ? doc.splitTextToSize(valStr, contentW - 4) : [];
     checkPage(lines.length > 0 ? 16 + lines.length * 4.2 : 12);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${label}:`, margin, y);
+    doc.setFont('helvetica', 'bold'); doc.text(`${label}:`, margin, y);
     y += 4.5;
     doc.setFont('helvetica', 'normal');
     if (lines.length > 0) {
-      for (let i = 0; i < lines.length; i++) {
-        checkPage(5);
-        doc.text(lines[i], margin + 2, y);
-        y += 4.2;
-      }
+      for (let i = 0; i < lines.length; i++) { checkPage(5); doc.text(lines[i], margin + 2, y); y += 4.2; }
       y += 2;
-    } else {
-      y += 2;
-    }
+    } else { y += 2; }
   };
 
   section('1. IDENTIFICACIÓN Y MODALIDAD');
@@ -210,76 +168,45 @@ export function exportarForm04PDF(datos, codigo = '') {
   field('Keywords', datos.keywords);
 
   section('7. EQUIPO DE INVESTIGACIÓN');
-  const invTec = Array.isArray(datos.investigadoresTEC) && datos.investigadoresTEC.length > 0
-    ? datos.investigadoresTEC
-    : (Array.isArray(datos.integrantes) ? datos.integrantes : []);
+  const invTec = Array.isArray(datos.investigadoresTEC) && datos.investigadoresTEC.length > 0 ? datos.investigadoresTEC : (Array.isArray(datos.integrantes) ? datos.integrantes : []);
   if (invTec.length > 0) {
     renderTable({
       startY: y, margin: { left: margin, right: margin },
       head: [['Nombre', 'Instancia / Escuela', 'Horas', 'Rol']],
-      body: invTec.map(i => [
-        safe(i.nombreCompleto || i.nombre || `${i.nombreUsuario || ''} ${i.apellido1Usuario || ''}`.trim() || 'Investigador(a)'),
-        safe(i.instancia || i.escuela || i.departamento || 'TEC'),
-        safe(i.horas || (i.horasSemanales ? `${i.horasSemanales} h` : '10 h')),
-        safe(i.rol || (i.rolEquipoId === 1 ? 'Coordinador(a)' : 'Co-Investigador(a)'))
-      ]),
+      body: invTec.map(i => [safe(i.nombreCompleto || i.nombre || `${i.nombreUsuario || ''} ${i.apellido1Usuario || ''}`.trim() || 'Investigador(a)'), safe(i.instancia || i.escuela || i.departamento || 'TEC'), safe(i.horas || (i.horasSemanales ? `${i.horasSemanales} h` : '10 h')), safe(i.rol || (i.rolEquipoId === 1 ? 'Coordinador(a)' : 'Co-Investigador(a)'))]),
       styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] }
     });
     y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
-  } else {
-    field('Investigadores TEC', '');
-  }
+  } else { field('Investigadores TEC', ''); }
 
   const colExt = Array.isArray(datos.colaboradoresExternos) ? datos.colaboradoresExternos : [];
   if (colExt.length > 0) {
-    checkPage(20);
-    doc.setFont('helvetica', 'bold'); doc.text('Colaboradores Externos:', margin, y); y += 5;
+    checkPage(20); doc.setFont('helvetica', 'bold'); doc.text('Colaboradores Externos:', margin, y); y += 5;
     renderTable({
       startY: y, margin: { left: margin, right: margin },
       head: [['Nombre', 'Institución / Empresa', 'Tipo']],
-      body: colExt.map(c => [
-        safe(c.nombre || `${c.nombreColaborador || ''} ${c.apellido1Colaborador || ''}`.trim() || 'Colaborador(a)'),
-        safe(c.institucion || c.institucionEmpresa || 'Institución Externa'),
-        safe(c.tipo || 'Colaborador(a) Externo')
-      ]),
+      body: colExt.map(c => [safe(c.nombre || `${c.nombreColaborador || ''} ${c.apellido1Colaborador || ''}`.trim() || 'Colaborador(a)'), safe(c.institucion || c.institucionEmpresa || 'Institución Externa'), safe(c.tipo || 'Colaborador(a) Externo')]),
       styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] }
     });
     y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
-  } else {
-    field('Colaboradores Externos', '');
-  }
+  } else { field('Colaboradores Externos', ''); }
 
   section('8. PROBLEMA DE INVESTIGACIÓN');
   multiField('Planteamiento del Problema', datos.problemaInvestigacion || datos?.contenido?.problemaInvestigacion);
 
   section('9. OBJETIVOS DEL PROYECTO');
   multiField('Objetivo General', datos.objetivoGeneral || datos?.contenido?.objetivoGeneral);
-  
   const rawObjs = datos.objetivosEspecificos || datos?.contenido?.objetivosEspecificos || [];
-  let objs = [];
-  if (Array.isArray(rawObjs)) {
-    objs = rawObjs;
-  } else if (typeof rawObjs === 'string') {
-    objs = rawObjs.split(';').map(s => s.replace(/^\n+|\n+$/g, '').trim()).filter(Boolean);
-  }
-
+  let objs = Array.isArray(rawObjs) ? rawObjs : (typeof rawObjs === 'string' ? rawObjs.split(';').map(s => s.replace(/^\n+|\n+$/g, '').trim()).filter(Boolean) : []);
   if (objs.length > 0) {
-    checkPage(15);
-    doc.setFont('helvetica', 'bold'); doc.text('Objetivos Específicos:', margin, y); y += 5;
+    checkPage(15); doc.setFont('helvetica', 'bold'); doc.text('Objetivos Específicos:', margin, y); y += 5;
     doc.setFont('helvetica', 'normal');
     objs.forEach((o, i) => {
       const oText = typeof o === 'string' ? o : (o.descripcion || o.objetivo || '');
-      if (oText && oText.trim()) {
-        checkPage(8);
-        const l = doc.splitTextToSize(`${i + 1}. ${oText.trim()}`, contentW - 6);
-        doc.text(l, margin + 4, y);
-        y += l.length * 4.2 + 1;
-      }
+      if (oText && oText.trim()) { checkPage(8); const l = doc.splitTextToSize(`${i + 1}. ${oText.trim()}`, contentW - 6); doc.text(l, margin + 4, y); y += l.length * 4.2 + 1; }
     });
     y += 2;
-  } else {
-    field('Objetivos Específicos', '');
-  }
+  } else { field('Objetivos Específicos', ''); }
 
   section('10. ESTADO DEL ARTE');
   multiField('Estado del Arte', datos.estadoArte || datos?.contenido?.estadoArte);
@@ -289,18 +216,26 @@ export function exportarForm04PDF(datos, codigo = '') {
 
   section('12. PLAN DE ACCIÓN Y GESTIÓN DE RIESGOS');
   if (datos.actividadesCronograma?.length > 0) {
-    renderTable({ startY: y, margin: { left: margin, right: margin }, head: [['Obj.', 'Actividad principal', 'Responsable', 'Periodo']], body: datos.actividadesCronograma.map(a => [safe(a.obj || a.objetivo || 'OE 1'), safe(a.actividad || a.nombre), safe(a.responsable || 'Equipo'), safe([a.a1 && 'Año 1', a.a2 && 'Año 2', a.a3 && 'Año 3'].filter(Boolean).join(', ') || [a.inicio, a.fin].filter(Boolean).join(' - ') || 'Periodo regular')]), styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] } });
+    renderTable({
+      startY: y, margin: { left: margin, right: margin },
+      head: [['Obj.', 'Actividad principal', 'Resultado', 'Responsable', 'Periodo']],
+      body: datos.actividadesCronograma.map(a => [safe(a.obj || a.objetivo || 'OE 1'), safe(a.actividad || a.nombre), safe(a.resultado || a.entregable || '-'), safe(a.responsable || a.participante || 'Equipo'), safe((a.mesInicio ? `Mes ${a.mesInicio} (${a.duracionMesesAct || 1}m)` : '') || [a.a1 && 'Año 1', a.a2 && 'Año 2', a.a3 && 'Año 3'].filter(Boolean).join(', ') || [a.inicio, a.fin].filter(Boolean).join(' - ') || 'Periodo regular')]),
+      styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] }
+    });
     y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
-  } else {
-    field('Cronograma de Actividades', '');
-  }
-  if (datos.riesgosMitigacion?.length > 0) {
+  } else { field('Cronograma de Actividades', ''); }
+
+  const riesgosCombinados = [...(Array.isArray(datos.riesgosMitigacion) ? datos.riesgosMitigacion : []), ...(Array.isArray(datos.actividadesCronograma) ? datos.actividadesCronograma.filter(a => a.riesgo).map(a => ({ riesgo: a.riesgo, probabilidad: 'Media', impacto: 'Moderado', mitigacion: a.mitigacion || a.responsableGestion || 'Plan de contingencia' })) : [])];
+  if (riesgosCombinados.length > 0) {
     checkPage(20);
-    renderTable({ startY: y, margin: { left: margin, right: margin }, head: [['Riesgo', 'Probabilidad', 'Impacto', 'Mitigación']], body: datos.riesgosMitigacion.map(r => [safe(r.riesgo || r.nombre), safe(r.probabilidad), safe(r.impacto), safe(r.mitigacion)]), styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] } });
+    renderTable({
+      startY: y, margin: { left: margin, right: margin },
+      head: [['Riesgo', 'Probabilidad', 'Impacto', 'Mitigación']],
+      body: riesgosCombinados.map(r => [safe(r.riesgo || r.nombre), safe(r.probabilidad || 'Media'), safe(r.impacto || 'Moderado'), safe(r.mitigacion || '-')]),
+      styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] }
+    });
     y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
-  } else {
-    field('Matriz de Riesgos y Mitigación', '');
-  }
+  } else { field('Matriz de Riesgos y Mitigación', ''); }
 
   section('13. PRESUPUESTO PLURIANUAL');
   let presAnual = Array.isArray(datos.presupuestoAnual) && datos.presupuestoAnual.length > 0 ? datos.presupuestoAnual : [];
@@ -310,22 +245,14 @@ export function exportarForm04PDF(datos, codigo = '') {
       const a = p.anioEjecucion || p.anio || 1;
       if (!porAno[a]) porAno[a] = { ano: `Año ${a}`, operativo: 0, duradero: 0 };
       const monto = Number(p.montoSolicitado || p.monto || 0);
-      if (p.esDuradero) porAno[a].duradero += monto;
-      else porAno[a].operativo += monto;
+      if (p.esDuradero) porAno[a].duradero += monto; else porAno[a].operativo += monto;
     });
-    presAnual = Object.values(porAno).map(r => ({
-      ano: r.ano,
-      operativo: r.operativo.toLocaleString('es-CR'),
-      duradero: r.duradero.toLocaleString('es-CR')
-    }));
+    presAnual = Object.values(porAno).map(r => ({ ano: r.ano, operativo: r.operativo.toLocaleString('es-CR'), duradero: r.duradero.toLocaleString('es-CR') }));
   }
-
   if (presAnual.length > 0) {
     renderTable({ startY: y, margin: { left: margin, right: margin }, head: [['Año', 'Operativo (₡)', 'Duradero (₡)']], body: presAnual.map(p => [safe(p.ano), safe(p.operativo || '0'), safe(p.duradero || '0')]), styles: { fontSize: 9, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] } });
     y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
-  } else {
-    field('Presupuesto Plurianual', '');
-  }
+  } else { field('Presupuesto Plurianual', ''); }
 
   section('14. PRODUCTOS ACADÉMICOS COMPROMETIDOS');
   if (datos.rangoHorasCompromiso) field('Rango de Horas', datos.rangoHorasCompromiso);
@@ -337,10 +264,19 @@ export function exportarForm04PDF(datos, codigo = '') {
     if (p.adicional1) field('Producto adicional 1', p.adicional1);
     if (p.adicional2) field('Producto adicional 2', p.adicional2);
   }
-  if (Array.isArray(datos.productosAcademicos) && datos.productosAcademicos.length > 0) {
-    datos.productosAcademicos.forEach((pa, idx) => {
-      field(`Producto Académico ${idx + 1}`, `${pa.descripcion || 'Producto'} (Cantidad: ${pa.cantidadComprometida || 1})`);
+  if (datos.productos14b) {
+    const pb = datos.productos14b;
+    const activosMap = { patente: 'Patente de invención o modelo de utilidad', diseno: 'Diseño industrial registrado', software: 'Desarrollo de Software institucional', secreto: 'Secreto empresarial o Know-How formalizado', obtencion: 'Obtención Vegetal / Variedad protegida', marca: 'Marca comercial o signo distintivo', circuito: 'Esquema de trazado de circuitos integrados', otros: 'Otros activos tecnológicos protegibles', articulo: 'Artículo en revista indexada (WoS/Scopus/SciELO)', memoria: 'Artículos en revistas o conferencias', paquete: 'Paquete tecnológico transferible o prototipo', norma: 'Norma técnica (INTECO u homologado)' };
+    Object.entries(pb).forEach(([k, item]) => {
+      if (item?.check && item?.cantidad > 0) {
+        const nom = activosMap[k] || k;
+        const ref = item.consecutivo ? `Dictamen: ${item.consecutivo}` : (item.objetivo ? `Objetivo: ${item.objetivo}` : '');
+        field(nom, `Cantidad: ${item.cantidad}${ref ? `, ${ref}` : ''}`);
+      }
     });
+  }
+  if (Array.isArray(datos.productosAcademicos) && datos.productosAcademicos.length > 0) {
+    datos.productosAcademicos.forEach((pa, idx) => { field(`Producto Académico ${idx + 1}`, `${pa.descripcion || 'Producto'} (Cantidad: ${pa.cantidadComprometida || 1})`); });
   }
 
   section('15. ESTRATEGIA DE DIVULGACIÓN Y ASPECTOS ÉTICOS');
@@ -350,9 +286,7 @@ export function exportarForm04PDF(datos, codigo = '') {
     if (d.canalesInstitucionales) multiField('Canales Institucionales', d.canalesInstitucionales);
     if (d.socializacion) multiField('Socialización', d.socializacion);
     if (d.mediosMasivos) multiField('Medios Masivos', d.mediosMasivos);
-  } else {
-    field('Estrategia de Divulgación', '');
-  }
+  } else { field('Estrategia de Divulgación', ''); }
   if (datos.aspectosEticos) {
     const ae = datos.aspectosEticos;
     const eticos = [];
@@ -361,9 +295,7 @@ export function exportarForm04PDF(datos, codigo = '') {
     if (ae.animales) eticos.push('Animales');
     if (ae.comunidadesIndigenas) eticos.push('Comunidades indígenas');
     field('Aspectos Éticos', eticos.length > 0 ? eticos.join(', ') : '');
-  } else {
-    field('Aspectos Éticos', '');
-  }
+  } else { field('Aspectos Éticos', ''); }
   multiField('Hoja de Ruta', datos.hojaRuta || datos?.contenido?.hojaRuta);
 
   section('16. DECLARACIÓN JURADA Y FIRMA');
@@ -374,51 +306,299 @@ export function exportarForm04PDF(datos, codigo = '') {
     field('Firmado por', datos.firmaCoordinador.nombre);
     field('Cédula', datos.firmaCoordinador.cedula);
     field('Firma Digital', datos.firmaCoordinador.firmadoDigital ? 'Sí' : 'No');
-  } else {
-    field('Firma de la Persona Coordinadora', '');
-  }
+  } else { field('Firma de la Persona Coordinadora', ''); }
 
   const totalPages = doc.internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8); doc.setFont('helvetica', 'italic');
+    doc.setPage(i); doc.setFontSize(8); doc.setFont('helvetica', 'italic');
     doc.text(`Página ${i} de ${totalPages}  |  SGPI — Vicerrectoría de Investigación y Extensión, TEC`, margin, 272);
   }
 
   doc.save(`Form04_${safe(codigo, 'Propuesta').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   1.1 GENERAR FORM-04 COMO BLOB (Para subir a Supabase)
+   ═══════════════════════════════════════════════════════════════ */
+export function generarBlobForm04PDF(datos, codigo = '') {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  const contentW = pageW - margin * 2;
+  let y = 14;
+
+  const addPage = () => { doc.addPage(); y = 14; };
+  const checkPage = (need = 30) => { if (y + need > 265) addPage(); };
+
+  const renderTable = (options) => {
+    try { if (typeof doc.autoTable === 'function') { doc.autoTable(options); return; } } catch (_e) {}
+    try { autoTable(doc, options); } catch (err) { console.warn('Error autoTable:', err); }
+  };
+
+  doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+  doc.text('Instituto Tecnológico de Costa Rica', margin, y);
+  doc.text('Vicerrectoría de Investigación y Extensión', margin, y + 4);
+  y += 10;
+  doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+  doc.text('FORMULARIO F-04 — FORMULARIO DE PROYECTO', margin, y);
+  y += 6;
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+  doc.text(`Código: ${safe(codigo, 'Sin código')}  |  Generado: ${hoy()}`, margin, y);
+  y += 10;
+
+  const section = (title) => {
+    checkPage(20);
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+    doc.setFillColor(0, 40, 85);
+    doc.rect(margin, y - 4, contentW, 7, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.text(title, margin + 3, y);
+    doc.setTextColor(0, 0, 0);
+    y += 7;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+  };
+
+  const formatVal = (v) => {
+    if (v === null || v === undefined) return '';
+    if (typeof v === 'boolean') return v ? 'Sí' : 'No';
+    if (typeof v === 'object') {
+      if (v.aplica === true) return `Sí${v.detalle ? ` — ${v.detalle}` : (v.tipo ? ` — ${v.tipo}` : (v.nombre ? ` — ${v.nombre}` : (v.oficioDictamen ? ` — Oficio: ${v.oficioDictamen}` : '')))}`;
+      if (v.aplica === false) return 'No aplica';
+      if (v.aplica === 'Sí') return `Sí${v.programa ? ` — Programa: ${v.programa}, Universidad: ${v.universidad || ''}` : ''}`;
+      if (v.aplica === 'No') return 'No';
+      return '';
+    }
+    const s = String(v).trim();
+    if (s === '—' || s === 'No especificado' || s === 'Ninguno' || s === 'Ninguno registrado' || s === 'undefined' || s === 'null') return '';
+    return s;
+  };
+
+  const field = (label, value) => {
+    checkPage(14);
+    doc.setFont('helvetica', 'bold'); doc.text(`${label}:`, margin, y);
+    doc.setFont('helvetica', 'normal');
+    const valStr = formatVal(value);
+    if (valStr) {
+      const lines = doc.splitTextToSize(valStr, contentW - 4);
+      doc.text(lines, margin + 2, y + 4.5);
+      y += 4.5 + lines.length * 4.2 + 2;
+    } else { y += 6; }
+  };
+
+  const multiField = (label, value) => {
+    const valStr = formatVal(value);
+    const lines = valStr ? doc.splitTextToSize(valStr, contentW - 4) : [];
+    checkPage(lines.length > 0 ? 16 + lines.length * 4.2 : 12);
+    doc.setFont('helvetica', 'bold'); doc.text(`${label}:`, margin, y);
+    y += 4.5;
+    doc.setFont('helvetica', 'normal');
+    if (lines.length > 0) {
+      for (let i = 0; i < lines.length; i++) { checkPage(5); doc.text(lines[i], margin + 2, y); y += 4.2; }
+      y += 2;
+    } else { y += 2; }
+  };
+
+  section('1. IDENTIFICACIÓN Y MODALIDAD');
+  field('Nombre del Proyecto', datos.nombreProyecto || datos.titulo);
+  field('Modalidad', datos.modalidad || (datos.modalidadId === 4 ? 'Desarrollo tecnológico' : (datos.modalidadId === 2 ? 'Investigación aplicada' : (datos.modalidadId === 3 ? 'Investigación básica y aplicada' : 'Investigación básica'))));
+  field('Fecha de Inicio', datos.fechaInicio);
+  field('Fecha de Finalización', datos.fechaFin || datos.fechaFinalizacion);
+
+  section('2. FINANCIACIÓN PREVIA Y VINCULACIÓN');
+  field('Otras Fuentes de Financiamiento', datos.otrasFuentes);
+  field('Vinculación Técnica', datos.vinculacionTecnica);
+  field('Problemas Nacionales', datos.problemasNacionales);
+
+  section('3. INSTRUMENTOS JURÍDICOS Y CONVENIOS');
+  field('Requiere Instrumento Jurídico', datos.requiereInstrumento);
+  field('Convenio Marco', datos.convenioMarco);
+  field('Base para Posgrado', datos.basePosgrado);
+
+  section('4. PROPIEDAD INTELECTUAL E INNOVACIÓN');
+  field('Información Confidencial', datos.infoConfidencial);
+  field('Potencial de PI', datos.potencialPI);
+  field('Posee Innovación', datos.poseeInnovacion);
+
+  section('5. ESCALA TRL');
+  field('Nivel TRL Seleccionado', datos.trlSeleccionado || datos.nivelTrlActual);
+
+  section('6. RESUMEN Y ABSTRACT');
+  multiField('Resumen', datos.resumen || datos?.contenido?.resumen);
+  field('Palabras Clave', datos.palabrasClave || datos?.contenido?.palabrasClave);
+  multiField('Abstract', datos.abstract || datos?.contenido?.abstract);
+  field('Keywords', datos.keywords);
+
+  section('7. EQUIPO DE INVESTIGACIÓN');
+  const invTec = Array.isArray(datos.investigadoresTEC) && datos.investigadoresTEC.length > 0 ? datos.investigadoresTEC : (Array.isArray(datos.integrantes) ? datos.integrantes : []);
+  if (invTec.length > 0) {
+    renderTable({
+      startY: y, margin: { left: margin, right: margin },
+      head: [['Nombre', 'Instancia / Escuela', 'Horas', 'Rol']],
+      body: invTec.map(i => [safe(i.nombreCompleto || i.nombre || `${i.nombreUsuario || ''} ${i.apellido1Usuario || ''}`.trim() || 'Investigador(a)'), safe(i.instancia || i.escuela || i.departamento || 'TEC'), safe(i.horas || (i.horasSemanales ? `${i.horasSemanales} h` : '10 h')), safe(i.rol || (i.rolEquipoId === 1 ? 'Coordinador(a)' : 'Co-Investigador(a)'))]),
+      styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] }
+    });
+    y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
+  } else { field('Investigadores TEC', ''); }
+
+  const colExt = Array.isArray(datos.colaboradoresExternos) ? datos.colaboradoresExternos : [];
+  if (colExt.length > 0) {
+    checkPage(20); doc.setFont('helvetica', 'bold'); doc.text('Colaboradores Externos:', margin, y); y += 5;
+    renderTable({
+      startY: y, margin: { left: margin, right: margin },
+      head: [['Nombre', 'Institución / Empresa', 'Tipo']],
+      body: colExt.map(c => [safe(c.nombre || `${c.nombreColaborador || ''} ${c.apellido1Colaborador || ''}`.trim() || 'Colaborador(a)'), safe(c.institucion || c.institucionEmpresa || 'Institución Externa'), safe(c.tipo || 'Colaborador(a) Externo')]),
+      styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] }
+    });
+    y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
+  } else { field('Colaboradores Externos', ''); }
+
+  section('8. PROBLEMA DE INVESTIGACIÓN');
+  multiField('Planteamiento del Problema', datos.problemaInvestigacion || datos?.contenido?.problemaInvestigacion);
+
+  section('9. OBJETIVOS DEL PROYECTO');
+  multiField('Objetivo General', datos.objetivoGeneral || datos?.contenido?.objetivoGeneral);
+  const rawObjs = datos.objetivosEspecificos || datos?.contenido?.objetivosEspecificos || [];
+  let objs = Array.isArray(rawObjs) ? rawObjs : (typeof rawObjs === 'string' ? rawObjs.split(';').map(s => s.replace(/^\n+|\n+$/g, '').trim()).filter(Boolean) : []);
+  if (objs.length > 0) {
+    checkPage(15); doc.setFont('helvetica', 'bold'); doc.text('Objetivos Específicos:', margin, y); y += 5;
+    doc.setFont('helvetica', 'normal');
+    objs.forEach((o, i) => {
+      const oText = typeof o === 'string' ? o : (o.descripcion || o.objetivo || '');
+      if (oText && oText.trim()) { checkPage(8); const l = doc.splitTextToSize(`${i + 1}. ${oText.trim()}`, contentW - 6); doc.text(l, margin + 4, y); y += l.length * 4.2 + 1; }
+    });
+    y += 2;
+  } else { field('Objetivos Específicos', ''); }
+
+  section('10. ESTADO DEL ARTE');
+  multiField('Estado del Arte', datos.estadoArte || datos?.contenido?.estadoArte);
+
+  section('11. METODOLOGÍA');
+  multiField('Metodología', datos.metodologia || datos?.contenido?.metodologia);
+
+  section('12. PLAN DE ACCIÓN Y GESTIÓN DE RIESGOS');
+  if (datos.actividadesCronograma?.length > 0) {
+    renderTable({
+      startY: y, margin: { left: margin, right: margin },
+      head: [['Obj.', 'Actividad principal', 'Resultado', 'Responsable', 'Periodo']],
+      body: datos.actividadesCronograma.map(a => [safe(a.obj || a.objetivo || 'OE 1'), safe(a.actividad || a.nombre), safe(a.resultado || a.entregable || '-'), safe(a.responsable || a.participante || 'Equipo'), safe((a.mesInicio ? `Mes ${a.mesInicio} (${a.duracionMesesAct || 1}m)` : '') || [a.a1 && 'Año 1', a.a2 && 'Año 2', a.a3 && 'Año 3'].filter(Boolean).join(', ') || [a.inicio, a.fin].filter(Boolean).join(' - ') || 'Periodo regular')]),
+      styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] }
+    });
+    y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
+  } else { field('Cronograma de Actividades', ''); }
+
+  const riesgosCombinados = [...(Array.isArray(datos.riesgosMitigacion) ? datos.riesgosMitigacion : []), ...(Array.isArray(datos.actividadesCronograma) ? datos.actividadesCronograma.filter(a => a.riesgo).map(a => ({ riesgo: a.riesgo, probabilidad: 'Media', impacto: 'Moderado', mitigacion: a.mitigacion || a.responsableGestion || 'Plan de contingencia' })) : [])];
+  if (riesgosCombinados.length > 0) {
+    checkPage(20);
+    renderTable({
+      startY: y, margin: { left: margin, right: margin },
+      head: [['Riesgo', 'Probabilidad', 'Impacto', 'Mitigación']],
+      body: riesgosCombinados.map(r => [safe(r.riesgo || r.nombre), safe(r.probabilidad || 'Media'), safe(r.impacto || 'Moderado'), safe(r.mitigacion || '-')]),
+      styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] }
+    });
+    y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
+  } else { field('Matriz de Riesgos y Mitigación', ''); }
+
+  section('13. PRESUPUESTO PLURIANUAL');
+  let presAnual = Array.isArray(datos.presupuestoAnual) && datos.presupuestoAnual.length > 0 ? datos.presupuestoAnual : [];
+  if (presAnual.length === 0 && Array.isArray(datos.presupuesto) && datos.presupuesto.length > 0) {
+    const porAno = {};
+    datos.presupuesto.forEach(p => {
+      const a = p.anioEjecucion || p.anio || 1;
+      if (!porAno[a]) porAno[a] = { ano: `Año ${a}`, operativo: 0, duradero: 0 };
+      const monto = Number(p.montoSolicitado || p.monto || 0);
+      if (p.esDuradero) porAno[a].duradero += monto; else porAno[a].operativo += monto;
+    });
+    presAnual = Object.values(porAno).map(r => ({ ano: r.ano, operativo: r.operativo.toLocaleString('es-CR'), duradero: r.duradero.toLocaleString('es-CR') }));
+  }
+  if (presAnual.length > 0) {
+    renderTable({ startY: y, margin: { left: margin, right: margin }, head: [['Año', 'Operativo (₡)', 'Duradero (₡)']], body: presAnual.map(p => [safe(p.ano), safe(p.operativo || '0'), safe(p.duradero || '0')]), styles: { fontSize: 9, cellPadding: 2 }, headStyles: { fillColor: [0, 40, 85] } });
+    y = (doc.lastAutoTable?.finalY ?? (y + 20)) + 6;
+  } else { field('Presupuesto Plurianual', ''); }
+
+  section('14. PRODUCTOS ACADÉMICOS COMPROMETIDOS');
+  if (datos.rangoHorasCompromiso) field('Rango de Horas', datos.rangoHorasCompromiso);
+  if (datos.productos14a) {
+    const p = datos.productos14a;
+    if (p.opcion1?.check) field('Artículo en revista indexada', `Cantidad: ${p.opcion1.cantidad || 1}, Objetivo: ${p.opcion1.objetivo || 'General'}`);
+    if (p.opcion2?.check) field('Memoria / Ponencia', `Cantidad: ${p.opcion2.cantidad || 1}, Objetivo: ${p.opcion2.objetivo || 'General'}`);
+    if (p.opcion3?.check) field('Libro / Capítulo de libro', `Cantidad: ${p.opcion3.cantidad || 1}, Objetivo: ${p.opcion3.objetivo || 'General'}`);
+    if (p.adicional1) field('Producto adicional 1', p.adicional1);
+    if (p.adicional2) field('Producto adicional 2', p.adicional2);
+  }
+  if (datos.productos14b) {
+    const pb = datos.productos14b;
+    const activosMap = { patente: 'Patente de invención o modelo de utilidad', diseno: 'Diseño industrial registrado', software: 'Desarrollo de Software institucional', secreto: 'Secreto empresarial o Know-How formalizado', obtencion: 'Obtención Vegetal / Variedad protegida', marca: 'Marca comercial o signo distintivo', circuito: 'Esquema de trazado de circuitos integrados', otros: 'Otros activos tecnológicos protegibles', articulo: 'Artículo en revista indexada (WoS/Scopus/SciELO)', memoria: 'Artículos en revistas o conferencias', paquete: 'Paquete tecnológico transferible o prototipo', norma: 'Norma técnica (INTECO u homologado)' };
+    Object.entries(pb).forEach(([k, item]) => {
+      if (item?.check && item?.cantidad > 0) {
+        const nom = activosMap[k] || k;
+        const ref = item.consecutivo ? `Dictamen: ${item.consecutivo}` : (item.objetivo ? `Objetivo: ${item.objetivo}` : '');
+        field(nom, `Cantidad: ${item.cantidad}${ref ? `, ${ref}` : ''}`);
+      }
+    });
+  }
+  if (Array.isArray(datos.productosAcademicos) && datos.productosAcademicos.length > 0) {
+    datos.productosAcademicos.forEach((pa, idx) => { field(`Producto Académico ${idx + 1}`, `${pa.descripcion || 'Producto'} (Cantidad: ${pa.cantidadComprometida || 1})`); });
+  }
+
+  section('15. ESTRATEGIA DE DIVULGACIÓN Y ASPECTOS ÉTICOS');
+  if (datos.divulgacion && typeof datos.divulgacion === 'object') {
+    const d = datos.divulgacion;
+    if (d.cientifica) multiField('Divulgación Científica', d.cientifica);
+    if (d.canalesInstitucionales) multiField('Canales Institucionales', d.canalesInstitucionales);
+    if (d.socializacion) multiField('Socialización', d.socializacion);
+    if (d.mediosMasivos) multiField('Medios Masivos', d.mediosMasivos);
+  } else { field('Estrategia de Divulgación', ''); }
+  if (datos.aspectosEticos) {
+    const ae = datos.aspectosEticos;
+    const eticos = [];
+    if (ae.seresHumanos) eticos.push('Seres humanos');
+    if (ae.biodiversidad) eticos.push('Biodiversidad');
+    if (ae.animales) eticos.push('Animales');
+    if (ae.comunidadesIndigenas) eticos.push('Comunidades indígenas');
+    field('Aspectos Éticos', eticos.length > 0 ? eticos.join(', ') : '');
+  } else { field('Aspectos Éticos', ''); }
+  multiField('Hoja de Ruta', datos.hojaRuta || datos?.contenido?.hojaRuta);
+
+  section('16. DECLARACIÓN JURADA Y FIRMA');
+  field('Resguardo en Repositorio', datos.resguardoCompromiso);
+  field('Resguardo de Software', datos.resguardoSoftware);
+  multiField('Referencias Bibliográficas', datos.referenciasBibliograficas);
+  if (datos.firmaCoordinador && datos.firmaCoordinador.nombre) {
+    field('Firmado por', datos.firmaCoordinador.nombre);
+    field('Cédula', datos.firmaCoordinador.cedula);
+    field('Firma Digital', datos.firmaCoordinador.firmadoDigital ? 'Sí' : 'No');
+  } else { field('Firma de la Persona Coordinadora', ''); }
+
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i); doc.setFontSize(8); doc.setFont('helvetica', 'italic');
+    doc.text(`Página ${i} de ${totalPages}  |  SGPI — Vicerrectoría de Investigación y Extensión, TEC`, margin, 272);
+  }
+
+  return doc.output('blob');
+}
 
 /* ═══════════════════════════════════════════════════════════════
-   2.  EXPORTAR FORM-05  (Plan de Acción y Riesgos)  →  XLSX
+   2. EXPORTAR FORM-05 (Plan de Acción y Riesgos) → XLSX
    ═══════════════════════════════════════════════════════════════ */
 export async function exportarForm05Excel(datos, codigo = '') {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'SGPI — Vicerrectoría de Investigación y Extensión, TEC';
   wb.created = new Date();
 
-  /* ─── Hoja 1: Información General ─── */
   const wsInfo = wb.addWorksheet('Información General');
   wsInfo.columns = [{ width: 30 }, { width: 50 }];
-
   wsInfo.mergeCells('A1:B1');
   const titleCell = wsInfo.getCell('A1');
   titleCell.value = 'FORMULARIO F-05: PLAN DE ACCIÓN Y GESTIÓN DEL RIESGO';
   titleCell.font = TITLE_FONT;
   titleCell.alignment = { horizontal: 'center' };
-
   wsInfo.mergeCells('A2:B2');
   wsInfo.getCell('A2').value = 'Instituto Tecnológico de Costa Rica — Vicerrectoría de Investigación y Extensión';
   wsInfo.getCell('A2').font = { size: 10, italic: true, color: { argb: 'FF475569' } };
   wsInfo.getCell('A2').alignment = { horizontal: 'center' };
 
-  const infoData = [
-    ['Código de Propuesta', safe(codigo)],
-    ['Título del Proyecto', safe(datos.nombrePropuesta, 'Sin título')],
-    ['Tipo de Iniciativa', safe(datos.tipoIniciativa)],
-    ['Duración', safe(datos.duracionMeses)],
-    ['Fecha de Generación', hoy()]
-  ];
+  const infoData = [['Código de Propuesta', safe(codigo)], ['Título del Proyecto', safe(datos.nombrePropuesta, 'Sin título')], ['Tipo de Iniciativa', safe(datos.tipoIniciativa)], ['Duración', safe(datos.duracionMeses)], ['Fecha de Generación', hoy()]];
   let row = 4;
   infoData.forEach(([label, val]) => {
     wsInfo.getCell(`A${row}`).value = label;
@@ -427,61 +607,33 @@ export async function exportarForm05Excel(datos, codigo = '') {
     row++;
   });
 
-  /* ─── Hoja 2: Equipo de Trabajo ─── */
   const wsEquipo = wb.addWorksheet('Equipo de Trabajo');
-  wsEquipo.columns = [
-    { header: 'Nombre', key: 'nombre', width: 35 },
-    { header: 'Iniciales', key: 'iniciales', width: 12 },
-    { header: 'Rol', key: 'rol', width: 30 }
-  ];
+  wsEquipo.columns = [{ header: 'Nombre', key: 'nombre', width: 35 }, { header: 'Iniciales', key: 'iniciales', width: 12 }, { header: 'Rol', key: 'rol', width: 30 }];
   applyHeaderRow(wsEquipo, 1, 3);
-
   const integrantes = datos.integrantes || [];
-  integrantes.forEach(i => {
-    wsEquipo.addRow({ nombre: safe(i.nombre), iniciales: safe(i.iniciales), rol: safe(i.rol) });
-  });
+  integrantes.forEach(i => { wsEquipo.addRow({ nombre: safe(i.nombre), iniciales: safe(i.iniciales), rol: safe(i.rol) }); });
   if (integrantes.length > 0) applyDataBorders(wsEquipo, 2, 1 + integrantes.length, 3);
 
-  /* ─── Hoja 3: Plan de Acción y Gestión del Riesgo ─── */
   const wsPlan = wb.addWorksheet('Plan de Acción');
-
-  // Determine number of years from duracionMeses
   const durStr = safe(datos.duracionMeses);
   const numAnios = durStr.includes('12') ? 1 : durStr.includes('36') ? 3 : 2;
-
-  // Build columns: fixed fields + months for each year
-  const fixedHeaders = [
-    'Objetivo', 'Actividades', 'Resultado Esperado', 'Participantes',
-    'Responsabilidad', 'Riesgos Identificados', 'Medidas de Mitigación',
-    'Responsable de la Gestión', 'Mes de Inicio', 'Duración (Meses)'
-  ];
+  const fixedHeaders = ['Objetivo', 'Actividades', 'Resultado Esperado', 'Participantes', 'Responsabilidad', 'Riesgos Identificados', 'Medidas de Mitigación', 'Responsable de la Gestión', 'Mes de Inicio', 'Duración (Meses)'];
   const fixedWidths = [12, 25, 20, 12, 14, 20, 20, 14, 10, 10];
-
-  // Build column definitions
   const allCols = [];
-  fixedHeaders.forEach((h, idx) => {
-    allCols.push({ header: '', key: `f${idx}`, width: fixedWidths[idx] });
-  });
-  for (let a = 1; a <= numAnios; a++) {
-    for (let m = 1; m <= 12; m++) {
-      allCols.push({ header: '', key: `a${a}m${m}`, width: 4 });
-    }
-  }
+  fixedHeaders.forEach((h, idx) => { allCols.push({ header: '', key: `f${idx}`, width: fixedWidths[idx] }); });
+  for (let a = 1; a <= numAnios; a++) { for (let m = 1; m <= 12; m++) { allCols.push({ header: '', key: `a${a}m${m}`, width: 4 }); } }
   wsPlan.columns = allCols;
-
   const totalCols = fixedHeaders.length + numAnios * 12;
 
-  // Row 1: Title spanning all columns
   wsPlan.mergeCells(1, 1, 1, totalCols);
   const planTitle = wsPlan.getCell(1, 1);
   planTitle.value = 'PLAN DE ACCIÓN Y GESTIÓN DE RIESGOS';
   planTitle.font = TITLE_FONT;
   planTitle.alignment = { horizontal: 'center', vertical: 'middle' };
 
-  // Row 2: Header row 1 — fixed columns span 2 rows, "PERIODO DE EJECUCIÓN" spans years
   const headerRow1 = wsPlan.getRow(2);
   fixedHeaders.forEach((h, idx) => {
-    wsPlan.mergeCells(2, idx + 1, 3, idx + 1); // merge rows 2-3 for fixed headers
+    wsPlan.mergeCells(2, idx + 1, 3, idx + 1);
     const cell = wsPlan.getCell(2, idx + 1);
     cell.value = h.toUpperCase();
     cell.fill = HEADER_FILL;
@@ -489,8 +641,6 @@ export async function exportarForm05Excel(datos, codigo = '') {
     cell.border = BORDER_THIN;
     cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
   });
-
-  // "PERIODO DE EJECUCIÓN" spanning all year columns in row 2 — but we put each year header
   for (let a = 0; a < numAnios; a++) {
     const startCol = fixedHeaders.length + 1 + a * 12;
     const endCol = startCol + 11;
@@ -502,8 +652,6 @@ export async function exportarForm05Excel(datos, codigo = '') {
     cell.border = BORDER_THIN;
     cell.alignment = { horizontal: 'center', vertical: 'middle' };
   }
-
-  // Row 3: month numbers under each year
   const headerRow3 = wsPlan.getRow(3);
   for (let a = 0; a < numAnios; a++) {
     for (let m = 0; m < 12; m++) {
@@ -517,43 +665,23 @@ export async function exportarForm05Excel(datos, codigo = '') {
     }
   }
 
-  // Data rows
   const acts = datos.actividades || [];
   let dataRow = 4;
   acts.forEach(a => {
-    const rowValues = [
-      safe(a.objetivo),
-      safe(a.actividad),
-      safe(a.resultado),
-      safe(a.participante),
-      safe(a.responsabilidad),
-      safe(a.riesgo),
-      safe(a.mitigacion),
-      safe(a.responsableGestion),
-      safe(a.mesInicio),
-      safe(a.duracionMesesAct)
-    ];
-
-    // Period of execution checkboxes as "X" or ""
+    const rowValues = [safe(a.objetivo || a.obj), safe(a.actividad), safe(a.resultado), safe(a.participante), safe(a.responsabilidad), safe(a.riesgo), safe(a.mitigacion), safe(a.responsableGestion), safe(a.mesInicio), safe(a.duracionMesesAct)];
     for (let yr = 1; yr <= numAnios; yr++) {
       for (let mo = 1; mo <= 12; mo++) {
         const checked = a.periodoEjecucion?.[`a${yr}`]?.[`m${mo}`];
         rowValues.push(checked ? 'X' : '');
       }
     }
-
     const excelRow = wsPlan.getRow(dataRow);
     rowValues.forEach((v, idx) => {
       excelRow.getCell(idx + 1).value = v;
       excelRow.getCell(idx + 1).border = BORDER_THIN;
       excelRow.getCell(idx + 1).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
     });
-
-    // Left-align text columns
-    [1, 2, 3, 6, 7].forEach(col => {
-      excelRow.getCell(col).alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
-    });
-
+    [1, 2, 3, 6, 7].forEach(col => { excelRow.getCell(col).alignment = { vertical: 'middle', horizontal: 'left', wrapText: true }; });
     dataRow++;
   });
 
@@ -561,16 +689,136 @@ export async function exportarForm05Excel(datos, codigo = '') {
   await guardarWorkbook(wb, fileName);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   2.1 GENERAR FORM-05 COMO BLOB (Para subir a Supabase)
+   ═══════════════════════════════════════════════════════════════ */
+export async function generarBlobForm05Excel(datos, codigo = '') {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'SGPI — Vicerrectoría de Investigación y Extensión, TEC';
+  wb.created = new Date();
+
+  const wsInfo = wb.addWorksheet('Información General');
+  wsInfo.columns = [{ width: 30 }, { width: 50 }];
+  wsInfo.mergeCells('A1:B1');
+  const titleCell = wsInfo.getCell('A1');
+  titleCell.value = 'FORMULARIO F-05: PLAN DE ACCIÓN Y GESTIÓN DEL RIESGO';
+  titleCell.font = { bold: true, size: 14, color: { argb: 'FF002855' } };
+  titleCell.alignment = { horizontal: 'center' };
+  wsInfo.mergeCells('A2:B2');
+  wsInfo.getCell('A2').value = 'Instituto Tecnológico de Costa Rica — Vicerrectoría de Investigación y Extensión';
+  wsInfo.getCell('A2').font = { size: 10, italic: true, color: { argb: 'FF475569' } };
+  wsInfo.getCell('A2').alignment = { horizontal: 'center' };
+
+  const infoData = [['Código de Propuesta', safe(codigo)], ['Título del Proyecto', safe(datos.nombrePropuesta, 'Sin título')], ['Tipo de Iniciativa', safe(datos.tipoIniciativa)], ['Duración', safe(datos.duracionMeses)], ['Fecha de Generación', hoy()]];
+  let row = 4;
+  infoData.forEach(([label, val]) => {
+    wsInfo.getCell(`A${row}`).value = label;
+    wsInfo.getCell(`A${row}`).font = { bold: true };
+    wsInfo.getCell(`B${row}`).value = val;
+    row++;
+  });
+
+  const wsEquipo = wb.addWorksheet('Equipo de Trabajo');
+  wsEquipo.columns = [{ header: 'Nombre', key: 'nombre', width: 35 }, { header: 'Iniciales', key: 'iniciales', width: 12 }, { header: 'Rol', key: 'rol', width: 30 }];
+  const headerRowEquipo = wsEquipo.getRow(1);
+  for (let c = 1; c <= 3; c++) {
+    const cell = headerRowEquipo.getCell(c);
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002855' } };
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+    cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+  }
+  const integrantes = datos.integrantes || [];
+  integrantes.forEach(i => { wsEquipo.addRow({ nombre: safe(i.nombre), iniciales: safe(i.iniciales), rol: safe(i.rol) }); });
+  if (integrantes.length > 0) {
+    for (let r = 2; r <= 1 + integrantes.length; r++) {
+      for (let c = 1; c <= 3; c++) {
+        wsEquipo.getRow(r).getCell(c).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+      }
+    }
+  }
+
+  const wsPlan = wb.addWorksheet('Plan de Acción');
+  const durStr = safe(datos.duracionMeses);
+  const numAnios = durStr.includes('12') ? 1 : durStr.includes('36') ? 3 : 2;
+  const fixedHeaders = ['Objetivo', 'Actividades', 'Resultado Esperado', 'Participantes', 'Responsabilidad', 'Riesgos Identificados', 'Medidas de Mitigación', 'Responsable de la Gestión', 'Mes de Inicio', 'Duración (Meses)'];
+  const fixedWidths = [12, 25, 20, 12, 14, 20, 20, 14, 10, 10];
+  const allCols = [];
+  fixedHeaders.forEach((h, idx) => { allCols.push({ header: '', key: `f${idx}`, width: fixedWidths[idx] }); });
+  for (let a = 1; a <= numAnios; a++) { for (let m = 1; m <= 12; m++) { allCols.push({ header: '', key: `a${a}m${m}`, width: 4 }); } }
+  wsPlan.columns = allCols;
+  const totalCols = fixedHeaders.length + numAnios * 12;
+
+  wsPlan.mergeCells(1, 1, 1, totalCols);
+  const planTitle = wsPlan.getCell(1, 1);
+  planTitle.value = 'PLAN DE ACCIÓN Y GESTIÓN DE RIESGOS';
+  planTitle.font = { bold: true, size: 14, color: { argb: 'FF002855' } };
+  planTitle.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  const headerRow1 = wsPlan.getRow(2);
+  fixedHeaders.forEach((h, idx) => {
+    wsPlan.mergeCells(2, idx + 1, 3, idx + 1);
+    const cell = wsPlan.getCell(2, idx + 1);
+    cell.value = h.toUpperCase();
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002855' } };
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+    cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+  });
+  for (let a = 0; a < numAnios; a++) {
+    const startCol = fixedHeaders.length + 1 + a * 12;
+    const endCol = startCol + 11;
+    wsPlan.mergeCells(2, startCol, 2, endCol);
+    const cell = wsPlan.getCell(2, startCol);
+    cell.value = `AÑO ${a + 1}`;
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002855' } };
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+    cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+  }
+  const headerRow3 = wsPlan.getRow(3);
+  for (let a = 0; a < numAnios; a++) {
+    for (let m = 0; m < 12; m++) {
+      const col = fixedHeaders.length + 1 + a * 12 + m;
+      const cell = headerRow3.getCell(col);
+      cell.value = m + 1;
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002855' } };
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 9 };
+      cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    }
+  }
+
+  const acts = datos.actividades || [];
+  let dataRow = 4;
+  acts.forEach(a => {
+    const rowValues = [safe(a.objetivo || a.obj), safe(a.actividad), safe(a.resultado), safe(a.participante), safe(a.responsabilidad), safe(a.riesgo), safe(a.mitigacion), safe(a.responsableGestion), safe(a.mesInicio), safe(a.duracionMesesAct)];
+    for (let yr = 1; yr <= numAnios; yr++) {
+      for (let mo = 1; mo <= 12; mo++) {
+        const checked = a.periodoEjecucion?.[`a${yr}`]?.[`m${mo}`];
+        rowValues.push(checked ? 'X' : '');
+      }
+    }
+    const excelRow = wsPlan.getRow(dataRow);
+    rowValues.forEach((v, idx) => {
+      excelRow.getCell(idx + 1).value = v;
+      excelRow.getCell(idx + 1).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+      excelRow.getCell(idx + 1).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    });
+    [1, 2, 3, 6, 7].forEach(col => { excelRow.getCell(col).alignment = { vertical: 'middle', horizontal: 'left', wrapText: true }; });
+    dataRow++;
+  });
+
+  const buffer = await wb.xlsx.writeBuffer();
+  return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
 
 /* ═══════════════════════════════════════════════════════════════
-   3.  EXPORTAR FORM-06  (Presupuesto Operativo)  →  XLSX
+   3. EXPORTAR FORM-06 (Presupuesto Operativo) → XLSX
    ═══════════════════════════════════════════════════════════════ */
 export async function exportarPresupuestoExcel(presupuestos, propuesta, usuario) {
   const totalRubros = Object.values(presupuestos).reduce((acc, curr) => acc + (curr?.length || 0), 0);
-  if (totalRubros === 0) {
-    alert('No hay objetos de gasto registrados para exportar. Agregue al menos una partida.');
-    return;
-  }
+  if (totalRubros === 0) { alert('No hay objetos de gasto registrados para exportar. Agregue al menos una partida.'); return; }
 
   const cod = propuesta?.codigoPropuesta || 'FVIE-2026-001';
   const nom = propuesta?.titulo || 'Sin título';
@@ -584,12 +832,10 @@ export async function exportarPresupuestoExcel(presupuestos, propuesta, usuario)
   let granTotal = 0;
   const resumenData = [];
 
-  /* ─── Una hoja por año ─── */
   anios.forEach((ano, idx) => {
     const filas = presupuestos[ano] || [];
     const subtotal = filas.reduce((a, b) => a + (Number(b.monto) || 0), 0);
     granTotal += subtotal;
-
     const serv = filas.filter(f => f.categoria === 'Servicios').reduce((a, b) => a + (Number(b.monto) || 0), 0);
     const mat  = filas.filter(f => f.categoria === 'Materiales').reduce((a, b) => a + (Number(b.monto) || 0), 0);
     const bec  = filas.filter(f => f.categoria === 'Becas').reduce((a, b) => a + (Number(b.monto) || 0), 0);
@@ -597,8 +843,6 @@ export async function exportarPresupuestoExcel(presupuestos, propuesta, usuario)
     resumenData.push({ ano, serv, mat, bec, eq, total: subtotal });
 
     const ws = wb.addWorksheet(`Año ${idx + 1} (${ano})`);
-
-    // Encabezado
     ws.mergeCells('A1:E1');
     ws.getCell('A1').value = 'FORMULARIO F-06: PRESUPUESTO OPERATIVO DE PROYECTO';
     ws.getCell('A1').font = TITLE_FONT;
@@ -609,7 +853,6 @@ export async function exportarPresupuestoExcel(presupuestos, propuesta, usuario)
     ws.getCell('A3').value = `Investigador(a): ${autor}  |  Generado: ${hoy()}`;
     ws.getCell('A3').font = { size: 9, color: { argb: 'FF627D98' } };
 
-    // Tabla de datos
     ws.getRow(5).values = ['Código OG', 'Categoría', 'Detalle de Objeto de Gasto', 'Monto (CRC)', 'Justificación Técnica'];
     ws.columns = [{ width: 16 }, { width: 14 }, { width: 40 }, { width: 18 }, { width: 40 }];
     applyHeaderRow(ws, 5, 5);
@@ -622,7 +865,6 @@ export async function exportarPresupuestoExcel(presupuestos, propuesta, usuario)
     });
     if (filas.length > 0) applyDataBorders(ws, 6, 5 + filas.length, 5);
 
-    // Subtotal
     ws.getRow(r).values = ['', '', `Subtotal Año ${idx + 1} (${ano}):`, subtotal, ''];
     ws.getCell(`C${r}`).font = { bold: true };
     ws.getCell(`D${r}`).font = { bold: true };
@@ -630,12 +872,10 @@ export async function exportarPresupuestoExcel(presupuestos, propuesta, usuario)
     ws.getCell(`D${r}`).border = BORDER_THIN;
   });
 
-  /* ─── Hoja Resumen Consolidado ─── */
   const wsR = wb.addWorksheet('Resumen Trienal');
   wsR.mergeCells('A1:F1');
   wsR.getCell('A1').value = 'RESUMEN CONSOLIDADO TRIENAL (VIE 2027-2029)';
   wsR.getCell('A1').font = TITLE_FONT;
-
   wsR.getRow(3).values = ['Año', 'Servicios (CRC)', 'Materiales (CRC)', 'Becas (CRC)', 'Equipo (CRC)', 'Total Anual (CRC)'];
   wsR.columns = [{ width: 12 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 20 }];
   applyHeaderRow(wsR, 3, 6);
@@ -643,14 +883,11 @@ export async function exportarPresupuestoExcel(presupuestos, propuesta, usuario)
   let rr = 4;
   resumenData.forEach(d => {
     wsR.getRow(rr).values = [d.ano, d.serv, d.mat, d.bec, d.eq, d.total];
-    for (let c = 2; c <= 6; c++) {
-      wsR.getRow(rr).getCell(c).numFmt = '#,##0.00';
-    }
+    for (let c = 2; c <= 6; c++) { wsR.getRow(rr).getCell(c).numFmt = '#,##0.00'; }
     rr++;
   });
   applyDataBorders(wsR, 4, 3 + resumenData.length, 6);
 
-  // Gran total
   wsR.getRow(rr).values = ['GRAN TOTAL', '', '', '', '', granTotal];
   wsR.getCell(`A${rr}`).font = { bold: true, size: 12 };
   wsR.getCell(`F${rr}`).font = { bold: true, size: 12 };
@@ -661,39 +898,133 @@ export async function exportarPresupuestoExcel(presupuestos, propuesta, usuario)
   await guardarWorkbook(wb, fileName);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   3.1 GENERAR FORM-06 COMO BLOB (Para subir a Supabase)
+   ═══════════════════════════════════════════════════════════════ */
+export async function generarBlobForm06Excel(presupuestos, propuesta, usuario) {
+  const totalRubros = Object.values(presupuestos).reduce((acc, curr) => acc + (curr?.length || 0), 0);
+  if (totalRubros === 0) {
+    throw new Error('No hay objetos de gasto registrados para exportar.');
+  }
+
+  const cod = propuesta?.codigoPropuesta || 'FVIE-2027-001';
+  const nom = propuesta?.titulo || 'Sin título';
+  const autor = usuario?.nombre ? `${usuario.nombre} ${usuario.apellido1 || ''}`.trim() : 'Investigador Principal';
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'SGPI — VIE, TEC';
+  wb.created = new Date();
+
+  const anios = [2027, 2028, 2029];
+  let granTotal = 0;
+  const resumenData = [];
+
+  anios.forEach((ano, idx) => {
+    const filas = presupuestos[ano] || [];
+    const subtotal = filas.reduce((a, b) => a + (Number(b.monto) || 0), 0);
+    granTotal += subtotal;
+    const serv = filas.filter(f => f.categoria === 'Servicios').reduce((a, b) => a + (Number(b.monto) || 0), 0);
+    const mat  = filas.filter(f => f.categoria === 'Materiales').reduce((a, b) => a + (Number(b.monto) || 0), 0);
+    const bec  = filas.filter(f => f.categoria === 'Becas').reduce((a, b) => a + (Number(b.monto) || 0), 0);
+    const eq   = filas.filter(f => f.categoria === 'Equipo').reduce((a, b) => a + (Number(b.monto) || 0), 0);
+    resumenData.push({ ano, serv, mat, bec, eq, total: subtotal });
+
+    const ws = wb.addWorksheet(`Año ${idx + 1} (${ano})`);
+    ws.mergeCells('A1:E1');
+    ws.getCell('A1').value = 'FORMULARIO F-06: PRESUPUESTO OPERATIVO DE PROYECTO';
+    ws.getCell('A1').font = { bold: true, size: 14, color: { argb: 'FF002855' } };
+    ws.mergeCells('A2:E2');
+    ws.getCell('A2').value = `${cod} — ${nom}`;
+    ws.getCell('A2').font = { size: 10, italic: true };
+    ws.mergeCells('A3:E3');
+    ws.getCell('A3').value = `Investigador(a): ${autor}  |  Generado: ${hoy()}`;
+    ws.getCell('A3').font = { size: 9, color: { argb: 'FF627D98' } };
+
+    ws.getRow(5).values = ['Código OG', 'Categoría', 'Detalle de Objeto de Gasto', 'Monto (CRC)', 'Justificación Técnica'];
+    ws.columns = [{ width: 16 }, { width: 14 }, { width: 40 }, { width: 18 }, { width: 40 }];
+    const headerRow = ws.getRow(5);
+    for (let c = 1; c <= 5; c++) {
+      const cell = headerRow.getCell(c);
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002855' } };
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+      cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    }
+
+    let r = 6;
+    filas.forEach(f => {
+      ws.getRow(r).values = [f.codigo, f.categoria, f.detalle || '', Number(f.monto) || 0, f.justificacion || ''];
+      ws.getCell(`D${r}`).numFmt = '#,##0.00';
+      for (let c = 1; c <= 5; c++) {
+        ws.getRow(r).getCell(c).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+      }
+      r++;
+    });
+
+    ws.getRow(r).values = ['', '', `Subtotal Año ${idx + 1} (${ano}):`, subtotal, ''];
+    ws.getCell(`C${r}`).font = { bold: true };
+    ws.getCell(`D${r}`).font = { bold: true };
+    ws.getCell(`D${r}`).numFmt = '#,##0.00';
+    ws.getCell(`D${r}`).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+  });
+
+  const wsR = wb.addWorksheet('Resumen Trienal');
+  wsR.mergeCells('A1:F1');
+  wsR.getCell('A1').value = 'RESUMEN CONSOLIDADO TRIENAL (VIE 2027-2029)';
+  wsR.getCell('A1').font = { bold: true, size: 14, color: { argb: 'FF002855' } };
+
+  wsR.getRow(3).values = ['Año', 'Servicios (CRC)', 'Materiales (CRC)', 'Becas (CRC)', 'Equipo (CRC)', 'Total Anual (CRC)'];
+  wsR.columns = [{ width: 12 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 20 }];
+  const headerRowR = wsR.getRow(3);
+  for (let c = 1; c <= 6; c++) {
+    const cell = headerRowR.getCell(c);
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002855' } };
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+    cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+  }
+
+  let rr = 4;
+  resumenData.forEach(d => {
+    wsR.getRow(rr).values = [d.ano, d.serv, d.mat, d.bec, d.eq, d.total];
+    for (let c = 2; c <= 6; c++) {
+      wsR.getRow(rr).getCell(c).numFmt = '#,##0.00';
+      wsR.getRow(rr).getCell(c).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+    }
+    rr++;
+  });
+
+  wsR.getRow(rr).values = ['GRAN TOTAL', '', '', '', '', granTotal];
+  wsR.getCell(`A${rr}`).font = { bold: true, size: 12 };
+  wsR.getCell(`F${rr}`).font = { bold: true, size: 12 };
+  wsR.getCell(`F${rr}`).numFmt = '#,##0.00';
+  wsR.getCell(`F${rr}`).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+
+  const buffer = await wb.xlsx.writeBuffer();
+  return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
 
 /* ═══════════════════════════════════════════════════════════════
-   4.  DESCARGAR DATOS DE UNA PROPUESTA  →  PDF resumen rápido
+   4. DESCARGAR DATOS DE UNA PROPUESTA → PDF resumen rápido
    ═══════════════════════════════════════════════════════════════ */
 export async function descargarPropuestaPDF(propuestaId, propuestaService) {
   try {
-    const resolvedId = (propuestaId && String(propuestaId) !== 'undefined')
-      ? propuestaId
-      : (localStorage.getItem('propuesta_activa_id') || '');
-
+    const resolvedId = (propuestaId && String(propuestaId) !== 'undefined') ? propuestaId : (localStorage.getItem('propuesta_activa_id') || '');
     let datos = null;
     try {
       if (resolvedId && propuestaService && propuestaService.obtenerPropuesta) {
         datos = await propuestaService.obtenerPropuesta(resolvedId);
       }
-    } catch (_e) {
-      console.warn('No se pudo obtener detalle remoto, usando datos locales:', _e);
-    }
+    } catch (_e) { console.warn('No se pudo obtener detalle remoto, usando datos locales:', _e); }
 
     let local = {};
-    const possibleKeys = [
-      `borrador_form04_${resolvedId}`,
-      `propuesta_${resolvedId}_form04`,
-      'borrador_form04_ultimo'
-    ];
+    const possibleKeys = [`borrador_form04_${resolvedId}`, `propuesta_${resolvedId}_form04`, 'borrador_form04_ultimo'];
     for (const k of possibleKeys) {
       try {
         const raw = localStorage.getItem(k);
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (parsed && typeof parsed === 'object') {
-            local = { ...parsed, ...local };
-          }
+          if (parsed && typeof parsed === 'object') { local = { ...parsed, ...local }; }
         }
       } catch (_e) {}
     }
@@ -712,13 +1043,7 @@ export async function descargarPropuestaPDF(propuestaId, propuestaService) {
 
     const decl = datos?.declaraciones || {};
     const cont = datos?.contenido || {};
-
-    const modalidadesMap = {
-      1: 'Investigación básica',
-      2: 'Investigación aplicada',
-      3: 'Investigación básica y aplicada',
-      4: 'Desarrollo tecnológico'
-    };
+    const modalidadesMap = { 1: 'Investigación básica', 2: 'Investigación aplicada', 3: 'Investigación básica y aplicada', 4: 'Desarrollo tecnológico' };
     const modalidadCalculada = local.modalidad || datos?.modalidad || modalidadesMap[datos?.modalidadId] || 'Investigación básica';
 
     let divulgacionObj = local.divulgacion || {};
@@ -726,21 +1051,12 @@ export async function descargarPropuestaPDF(propuestaId, propuestaService) {
       try {
         const parsedDiv = JSON.parse(cont.estrategiaDivulgacion);
         if (parsedDiv && typeof parsedDiv === 'object') divulgacionObj = { ...divulgacionObj, ...parsedDiv };
-      } catch (_e) {
-        divulgacionObj.cientifica = cont.estrategiaDivulgacion;
-      }
+      } catch (_e) { divulgacionObj.cientifica = cont.estrategiaDivulgacion; }
     }
 
     let integrantesTec = [];
     if (datos?.integrantes && datos.integrantes.length > 0) {
-      integrantesTec = datos.integrantes.map(i => ({
-        nombre: i.nombreCompleto || i.nombre || '',
-        nombreCompleto: i.nombreCompleto || i.nombre || '',
-        escuela: i.instancia || i.escuela || 'TEC',
-        instancia: i.instancia || i.escuela || 'TEC',
-        horas: `${i.horasSemanales || 10} h`,
-        rol: i.rolEquipoId === 1 ? 'Coordinador(a)' : (i.rol || 'Co-Investigador(a)')
-      }));
+      integrantesTec = datos.integrantes.map(i => ({ nombre: i.nombreCompleto || i.nombre || '', nombreCompleto: i.nombreCompleto || i.nombre || '', escuela: i.instancia || i.escuela || 'TEC', instancia: i.instancia || i.escuela || 'TEC', horas: `${i.horasSemanales || 10} h`, rol: i.rolEquipoId === 1 ? 'Coordinador(a)' : (i.rol || 'Co-Investigador(a)') }));
     } else if (local.investigadoresTEC && local.investigadoresTEC.length > 0) {
       integrantesTec = local.investigadoresTEC;
     } else if (local05.integrantes && local05.integrantes.length > 0) {
@@ -749,18 +1065,12 @@ export async function descargarPropuestaPDF(propuestaId, propuestaService) {
 
     let colaboradoresExt = [];
     if (datos?.colaboradoresExternos && datos.colaboradoresExternos.length > 0) {
-      colaboradoresExt = datos.colaboradoresExternos.map(c => ({
-        nombre: `${c.nombreColaborador || ''} ${c.apellido1Colaborador || ''}`.trim() || c.nombre || '',
-        institucion: c.institucionEmpresa || c.institucion || 'Institución Externa',
-        tipo: 'Colaborador(a) Externo'
-      }));
+      colaboradoresExt = datos.colaboradoresExternos.map(c => ({ nombre: `${c.nombreColaborador || ''} ${c.apellido1Colaborador || ''}`.trim() || c.nombre || '', institucion: c.institucionEmpresa || c.institucion || 'Institución Externa', tipo: 'Colaborador(a) Externo' }));
     } else if (local.colaboradoresExternos && local.colaboradoresExternos.length > 0) {
       colaboradoresExt = local.colaboradoresExternos;
     }
 
-    const actividades = (local.actividadesCronograma && local.actividadesCronograma.length > 0)
-      ? local.actividadesCronograma
-      : (local05.actividades || []);
+    const actividades = (local.actividadesCronograma && local.actividadesCronograma.length > 0) ? local.actividadesCronograma : (local05.actividades || []);
 
     const merged = {
       nombreProyecto: datos?.titulo || local.nombreProyecto || local05.nombrePropuesta || '',
@@ -814,19 +1124,15 @@ export async function descargarPropuestaPDF(propuestaId, propuestaService) {
   }
 }
 
-
 /* ═══════════════════════════════════════════════════════════════
-   5.  DESCARGAR PLAN Y RIESGOS DE UNA PROPUESTA  →  XLSX
+   5. DESCARGAR PLAN Y RIESGOS DE UNA PROPUESTA → XLSX
    ═══════════════════════════════════════════════════════════════ */
 export async function descargarPlanRiesgoExcel(propuestaId, propuestaService) {
   let propuesta = null;
   if (propuestaService && propuestaId) {
-    try {
-      propuesta = await propuestaService.obtenerPropuesta(propuestaId);
-    } catch (_e) {}
+    try { propuesta = await propuestaService.obtenerPropuesta(propuestaId); } catch (_e) {}
   }
 
-  // Try primary key first, then fallback to borrador key
   const primaryKey = `propuesta_${propuestaId}_plan_riesgos`;
   const borradorKey = `borrador_form05_${propuestaId}`;
   const localKey04 = `borrador_form04_${propuestaId}`;
@@ -859,9 +1165,8 @@ export async function descargarPlanRiesgoExcel(propuestaId, propuestaService) {
   await exportarForm05Excel(datos, cod);
 }
 
-
 /* ═══════════════════════════════════════════════════════════════
-   6.  DESCARGAR PRESUPUESTO OPERATIVO DE UNA PROPUESTA  →  XLSX
+   6. DESCARGAR PRESUPUESTO OPERATIVO DE UNA PROPUESTA → XLSX
    ═══════════════════════════════════════════════════════════════ */
 export async function descargarPresupuestoDirectoExcel(propuestaId, propuestaService, usuario) {
   try {
@@ -869,16 +1174,12 @@ export async function descargarPresupuestoDirectoExcel(propuestaId, propuestaSer
     const localKey = `propuesta_${propuestaId}_presupuesto`;
     const localRaw = localStorage.getItem(localKey);
     if (localRaw) {
-      try {
-        presupuestos = JSON.parse(localRaw);
-      } catch (_e) {}
+      try { presupuestos = JSON.parse(localRaw); } catch (_e) {}
     }
 
     let propuesta = null;
     if (propuestaService) {
-      try {
-        propuesta = await propuestaService.obtenerPropuesta(propuestaId);
-      } catch (_e) {}
+      try { propuesta = await propuestaService.obtenerPropuesta(propuestaId); } catch (_e) {}
     }
 
     const tieneFilasLocales = presupuestos && Object.values(presupuestos).some(arr => Array.isArray(arr) && arr.length > 0);
@@ -908,4 +1209,234 @@ export async function descargarPresupuestoDirectoExcel(propuestaId, propuestaSer
     console.error('Error al exportar presupuesto:', err);
     alert('Error al generar el archivo Excel de presupuesto.');
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   7. GENERAR RÚBRICA COMO BLOB (Para guardar borrador en S3)
+   ═══════════════════════════════════════════════════════════════ */
+export async function generarBlobRubricaExcel(rubricaData, evaluaciones, productos) {
+  const ExcelJS = (await import('exceljs')).default;
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Rúbrica Oficial');
+
+  const modalidad = rubricaData.nombreRubrica || 'ACTIVIDADES DE FORTALECIMIENTO';
+  
+  // Encabezado
+  ws.mergeCells('A1:I1');
+  const cellTitulo = ws.getCell('A1');
+  cellTitulo.value = `RÚBRICA DE EVALUACIÓN – ${modalidad.toUpperCase()}`;
+  cellTitulo.font = { bold: true, size: 14, color: { argb: 'FF002855' } };
+  cellTitulo.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  ws.mergeCells('A2:I2');
+  ws.getCell('A2').value = 'Convocatoria con fondos VIE 2027 – Vicerrectoría de Investigación y Extensión, Instituto Tecnológico de Costa Rica';
+  ws.getCell('A2').alignment = { horizontal: 'center' };
+
+  ws.mergeCells('A3:B3'); ws.getCell('A3').value = 'Nombre de la propuesta:'; ws.getCell('A3').font = { bold: true };
+  ws.mergeCells('C3:I3'); ws.getCell('C3').value = rubricaData.titulo || '';
+
+  ws.mergeCells('A4:B4'); ws.getCell('A4').value = 'Dependencia académica coordinadora:'; ws.getCell('A4').font = { bold: true };
+  ws.mergeCells('C4:I4'); ws.getCell('C4').value = rubricaData.escuela || '';
+
+  ws.mergeCells('A5:B5'); ws.getCell('A5').value = 'Fecha de evaluación:'; ws.getCell('A5').font = { bold: true };
+  ws.mergeCells('C5:I5'); ws.getCell('C5').value = new Date().toLocaleDateString('es-CR');
+
+  ws.mergeCells('A7:I7');
+  const cellAdvertencia = ws.getCell('A7');
+  cellAdvertencia.value = '⚠ REQUISITOS MÍNIMOS OBLIGATORIOS: Los criterios marcados con ⛔ son requisitos obligatorios.';
+  cellAdvertencia.font = { italic: true, color: { argb: 'FFCC0000' }, size: 10 };
+  cellAdvertencia.alignment = { wrapText: true };
+
+  // Encabezados de tabla
+  const headers = ['Criterio de evaluación', 'Peso', 'Deficiente (0 pts)', 'Regular (6 pts)', 'Bueno (8 pts)', 'Excelente (10 pts)', 'Nivel', 'Subpuntaje', 'Justificación'];
+  const headerRow = ws.getRow(9);
+  headers.forEach((h, i) => {
+    const cell = headerRow.getCell(i + 1);
+    cell.value = h;
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002855' } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+  });
+  headerRow.height = 30;
+
+  let currentRow = 11;
+  const celdasSubtotales = [];
+
+  rubricaData.estructuraRubrica.secciones.forEach((seccion) => {
+    ws.mergeCells(`A${currentRow}:I${currentRow}`);
+    const cellSec = ws.getCell(`A${currentRow}`);
+    cellSec.value = `${seccion.nombre} — Peso: ${seccion.peso_seccion}%`;
+    cellSec.font = { bold: true, size: 12, color: { argb: 'FF002855' } };
+    cellSec.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F0FA' } };
+    currentRow++;
+
+    let subTotalSeccion = 0;
+    let pesoEvaluadoSeccion = 0;
+
+    seccion.criterios.forEach((crit) => {
+      const ev = evaluaciones[crit.id] || {};
+      const esObligatorio = crit.es_requisito_obligatorio;
+      const nombreCriterio = esObligatorio ? `⛔ ${crit.nombre}` : crit.nombre;
+
+      const row = ws.getRow(currentRow);
+      row.getCell(1).value = nombreCriterio;
+      row.getCell(1).font = esObligatorio ? { bold: true, color: { argb: 'FFCC0000' } } : { bold: false };
+      row.getCell(1).alignment = { wrapText: true, vertical: 'top' };
+
+      row.getCell(2).value = crit.peso;
+      row.getCell(2).numFmt = '0"%"';
+      row.getCell(2).alignment = { horizontal: 'center', vertical: 'top' };
+
+      row.getCell(3).value = crit.niveles?.Deficiente || '';
+      row.getCell(4).value = crit.niveles?.Regular || '';
+      row.getCell(5).value = crit.niveles?.Bueno || '';
+      row.getCell(6).value = crit.niveles?.Excelente || '';
+      ['C','D','E','F'].forEach(col => {
+        row.getCell(col).alignment = { wrapText: true, vertical: 'top' };
+        row.getCell(col).font = { size: 9 };
+      });
+
+      row.getCell(7).value = ev.nivel || '';
+      row.getCell(7).font = { bold: true, color: { argb: 'FF006600' } };
+      row.getCell(7).alignment = { horizontal: 'center', vertical: 'middle' };
+
+      const puntajeCalculado = ev.puntaje !== undefined && ev.puntaje !== null ? ev.puntaje : '';
+      row.getCell(8).value = puntajeCalculado;
+      if (puntajeCalculado !== '') {
+        row.getCell(8).font = { bold: true, color: { argb: 'FF002855' } };
+        subTotalSeccion += (puntajeCalculado / 10) * crit.peso;
+        pesoEvaluadoSeccion += crit.peso;
+      }
+      row.getCell(8).alignment = { horizontal: 'center', vertical: 'middle' };
+
+      row.getCell(9).value = ev.justificacion || '';
+      row.getCell(9).alignment = { wrapText: true, vertical: 'top' };
+
+      for (let i = 1; i <= 9; i++) {
+        row.getCell(i).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+      }
+      row.height = 80;
+      currentRow++;
+    });
+
+    ws.mergeCells(`A${currentRow}:F${currentRow}`);
+    ws.getCell(`A${currentRow}`).value = `Subtotal – ${seccion.nombre}`;
+    ws.getCell(`A${currentRow}`).font = { bold: true, italic: true };
+    ws.getCell(`A${currentRow}`).alignment = { horizontal: 'right' };
+
+    if (pesoEvaluadoSeccion > 0) {
+      const notaSeccion = (subTotalSeccion / pesoEvaluadoSeccion) * (seccion.peso_seccion / 100);
+      ws.mergeCells(`G${currentRow}:H${currentRow}`);
+      ws.getCell(`G${currentRow}`).value = parseFloat(notaSeccion.toFixed(2));
+      ws.getCell(`G${currentRow}`).numFmt = '0.00';
+      ws.getCell(`G${currentRow}`).font = { bold: true, color: { argb: 'FF002855' } };
+      ws.getCell(`G${currentRow}`).alignment = { horizontal: 'center' };
+      celdasSubtotales.push(parseFloat(notaSeccion.toFixed(2)));
+    }
+    currentRow += 2;
+  });
+
+  // Calificación final
+  const calificacionFinal = celdasSubtotales.reduce((a, b) => a + b, 0);
+  ws.mergeCells(`A${currentRow}:F${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'PUNTAJE TOTAL (escala 0 – 1)';
+  ws.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
+  ws.getCell(`A${currentRow}`).alignment = { horizontal: 'right' };
+
+  ws.mergeCells(`G${currentRow}:H${currentRow}`);
+  ws.getCell(`G${currentRow}`).value = parseFloat(calificacionFinal.toFixed(2));
+  ws.getCell(`G${currentRow}`).numFmt = '0.00';
+  ws.getCell(`G${currentRow}`).font = { bold: true, size: 14, color: { argb: calificacionFinal >= 0.70 ? 'FF008000' : 'FFCC0000' } };
+  ws.getCell(`G${currentRow}`).alignment = { horizontal: 'center' };
+  currentRow++;
+
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'ESCALA: ≥ 0.70 = RECOMIENDA | < 0.70 = NO RECOMIENDA';
+  ws.getCell(`A${currentRow}`).font = { bold: true, italic: true, color: { argb: 'FF666666' } };
+  ws.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
+  currentRow += 2;
+
+  // Sección de Productos
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = '8. PRODUCTOS ACADÉMICOS — Sección no sumativa';
+  ws.getCell(`A${currentRow}`).font = { bold: true, size: 12, color: { argb: 'FF002855' } };
+  ws.getCell(`A${currentRow}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F0FA' } };
+  currentRow++;
+
+  const esDesarrollo = modalidad.toLowerCase().includes('desarrollo');
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = esDesarrollo 
+    ? 'ATENCIÓN: Todo proyecto de desarrollo tecnológico requiere MÍNIMO 2 productos (1 de PI obligatorio + 1 adicional).'
+    : 'ATENCIÓN: Si el equipo NO cumple con el mínimo, el Comité Técnico NO DEBE RECOMENDAR la propuesta.';
+  ws.getCell(`A${currentRow}`).font = { italic: true, color: { argb: 'FFCC0000' }, size: 10 };
+  ws.getCell(`A${currentRow}`).alignment = { wrapText: true };
+  currentRow++;
+
+  ws.mergeCells(`A${currentRow}:B${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Horas semanales totales:';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  ws.mergeCells(`C${currentRow}:I${currentRow}`);
+  ws.getCell(`C${currentRow}`).value = `${productos.horasSemanales || 0} horas`;
+  currentRow++;
+
+  ws.mergeCells(`A${currentRow}:B${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Mínimo requerido:';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  ws.mergeCells(`C${currentRow}:I${currentRow}`);
+  ws.getCell(`C${currentRow}`).value = `${rubricaData.minimoProductosRequeridos || 0} producto(s)`;
+  currentRow++;
+
+  ws.mergeCells(`A${currentRow}:B${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Cantidad propuesta:';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  ws.mergeCells(`C${currentRow}:I${currentRow}`);
+  ws.getCell(`C${currentRow}`).value = `${productos.cantidadPropuesta || 0}`;
+  currentRow++;
+
+  ws.mergeCells(`A${currentRow}:B${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = 'Tipos comprometidos:';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  ws.mergeCells(`C${currentRow}:I${currentRow}`);
+  ws.getCell(`C${currentRow}`).value = (productos.tiposSeleccionados || []).join(', ') || 'Ninguno';
+  currentRow += 2;
+
+  const cumpleMinimo = productos.cantidadPropuesta >= (rubricaData.minimoProductosRequeridos || 0);
+  ws.mergeCells(`A${currentRow}:B${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = '¿Cumple con el mínimo?';
+  ws.getCell(`A${currentRow}`).font = { bold: true };
+  ws.mergeCells(`C${currentRow}:I${currentRow}`);
+  ws.getCell(`C${currentRow}`).value = cumpleMinimo ? '✓ CUMPLE' : '✗ NO CUMPLE';
+  ws.getCell(`C${currentRow}`).font = { bold: true, color: { argb: cumpleMinimo ? 'FF008000' : 'FFCC0000' } };
+  currentRow += 2;
+
+  ws.mergeCells(`A${currentRow}:I${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = `DICTAMEN: ${calificacionFinal >= 0.70 && cumpleMinimo ? 'PROPUESTA RECOMENDADA' : 'PROPUESTA NO RECOMENDADA'}`;
+  ws.getCell(`A${currentRow}`).font = { bold: true, size: 12, color: { argb: (calificacionFinal >= 0.70 && cumpleMinimo) ? 'FF008000' : 'FFCC0000' } };
+  ws.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
+
+  // Anchos de columna
+  ws.getColumn('A').width = 35;
+  ws.getColumn('B').width = 8;
+  ws.getColumn('C').width = 25;
+  ws.getColumn('D').width = 25;
+  ws.getColumn('E').width = 25;
+  ws.getColumn('F').width = 25;
+  ws.getColumn('G').width = 15;
+  ws.getColumn('H').width = 12;
+  ws.getColumn('I').width = 40;
+
+  const buffer = await wb.xlsx.writeBuffer();
+  return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HELPER: Subir un Blob a Supabase via el servicio de propuestas
+   ═══════════════════════════════════════════════════════════════ */
+export async function subirBlobASupabase(propuestaService, propuestaId, tipoDocumentoId, blob, nombreArchivo) {
+  if (!blob || blob.size === 0) {
+    throw new Error(`El archivo ${nombreArchivo} está vacío`);
+  }
+  const file = new File([blob], nombreArchivo, { type: blob.type });
+  return await propuestaService.subirDocumentoFormulario(propuestaId, tipoDocumentoId, file);
 }

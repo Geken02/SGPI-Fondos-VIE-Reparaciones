@@ -36,6 +36,9 @@ body, input, button, select, textarea {
 .dashboard-layout {
   display: flex;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   background-color: var(--tec-azul-principal);
 }
 
@@ -160,13 +163,19 @@ body, input, button, select, textarea {
   flex-direction: column;
   background-color: var(--tec-bg-pagina);
   min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .main-body {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 32px;
   background-color: var(--tec-bg-pagina);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 
@@ -2336,6 +2345,16 @@ input:checked + .slider:before { transform: translateX(20px); }
 /* ============================================================
    TABLAS INSTITUCIONALES COMPARTIDAS
    ============================================================ */
+
+/* Contenedor que confina el scroll horizontal de tablas anchas a su propia caja */
+.table-responsive-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+
 .institucional-data-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
 
 .institucional-data-table th {
@@ -2447,7 +2466,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 /* ============================================================
    ESTILOS INSTITUCIONALES PARA FORMULARIOS
    ============================================================ */
-.formulario-proyecto-master-wrapper { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; }
+.formulario-proyecto-master-wrapper { max-width: 1240px; width: 100%; min-width: 0; box-sizing: border-box; margin: 0 auto; display: flex; flex-direction: column; overflow-x: hidden; }
 
 .form-top-banner {
   background-color: var(--tec-azul-principal);
@@ -2486,6 +2505,11 @@ input:checked + .slider:before { transform: translateX(20px); }
   border-bottom-right-radius: 8px;
   padding: 32px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .step-counter-label {
@@ -2510,7 +2534,7 @@ input:checked + .slider:before { transform: translateX(20px); }
   margin-bottom: 12px;
 }
 
-.step-content-pane { min-height: 480px; }
+.step-content-pane { min-height: 480px; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; overflow-x: hidden; }
 
 .form-group-block { margin-bottom: 18px; }
 .form-field-label { display: block; font-size: 14px; font-weight: 600; color: var(--tec-texto-dark); margin-bottom: 6px; }
@@ -3415,20 +3439,203 @@ input:checked + .slider:before { transform: translateX(20px); }
   --tec-celeste-suave: #000000;
 }
 
-/* Sobrescrituras específicas para garantizar legibilidad en alto contraste */
+/* Sobrescrituras completas de CARDS y PANELES para Investigador y Vinculación */
 .high-contrast-mode body,
 .high-contrast-mode .dashboard-layout,
 .high-contrast-mode .main-body,
+.high-contrast-mode .investigador-dashboard-container,
+.high-contrast-mode .vinculacion-dashboard-container,
+.high-contrast-mode .vinculacion-dictamenes-container,
+.high-contrast-mode .vinculacion-evaluar-container,
 .high-contrast-mode .dashboard-main-card,
+.high-contrast-mode .kpi-card,
+.high-contrast-mode .kpi-card-highlight,
 .high-contrast-mode .proposal-item-card,
-.high-contrast-mode .convocatoria-card,
 .high-contrast-mode .propuesta-accordion-card,
+.high-contrast-mode .accordion-card-header,
+.high-contrast-mode .accordion-card-body,
+.high-contrast-mode .convocatoria-card,
+.high-contrast-mode .conv-stat-card,
+.high-contrast-mode .convocatoria-card-header,
+.high-contrast-mode .historial-card,
+.high-contrast-mode .historial-card-header,
+.high-contrast-mode .evaluacion-card,
+.high-contrast-mode .eval-card-header,
+.high-contrast-mode .eval-card-obs,
+.high-contrast-mode .subsanacion-card,
+.high-contrast-mode .quick-card,
+.high-contrast-mode .modalidad-card-option,
+.high-contrast-mode .question-toggle-card,
+.high-contrast-mode .expediente-card-box,
+.high-contrast-mode .dictamen-emitido-box,
+.high-contrast-mode .documento-adjunto-card,
+.high-contrast-mode .archivo-firmado-box,
+.high-contrast-mode .dropzone-upload-box,
+.high-contrast-mode .search-result-card,
+.high-contrast-mode .success-meta-card,
+.high-contrast-mode .resumen-oe-card,
+.high-contrast-mode .compromiso-callout-card,
+.high-contrast-mode .compromiso-table-wrapper,
+.high-contrast-mode .donut-chart-wrapper,
+.high-contrast-mode .donut-card,
+.high-contrast-mode .chart-card,
 .high-contrast-mode .modal-content,
 .high-contrast-mode .form-paper-container,
-.high-contrast-mode .new-expense-card-panel {
+.high-contrast-mode .step-content-pane,
+.high-contrast-mode .new-expense-card-panel,
+.high-contrast-mode .proposals-empty-state,
+.high-contrast-mode .crear-propuesta-modal-card,
+.high-contrast-mode .crear-propuesta-modal-body,
+.high-contrast-mode .investigador-propietario-box,
+.high-contrast-mode .filter-search-box,
+.high-contrast-mode .filter-select,
+.high-contrast-mode .proposal-progress-pill,
+.high-contrast-mode .convocatorias-filters-bar,
+.high-contrast-mode .propuestas-filters-bar,
+.high-contrast-mode .filtros-row,
+.high-contrast-mode .filtro-search-wrapper,
+.high-contrast-mode .doc-item-pill,
+.high-contrast-mode .auto-calc-box,
+.high-contrast-mode .presupuesto-summary-footer-box,
+.high-contrast-mode .compromiso-horas-bar,
+.high-contrast-mode .adicionales-container,
+.high-contrast-mode .ayuda-search-box,
+.high-contrast-mode .ayuda-guia-card,
+.high-contrast-mode .plantilla-item-card,
+.high-contrast-mode .crear-propuesta-success-body,
+.high-contrast-mode .success-propuesta-code-box {
+  background: #000000 !important;
   background-color: #000000 !important;
   color: #FFFFFF !important;
-  border-color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+/* Encabezados y pies interiores de tarjetas para evitar zonas claras o fondos desalineados */
+.high-contrast-mode .accordion-card-header,
+.high-contrast-mode .convocatoria-card-header,
+.high-contrast-mode .eval-card-header,
+.high-contrast-mode .historial-card-header,
+.high-contrast-mode .proposal-card-top,
+.high-contrast-mode .proposal-card-footer {
+  background: #0d0d0d !important;
+  background-color: #0d0d0d !important;
+  border-bottom: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+/* Tarjetas activas, seleccionadas o en hover */
+.high-contrast-mode .kpi-card:hover,
+.high-contrast-mode .kpi-card-highlight,
+.high-contrast-mode .proposal-item-card:hover,
+.high-contrast-mode .propuesta-accordion-card.open,
+.high-contrast-mode .convocatoria-card:hover,
+.high-contrast-mode .historial-card:hover,
+.high-contrast-mode .quick-card:hover,
+.high-contrast-mode .modalidad-card-option.is-selected,
+.high-contrast-mode .documento-adjunto-card:hover,
+.high-contrast-mode .evaluacion-card:hover {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+  outline-offset: -2px !important;
+  background-color: #000000 !important;
+}
+
+/* Círculo selector de modalidad */
+.high-contrast-mode .modalidad-radio-circle {
+  border: 2px solid #FFFFFF !important;
+  background-color: #000000 !important;
+}
+
+.high-contrast-mode .modalidad-card-option.is-selected .modalidad-radio-circle {
+  border-color: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+}
+
+/* Textos de títulos, etiquetas, métricas y detalles dentro de tarjetas */
+.high-contrast-mode .kpi-card-label,
+.high-contrast-mode .expediente-meta-label,
+.high-contrast-mode .quick-card-sub,
+.high-contrast-mode .proposal-card-meta,
+.high-contrast-mode .historial-card-meta,
+.high-contrast-mode .conv-card-desc,
+.high-contrast-mode .legend-text,
+.high-contrast-mode .proposal-code {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .kpi-big-number,
+.high-contrast-mode .cie-big-number,
+.high-contrast-mode .proposal-card-title,
+.high-contrast-mode .historial-card-title,
+.high-contrast-mode .quick-card-title,
+.high-contrast-mode .dashboard-main-title {
+  color: #FFFFFF !important;
+}
+
+/* Botón mini de cancelar propuesta (X) */
+.high-contrast-mode .btn-cancelar-propuesta-mini {
+  background-color: #000000 !important;
+  color: #FF3333 !important;
+  border: 2px solid #FF3333 !important;
+}
+
+.high-contrast-mode .btn-cancelar-propuesta-mini:hover {
+  background-color: #FF3333 !important;
+  color: #000000 !important;
+}
+
+/* Gráfico donut de estados de propuesta en alto contraste */
+.high-contrast-mode .donut-bg-track {
+  stroke: #333333 !important;
+}
+
+.high-contrast-mode .segment-revision {
+  stroke: #0284C7 !important;
+}
+
+.high-contrast-mode .segment-aprobadas {
+  stroke: #00FF66 !important;
+}
+
+.high-contrast-mode .segment-rechazadas {
+  stroke: #FF3333 !important;
+}
+
+.high-contrast-mode .segment-canceladas {
+  stroke: #FFFFFF !important;
+}
+
+.high-contrast-mode .donut-center-value {
+  fill: #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+/* Compatibilidad nativa con configuración de Alto Contraste del Sistema Operativo */
+@media (prefers-contrast: more), (forced-colors: active) {
+  .dashboard-main-card,
+  .kpi-card,
+  .proposal-item-card,
+  .propuesta-accordion-card,
+  .convocatoria-card,
+  .historial-card,
+  .evaluacion-card,
+  .quick-card,
+  .modalidad-card-option,
+  .expediente-card-box,
+  .documento-adjunto-card,
+  .resumen-oe-card,
+  .compromiso-callout-card {
+    border: 2px solid CanvasText !important;
+    box-shadow: none !important;
+  }
+
+  .kpi-card:hover,
+  .modalidad-card-option.is-selected,
+  .propuesta-accordion-card.open {
+    outline: 2px solid Highlight !important;
+    border-color: Highlight !important;
+  }
 }
 
 .high-contrast-mode .tec-sidebar {
@@ -3694,4 +3901,4388 @@ input:checked + .slider:before { transform: translateX(20px); }
 .high-contrast-mode .sidebar-pill-btn:hover:not(.active) .sidebar-pill-icon svg circle {
   stroke: #000000 !important;
   color: #000000 !important;
+}
+
+/* ==========================================================================
+   PARCHE GLOBAL V3 - RÚBRICA + EXPEDIENTE + HOVER + SVG INLINE
+   Se pega en dashboard.css porque es el único que carga en TODAS las vistas.
+   Gana sobre atributos stroke="" inline gracias a !important.
+   ========================================================================== */
+
+/* ---------- RÚBRICA: sidebar de secciones ---------- */
+
+/* Hover sobre item INACTIVO: gris oscuro (NO amarillo) para no perder el texto */
+.high-contrast-mode .rubrica-container .nav-item:hover:not(.active) {
+  background-color: #1a1a1a !important;
+}
+.high-contrast-mode .rubrica-container .nav-item:hover:not(.active) .nav-nombre,
+.high-contrast-mode .rubrica-container .nav-item:hover:not(.active) .nav-peso {
+  color: #FFFF00 !important;
+}
+
+/* Item ACTIVO: fondo amarillo + TODO el texto NEGRO (nombre y peso) */
+.high-contrast-mode .rubrica-container .nav-item.active {
+  background-color: #FFFF00 !important;
+  border-left-color: #000000 !important;
+}
+.high-contrast-mode .rubrica-container .nav-item.active .nav-nombre,
+.high-contrast-mode .rubrica-container .nav-item.active .nav-peso,
+.high-contrast-mode .rubrica-container .nav-item.active .nav-text span {
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+/* El círculo del ícono del item activo: fondo negro + número amarillo */
+.high-contrast-mode .rubrica-container .nav-item.active .nav-icon {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #000000 !important;
+}
+
+/* Items inactivos: nombre amarillo, peso gris */
+.high-contrast-mode .rubrica-container .nav-item .nav-nombre { color: #FFFF00 !important; }
+.high-contrast-mode .rubrica-container .nav-item .nav-peso { color: #CCCCCC !important; }
+.high-contrast-mode .rubrica-container .nav-item .nav-icon {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+/* Item completado (done): verde */
+.high-contrast-mode .rubrica-container .nav-item.done .nav-nombre { color: #00FF00 !important; }
+.high-contrast-mode .rubrica-container .nav-item.done .nav-icon {
+  background-color: #00FF00 !important;
+  color: #000000 !important;
+}
+
+/* ---------- RÚBRICA: botón IA y badges ---------- */
+.high-contrast-mode .rubrica-container .btn-analizar-ia,
+.high-contrast-mode .rubrica-container .sugerencia-ia button {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+.high-contrast-mode .rubrica-container .obligatorio-badge {
+  background-color: #000000 !important;
+  color: #FF3333 !important;
+  border: 2px solid #FF3333 !important;
+}
+
+/* ---------- EXPEDIENTE: menú lateral de secciones ---------- */
+
+/* Hover inactivo: gris oscuro, texto amarillo */
+.high-contrast-mode .exp-nav-item:hover:not(.active) {
+  background-color: #1a1a1a !important;
+}
+.high-contrast-mode .exp-nav-item:hover:not(.active) svg { stroke: #FFFF00 !important; }
+.high-contrast-mode .exp-nav-item:hover:not(.active) .exp-nav-label { color: #FFFF00 !important; }
+
+/* Item ACTIVO: fondo amarillo + texto NEGRO + ícono NEGRO */
+.high-contrast-mode .exp-nav-item.active {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+.high-contrast-mode .exp-nav-item.active .exp-nav-label,
+.high-contrast-mode .exp-nav-item.active span {
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+.high-contrast-mode .exp-nav-item.active svg {
+  stroke: #000000 !important;   /* mata el stroke="#002855" inline */
+}
+
+/* Items inactivos: texto amarillo, ícono amarillo */
+.high-contrast-mode .exp-nav-item svg { stroke: #FFFF00 !important; }
+.high-contrast-mode .exp-nav-item .exp-nav-label { color: #FFFF00 !important; }
+
+/* ---------- EXPEDIENTE: botón "Registrar Evaluación" ---------- */
+.high-contrast-mode .exp-btn-evaluar {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+.high-contrast-mode .exp-btn-evaluar svg { stroke: #000000 !important; }  /* mata color="white" inline */
+
+/* ---------- EXPEDIENTE: ícono del header de sección (caja amarilla) ---------- */
+.high-contrast-mode .exp-doc-header-icon {
+  background-color: #FFFF00 !important;
+  border: 1px solid #FFFFFF !important;
+}
+.high-contrast-mode .exp-doc-header-icon svg { stroke: #000000 !important; }
+
+/* ---------- EXPEDIENTE: íconos de metadata y botones pequeños ---------- */
+.high-contrast-mode .exp-meta-icon svg,
+.high-contrast-mode .exp-icon-btn svg,
+.high-contrast-mode .exp-back-btn svg,
+.high-contrast-mode .exp-doc-icon-box svg,
+.high-contrast-mode .exp-doc-download svg,
+.high-contrast-mode .exp-info-box svg,
+.high-contrast-mode .exp-alert-box svg,
+.high-contrast-mode .exp-notas-title svg {
+  stroke: #FFFF00 !important;   /* todos los SVG decorativos → amarillo sobre negro */
+}
+/* ==========================================================================
+   PARCHE GLOBAL - MODAL CREAR PROPUESTA, FILTROS, SELECTS Y ELEMENTOS BLANCOS
+   Evita que queden contenedores en blanco y asegura alto contraste estricto
+   ========================================================================== */
+
+/* 1. Modal Crear Propuesta */
+.high-contrast-mode .crear-propuesta-modal-overlay {
+  background: rgba(0, 0, 0, 0.88) !important;
+  background-color: rgba(0, 0, 0, 0.88) !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: 0 0 0 1px #000000 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-header {
+  background: #0d0d0d !important;
+  background-color: #0d0d0d !important;
+  color: #FFFFFF !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-header .modal-header-title {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-header .btn-modal-close {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-body {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-footer {
+  background: #0d0d0d !important;
+  background-color: #0d0d0d !important;
+  color: #FFFFFF !important;
+  border-top: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .modal-instructions {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .form-label-modal {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .form-input-modal,
+.high-contrast-mode select.form-input-modal {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .form-input-modal:focus,
+.high-contrast-mode select.form-input-modal:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 0, 0.4) !important;
+}
+
+.high-contrast-mode .form-input-modal option,
+.high-contrast-mode select.form-input-modal option {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode select.form-input-modal option:disabled {
+  color: #777777 !important;
+}
+
+.high-contrast-mode .investigador-propietario-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .propietario-avatar-circle {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .propietario-nombre {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .propietario-rol {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .link-incorporar-equipo {
+  color: #FFFF00 !important;
+  text-decoration: underline !important;
+}
+
+.high-contrast-mode .alert-error-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FF3333 !important;
+  color: #FF3333 !important;
+}
+
+/* 2. Filtros y Búsqueda en Dashboards (Investigador y Vinculación) */
+.high-contrast-mode .filter-search-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .filter-search-box:focus-within {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .filter-search-input,
+.high-contrast-mode .filter-search-box input {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .filter-search-input::placeholder,
+.high-contrast-mode .filter-search-box input::placeholder {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .filter-search-box svg {
+  stroke: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .filter-select,
+.high-contrast-mode select.filter-select,
+.high-contrast-mode .filtro-select,
+.high-contrast-mode select.filtro-select,
+.high-contrast-mode .filter-date-input,
+.high-contrast-mode select {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .filter-select:focus,
+.high-contrast-mode select.filter-select:focus,
+.high-contrast-mode .filtro-select:focus,
+.high-contrast-mode select.filtro-select:focus,
+.high-contrast-mode .filter-date-input:focus,
+.high-contrast-mode select:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .filter-select option,
+.high-contrast-mode select.filter-select option,
+.high-contrast-mode .filtro-select option,
+.high-contrast-mode select.filtro-select option,
+.high-contrast-mode select option {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .convocatorias-filters-bar,
+.high-contrast-mode .propuestas-filters-bar,
+.high-contrast-mode .filtros-row {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-limpiar-filtros {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-limpiar-filtros:hover {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* 3. Píldoras de Progreso y Estados en Tarjetas */
+.high-contrast-mode .proposal-progress-pill {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .proposal-progress-pill * {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .propuesta-codigo-pill,
+.high-contrast-mode .propuestas-codigo-badge {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .propuesta-escuela-text {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-status.warning,
+.high-contrast-mode .badge-status.info,
+.high-contrast-mode .badge-status-vinculacion.pendiente,
+.high-contrast-mode .badge-status-vinculacion.en-curso,
+.high-contrast-mode .badge-status-vinculacion.completada {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+/* 4. LimitedInput y Contadores */
+.high-contrast-mode .limited-field-container label,
+.high-contrast-mode .limited-field-label {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .limited-counter {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .limited-counter.at-limit {
+  color: #FF3333 !important;
+}
+
+.high-contrast-mode .limit-error-msg {
+  color: #FF3333 !important;
+}
+
+/* 5. Vista de Éxito al Crear Propuesta */
+.high-contrast-mode .crear-propuesta-success-body {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .success-icon-badge {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #00FF66 !important;
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .success-modal-title {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .success-modal-subtitle {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .success-propuesta-code-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .success-propuesta-code-box .code-label {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .success-propuesta-code-box .code-value {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .success-meta-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .success-meta-card .meta-title {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .success-meta-card .meta-val {
+  color: #FFFFFF !important;
+}
+
+/* 6. Documentos y Evaluaciones en Mis Propuestas */
+.high-contrast-mode .doc-item-pill,
+.high-contrast-mode .doc-item-pill.doc-completed,
+.high-contrast-mode .doc-item-pill.doc-pending {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .doc-item-pill.doc-completed {
+  border-color: #00FF66 !important;
+}
+
+.high-contrast-mode .doc-item-pill.doc-completed .doc-status-text {
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .doc-item-pill.doc-pending {
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .doc-item-pill.doc-pending .doc-status-text {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-aprobado {
+  background: #000000 !important;
+  border: 1.5px solid #00FF66 !important;
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .badge-nota {
+  background: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-pendiente {
+  background: #000000 !important;
+  border: 1.5px solid #FFCC00 !important;
+  color: #FFCC00 !important;
+}
+
+.high-contrast-mode .btn-ver-dictamen {
+  background: #000000 !important;
+  border: 1px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-ver-dictamen:hover {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* 7. Presupuesto, Tabs y Tablas */
+.high-contrast-mode .tab-year-btn {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tab-year-btn.active {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  border-color: #FFFF00 !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-dashed-add-row {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px dashed #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-dashed-add-row:hover {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .auto-calc-box,
+.high-contrast-mode .presupuesto-summary-footer-box,
+.high-contrast-mode .compromiso-horas-bar,
+.high-contrast-mode .adicionales-container {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .compromiso-horas-pill {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .tabla-footer {
+  background: #0d0d0d !important;
+  background-color: #0d0d0d !important;
+  border-top: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-page {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-page.active {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border-color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+/* ==========================================================================
+   FIX V4: SPANS INTERNOS DE BOTONES (la regla genérica .high-contrast-mode span
+   estaba pintando de blanco el texto sobre fondos amarillos)
+   ========================================================================== */
+
+/* Botón "Registrar Evaluación": fondo amarillo → texto NEGRO */
+.high-contrast-mode .exp-btn-evaluar,
+.high-contrast-mode .exp-btn-evaluar span {
+  color: #000000 !important;
+}
+
+/* Botón "Volver": fondo negro → texto AMARILLO */
+.high-contrast-mode .exp-back-btn,
+.high-contrast-mode .exp-back-btn span {
+  color: #FFFF00 !important;
+}
+
+/* Estado "Evaluación Completada": texto verde sobre negro */
+.high-contrast-mode .exp-status-box.completed,
+.high-contrast-mode .exp-status-box.completed span {
+  color: #00FF00 !important;
+}
+
+/* Estado "Solo lectura": texto blanco sobre negro */
+.high-contrast-mode .exp-status-box.readonly,
+.high-contrast-mode .exp-status-box.readonly span {
+  color: #FFFFFF !important;
+}
+
+/* Botón "Crear propuesta" activo del sidebar (por si su span cae en el mismo bug) */
+.high-contrast-mode button.sidebar-pill-btn.active,
+.high-contrast-mode button.sidebar-pill-btn.active span {
+  color: #000000 !important;
+}
+
+/* Botones de acciones en rúbrica/expediente con texto en span */
+.high-contrast-mode .asignar-btn-submit span,
+.high-contrast-mode .btn-modal-crear span,
+.high-contrast-mode .btn-enviar span {
+  color: #000000 !important;
+}
+
+
+/* ==========================================================================
+   ALTO CONTRASTE INTEGRAL: SUBSANACIONES, BADGES DE ESTADO Y BANNERS
+   Resuelve fondos blancos remanentes y etiquetas de estado ilegibles
+   ========================================================================== */
+
+/* 1. MÓDULO DE SUBSANACIONES (Sección 2 de Propuestas) */
+.high-contrast-mode .subsanacion-section-highlight,
+.high-contrast-mode .expediente-section.subsanacion-section-highlight {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  box-shadow: none !important;
+}
+
+.high-contrast-mode .subsanacion-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-header-meta {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border-bottom: 2px solid #333333 !important;
+}
+
+.high-contrast-mode .subsanacion-meta-label {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .subsanacion-meta-value {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+/* Badge de Estado de Subsanación (ej: PENDIENTE) */
+.high-contrast-mode .subsanacion-badge-status {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .subsanacion-observaciones-box {
+  background: #0d0d0d !important;
+  background-color: #0d0d0d !important;
+  border: 2px solid #FFFF00 !important;
+  border-left: 6px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .subsanacion-obs-title {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .subsanacion-obs-text {
+  color: #FFFFFF !important;
+  font-style: italic !important;
+}
+
+.high-contrast-mode .subsanacion-action-panel {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-step-title {
+  color: #FFFF00 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .subsanacion-quick-links {
+  background: transparent !important;
+}
+
+.high-contrast-mode .btn-sub-edit {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .btn-sub-edit:hover {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .subsanacion-file-upload-box {
+  background: #000000 !important;
+}
+
+.high-contrast-mode .btn-sub-upload {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px dashed #FFFF00 !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .btn-sub-upload:hover {
+  background: #1a1a1a !important;
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .subsanacion-files-list {
+  background: transparent !important;
+}
+
+.high-contrast-mode .subsanacion-file-tag {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .subsanacion-file-tag button {
+  color: #FF3333 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .modal-form-input,
+.high-contrast-mode textarea.modal-form-input {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .modal-form-input:focus,
+.high-contrast-mode textarea.modal-form-input:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .modal-form-input::placeholder,
+.high-contrast-mode textarea.modal-form-input::placeholder {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .btn-reenviar-propuesta {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-reenviar-propuesta:hover {
+  background: #CCCC00 !important;
+  background-color: #CCCC00 !important;
+}
+
+.high-contrast-mode .subsanacion-banner-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-banner-title {
+  color: #FFFF00 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .subsanacion-banner-sub {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-respondida-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #00FF66 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-resp-badge {
+  color: #00FF66 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .subsanacion-resp-date {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .subsanacion-resp-content {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .subsanacion-resp-footnote {
+  color: #00FF66 !important;
+}
+
+/* 2. BANNERS INFORMATIVOS Y DE ESTADO EN PROPUESTAS */
+.high-contrast-mode .banner-propuesta-cancelada {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #CCCCCC !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .banner-propuesta-cancelada * {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .banner-envio-vinculacion {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #00FF66 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .banner-envio-vinculacion div,
+.high-contrast-mode .banner-envio-vinculacion strong,
+.high-contrast-mode .banner-envio-vinculacion span {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .banner-solo-coordinador {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .banner-subsanacion-rechazada {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FF3333 !important;
+  color: #FF3333 !important;
+}
+
+.high-contrast-mode .banner-subsanacion-rechazada * {
+  color: #FF3333 !important;
+}
+
+/* 3. ETIQUETAS DE ESTADO Y BADGES VISIBLES EN TODO EL SISTEMA */
+.high-contrast-mode .badge-status {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .badge-status.info,
+.high-contrast-mode .badge-info,
+.high-contrast-mode .badge-status.borrador {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #00FFFF !important;
+  border: 1.5px solid #00FFFF !important;
+}
+
+.high-contrast-mode .badge-status.warning,
+.high-contrast-mode .badge-warning,
+.high-contrast-mode .estado-badge.warning {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-status.success,
+.high-contrast-mode .badge-success,
+.high-contrast-mode .estado-badge.success,
+.high-contrast-mode .badge-aprobado {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #00FF66 !important;
+  border: 1.5px solid #00FF66 !important;
+}
+
+.high-contrast-mode .badge-subsanacion,
+.high-contrast-mode .subsanacion-badge-status {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-cancelada,
+.high-contrast-mode .estado-badge.gray {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #CCCCCC !important;
+  border: 1.5px solid #CCCCCC !important;
+}
+
+.high-contrast-mode .eval-badge,
+.high-contrast-mode .eval-badge.badge-proximo {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #CCCCCC !important;
+  border: 1.5px solid #CCCCCC !important;
+}
+
+.high-contrast-mode .badge-coordinador-bloqueo {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #CCCCCC !important;
+  border: 1px solid #CCCCCC !important;
+}
+
+.high-contrast-mode .badge-equipo-miembro {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-nota {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-pendiente {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFCC00 !important;
+  border: 1.5px solid #FFCC00 !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion.pendiente {
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion.en-curso {
+  border-color: #00FFFF !important;
+  color: #00FFFF !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion.completada {
+  border-color: #00FF66 !important;
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .conv-status-badge {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .conv-status-badge.status-open {
+  border-color: #00FF66 !important;
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .conv-status-badge.status-warning {
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .conv-status-badge.status-closed {
+  border-color: #CCCCCC !important;
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .gv-badge,
+.high-contrast-mode .dir-badge,
+.high-contrast-mode .cie-badge {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .gv-badge-punto,
+.high-contrast-mode .dir-badge-punto {
+  background-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-cancelar-propuesta-mini {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FF3333 !important;
+  border: 1.5px solid #FF3333 !important;
+}
+
+.high-contrast-mode .btn-cancelar-propuesta-mini:hover {
+  background: #FF3333 !important;
+  background-color: #FF3333 !important;
+  color: #000000 !important;
+}
+
+/* ============================================================
+   SGPI - ENCABEZADOS DE TABLA EN MAYÚSCULA INSTITUCIONAL
+   ============================================================ */
+th,
+.table th,
+.vinculacion-table th,
+.institucional-data-table th,
+.compromiso-grid-table th {
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================================
+   BARRA DE NAVEGACIÓN Y STEPPER DEL FORMULARIO 04 (PROYECTO)
+   ============================================================ */
+.form-stepper-container {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-stepper-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.stepper-title-area {
+  flex: 1;
+  min-width: 280px;
+}
+
+.stepper-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.stepper-current-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #002855;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stepper-status-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stepper-status-badge.badge-completo {
+  background-color: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.stepper-status-badge.badge-incompleto {
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.stepper-progress-box {
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stepper-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #334155;
+}
+
+.stepper-progress-track {
+  width: 100%;
+  height: 8px;
+  background-color: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.stepper-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0284c7 0%, #16a34a 100%);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.form-stepper-scroll-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+}
+
+.form-stepper-scroll-strip::-webkit-scrollbar {
+  height: 6px;
+}
+
+.form-stepper-scroll-strip::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.form-step-tab {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.form-step-tab:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.form-step-tab.active-step {
+  background: #002855;
+  border-color: #002855;
+  box-shadow: 0 2px 6px rgba(0, 40, 85, 0.25);
+}
+
+.form-step-tab.active-step .step-tab-num {
+  background: #ffffff;
+  color: #002855;
+  border-color: #ffffff;
+}
+
+.form-step-tab.active-step .step-tab-short-name {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.form-step-tab.active-step .step-tab-status-text {
+  color: #fbbf24 !important;
+}
+
+.step-tab-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.form-step-tab.complete-step .step-tab-num {
+  background: #22c55e;
+  border-color: #16a34a;
+  color: #ffffff;
+}
+
+.step-tab-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.step-tab-short-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.step-tab-status-text {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.step-tab-status-text.text-green {
+  color: #16a34a;
+}
+
+.step-tab-status-text.text-amber {
+  color: #d97706;
+}
+
+/* Soporte para modo Alto Contraste */
+body.high-contrast .form-stepper-container {
+  background: #000000 !important;
+  border: 2px solid #ffff00 !important;
+}
+
+body.high-contrast .stepper-kicker {
+  color: #ffff00 !important;
+}
+
+body.high-contrast .stepper-current-title {
+  color: #ffffff !important;
+}
+
+body.high-contrast .stepper-status-badge.badge-completo {
+  background: #000000 !important;
+  color: #00ff00 !important;
+  border: 1px solid #00ff00 !important;
+}
+
+body.high-contrast .stepper-status-badge.badge-incompleto {
+  background: #000000 !important;
+  color: #ffff00 !important;
+  border: 1px solid #ffff00 !important;
+}
+
+body.high-contrast .stepper-progress-track {
+  background-color: #333333 !important;
+  border: 1px solid #ffff00 !important;
+}
+
+body.high-contrast .stepper-progress-fill {
+  background: #ffff00 !important;
+}
+
+body.high-contrast .form-step-tab {
+  background: #000000 !important;
+  border: 1px solid #ffffff !important;
+}
+
+body.high-contrast .form-step-tab .step-tab-short-name {
+  color: #ffffff !important;
+}
+
+body.high-contrast .form-step-tab.active-step {
+  background: #ffff00 !important;
+  border-color: #ffff00 !important;
+}
+
+body.high-contrast .form-step-tab.active-step .step-tab-num {
+  background: #000000 !important;
+  color: #ffff00 !important;
+}
+
+body.high-contrast .form-step-tab.active-step .step-tab-short-name {
+  color: #000000 !important;
+}
+
+body.high-contrast .form-step-tab.active-step .step-tab-status-text {
+  color: #000000 !important;
+}
+
+/* Soporte de botón para accesos rápidos (Avisos) */
+button.quick-card,
+.quick-card-btn {
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  border: 1px solid var(--tec-borde);
+  background-color: var(--tec-card-bg);
+  cursor: pointer;
+  padding: 14px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.2s ease;
+}
+
+button.quick-card:focus-visible,
+.quick-card-btn:focus-visible {
+  outline: 2px solid var(--tec-boton-primario);
+  outline-offset: 2px;
+}
+
+body.high-contrast button.quick-card,
+body.high-contrast .quick-card-btn {
+  background-color: #000000 !important;
+  border: 1px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast button.quick-card:hover,
+body.high-contrast .quick-card-btn:hover {
+  border-color: #ffff00 !important;
+  box-shadow: 0 0 8px rgba(255, 255, 0, 0.4) !important;
+}
+
+/* ============================================================
+   ALTO CONTRASTE: STEPPER FORMULARIO 04, BADGES HISTORIAL Y PUNTOS DONUT
+   ============================================================ */
+
+/* Stepper Formulario 04 en Alto Contraste */
+.high-contrast-mode .form-stepper-container,
+body.high-contrast .form-stepper-container,
+body.high-contrast-mode .form-stepper-container {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+.high-contrast-mode .form-stepper-header,
+body.high-contrast .form-stepper-header,
+body.high-contrast-mode .form-stepper-header {
+  border-bottom: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .stepper-kicker,
+body.high-contrast .stepper-kicker,
+body.high-contrast-mode .stepper-kicker {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .stepper-current-title,
+body.high-contrast .stepper-current-title,
+body.high-contrast-mode .stepper-current-title {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .stepper-current-title strong,
+body.high-contrast .stepper-current-title strong,
+body.high-contrast-mode .stepper-current-title strong {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .stepper-status-badge.badge-completo,
+body.high-contrast .stepper-status-badge.badge-completo,
+body.high-contrast-mode .stepper-status-badge.badge-completo {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #00FF66 !important;
+  border: 1.5px solid #00FF66 !important;
+}
+
+.high-contrast-mode .stepper-status-badge.badge-incompleto,
+body.high-contrast .stepper-status-badge.badge-incompleto,
+body.high-contrast-mode .stepper-status-badge.badge-incompleto {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .stepper-progress-label,
+body.high-contrast .stepper-progress-label,
+body.high-contrast-mode .stepper-progress-label {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .stepper-progress-label strong,
+body.high-contrast .stepper-progress-label strong,
+body.high-contrast-mode .stepper-progress-label strong {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .stepper-progress-track,
+body.high-contrast .stepper-progress-track,
+body.high-contrast-mode .stepper-progress-track {
+  background-color: #222222 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .stepper-progress-fill,
+body.high-contrast .stepper-progress-fill,
+body.high-contrast-mode .stepper-progress-fill {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .form-step-tab,
+body.high-contrast .form-step-tab,
+body.high-contrast-mode .form-step-tab {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .form-step-tab:hover,
+body.high-contrast .form-step-tab:hover,
+body.high-contrast-mode .form-step-tab:hover {
+  background-color: #1a1a1a !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .form-step-tab.active-step,
+body.high-contrast .form-step-tab.active-step,
+body.high-contrast-mode .form-step-tab.active-step {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .form-step-tab.active-step .step-tab-num,
+body.high-contrast .form-step-tab.active-step .step-tab-num,
+body.high-contrast-mode .form-step-tab.active-step .step-tab-num {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border-color: #000000 !important;
+}
+
+.high-contrast-mode .form-step-tab.active-step .step-tab-short-name,
+body.high-contrast .form-step-tab.active-step .step-tab-short-name,
+body.high-contrast-mode .form-step-tab.active-step .step-tab-short-name {
+  color: #000000 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .form-step-tab.active-step .step-tab-status-text,
+body.high-contrast .form-step-tab.active-step .step-tab-status-text,
+body.high-contrast-mode .form-step-tab.active-step .step-tab-status-text {
+  color: #000000 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .step-tab-num,
+body.high-contrast .step-tab-num,
+body.high-contrast-mode .step-tab-num {
+  background: #000000 !important;
+  border: 1px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .form-step-tab.complete-step .step-tab-num,
+body.high-contrast .form-step-tab.complete-step .step-tab-num,
+body.high-contrast-mode .form-step-tab.complete-step .step-tab-num {
+  background: #00FF66 !important;
+  background-color: #00FF66 !important;
+  color: #000000 !important;
+  border-color: #00FF66 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .step-tab-short-name,
+body.high-contrast .step-tab-short-name,
+body.high-contrast-mode .step-tab-short-name {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .step-tab-status-text.text-green,
+body.high-contrast .step-tab-status-text.text-green,
+body.high-contrast-mode .step-tab-status-text.text-green {
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .step-tab-status-text.text-amber,
+body.high-contrast .step-tab-status-text.text-amber,
+body.high-contrast-mode .step-tab-status-text.text-amber {
+  color: #FFFF00 !important;
+}
+
+/* Etiquetas en Historial de Proyectos */
+.high-contrast-mode .historial-tag-badge,
+body.high-contrast .historial-tag-badge,
+body.high-contrast-mode .historial-tag-badge {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+/* Puntos de leyenda del Gráfico de Dona en Alto Contraste */
+.high-contrast-mode .dot.dot-cyan,
+body.high-contrast .dot.dot-cyan,
+body.high-contrast-mode .dot.dot-cyan {
+  background-color: #0284C7 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .dot.dot-dark,
+body.high-contrast .dot.dot-dark,
+body.high-contrast-mode .dot.dot-dark {
+  background-color: #00FF66 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .dot.dot-coral,
+body.high-contrast .dot.dot-coral,
+body.high-contrast-mode .dot.dot-coral {
+  background-color: #FF3333 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .dot.dot-gray,
+body.high-contrast .dot.dot-gray,
+body.high-contrast-mode .dot.dot-gray {
+  background-color: #FFFFFF !important;
+  border: 1.5px solid #000000 !important;
+}
+
+.high-contrast-mode .kpi-legend-row .legend-text,
+body.high-contrast .kpi-legend-row .legend-text,
+body.high-contrast-mode .kpi-legend-row .legend-text {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .kpi-legend-row .legend-text strong,
+body.high-contrast .kpi-legend-row .legend-text strong,
+body.high-contrast-mode .kpi-legend-row .legend-text strong {
+  color: #FFFF00 !important;
+}
+
+/* ============================================================
+   SOBREESCRITURAS DE VISIBILIDAD EN MODO ALTO CONTRASTE (PROPUESTAS Y EXPEDIENTES)
+   ============================================================ */
+
+/* Encabezados de sección dentro del acordeón (evita que se vuelvan negros sobre fondo negro) */
+.high-contrast-mode .section-header-title,
+body.high-contrast .section-header-title,
+body.high-contrast-mode .section-header-title {
+  color: #FFFF00 !important;
+  font-weight: 800 !important;
+}
+
+/* Pastillas de documentos del investigador (F-01, F-02, F-03) */
+.high-contrast-mode .doc-item-pill,
+body.high-contrast .doc-item-pill,
+body.high-contrast-mode .doc-item-pill {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .doc-item-pill.doc-completed,
+body.high-contrast .doc-item-pill.doc-completed,
+body.high-contrast-mode .doc-item-pill.doc-completed {
+  border-color: #00FF66 !important;
+}
+
+.high-contrast-mode .doc-item-pill.doc-pending,
+body.high-contrast .doc-item-pill.doc-pending,
+body.high-contrast-mode .doc-item-pill.doc-pending {
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .doc-code,
+body.high-contrast .doc-code,
+body.high-contrast-mode .doc-code {
+  color: #FFFF00 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .doc-name,
+body.high-contrast .doc-name,
+body.high-contrast-mode .doc-name {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .doc-status-text,
+body.high-contrast .doc-status-text,
+body.high-contrast-mode .doc-status-text {
+  color: #00FF66 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .doc-status-text.pending,
+body.high-contrast .doc-status-text.pending,
+body.high-contrast-mode .doc-status-text.pending {
+  color: #FFFF00 !important;
+  font-weight: 800 !important;
+}
+
+/* Banner Enviar a Vinculación en alto contraste */
+.high-contrast-mode .banner-enviar-vinculacion,
+body.high-contrast .banner-enviar-vinculacion,
+body.high-contrast-mode .banner-enviar-vinculacion {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #00FF66 !important;
+}
+
+.high-contrast-mode .banner-enviar-vinculacion div,
+body.high-contrast .banner-enviar-vinculacion div,
+body.high-contrast-mode .banner-enviar-vinculacion div {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .banner-enviar-vinculacion strong,
+body.high-contrast .banner-enviar-vinculacion strong,
+body.high-contrast-mode .banner-enviar-vinculacion strong {
+  color: #FFFF00 !important;
+}
+
+/* Caja de estado vacío de subsanaciones */
+.subsanacion-vacia-box {
+  padding: 16px;
+  background-color: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.high-contrast-mode .subsanacion-vacia-box,
+body.high-contrast .subsanacion-vacia-box,
+body.high-contrast-mode .subsanacion-vacia-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+/* Tarjetas de evaluación institucional */
+.high-contrast-mode .evaluacion-card,
+body.high-contrast .evaluacion-card,
+body.high-contrast-mode .evaluacion-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .entity-name,
+body.high-contrast .entity-name,
+body.high-contrast-mode .entity-name {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .entity-instrument,
+body.high-contrast .entity-instrument,
+body.high-contrast-mode .entity-instrument {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .eval-card-obs,
+body.high-contrast .eval-card-obs,
+body.high-contrast-mode .eval-card-obs {
+  color: #FFFFFF !important;
+  border-top: 1px solid #333333 !important;
+}
+
+.high-contrast-mode .eval-card-obs strong,
+body.high-contrast .eval-card-obs strong,
+body.high-contrast-mode .eval-card-obs strong {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .eval-badge.badge-proximo,
+body.high-contrast .eval-badge.badge-proximo,
+body.high-contrast-mode .eval-badge.badge-proximo {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-ver-dictamen,
+body.high-contrast .btn-ver-dictamen,
+body.high-contrast-mode .btn-ver-dictamen {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #FFFFFF !important;
+}
+
+
+/* ============================================================
+   ALTO CONTRASTE – Paso 16 FormularioProyecto: Declaración Jurada
+   ============================================================ */
+.high-contrast-mode .legal-statement-box,
+body.high-contrast-mode .legal-statement-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+/* h3 con color inline en el paso 16 (y otros pasos que usen color: #002855 / #334155) */
+.high-contrast-mode .step-content-pane h1,
+.high-contrast-mode .step-content-pane h2,
+.high-contrast-mode .step-content-pane h3,
+.high-contrast-mode .step-content-pane h4,
+.high-contrast-mode .step-content-pane h5,
+.high-contrast-mode .step-content-pane p,
+.high-contrast-mode .step-content-pane li,
+.high-contrast-mode .step-content-pane span:not(.badge-status):not(.eval-badge):not(.badge-info):not(.badge-warning):not(.badge-success):not(.badge-cancelada):not(.badge-subsanacion),
+.high-contrast-mode .step-content-pane label,
+body.high-contrast-mode .step-content-pane h1,
+body.high-contrast-mode .step-content-pane h2,
+body.high-contrast-mode .step-content-pane h3,
+body.high-contrast-mode .step-content-pane h4,
+body.high-contrast-mode .step-content-pane h5,
+body.high-contrast-mode .step-content-pane p,
+body.high-contrast-mode .step-content-pane li,
+body.high-contrast-mode .step-content-pane label {
+  color: #FFFFFF !important;
+}
+
+/* Firma digital label y span de fecha en paso 16 */
+.high-contrast-mode .form-field-label,
+body.high-contrast-mode .form-field-label {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .step-main-title,
+body.high-contrast-mode .step-main-title {
+  color: #FFFFFF !important;
+}
+
+/* form-paper-container interior – párrafos y spans con color inline */
+.high-contrast-mode .form-paper-container h1,
+.high-contrast-mode .form-paper-container h2,
+.high-contrast-mode .form-paper-container h3,
+.high-contrast-mode .form-paper-container h4,
+.high-contrast-mode .form-paper-container p,
+.high-contrast-mode .form-paper-container li,
+.high-contrast-mode .form-paper-container label,
+body.high-contrast-mode .form-paper-container h1,
+body.high-contrast-mode .form-paper-container h2,
+body.high-contrast-mode .form-paper-container h3,
+body.high-contrast-mode .form-paper-container h4,
+body.high-contrast-mode .form-paper-container p,
+body.high-contrast-mode .form-paper-container li,
+body.high-contrast-mode .form-paper-container label {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .legal-statement-box *,
+body.high-contrast-mode .legal-statement-box * {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode input[type="checkbox"],
+body.high-contrast-mode input[type="checkbox"] {
+  accent-color: #FFFF00 !important;
+  outline: 1.5px solid #FFFFFF !important;
+}
+
+/* ============================================================
+   ALINEACIÓN Y CENTRADO DE BUSCADORES (.filter-search-box)
+   ============================================================ */
+.filter-search-box {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.filter-search-box svg {
+  flex-shrink: 0 !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+  align-self: center !important;
+  margin: 0 !important;
+}
+
+.filter-search-box .limited-field-container {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-self: center !important;
+  flex: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.filter-search-input,
+.filter-search-box input {
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1.4 !important;
+  vertical-align: middle !important;
+  outline: none !important;
+  border: none !important;
+  background: transparent !important;
+  align-self: center !important;
+}
+
+.search-main-bar .filter-search-box {
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* ============================================================
+   ALTO CONTRASTE – PERFIL DEL INVESTIGADOR Y CONFIGURACIÓN
+   ============================================================ */
+
+/* Perfil: Columna izquierda de Identidad */
+.high-contrast-mode .perfil-col-identidad,
+body.high-contrast-mode .perfil-col-identidad,
+body.high-contrast .perfil-col-identidad {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+.high-contrast-mode .perfil-foto-grande,
+body.high-contrast-mode .perfil-foto-grande {
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-cambiar-foto,
+body.high-contrast-mode .btn-cambiar-foto {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .perfil-nombre-lateral,
+body.high-contrast-mode .perfil-nombre-lateral {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .perfil-rol-lateral,
+body.high-contrast-mode .perfil-rol-lateral {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .perfil-especialidad-lateral,
+body.high-contrast-mode .perfil-especialidad-lateral {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .perfil-divider,
+body.high-contrast-mode .perfil-divider {
+  background-color: #333333 !important;
+}
+
+.high-contrast-mode .perfil-seccion-minititle,
+body.high-contrast-mode .perfil-seccion-minititle {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .perfil-tag-chip,
+body.high-contrast-mode .perfil-tag-chip {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-agregar-tag,
+body.high-contrast-mode .btn-agregar-tag {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px dashed #FFFF00 !important;
+}
+
+.high-contrast-mode .perfil-proyecto-codigo,
+body.high-contrast-mode .perfil-proyecto-codigo {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .perfil-proyecto-rol,
+body.high-contrast-mode .perfil-proyecto-rol {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .badge-validado,
+body.high-contrast-mode .badge-validado {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #22c55e !important;
+  border: 1.5px solid #22c55e !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .badge-oficial-tec,
+body.high-contrast-mode .badge-oficial-tec {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .input-readonly,
+body.high-contrast-mode .input-readonly {
+  background-color: #111111 !important;
+  color: #AAAAAA !important;
+  border: 1.5px solid #555555 !important;
+}
+
+.high-contrast-mode .alert-guardado-exito,
+body.high-contrast-mode .alert-guardado-exito {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #22c55e !important;
+  border: 1.5px solid #22c55e !important;
+}
+
+/* Títulos y subtítulos generales de columnas */
+.high-contrast-mode .column-title,
+body.high-contrast-mode .column-title {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .column-subtitle,
+body.high-contrast-mode .column-subtitle {
+  color: #CCCCCC !important;
+}
+
+/* Configuración: Tarjeta lateral de Asistente */
+.high-contrast-mode .config-asistente-card-form,
+body.high-contrast-mode .config-asistente-card-form,
+body.high-contrast .config-asistente-card-form {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+.high-contrast-mode .config-asistente-card-form .modal-title,
+.high-contrast-mode .config-asistente-card-form h3,
+body.high-contrast-mode .config-asistente-card-form .modal-title,
+body.high-contrast-mode .config-asistente-card-form h3 {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .config-asistente-card-form .column-subtitle,
+.high-contrast-mode .config-asistente-card-form p,
+body.high-contrast-mode .config-asistente-card-form .column-subtitle,
+body.high-contrast-mode .config-asistente-card-form p {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .config-asistente-card-form label,
+body.high-contrast-mode .config-asistente-card-form label {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .config-asistente-card-form .modal-input,
+.high-contrast-mode .config-asistente-card-form .modal-select,
+body.high-contrast-mode .config-asistente-card-form .modal-input,
+body.high-contrast-mode .config-asistente-card-form .modal-select {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .config-toggle-item,
+body.high-contrast-mode .config-toggle-item {
+  border-bottom: 1px solid #333333 !important;
+}
+
+.high-contrast-mode .toggle-title,
+body.high-contrast-mode .toggle-title {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .toggle-description,
+body.high-contrast-mode .toggle-description {
+  color: #CCCCCC !important;
+}
+
+.high-contrast-mode .badge-permiso,
+body.high-contrast-mode .badge-permiso {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .switch .slider,
+body.high-contrast-mode .switch .slider {
+  background-color: #222222 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .switch input:checked + .slider,
+body.high-contrast-mode .switch input:checked + .slider {
+  background-color: #00ff00 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+/* Tabla de asistentes en alto contraste */
+.high-contrast-mode .vinculacion-table td,
+body.high-contrast-mode .vinculacion-table td {
+  color: #FFFFFF !important;
+}
+
+/* ============================================================
+   CONVOCATORIAS: Tarjeta de Propuesta Activa y Documentos Modal
+   ============================================================ */
+.convocatoria-propuesta-activa-box {
+  margin: 12px 0;
+  padding: 10px 12px;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.convocatoria-propuesta-activa-box .propuesta-activa-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.convocatoria-propuesta-activa-box .propuesta-activa-code {
+  color: #1e40af;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.convocatoria-propuesta-activa-box .propuesta-activa-title {
+  color: #1e3a8a;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.badge-convocatoria-cerrada-label {
+  font-size: 11px;
+  color: #b91c1c;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+.convocatoria-modal-doc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+.convocatoria-modal-doc-item .doc-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #1e293b;
+}
+.btn-doc-download-action {
+  border: none;
+  background: #0369A1;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* ============================================================
+   ALTO CONTRASTE – MÓDULO DE CONVOCATORIAS
+   ============================================================ */
+
+/* Metadatos de la tarjeta de convocatoria */
+.high-contrast-mode .convocatoria-meta-block,
+body.high-contrast-mode .convocatoria-meta-block,
+body.high-contrast .convocatoria-meta-block {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .convocatoria-meta-block .meta-line,
+body.high-contrast-mode .convocatoria-meta-block .meta-line,
+body.high-contrast .convocatoria-meta-block .meta-line {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .convocatoria-meta-block .meta-bold-label,
+body.high-contrast-mode .convocatoria-meta-block .meta-bold-label,
+body.high-contrast .convocatoria-meta-block .meta-bold-label {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .convocatoria-meta-block .meta-muted-label,
+body.high-contrast-mode .convocatoria-meta-block .meta-muted-label,
+body.high-contrast .convocatoria-meta-block .meta-muted-label {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+/* Caja de Propuesta en Trámite / Activa */
+.high-contrast-mode .convocatoria-propuesta-activa-box,
+body.high-contrast-mode .convocatoria-propuesta-activa-box,
+body.high-contrast .convocatoria-propuesta-activa-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+.high-contrast-mode .convocatoria-propuesta-activa-box .propuesta-activa-code,
+body.high-contrast-mode .convocatoria-propuesta-activa-box .propuesta-activa-code,
+body.high-contrast .convocatoria-propuesta-activa-box .propuesta-activa-code {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .convocatoria-propuesta-activa-box .propuesta-activa-title,
+body.high-contrast-mode .convocatoria-propuesta-activa-box .propuesta-activa-title,
+body.high-contrast .convocatoria-propuesta-activa-box .propuesta-activa-title {
+  color: #FFFFFF !important;
+}
+
+/* Botones dentro de la tarjeta de convocatoria */
+.high-contrast-mode .btn-conv-aplicar,
+body.high-contrast-mode .btn-conv-aplicar,
+body.high-contrast .btn-conv-aplicar {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-conv-documentos,
+body.high-contrast-mode .btn-conv-documentos,
+body.high-contrast .btn-conv-documentos {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .btn-conv-documentos:hover,
+body.high-contrast-mode .btn-conv-documentos:hover,
+body.high-contrast .btn-conv-documentos:hover {
+  background-color: #222222 !important;
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-conv-proximamente,
+body.high-contrast-mode .btn-conv-proximamente,
+body.high-contrast .btn-conv-proximamente {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #CCCCCC !important;
+  border: 1.5px solid #777777 !important;
+  cursor: not-allowed !important;
+}
+
+.high-contrast-mode .badge-convocatoria-cerrada-label,
+body.high-contrast-mode .badge-convocatoria-cerrada-label {
+  color: #ff6b6b !important;
+  font-weight: 700 !important;
+}
+
+/* Modal de documentos en alto contraste */
+.high-contrast-mode .convocatoria-modal-doc-item,
+body.high-contrast-mode .convocatoria-modal-doc-item,
+body.high-contrast .convocatoria-modal-doc-item {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .convocatoria-modal-doc-item .doc-item-left,
+body.high-contrast-mode .convocatoria-modal-doc-item .doc-item-left {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-doc-download-action,
+body.high-contrast-mode .btn-doc-download-action {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+/* ============================================================
+   VINCULACIÓN: ESTILOS ESTÁNDAR Y MODO ALTO CONTRASTE
+   ============================================================ */
+.propuesta-titulo-td {
+  color: var(--tec-azul-principal);
+}
+.empty-state-title {
+  color: var(--tec-azul-principal);
+}
+.archivo-firmado-nombre {
+  color: var(--tec-azul-principal);
+}
+.doc-electronico-card {
+  background-color: #f8fafc;
+}
+
+/* 1. Badges de Escuelas en Alto Contraste */
+.high-contrast-mode .badge-escuela-abbr,
+body.high-contrast-mode .badge-escuela-abbr,
+body.high-contrast .badge-escuela-abbr {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+/* 2. Badges de Estado de Dictamen y Vinculación en Alto Contraste */
+.high-contrast-mode .badge-dictamen-aprobado,
+.high-contrast-mode .badge-dictamen-emitido,
+.high-contrast-mode [class*="badge-dictamen-aprobado"],
+.high-contrast-mode [class*="badge-dictamen-emitido"],
+.high-contrast-mode .badge-status-vinculacion.completada,
+body.high-contrast-mode .badge-dictamen-aprobado,
+body.high-contrast-mode .badge-dictamen-emitido,
+body.high-contrast-mode [class*="badge-dictamen-aprobado"],
+body.high-contrast-mode [class*="badge-dictamen-emitido"],
+body.high-contrast-mode .badge-status-vinculacion.completada,
+body.high-contrast .badge-dictamen-aprobado,
+body.high-contrast .badge-dictamen-emitido,
+body.high-contrast .badge-status-vinculacion.completada {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #22c55e !important;
+  border: 1.5px solid #22c55e !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .badge-dictamen-rechazado,
+.high-contrast-mode [class*="badge-dictamen-rechazado"],
+body.high-contrast-mode .badge-dictamen-rechazado,
+body.high-contrast-mode [class*="badge-dictamen-rechazado"],
+body.high-contrast .badge-dictamen-rechazado {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #ef4444 !important;
+  border: 1.5px solid #ef4444 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion.pendiente,
+body.high-contrast-mode .badge-status-vinculacion.pendiente,
+body.high-contrast .badge-status-vinculacion.pendiente {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .badge-status-vinculacion.en-curso,
+body.high-contrast-mode .badge-status-vinculacion.en-curso,
+body.high-contrast .badge-status-vinculacion.en-curso {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #38bdf8 !important;
+  border: 1.5px solid #38bdf8 !important;
+  font-weight: 700 !important;
+}
+
+/* 3. Badges de TRL, PI e Innovación */
+.high-contrast-mode .badge-trl,
+.high-contrast-mode .badge-pi,
+.high-contrast-mode .badge-inn,
+body.high-contrast-mode .badge-trl,
+body.high-contrast-mode .badge-pi,
+body.high-contrast-mode .badge-inn,
+body.high-contrast .badge-trl,
+body.high-contrast .badge-pi,
+body.high-contrast .badge-inn {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+/* 4. Expediente de la Propuesta (Evaluar y Detalle) */
+.high-contrast-mode .expediente-meta-label,
+body.high-contrast-mode .expediente-meta-label,
+body.high-contrast .expediente-meta-label {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .expediente-meta-value,
+body.high-contrast-mode .expediente-meta-value,
+body.high-contrast .expediente-meta-value {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .expediente-resumen-title,
+body.high-contrast-mode .expediente-resumen-title,
+body.high-contrast .expediente-resumen-title {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .expediente-resumen-text,
+body.high-contrast-mode .expediente-resumen-text,
+body.high-contrast .expediente-resumen-text {
+  color: #FFFFFF !important;
+}
+
+/* 5. Detalle del Dictamen */
+.high-contrast-mode .banner-dictamen-recomendado,
+body.high-contrast-mode .banner-dictamen-recomendado,
+body.high-contrast .banner-dictamen-recomendado {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #22c55e !important;
+  border: 2px solid #22c55e !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .dictamen-item-title,
+body.high-contrast-mode .dictamen-item-title,
+body.high-contrast .dictamen-item-title {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .dictamen-item-val,
+body.high-contrast-mode .dictamen-item-val,
+body.high-contrast .dictamen-item-val {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .dictamen-item-sub,
+body.high-contrast-mode .dictamen-item-sub,
+body.high-contrast .dictamen-item-sub {
+  color: #cccccc !important;
+}
+
+.high-contrast-mode .dictamen-item-parrafo,
+body.high-contrast-mode .dictamen-item-parrafo,
+body.high-contrast .dictamen-item-parrafo {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .checklist-item,
+body.high-contrast-mode .checklist-item,
+body.high-contrast .checklist-item {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .checklist-item-empty,
+body.high-contrast-mode .checklist-item-empty,
+body.high-contrast .checklist-item-empty {
+  color: #cbd5e1 !important;
+}
+
+/* 6. Documento Adjunto Card en Alto Contraste */
+.high-contrast-mode .documento-adjunto-card,
+.high-contrast-mode .doc-electronico-card,
+body.high-contrast-mode .documento-adjunto-card,
+body.high-contrast-mode .doc-electronico-card,
+body.high-contrast .documento-adjunto-card,
+body.high-contrast .doc-electronico-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  opacity: 1 !important;
+}
+
+.high-contrast-mode .documento-adjunto-card:hover,
+body.high-contrast-mode .documento-adjunto-card:hover,
+body.high-contrast .documento-adjunto-card:hover {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .documento-adjunto-card .doc-nombre,
+.high-contrast-mode .doc-nombre,
+body.high-contrast-mode .documento-adjunto-card .doc-nombre,
+body.high-contrast-mode .doc-nombre,
+body.high-contrast .documento-adjunto-card .doc-nombre,
+body.high-contrast .doc-nombre {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .documento-adjunto-card .doc-peso,
+.high-contrast-mode .doc-peso,
+body.high-contrast-mode .documento-adjunto-card .doc-peso,
+body.high-contrast-mode .doc-peso,
+body.high-contrast .documento-adjunto-card .doc-peso,
+body.high-contrast .doc-peso {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .doc-download-icon,
+body.high-contrast-mode .doc-download-icon,
+body.high-contrast .doc-download-icon {
+  color: #FFFF00 !important;
+}
+
+/* 7. Firma y pie del Dictamen */
+.high-contrast-mode .dictamen-firma-footer,
+.high-contrast-mode .firma-evaluador,
+.high-contrast-mode .firma-fecha,
+body.high-contrast-mode .dictamen-firma-footer,
+body.high-contrast-mode .firma-evaluador,
+body.high-contrast-mode .firma-fecha,
+body.high-contrast .dictamen-firma-footer,
+body.high-contrast .firma-evaluador,
+body.high-contrast .firma-fecha {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .firma-evaluador strong,
+body.high-contrast-mode .firma-evaluador strong,
+body.high-contrast .firma-evaluador strong {
+  color: #FFFF00 !important;
+}
+
+/* 8. Pestañas, Volver, Enlaces y Dropzone en Vinculación */
+.high-contrast-mode .evaluacion-tabs-header,
+body.high-contrast-mode .evaluacion-tabs-header,
+body.high-contrast .evaluacion-tabs-header {
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .tab-btn,
+body.high-contrast-mode .tab-btn,
+body.high-contrast .tab-btn {
+  color: #FFFFFF !important;
+  background: transparent !important;
+}
+
+.high-contrast-mode .tab-btn.active,
+body.high-contrast-mode .tab-btn.active,
+body.high-contrast .tab-btn.active {
+  color: #FFFF00 !important;
+  border-bottom: 3px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .form-caption-subtext,
+body.high-contrast-mode .form-caption-subtext,
+body.high-contrast .form-caption-subtext {
+  color: #e2e8f0 !important;
+}
+
+.high-contrast-mode .btn-link-volver,
+body.high-contrast-mode .btn-link-volver,
+body.high-contrast .btn-link-volver {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .code-link,
+body.high-contrast-mode .code-link,
+body.high-contrast .code-link {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+  text-decoration: underline !important;
+}
+
+.high-contrast-mode .archivo-firmado-box,
+body.high-contrast-mode .archivo-firmado-box,
+body.high-contrast .archivo-firmado-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .archivo-firmado-nombre,
+body.high-contrast-mode .archivo-firmado-nombre,
+body.high-contrast .archivo-firmado-nombre {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .dropzone-upload-box,
+body.high-contrast-mode .dropzone-upload-box,
+body.high-contrast .dropzone-upload-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px dashed #FFFF00 !important;
+}
+
+.high-contrast-mode .dropzone-title,
+body.high-contrast-mode .dropzone-title,
+body.high-contrast .dropzone-title {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .dropzone-sub,
+body.high-contrast-mode .dropzone-sub,
+body.high-contrast .dropzone-sub {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .propuesta-titulo-td,
+body.high-contrast-mode .propuesta-titulo-td,
+body.high-contrast .propuesta-titulo-td {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .empty-state-title,
+body.high-contrast-mode .empty-state-title,
+body.high-contrast .empty-state-title {
+  color: #FFFFFF !important;
+}
+
+
+/* ============================================================
+   PANEL DE OBJETIVOS ESPECÍFICOS VINCULADOS (FORM-04 PASO 12)
+   ============================================================ */
+.oe-vinculados-panel {
+  margin-bottom: 16px;
+  padding: 14px 18px;
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.oe-vinculados-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.oe-vinculados-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: #0369a1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.oe-vinculados-edit-btn {
+  font-size: 12px;
+  color: #0284c7;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.oe-vinculados-empty {
+  font-size: 13px;
+  color: #64748b;
+  font-style: italic;
+  padding: 6px 0;
+}
+
+.oe-vinculados-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.oe-vinculados-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+}
+
+.oe-vinculados-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.oe-vinculados-clave {
+  color: #002855;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.oe-vinculados-desc {
+  color: #334155;
+}
+
+.oe-vinculados-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.oe-vinculados-badge.badge-ok {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.oe-vinculados-badge.badge-vacio {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+/* Modo Alto Contraste */
+.high-contrast-mode .oe-vinculados-panel,
+body.high-contrast-mode .oe-vinculados-panel {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .oe-vinculados-title,
+body.high-contrast-mode .oe-vinculados-title {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .oe-vinculados-edit-btn,
+body.high-contrast-mode .oe-vinculados-edit-btn {
+  color: #00FFFF !important;
+}
+
+.high-contrast-mode .oe-vinculados-empty,
+body.high-contrast-mode .oe-vinculados-empty {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .oe-vinculados-card,
+body.high-contrast-mode .oe-vinculados-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+.high-contrast-mode .oe-vinculados-clave,
+body.high-contrast-mode .oe-vinculados-clave {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .oe-vinculados-desc,
+body.high-contrast-mode .oe-vinculados-desc {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .oe-vinculados-badge.badge-ok,
+body.high-contrast-mode .oe-vinculados-badge.badge-ok {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #00FF66 !important;
+  color: #00FF66 !important;
+}
+
+.high-contrast-mode .oe-vinculados-badge.badge-vacio,
+body.high-contrast-mode .oe-vinculados-badge.badge-vacio {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+/* ============================================================
+   SELECT PARA OBJETIVOS ESPECÍFICOS EN PASO 14 (COMPROMISOS)
+   ============================================================ */
+select.select-compromiso-oe {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 4px;
+  background-color: #ffffff;
+  color: #002855;
+  border: 1px solid var(--tec-borde);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+select.select-compromiso-oe:focus {
+  outline: none;
+  border-color: #0369A1;
+}
+
+/* Modo Alto Contraste */
+.high-contrast-mode select.select-compromiso-oe,
+body.high-contrast-mode select.select-compromiso-oe {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode select.select-compromiso-oe:focus,
+body.high-contrast-mode select.select-compromiso-oe:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode select.select-compromiso-oe option,
+body.high-contrast-mode select.select-compromiso-oe option {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+/* ============================================================
+   MODO ALTO CONTRASTE - CENTRO DE AYUDA Y SOPORTE (AYUDA.JSX)
+   ============================================================ */
+
+/* Buscador de Ayuda */
+.high-contrast-mode .ayuda-search-box,
+body.high-contrast-mode .ayuda-search-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .ayuda-search-box:focus-within,
+body.high-contrast-mode .ayuda-search-box:focus-within {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .ayuda-search-input,
+body.high-contrast-mode .ayuda-search-input {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .ayuda-search-input::placeholder,
+body.high-contrast-mode .ayuda-search-input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+.high-contrast-mode .ayuda-search-box svg,
+body.high-contrast-mode .ayuda-search-box svg {
+  stroke: #FFFF00 !important;
+}
+
+/* Guías Rápidas por Tema */
+.high-contrast-mode .ayuda-guia-card,
+body.high-contrast-mode .ayuda-guia-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .ayuda-guia-card:hover,
+body.high-contrast-mode .ayuda-guia-card:hover {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .guia-title,
+body.high-contrast-mode .guia-title {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .guia-sub,
+body.high-contrast-mode .guia-sub {
+  color: #e2e8f0 !important;
+}
+
+.high-contrast-mode .help-link,
+body.high-contrast-mode .help-link {
+  color: #FFFF00 !important;
+  font-weight: 600 !important;
+  text-decoration: underline !important;
+}
+
+/* Preguntas Frecuentes Relevantes (Acordeón) */
+.high-contrast-mode .faq-accordion-item,
+body.high-contrast-mode .faq-accordion-item {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  margin-bottom: 10px !important;
+}
+
+.high-contrast-mode .faq-accordion-item.open,
+body.high-contrast-mode .faq-accordion-item.open {
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .faq-accordion-header,
+body.high-contrast-mode .faq-accordion-header {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: none !important;
+}
+
+.high-contrast-mode .faq-question-text,
+body.high-contrast-mode .faq-question-text {
+  color: #FFFFFF !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .faq-accordion-item.open .faq-question-text,
+body.high-contrast-mode .faq-accordion-item.open .faq-question-text {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .faq-icon-arrow,
+body.high-contrast-mode .faq-icon-arrow {
+  color: #FFFF00 !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .faq-accordion-body,
+body.high-contrast-mode .faq-accordion-body {
+  background: #0d0d0d !important;
+  background-color: #0d0d0d !important;
+  border-top: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .faq-accordion-body p,
+body.high-contrast-mode .faq-accordion-body p {
+  color: #FFFFFF !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.high-contrast-mode .faq-accordion-body a.help-link,
+body.high-contrast-mode .faq-accordion-body a.help-link {
+  color: #00FFFF !important;
+  text-decoration: underline !important;
+}
+
+/* Plantillas y Formularios */
+.high-contrast-mode .plantilla-item-card,
+body.high-contrast-mode .plantilla-item-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .plantilla-item-card:hover,
+body.high-contrast-mode .plantilla-item-card:hover {
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .plantilla-name,
+body.high-contrast-mode .plantilla-name {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .plantilla-sub,
+body.high-contrast-mode .plantilla-sub {
+  color: #e2e8f0 !important;
+}
+
+/* Tarjeta de Soporte Humano Directo */
+.high-contrast-mode .soporte-humano-card,
+body.high-contrast-mode .soporte-humano-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .soporte-humano-card h3,
+body.high-contrast-mode .soporte-humano-card h3 {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .soporte-humano-card p,
+body.high-contrast-mode .soporte-humano-card p {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .gestora-avatar-circle,
+body.high-contrast-mode .gestora-avatar-circle {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .gestora-nombre,
+body.high-contrast-mode .gestora-nombre {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .gestora-rol,
+body.high-contrast-mode .gestora-rol {
+  color: #e2e8f0 !important;
+}
+
+.high-contrast-mode .btn-contactar-gestora,
+body.high-contrast-mode .btn-contactar-gestora {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-contactar-gestora:hover,
+body.high-contrast-mode .btn-contactar-gestora:hover {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .soporte-horario-text,
+body.high-contrast-mode .soporte-horario-text {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-soporte-secundario,
+body.high-contrast-mode .btn-soporte-secundario {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-soporte-secundario:hover,
+body.high-contrast-mode .btn-soporte-secundario:hover {
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+/* ============================================================
+   MODO ALTO CONTRASTE - PASO 14 COMPROMISOS (FORMULARIO 04)
+   ============================================================ */
+
+/* Tag de subtítulo del paso (1.1 Para proyectos de investigación...) */
+.high-contrast-mode .step-subheading-tag,
+body.high-contrast-mode .step-subheading-tag {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+/* Encabezados de sección (a. Compromiso de productos..., b. Selección...) */
+.high-contrast-mode .compromiso-section-header,
+body.high-contrast-mode .compromiso-section-header {
+  color: #FFFF00 !important;
+}
+
+/* Contenedores de tablas de compromiso */
+.high-contrast-mode .compromiso-table-wrapper,
+body.high-contrast-mode .compromiso-table-wrapper {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+/* Tablas de compromisos (Cuadro a y Cuadro b) */
+.high-contrast-mode .compromiso-grid-table,
+body.high-contrast-mode .compromiso-grid-table {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border-collapse: collapse !important;
+}
+
+.high-contrast-mode .compromiso-grid-table th,
+body.high-contrast-mode .compromiso-grid-table th {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFFFF !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .compromiso-grid-table td,
+body.high-contrast-mode .compromiso-grid-table td {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .compromiso-grid-table tr:hover td,
+body.high-contrast-mode .compromiso-grid-table tr:hover td,
+.high-contrast-mode .compromiso-grid-table tr.clickable-row:hover td,
+body.high-contrast-mode .compromiso-grid-table tr.clickable-row:hover td {
+  background-color: #1a1a1a !important;
+}
+
+/* Fila seleccionada en Cuadro a */
+.high-contrast-mode .compromiso-grid-table tr.is-selected,
+body.high-contrast-mode .compromiso-grid-table tr.is-selected,
+.high-contrast-mode .compromiso-grid-table tr.is-selected td,
+body.high-contrast-mode .compromiso-grid-table tr.is-selected td {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .compromiso-grid-table tr.is-selected td strong,
+body.high-contrast-mode .compromiso-grid-table tr.is-selected td strong {
+  color: #FFFF00 !important;
+}
+
+/* Indicadores de radio seleccionados */
+.high-contrast-mode .compromiso-selection-radio,
+body.high-contrast-mode .compromiso-selection-radio {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .compromiso-selection-radio.selected,
+body.high-contrast-mode .compromiso-selection-radio.selected {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .compromiso-selection-radio.unselected,
+body.high-contrast-mode .compromiso-selection-radio.unselected {
+  color: #94a3b8 !important;
+}
+
+/* Inputs numéricos dentro de tablas de compromiso */
+.high-contrast-mode .compromiso-grid-table input.form-table-input,
+body.high-contrast-mode .compromiso-grid-table input.form-table-input {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .compromiso-grid-table input.form-table-input:focus,
+body.high-contrast-mode .compromiso-grid-table input.form-table-input:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+/* Texto destacado dentro de las opciones de producto */
+.high-contrast-mode .compromiso-grid-table td strong,
+body.high-contrast-mode .compromiso-grid-table td strong {
+  color: #FFFF00 !important;
+}
+
+/* Callout informativo (Requisito Institucional de Cierre) */
+.high-contrast-mode .compromiso-callout-card,
+body.high-contrast-mode .compromiso-callout-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .compromiso-callout-card strong,
+body.high-contrast-mode .compromiso-callout-card strong {
+  color: #FFFF00 !important;
+}
+
+/* Sección c: Resultados complementarios */
+.high-contrast-mode .adicionales-container,
+body.high-contrast-mode .adicionales-container {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .adicional-item-row,
+body.high-contrast-mode .adicional-item-row {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .adicional-label,
+body.high-contrast-mode .adicional-label {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .adicionales-container input.form-table-input,
+body.high-contrast-mode .adicionales-container input.form-table-input {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .adicionales-container input.form-table-input:focus,
+body.high-contrast-mode .adicionales-container input.form-table-input:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+/* ============================================================
+   ESTILOS BASE PARA ELEMENTOS ACTUALIZADOS (FORM 04)
+   ============================================================ */
+
+.trl-table-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.trl-table-row.is-selected {
+  background-color: #f0fdf4;
+}
+.trl-label-cell strong {
+  color: #002855;
+  font-size: 13px;
+}
+.trl-desc-cell {
+  font-size: 13px;
+  color: #475569;
+}
+
+.form-table-input-readonly {
+  background-color: #f8fafc;
+  font-weight: 600;
+  color: #002855;
+}
+
+.oe-vinculo-cronograma-callout {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.oe-vinculo-text {
+  font-size: 13px;
+  color: #166534;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.oe-vinculo-btn {
+  font-size: 12px;
+  color: #15803d;
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.table-total-row {
+  background-color: #f8fafc;
+  font-weight: 700;
+}
+
+.adjuntar-plan-box {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background-color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.adjuntar-plan-box:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
+.adjuntar-plan-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #002855;
+}
+.adjuntar-plan-hint {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.step-subheading-tag-tech {
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.aspecto-etico-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+.aspecto-etico-label {
+  font-size: 13px;
+  color: #1e293b;
+}
+
+/* ============================================================
+   MODO ALTO CONTRASTE - BOTONES, TOGGLES, TARGETS Y FORM 04
+   ============================================================ */
+
+/* Grupos y Botones Toggle (Sí / No en Paso 2, 3, 4, 15) */
+.high-contrast-mode .toggle-btn-group,
+body.high-contrast-mode .toggle-btn-group {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  padding: 2px !important;
+  border-radius: 6px !important;
+}
+
+.high-contrast-mode .btn-toggle-option,
+body.high-contrast-mode .btn-toggle-option {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1px solid transparent !important;
+}
+
+.high-contrast-mode .btn-toggle-option:hover,
+body.high-contrast-mode .btn-toggle-option:hover {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-toggle-option.active,
+body.high-contrast-mode .btn-toggle-option.active {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+/* Selector Pills (de Proceso / de Producto en Paso 4) */
+.high-contrast-mode .btn-selector-pill,
+body.high-contrast-mode .btn-selector-pill {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-selector-pill:hover,
+body.high-contrast-mode .btn-selector-pill:hover {
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-selector-pill.active,
+body.high-contrast-mode .btn-selector-pill.active {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+/* Fila de Coordinador Read-Only (Paso 7) */
+.high-contrast-mode .form-table-input-readonly,
+body.high-contrast-mode .form-table-input-readonly {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+/* Botones de acción en tablas y listas (+ Insertar fila, + Agregar Objetivo) */
+.high-contrast-mode .btn-add-table-row,
+body.high-contrast-mode .btn-add-table-row {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px dashed #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-add-table-row:hover,
+body.high-contrast-mode .btn-add-table-row:hover {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* Botones de eliminar filas (✕) */
+.high-contrast-mode .btn-remove-table-row,
+body.high-contrast-mode .btn-remove-table-row,
+.high-contrast-mode .btn-icon-delete,
+body.high-contrast-mode .btn-icon-delete,
+.high-contrast-mode .btn-delete-oe,
+body.high-contrast-mode .btn-delete-oe {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FF5555 !important;
+  border: 1.5px solid #FF5555 !important;
+}
+
+.high-contrast-mode .btn-remove-table-row:hover,
+body.high-contrast-mode .btn-remove-table-row:hover,
+.high-contrast-mode .btn-icon-delete:hover,
+body.high-contrast-mode .btn-icon-delete:hover,
+.high-contrast-mode .btn-delete-oe:hover,
+body.high-contrast-mode .btn-delete-oe:hover {
+  background: #FF5555 !important;
+  background-color: #FF5555 !important;
+  color: #000000 !important;
+}
+
+/* Botones y enlaces con estilo link (+ Añadir miembro, etc.) */
+.high-contrast-mode .btn-link-action,
+body.high-contrast-mode .btn-link-action {
+  color: #00FFFF !important;
+  text-decoration: underline !important;
+}
+
+/* Tabla TRL (Paso 5) */
+.high-contrast-mode .trl-table-row,
+body.high-contrast-mode .trl-table-row {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+.high-contrast-mode .trl-table-row.is-selected td,
+body.high-contrast-mode .trl-table-row.is-selected td {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .trl-label-cell strong,
+body.high-contrast-mode .trl-label-cell strong {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .trl-desc-cell,
+body.high-contrast-mode .trl-desc-cell {
+  color: #FFFFFF !important;
+}
+
+/* Banner de Vinculación con Paso 12 en Paso 9 */
+.high-contrast-mode .oe-vinculo-cronograma-callout,
+body.high-contrast-mode .oe-vinculo-cronograma-callout {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .oe-vinculo-text,
+body.high-contrast-mode .oe-vinculo-text {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .oe-vinculo-text strong,
+body.high-contrast-mode .oe-vinculo-text strong {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .oe-vinculo-btn,
+body.high-contrast-mode .oe-vinculo-btn {
+  color: #00FFFF !important;
+}
+
+/* Fila de Total en Tablas de Presupuesto (Paso 13) */
+.high-contrast-mode .table-total-row td,
+body.high-contrast-mode .table-total-row td {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+/* Caja de Adjuntar Plan en Presupuesto (Paso 13) */
+.high-contrast-mode .adjuntar-plan-box,
+body.high-contrast-mode .adjuntar-plan-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px dashed #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .adjuntar-plan-box:hover,
+body.high-contrast-mode .adjuntar-plan-box:hover {
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .adjuntar-plan-title,
+body.high-contrast-mode .adjuntar-plan-title {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .adjuntar-plan-hint,
+body.high-contrast-mode .adjuntar-plan-hint {
+  color: #FFFFFF !important;
+}
+
+/* Filas de Aspectos Éticos (Paso 15) */
+.high-contrast-mode .aspecto-etico-row,
+body.high-contrast-mode .aspecto-etico-row {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .aspecto-etico-label,
+body.high-contrast-mode .aspecto-etico-label {
+  color: #FFFFFF !important;
+}
+
+/* Subheading tags alternativos (Paso 14b) */
+.high-contrast-mode .step-subheading-tag-tech,
+body.high-contrast-mode .step-subheading-tag-tech {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+/* Inputs Radio y Checkbox en alto contraste */
+.high-contrast-mode input[type="radio"],
+body.high-contrast-mode input[type="radio"],
+.high-contrast-mode input[type="checkbox"],
+body.high-contrast-mode input[type="checkbox"] {
+  accent-color: #FFFF00 !important;
+}
+
+/* Títulos y subtítulos dentro de panes */
+.high-contrast-mode .step-content-pane h1,
+body.high-contrast-mode .step-content-pane h1,
+.high-contrast-mode .step-content-pane h2,
+body.high-contrast-mode .step-content-pane h2,
+.high-contrast-mode .step-content-pane h3,
+body.high-contrast-mode .step-content-pane h3,
+.high-contrast-mode .section-title-h2,
+body.high-contrast-mode .section-title-h2 {
+  color: #FFFF00 !important;
+}
+
+/* Barra de pasos superior (Stepper) */
+.high-contrast-mode .form-stepper-scroll-strip::-webkit-scrollbar,
+body.high-contrast-mode .form-stepper-scroll-strip::-webkit-scrollbar {
+  height: 6px;
+}
+.high-contrast-mode .form-stepper-scroll-strip::-webkit-scrollbar-track,
+body.high-contrast-mode .form-stepper-scroll-strip::-webkit-scrollbar-track {
+  background: #000000 !important;
+}
+.high-contrast-mode .form-stepper-scroll-strip::-webkit-scrollbar-thumb,
+body.high-contrast-mode .form-stepper-scroll-strip::-webkit-scrollbar-thumb {
+  background: #FFFF00 !important;
+  border-radius: 3px;
+}
+
+/* Acordeón de preguntas frecuentes en Ayuda (Image 4) */
+.high-contrast-mode .faq-accordion-item,
+body.high-contrast-mode .faq-accordion-item,
+.high-contrast-mode .faq-accordion-header,
+body.high-contrast-mode .faq-accordion-header,
+.high-contrast-mode button.faq-accordion-header,
+body.high-contrast-mode button.faq-accordion-header {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .faq-question-text,
+body.high-contrast-mode .faq-question-text {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .faq-accordion-item.open .faq-question-text,
+body.high-contrast-mode .faq-accordion-item.open .faq-question-text {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .ayuda-soporte-card,
+body.high-contrast-mode .ayuda-soporte-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+/* ============================================================
+   MODO ALTO CONTRASTE - REPARACIÓN ESPECÍFICA FORMS 04, 05 Y 06
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1. FORM 04: BOTONES DE SELECCIÓN DE TIPO / MODALIDAD (PASO 1)
+   ------------------------------------------------------------ */
+.high-contrast-mode .modalidades-grid-cards,
+body.high-contrast-mode .modalidades-grid-cards {
+  background: transparent !important;
+}
+
+.high-contrast-mode .modalidad-card-option,
+body.high-contrast-mode .modalidad-card-option {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+.high-contrast-mode .modalidad-card-option:hover,
+body.high-contrast-mode .modalidad-card-option:hover {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+  background-color: #1a1a1a !important;
+}
+
+.high-contrast-mode .modalidad-card-option.is-selected,
+body.high-contrast-mode .modalidad-card-option.is-selected {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2.5px solid #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+  box-shadow: 0 0 10px rgba(255, 255, 0, 0.4) !important;
+}
+
+.high-contrast-mode .modalidad-name,
+body.high-contrast-mode .modalidad-name {
+  color: #FFFF00 !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .modalidad-desc,
+body.high-contrast-mode .modalidad-desc {
+  color: #FFFFFF !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+.high-contrast-mode .modalidad-radio-circle,
+body.high-contrast-mode .modalidad-radio-circle {
+  border: 2px solid #FFFFFF !important;
+  background: #000000 !important;
+}
+
+.high-contrast-mode .modalidad-card-option.is-selected .modalidad-radio-circle {
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .modalidad-radio-circle .inner-dot,
+body.high-contrast-mode .modalidad-radio-circle .inner-dot {
+  background-color: #FFFF00 !important;
+}
+
+/* ------------------------------------------------------------
+   2. FORM 05: PLAN DE ACCIÓN Y GESTIÓN DE RIESGOS (FORM 5)
+   ------------------------------------------------------------ */
+.high-contrast-mode .form-section-box,
+body.high-contrast-mode .form-section-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+.high-contrast-mode .form-section-box .section-title-h2,
+body.high-contrast-mode .form-section-box .section-title-h2,
+.high-contrast-mode .section-title-h2,
+body.high-contrast-mode .section-title-h2 {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .propuesta-codigo-pill,
+body.high-contrast-mode .propuesta-codigo-pill {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .int-nombre-cell,
+body.high-contrast-mode .int-nombre-cell,
+.high-contrast-mode .int-rol-cell,
+body.high-contrast-mode .int-rol-cell {
+  color: #FFFFFF !important;
+}
+
+/* Modal de Agregar Integrante en Form 5 */
+.high-contrast-mode .crear-propuesta-modal-overlay,
+body.high-contrast-mode .crear-propuesta-modal-overlay {
+  background: rgba(0, 0, 0, 0.85) !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card,
+body.high-contrast-mode .crear-propuesta-modal-card {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card header,
+body.high-contrast-mode .crear-propuesta-modal-card header,
+.high-contrast-mode .crear-propuesta-modal-card > div:first-child {
+  background: #000000 !important;
+  border-bottom: 2px solid #FFFFFF !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-body,
+body.high-contrast-mode .crear-propuesta-modal-body {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+/* ------------------------------------------------------------
+   3. FORM 06: FORMULACIÓN PRESUPUESTARIA (PRESUPUESTO)
+   ------------------------------------------------------------ */
+.high-contrast-mode .project-badge-tag,
+body.high-contrast-mode .project-badge-tag {
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.8px !important;
+}
+
+.high-contrast-mode .presupuesto-project-title,
+body.high-contrast-mode .presupuesto-project-title {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .regimen-badge,
+body.high-contrast-mode .regimen-badge {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .tab-year-btn,
+body.high-contrast-mode .tab-year-btn {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .tab-year-btn:hover,
+body.high-contrast-mode .tab-year-btn:hover {
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .tab-year-btn.active,
+body.high-contrast-mode .tab-year-btn.active {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .og-detalle-cell,
+body.high-contrast-mode .og-detalle-cell,
+.high-contrast-mode .og-detalle-cell strong,
+body.high-contrast-mode .og-detalle-cell strong {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .og-monto-cell,
+body.high-contrast-mode .og-monto-cell {
+  color: #00FF66 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .og-justificacion-cell,
+body.high-contrast-mode .og-justificacion-cell {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-dashed-add-row,
+body.high-contrast-mode .btn-dashed-add-row {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px dashed #FFFF00 !important;
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-dashed-add-row:hover,
+body.high-contrast-mode .btn-dashed-add-row:hover {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .presupuesto-summary-footer-box,
+body.high-contrast-mode .presupuesto-summary-footer-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .categories-breakdown,
+body.high-contrast-mode .categories-breakdown {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .categories-breakdown strong,
+body.high-contrast-mode .categories-breakdown strong {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .categories-breakdown .sep,
+body.high-contrast-mode .categories-breakdown .sep {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .grand-total-amount,
+body.high-contrast-mode .grand-total-amount {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .grand-total-amount strong,
+body.high-contrast-mode .grand-total-amount strong {
+  color: #00FF66 !important;
+  font-size: 19px !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .new-expense-card-panel,
+body.high-contrast-mode .new-expense-card-panel {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .new-expense-header,
+body.high-contrast-mode .new-expense-header {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .modal-form-label,
+body.high-contrast-mode .modal-form-label {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .modal-form-select,
+body.high-contrast-mode .modal-form-select,
+.high-contrast-mode .modal-form-input,
+body.high-contrast-mode .modal-form-input {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .auto-calc-box,
+body.high-contrast-mode .auto-calc-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .calc-title,
+body.high-contrast-mode .calc-title {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .calc-label,
+body.high-contrast-mode .calc-label {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .calc-amount,
+body.high-contrast-mode .calc-amount {
+  color: #00FF66 !important;
+  font-weight: 700 !important;
+}
+
+/* ------------------------------------------------------------
+   4. LABELS GENERALES Y RECORDATORIOS
+   ------------------------------------------------------------ */
+.high-contrast-mode .limited-input-label,
+body.high-contrast-mode .limited-input-label,
+.high-contrast-mode .form-field-label,
+body.high-contrast-mode .form-field-label {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .form-field-hint,
+body.high-contrast-mode .form-field-hint {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .vie-reminder-box,
+body.high-contrast-mode .vie-reminder-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .reminder-text strong,
+body.high-contrast-mode .reminder-text strong {
+  color: #FFFF00 !important;
+}
+
+/* ==========================================================================
+   ALTO CONTRASTE ESPECÍFICO (FONDOS VIE - REPARACIONES)
+   1. Formulario 04: Paso 1 (Modalidades, Títulos, Inputs Fecha) y Paso 7 (Equipos)
+   2. Formulario 05: Plan de Riesgos y Cronograma + Modal Añadir Integrante
+   3. Formulario 06: Módulo Presupuestario (Filas, Resumen Footer, Tabs)
+   4. Gestión de Equipos: Etiquetas Escuela/Rol y Modal Agregar Miembro
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. FORM 04 - PASO 1: MODALIDAD DEL PROYECTO, LABELS E INPUTS DE FECHA
+   -------------------------------------------------------------------------- */
+.high-contrast-mode .modalidades-grid-cards,
+body.high-contrast-mode .modalidades-grid-cards {
+  background: transparent !important;
+}
+
+.high-contrast-mode .modalidad-card-option,
+body.high-contrast-mode .modalidad-card-option {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: none !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .modalidad-card-option:hover,
+body.high-contrast-mode .modalidad-card-option:hover,
+.high-contrast-mode .modalidad-card-option:focus,
+body.high-contrast-mode .modalidad-card-option:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+  background-color: #111111 !important;
+}
+
+.high-contrast-mode .modalidad-card-option.is-selected,
+body.high-contrast-mode .modalidad-card-option.is-selected {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2.5px solid #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+  box-shadow: 0 0 12px rgba(255, 255, 0, 0.5) !important;
+}
+
+.high-contrast-mode .modalidad-name,
+body.high-contrast-mode .modalidad-name {
+  color: #FFFF00 !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .modalidad-desc,
+body.high-contrast-mode .modalidad-desc {
+  color: #FFFFFF !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+.high-contrast-mode .modalidad-radio-circle,
+body.high-contrast-mode .modalidad-radio-circle {
+  border: 2px solid #FFFFFF !important;
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+.high-contrast-mode .modalidad-card-option.is-selected .modalidad-radio-circle {
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .modalidad-radio-circle .inner-dot,
+body.high-contrast-mode .modalidad-radio-circle .inner-dot {
+  background-color: #FFFF00 !important;
+}
+
+/* Inputs de fecha nativos en Paso 1 */
+.high-contrast-mode input[type="date"],
+body.high-contrast-mode input[type="date"] {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  color-scheme: dark !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode input[type="date"]::-webkit-calendar-picker-indicator,
+body.high-contrast-mode input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) !important;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   2. FORM 04 - PASO 7: EQUIPO DE INVESTIGACIÓN (CUADROS 2 Y 3)
+   -------------------------------------------------------------------------- */
+.high-contrast-mode .form-table-input-readonly,
+body.high-contrast-mode .form-table-input-readonly {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .step-content-pane h3,
+body.high-contrast-mode .step-content-pane h3 {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-link-action,
+body.high-contrast-mode .btn-link-action {
+  color: #FFFF00 !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. GESTIÓN DE EQUIPOS (InvestigadorEquipos.jsx): ETIQUETAS ESCUELA Y ROL
+   -------------------------------------------------------------------------- */
+.high-contrast-mode .school-tag-pill,
+body.high-contrast-mode .school-tag-pill {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .rol-tag-pill,
+body.high-contrast-mode .rol-tag-pill {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .rol-tag-pill.rol-lider,
+body.high-contrast-mode .rol-tag-pill.rol-lider {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .member-avatar-circle,
+body.high-contrast-mode .member-avatar-circle {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .institucional-data-table td span[style*="002855"],
+body.high-contrast-mode .institucional-data-table td span[style*="002855"] {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .institucional-data-table td[style*="475569"],
+body.high-contrast-mode .institucional-data-table td[style*="475569"] {
+  color: #CCCCCC !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. MODAL AÑADIR MIEMBRO (Tanto en Form 05 como en InvestigadorEquipos.jsx)
+   -------------------------------------------------------------------------- */
+/* Cabecera del modal (remueve el gradiente azul inline) */
+.high-contrast-mode .crear-propuesta-modal-card > div:first-child,
+body.high-contrast-mode .crear-propuesta-modal-card > div:first-child {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  background-image: none !important;
+  border-bottom: 2px solid #FFFFFF !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card > div:first-child h3,
+body.high-contrast-mode .crear-propuesta-modal-card > div:first-child h3 {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card > div:first-child div,
+body.high-contrast-mode .crear-propuesta-modal-card > div:first-child div {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card > div:first-child button,
+body.high-contrast-mode .crear-propuesta-modal-card > div:first-child button {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1.5px solid #FFFF00 !important;
+}
+
+/* Pestañas de tipo miembro (Investigador TEC / Colaborador Externo) */
+.high-contrast-mode .crear-propuesta-modal-card > div:nth-child(2),
+body.high-contrast-mode .crear-propuesta-modal-card > div:nth-child(2) {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card > div:nth-child(2) button,
+body.high-contrast-mode .crear-propuesta-modal-card > div:nth-child(2) button {
+  background: transparent !important;
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card > div:nth-child(2) button[style*="002855"],
+body.high-contrast-mode .crear-propuesta-modal-card > div:nth-child(2) button[style*="002855"] {
+  color: #FFFF00 !important;
+  border-bottom: 3px solid #FFFF00 !important;
+}
+
+/* Banner informativo azul en modal */
+.high-contrast-mode .crear-propuesta-modal-card div[style*="f0f9ff"],
+body.high-contrast-mode .crear-propuesta-modal-card div[style*="f0f9ff"] {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #00FFFF !important;
+  color: #FFFFFF !important;
+}
+.high-contrast-mode .crear-propuesta-modal-card div[style*="f0f9ff"] *,
+body.high-contrast-mode .crear-propuesta-modal-card div[style*="f0f9ff"] * {
+  color: #FFFFFF !important;
+}
+
+/* Cuerpo del formulario del modal */
+.high-contrast-mode .crear-propuesta-modal-card form > div:first-child,
+body.high-contrast-mode .crear-propuesta-modal-card form > div:first-child {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+/* Labels en modal */
+.high-contrast-mode .crear-propuesta-modal-card label,
+body.high-contrast-mode .crear-propuesta-modal-card label {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card span[style*="64748b"],
+body.high-contrast-mode .crear-propuesta-modal-card span[style*="64748b"] {
+  color: #CCCCCC !important;
+}
+
+/* Inputs de texto y números dentro del modal */
+.high-contrast-mode .crear-propuesta-modal-card input,
+body.high-contrast-mode .crear-propuesta-modal-card input {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card input::placeholder,
+body.high-contrast-mode .crear-propuesta-modal-card input::placeholder {
+  color: #AAAAAA !important;
+}
+
+/* Selects dentro del modal */
+.high-contrast-mode .crear-propuesta-modal-card select,
+body.high-contrast-mode .crear-propuesta-modal-card select {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card select option,
+body.high-contrast-mode .crear-propuesta-modal-card select option {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+/* Tarjeta preview de investigador seleccionado */
+.high-contrast-mode .crear-propuesta-modal-card form div[style*="f0fdf4"],
+.high-contrast-mode .crear-propuesta-modal-card form div[style*="10b981"],
+body.high-contrast-mode .crear-propuesta-modal-card form div[style*="f0fdf4"],
+body.high-contrast-mode .crear-propuesta-modal-card form div[style*="10b981"] {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #00FF66 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card form div[style*="f0fdf4"] *,
+.high-contrast-mode .crear-propuesta-modal-card form div[style*="10b981"] *,
+body.high-contrast-mode .crear-propuesta-modal-card form div[style*="f0fdf4"] *,
+body.high-contrast-mode .crear-propuesta-modal-card form div[style*="10b981"] * {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card form div[style*="166534"],
+.high-contrast-mode .crear-propuesta-modal-card form span[style*="15803d"],
+body.high-contrast-mode .crear-propuesta-modal-card form div[style*="166534"],
+body.high-contrast-mode .crear-propuesta-modal-card form span[style*="15803d"] {
+  color: #00FF66 !important;
+}
+
+/* Avatar de iniciales en modal preview */
+.high-contrast-mode .crear-propuesta-modal-card form div[style*="002855"],
+body.high-contrast-mode .crear-propuesta-modal-card form div[style*="002855"] {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+/* Caja de error modal */
+.high-contrast-mode .crear-propuesta-modal-card div[style*="fef2f2"],
+body.high-contrast-mode .crear-propuesta-modal-card div[style*="fef2f2"] {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FF5555 !important;
+  color: #FF5555 !important;
+}
+
+.high-contrast-mode .crear-propuesta-modal-card div[style*="fef2f2"] *,
+body.high-contrast-mode .crear-propuesta-modal-card div[style*="fef2f2"] * {
+  color: #FF5555 !important;
+}
+
+/* Footer del modal */
+.high-contrast-mode .crear-propuesta-modal-card form > div:last-child,
+body.high-contrast-mode .crear-propuesta-modal-card form > div:last-child {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border-top: 2px solid #FFFFFF !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. FORM 05: PLAN DE RIESGOS Y CRONOGRAMA
+   -------------------------------------------------------------------------- */
+.high-contrast-mode .form-section-box,
+body.high-contrast-mode .form-section-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .section-title-h2,
+body.high-contrast-mode .section-title-h2 {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .propuesta-codigo-pill,
+body.high-contrast-mode .propuesta-codigo-pill {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFF00 !important;
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-nueva-propuesta,
+body.high-contrast-mode .btn-nueva-propuesta {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-nueva-propuesta:hover,
+body.high-contrast-mode .btn-nueva-propuesta:hover {
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  border-color: #FFFF00 !important;
+}
+
+/* Botón de eliminar fila en tablas */
+.high-contrast-mode .btn-icon-delete,
+body.high-contrast-mode .btn-icon-delete {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FF5555 !important;
+  border: 1.5px solid #FF5555 !important;
+}
+
+.high-contrast-mode .btn-icon-delete:hover,
+body.high-contrast-mode .btn-icon-delete:hover {
+  background: #FF5555 !important;
+  background-color: #FF5555 !important;
+  color: #000000 !important;
+}
+
+/* Checkboxes de meses en cronograma */
+.high-contrast-mode input[type="checkbox"],
+body.high-contrast-mode input[type="checkbox"] {
+  accent-color: #FFFF00 !important;
+  cursor: pointer;
+}
+
+/* Global form-table-input para tablas de Form 04 y Form 05 */
+.high-contrast-mode .form-table-input,
+body.high-contrast-mode .form-table-input {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .form-table-input:focus,
+body.high-contrast-mode .form-table-input:focus {
+  border-color: #FFFF00 !important;
+  outline: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .form-table-input option,
+body.high-contrast-mode .form-table-input option {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. FORM 06: MÓDULO DE FORMULACIÓN PRESUPUESTARIA
+   -------------------------------------------------------------------------- */
+.high-contrast-mode .tab-year-btn,
+body.high-contrast-mode .tab-year-btn {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .tab-year-btn:hover,
+body.high-contrast-mode .tab-year-btn:hover {
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .tab-year-btn.active,
+body.high-contrast-mode .tab-year-btn.active {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast-mode .og-detalle-cell,
+body.high-contrast-mode .og-detalle-cell,
+.high-contrast-mode .og-detalle-cell *,
+body.high-contrast-mode .og-detalle-cell * {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .og-monto-cell,
+body.high-contrast-mode .og-monto-cell,
+.high-contrast-mode .og-monto-cell *,
+body.high-contrast-mode .og-monto-cell * {
+  color: #00FF66 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .og-justificacion-cell,
+body.high-contrast-mode .og-justificacion-cell,
+.high-contrast-mode .og-justificacion-cell *,
+body.high-contrast-mode .og-justificacion-cell * {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .btn-dashed-add-row,
+body.high-contrast-mode .btn-dashed-add-row {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px dashed #FFFF00 !important;
+  color: #FFFF00 !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-dashed-add-row:hover,
+body.high-contrast-mode .btn-dashed-add-row:hover {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* Footer de resumen presupuestario */
+.high-contrast-mode .presupuesto-summary-footer-box,
+body.high-contrast-mode .presupuesto-summary-footer-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .categories-breakdown,
+body.high-contrast-mode .categories-breakdown,
+.high-contrast-mode .categories-breakdown span,
+body.high-contrast-mode .categories-breakdown span {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .categories-breakdown strong,
+body.high-contrast-mode .categories-breakdown strong {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .categories-breakdown .sep,
+body.high-contrast-mode .categories-breakdown .sep {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .grand-total-amount,
+body.high-contrast-mode .grand-total-amount {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .grand-total-amount strong,
+body.high-contrast-mode .grand-total-amount strong {
+  color: #00FF66 !important;
+  font-size: 19px !important;
+  font-weight: 800 !important;
+}
+
+/* Panel de inserción de nuevo gasto */
+.high-contrast-mode .new-expense-card-panel,
+body.high-contrast-mode .new-expense-card-panel {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .new-expense-header,
+body.high-contrast-mode .new-expense-header {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .modal-form-label,
+body.high-contrast-mode .modal-form-label {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .modal-form-select,
+body.high-contrast-mode .modal-form-select,
+.high-contrast-mode .modal-form-input,
+body.high-contrast-mode .modal-form-input {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .auto-calc-box,
+body.high-contrast-mode .auto-calc-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .calc-title,
+body.high-contrast-mode .calc-title {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .calc-label,
+body.high-contrast-mode .calc-label {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .calc-amount,
+body.high-contrast-mode .calc-amount {
+  color: #00FF66 !important;
+  font-weight: 700 !important;
 }

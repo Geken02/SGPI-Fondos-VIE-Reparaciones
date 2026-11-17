@@ -7,7 +7,6 @@ import RoleSwitcher from '../../components/RoleSwitcher';
 
 export default function AdminPanel() {
   const navigate = useNavigate();
-  // ✅ CORRECCIÓN: Extraemos también rolActivo para una validación más segura
   const { usuario, rolActivo } = useAuth();
 
   const [stats, setStats] = useState({
@@ -48,7 +47,6 @@ export default function AdminPanel() {
       });
 
     } catch (err) {
-      // ✅ CORRECCIÓN: Validación segura usando rolActivo en lugar de mapear roles que pueden ser undefined
       if (err.response?.status === 403) {
         console.warn("Acceso denegado al panel de admin. Redirigiendo a tu panel...");
         const rolesComite = ['AsistenteComiteTecnico', 'CoordinadorComiteTecnico', 'MiembroComiteTecnico', 'DirectorEscuela'];
@@ -76,6 +74,12 @@ export default function AdminPanel() {
   const totalPropuestas = stats.propuestasPorEstado.reduce((sum, item) => sum + (item.cantidad || 0), 0);
   const getPorcentaje = (cantidad) => totalPropuestas === 0 ? 0 : Math.round((cantidad / totalPropuestas) * 100);
 
+  // Máximos reales para calcular porcentajes honestos (ajusta a tu sistema)
+  const MAX_PROPUESTAS = 1000;
+  const MAX_ESCUELAS = 100;
+  const MAX_USUARIOS = 100;
+  const calcPct = (valor, max) => Math.min(100, Math.round((valor / max) * 100));
+
   const coloresEstado = {
     'Borrador': 'var(--color-gris, #94a3b8)',
     'Enviada a VIE': 'var(--color-primario, #002855)',
@@ -101,7 +105,7 @@ export default function AdminPanel() {
 
   if (error) {
     return (
-      <main className="admin-error" aria-live="assertive">
+      <main className="admin-error" aria-live="assertive" role="alert">
         <p>{error}</p>
         <button onClick={cargarDatos}>Reintentar</button>
       </main>
@@ -110,7 +114,6 @@ export default function AdminPanel() {
 
   return (
     <main className="admin-container">
-      {/* Encabezado Semántico */}
       <header className="admin-header">
         <h1 id="titulo-panel">Panel de Administrador</h1>
         <p>Sistema de Gestión de Propuestas de Investigación – Vicerrectoría de Investigación y Extensión (VIE)</p>
@@ -120,7 +123,12 @@ export default function AdminPanel() {
       <section className="stats-row" aria-labelledby="titulo-estadisticas">
         <h2 id="titulo-estadisticas" className="sr-only">Estadísticas Generales del Sistema</h2>
         
-        <div className="stat-card">
+        <div 
+          className="stat-card" 
+          tabIndex={0} 
+          role="group"
+          aria-label={`Tarjeta de estadísticas: ${stats.propuestasActivas} Propuestas Activas`}
+        >
           <div className="stat-top">
             <div className="stat-icon-wrapper">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
@@ -140,16 +148,21 @@ export default function AdminPanel() {
           <div 
             className="stat-progress"
             role="progressbar"
-            aria-valuenow={70}
+            aria-valuenow={calcPct(stats.propuestasActivas, MAX_PROPUESTAS)}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label="Progreso de propuestas activas: 70%"
+            aria-label={`${stats.propuestasActivas} propuestas activas de ${MAX_PROPUESTAS} posibles: ${calcPct(stats.propuestasActivas, MAX_PROPUESTAS)} por ciento`}
           >
-            <div className="stat-progress-fill" style={{ width: '70%', background: 'var(--color-primario, #002855)' }}></div>
+            <div className="stat-progress-fill" style={{ width: `${calcPct(stats.propuestasActivas, MAX_PROPUESTAS)}%`, background: 'var(--color-primario, #002855)' }}></div>
           </div>
         </div>
 
-        <div className="stat-card">
+        <div 
+          className="stat-card" 
+          tabIndex={0} 
+          role="group"
+          aria-label={`Tarjeta de estadísticas: ${stats.escuelasActivas} Escuelas Activas`}
+        >
           <div className="stat-top">
             <div className="stat-icon-wrapper">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
@@ -164,16 +177,21 @@ export default function AdminPanel() {
           <div 
             className="stat-progress"
             role="progressbar"
-            aria-valuenow={60}
+            aria-valuenow={calcPct(stats.escuelasActivas, MAX_ESCUELAS)}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label="Progreso de escuelas activas: 60%"
+            aria-label={`${stats.escuelasActivas} escuelas activas de ${MAX_ESCUELAS}: ${calcPct(stats.escuelasActivas, MAX_ESCUELAS)} por ciento`}
           >
-            <div className="stat-progress-fill gray" style={{ width: '60%' }}></div>
+            <div className="stat-progress-fill gray" style={{ width: `${calcPct(stats.escuelasActivas, MAX_ESCUELAS)}%` }}></div>
           </div>
         </div>
 
-        <div className="stat-card">
+        <div 
+          className="stat-card" 
+          tabIndex={0} 
+          role="group"
+          aria-label={`Tarjeta de estadísticas: ${stats.usuariosActivos} Usuarios del Sistema`}
+        >
           <div className="stat-top">
             <div className="stat-icon-wrapper">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
@@ -190,16 +208,21 @@ export default function AdminPanel() {
           <div 
             className="stat-progress"
             role="progressbar"
-            aria-valuenow={80}
+            aria-valuenow={calcPct(stats.usuariosActivos, MAX_USUARIOS)}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label="Progreso de usuarios del sistema: 80%"
+            aria-label={`${stats.usuariosActivos} usuarios de ${MAX_USUARIOS} cupos: ${calcPct(stats.usuariosActivos, MAX_USUARIOS)} por ciento`}
           >
-            <div className="stat-progress-fill blue" style={{ width: '80%' }}></div>
+            <div className="stat-progress-fill blue" style={{ width: `${calcPct(stats.usuariosActivos, MAX_USUARIOS)}%` }}></div>
           </div>
         </div>
 
-        <div className="stat-card">
+        <div 
+          className="stat-card" 
+          tabIndex={0} 
+          role="group"
+          aria-label={`Tarjeta de estadísticas: Convocatoria Activa ${stats.convocatoriaActiva.anio}`}
+        >
           <div className="stat-top">
             <div className="stat-icon-wrapper">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
@@ -209,7 +232,7 @@ export default function AdminPanel() {
                 <line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
             </div>
-            <span className="stat-badge">Aprobado</span>
+            <span className="stat-badge" aria-label="Estado de la convocatoria: Aprobada">Aprobado</span>
           </div>
           <div className="stat-number">{stats.convocatoriaActiva.anio}</div>
           <div className="stat-label">{stats.convocatoriaActiva.nombre}</div>
@@ -223,6 +246,7 @@ export default function AdminPanel() {
         <Link 
           to="/dashboard/admin/catalogos" 
           className="quick-card"
+          tabIndex={0}
           aria-label="Acceder a Gestión de Catálogos: administrar Escuelas, Líneas de Investigación, Tipos de Hora y niveles TRL"
         >
           <div className="quick-icon">
@@ -240,6 +264,7 @@ export default function AdminPanel() {
         <Link 
           to="/dashboard/admin/convocatoria" 
           className="quick-card"
+          tabIndex={0}
           aria-label="Acceder a Configuración de Convocatoria: definir fechas límite, plazos de evaluación y bloqueo automático en Orión"
         >
           <div className="quick-icon">
@@ -263,6 +288,7 @@ export default function AdminPanel() {
         <Link 
           to="/dashboard/admin/gestoras" 
           className="quick-card"
+          tabIndex={0}
           aria-label="Acceder a Asignación de Escuelas: asignar escuelas específicas a cada Persona Gestora de la VIE"
         >
           <div className="quick-icon">
@@ -282,9 +308,15 @@ export default function AdminPanel() {
       <div className="bottom-row">
         <section className="card proposals-section" aria-labelledby="titulo-estado-propuestas">
           <h2 id="titulo-estado-propuestas">Estado de Propuestas por Módulo</h2>
-          <div className="progress-list">
+          <div className="progress-list" role="list" aria-label="Distribución de propuestas por estado">
             {stats.propuestasPorEstado.map((item, index) => (
-              <div key={index} className="progress-item">
+              <div 
+                key={index} 
+                className="progress-item" 
+                role="listitem"
+                tabIndex={0}
+                aria-label={`${item.estado}: ${item.cantidad} propuestas, ${getPorcentaje(item.cantidad)} por ciento del total`}
+              >
                 <div className="progress-header">
                   <span className="progress-label">{item.estado}</span>
                   <span className="progress-stats">{getPorcentaje(item.cantidad)}% ({item.cantidad})</span>
@@ -295,7 +327,7 @@ export default function AdminPanel() {
                   aria-valuenow={getPorcentaje(item.cantidad)}
                   aria-valuemin={0}
                   aria-valuemax={100}
-                  aria-label={`${item.estado}: ${item.cantidad} propuestas, ${getPorcentaje(item.cantidad)} por ciento`}
+                  aria-label={`${item.estado}: ${getPorcentaje(item.cantidad)} por ciento completado`}
                 >
                   <div 
                     className="progress-fill" 
@@ -315,9 +347,15 @@ export default function AdminPanel() {
           {stats.actividadReciente.length === 0 ? (
             <p className="no-activity">Sin actividad reciente</p>
           ) : (
-            <div className="activity-list">
+            <div className="activity-list" role="list" aria-live="polite" aria-label="Lista de actividades recientes del sistema">
               {stats.actividadReciente.slice(0, 5).map((log) => (
-                <div key={log.logId} className="activity-item">
+                <div 
+                  key={log.logId} 
+                  className="activity-item" 
+                  role="listitem"
+                  tabIndex={0}
+                  aria-label={`${log.descripcion}, registrado el ${new Date(log.fecha).toLocaleString('es-CR')}`}
+                >
                   <span className="activity-icon" aria-hidden="true">●</span>
                   <div className="activity-content">
                     <p className="activity-desc">{log.descripcion}</p>
@@ -331,7 +369,7 @@ export default function AdminPanel() {
               ))}
             </div>
           )}
-          <Link to="/dashboard/admin/bitacora" className="view-all" aria-label="Ver toda la actividad del sistema en la bitácora">
+          <Link to="/dashboard/admin/bitacora" className="view-all" tabIndex={0} aria-label="Ver toda la actividad del sistema en la bitácora">
             Ver toda la actividad →
           </Link>
         </section>
@@ -353,7 +391,7 @@ export default function AdminPanel() {
             <p>Crear, editar y asignar roles y permisos</p>
           </div>
         </div>
-        <Link to="/dashboard/admin/usuarios" className="btn-outline" aria-label="Acceder a la gestión de usuarios y roles">
+        <Link to="/dashboard/admin/usuarios" className="btn-outline" tabIndex={0} aria-label="Acceder a la gestión de usuarios y roles">
           Acceder →
         </Link>
       </section>
@@ -368,7 +406,7 @@ export default function AdminPanel() {
           </div>
           <div className="modo-global-info">
             <h3 id="titulo-modo-global">Modo de Acceso Global (SuperAdmin)</h3>
-            <p>Simular cualquier rol para pruebas y carga de datos</p>
+            <p id="desc-simulacion">Simular cualquier rol para pruebas y carga de datos</p>
           </div>
           
           <button 
@@ -376,6 +414,8 @@ export default function AdminPanel() {
             onClick={() => setModalAbierto(true)}
             aria-expanded={modalAbierto}
             aria-controls="modal-role-switcher"
+            aria-haspopup="dialog"
+            aria-describedby="desc-simulacion"
           >
             {rolSimulado !== 'SuperAdministrador' 
               ? `Simulando: ${rolSimulado} (Cambiar)` 
@@ -385,7 +425,7 @@ export default function AdminPanel() {
       </section>
 
       {/* RoleSwitcher Modal */}
-      <div id="modal-role-switcher" hidden={!modalAbierto}>
+      <div id="modal-role-switcher">
         <RoleSwitcher 
           isOpen={modalAbierto}
           onClose={() => setModalAbierto(false)}

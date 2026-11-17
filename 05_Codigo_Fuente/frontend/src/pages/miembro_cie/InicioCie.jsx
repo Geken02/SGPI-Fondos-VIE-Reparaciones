@@ -76,8 +76,8 @@ const InicioCie = () => {
         <>
           <section className="gv-resumen" aria-label="Resumen de expedientes">
             {indicadores.map((item) => (
-              <article className="gv-card gv-tarjeta-resumen" key={item.etiqueta}>
-                <div className={`gv-resumen-icono ${item.clase}`}>
+              <article className="gv-card gv-tarjeta-resumen" key={item.etiqueta} role="region" aria-label={`${item.etiqueta}: ${item.valor}`}>
+                <div className={`gv-resumen-icono ${item.clase}`} aria-hidden="true">
                   <Icono nombre={item.icono} size={23} />
                 </div>
                 <div>
@@ -89,37 +89,37 @@ const InicioCie = () => {
           </section>
 
           <section className="cie-inicio-accesos" aria-label="Accesos rápidos">
-            <Link className="gv-card cie-inicio-acceso" to="/cie/expedientes">
-              <span className="cie-inicio-acceso-icono">
+            <Link className="gv-card cie-inicio-acceso" to="/cie/expedientes" aria-label="Consultar expedientes: Revisa propuestas pendientes y continúa su evaluación">
+              <span className="cie-inicio-acceso-icono" aria-hidden="true">
                 <Icono nombre="clipboard" size={24} />
               </span>
               <span className="cie-inicio-acceso-texto">
                 <strong>Consultar expedientes</strong>
                 <span>Revisa propuestas pendientes y continúa su evaluación.</span>
               </span>
-              <Icono nombre="arrowRight" size={19} />
+              <Icono nombre="arrowRight" size={19} aria-hidden="true" />
             </Link>
 
-            <Link className="gv-card cie-inicio-acceso" to="/cie/resoluciones">
-              <span className="cie-inicio-acceso-icono">
+            <Link className="gv-card cie-inicio-acceso" to="/cie/resoluciones" aria-label="Consultar resoluciones: Accede al registro de resoluciones emitidas">
+              <span className="cie-inicio-acceso-icono" aria-hidden="true">
                 <Icono nombre="checkCircle" size={24} />
               </span>
               <span className="cie-inicio-acceso-texto">
                 <strong>Consultar resoluciones</strong>
                 <span>Accede al registro de resoluciones emitidas.</span>
               </span>
-              <Icono nombre="arrowRight" size={19} />
+              <Icono nombre="arrowRight" size={19} aria-hidden="true" />
             </Link>
           </section>
 
-          <section className="gv-card cie-inicio-recientes">
+          <section className="gv-card cie-inicio-recientes" aria-label="Expedientes pendientes">
             <div className="cie-inicio-seccion-cabecera">
               <div>
                 <h2>Expedientes pendientes</h2>
                 <p>Propuestas que requieren seguimiento del CIE.</p>
               </div>
-              <Link to="/cie/expedientes" className="cie-inicio-ver-todos">
-                Ver todos <Icono nombre="arrowRight" size={15} />
+              <Link to="/cie/expedientes" className="cie-inicio-ver-todos" aria-label="Ver todos los expedientes pendientes">
+                Ver todos <Icono nombre="arrowRight" size={15} aria-hidden="true" />
               </Link>
             </div>
 
@@ -131,7 +131,7 @@ const InicioCie = () => {
               <div className="cie-inicio-lista">
                 {recientes.map((propuesta) => (
                   <article className="cie-inicio-fila" key={propuesta.codigo}>
-                    <div className="cie-inicio-fila-icono">
+                    <div className="cie-inicio-fila-icono" aria-hidden="true">
                       <Icono nombre="fileText" size={20} />
                     </div>
                     <div className="cie-inicio-fila-datos">
@@ -146,6 +146,7 @@ const InicioCie = () => {
                       <Link
                         to={`/cie/expedientes/${encodeURIComponent(propuesta.codigo)}`}
                         className="gv-btn-ver"
+                        aria-label={`Revisar propuesta ${propuesta.codigo}: ${propuesta.titulo}`}
                       >
                         Revisar
                       </Link>

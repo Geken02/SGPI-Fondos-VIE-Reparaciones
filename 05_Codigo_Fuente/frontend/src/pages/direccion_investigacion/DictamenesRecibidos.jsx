@@ -58,10 +58,10 @@ const DictamenesRecibidos = () => {
 
       {!cargando && !error && (
         <>
-          <div className="gv-resumen">
+          <div className="gv-resumen" role="region" aria-label="Resumen de dictámenes">
             {resumen.map((r) => (
-              <div key={r.etiqueta} className="gv-card gv-tarjeta-resumen">
-                <div className={`gv-resumen-icono ${r.clase}`}><Icono nombre={r.icono} size={24} /></div>
+              <div key={r.etiqueta} className="gv-card gv-tarjeta-resumen" role="region" aria-label={`${r.etiqueta}: ${r.valor}`}>
+                <div className={`gv-resumen-icono ${r.clase}`} aria-hidden="true"><Icono nombre={r.icono} size={24} /></div>
                 <div>
                   <div className="gv-resumen-valor">{r.valor}</div>
                   <div className="gv-resumen-etiqueta">{r.etiqueta}</div>
@@ -70,28 +70,28 @@ const DictamenesRecibidos = () => {
             ))}
           </div>
 
-          <div className="gv-filtros">
+          <div className="gv-filtros" role="search" aria-label="Filtros de dictámenes">
             <label className="gv-campo gv-campo-busqueda">
-              <Icono nombre="search" size={16} />
+              <Icono nombre="search" size={16} aria-hidden="true" />
               <input type="text" placeholder="Buscar por código, título, investigador o escuela..."
-                value={busqueda} onChange={cambiar(setBusqueda)} />
+                value={busqueda} onChange={cambiar(setBusqueda)} aria-label="Buscar dictamen por código, título, investigador o escuela" />
             </label>
             <label className="gv-campo gv-campo-select">
               <select value={escuela} onChange={cambiar(setEscuela)} aria-label="Filtrar por escuela">
                 <option value="">Escuela: Todas</option>
                 {escuelas.map((e) => <option key={e} value={e}>{e}</option>)}
               </select>
-              <Icono nombre="chevronDown" size={16} />
+              <Icono nombre="chevronDown" size={16} aria-hidden="true" />
             </label>
             <label className="gv-campo gv-campo-select">
               <select value={estado} onChange={cambiar(setEstado)} aria-label="Filtrar por estado">
                 <option value="">Estado: Todos</option>
                 {Object.entries(ESTADOS_TRAMITE).map(([k, v]) => <option key={k} value={k}>{v.etiqueta}</option>)}
               </select>
-              <Icono nombre="chevronDown" size={16} />
+              <Icono nombre="chevronDown" size={16} aria-hidden="true" />
             </label>
-            <button type="button" className="cie-btn-outline" onClick={limpiar}>
-              <Icono nombre="sliders" size={15} />Limpiar filtros
+            <button type="button" className="cie-btn-outline" onClick={limpiar} aria-label="Limpiar filtros de búsqueda">
+              <Icono nombre="sliders" size={15} aria-hidden="true" />Limpiar filtros
             </button>
           </div>
 
@@ -116,6 +116,7 @@ const DictamenesRecibidos = () => {
                       <td><EstadoTramiteBadge estado={d.estado} /></td>
                       <td>
                         <button type="button" className="gv-btn-ver"
+                          aria-label={`Ver dictamen de ${d.codigo}: ${d.titulo}`}
                           onClick={() => navigate(`${RUTA_BANDEJA}/${d.codigo}`)}>Ver</button>
                       </td>
                     </tr>
@@ -136,13 +137,13 @@ const DictamenesRecibidos = () => {
               </span>
               <div className="gv-paginador">
                 <button type="button" className="gv-pagina" disabled={paginaActual === 1}
-                  onClick={() => setPagina(paginaActual - 1)} aria-label="Página anterior"><Icono nombre="chevronLeft" size={14} /></button>
+                  onClick={() => setPagina(paginaActual - 1)} aria-label="Página anterior"><Icono nombre="chevronLeft" size={14} aria-hidden="true" /></button>
                 {Array.from({ length: totalPaginas }, (_, i) => (
                   <button key={i} type="button" className={`gv-pagina ${paginaActual === i + 1 ? 'activa' : ''}`}
-                    onClick={() => setPagina(i + 1)}>{i + 1}</button>
+                    onClick={() => setPagina(i + 1)} aria-label={`Página ${i + 1}`} aria-current={paginaActual === i + 1 ? 'page' : undefined}>{i + 1}</button>
                 ))}
                 <button type="button" className="gv-pagina" disabled={paginaActual === totalPaginas}
-                  onClick={() => setPagina(paginaActual + 1)} aria-label="Página siguiente"><Icono nombre="chevronRight" size={14} /></button>
+                  onClick={() => setPagina(paginaActual + 1)} aria-label="Página siguiente"><Icono nombre="chevronRight" size={14} aria-hidden="true" /></button>
               </div>
             </div>
           </div>

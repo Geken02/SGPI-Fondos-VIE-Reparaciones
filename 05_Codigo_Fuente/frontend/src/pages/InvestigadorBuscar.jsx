@@ -132,7 +132,7 @@ const InvestigadorBuscar = () => {
         {/* Buscador Principal */}
         <form onSubmit={handleBuscar} className="search-main-bar" style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
           <div className="filter-search-box" style={{ flex: 1, padding: '10px 16px' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
@@ -142,8 +142,9 @@ const InvestigadorBuscar = () => {
               value={terminoBusqueda}
               onChange={(e) => setTerminoBusqueda(e.target.value)}
               maxLength={200}
+              showCounter={false}
               className="filter-search-input"
-              containerStyle={{ flex: 1 }}
+              containerStyle={{ flex: 1, margin: 0, padding: 0 }}
               style={{ fontSize: '15px', border: 'none', outline: 'none', background: 'transparent' }}
             />
             {terminoBusqueda && (

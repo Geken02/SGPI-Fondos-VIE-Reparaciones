@@ -1,5 +1,6 @@
 // src/components/UserForm.jsx
 import { useState, useEffect } from 'react';
+import { adminService } from '../services/adminService'; // Ajusta la ruta si es necesario
 
 // Componente externo para evitar pérdida de foco
 const InputConLimite = ({ nombre, label, tipo, placeholder, maxLength, requerido, valor, error, onChange }) => {
@@ -146,44 +147,18 @@ export default function UserForm({ usuario, roles, escuelas, onSubmit, onCancel,
     setMensajeRol({ texto: '', tipo: '' });
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/admin/usuarios/${usuario.usuarioId}/roles/${usuarioRolId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      // El backend devuelve 204 No Content (sin cuerpo JSON)
-      if (response.status === 204) {
-        setRolesAsignados(prev => prev.filter(r => r.usuarioRolId !== usuarioRolId));
-        setMensajeRol({ texto: `Rol "${nombreRol}" revocado exitosamente.`, tipo: 'exito' });
-      } else if (!response.ok) {
-        // Intentar leer JSON solo si hay contenido
-        const text = await response.text();
-        let errorMsg = 'Error al revocar el rol';
-        try {
-          const err = JSON.parse(text);
-          errorMsg = err.detail || errorMsg;
-        } catch (e) {
-          errorMsg = text || errorMsg;
-        }
-        throw new Error(errorMsg);
-      } else {
-        // Si devuelve 200 con cuerpo
-        const data = await response.json();
-        setRolesAsignados(prev => prev.filter(r => r.usuarioRolId !== usuarioRolId));
-        setMensajeRol({ texto: `Rol "${nombreRol}" revocado exitosamente.`, tipo: 'exito' });
-      }
+      await adminService.revocarRol(usuario.usuarioId, usuarioRolId);
+      setRolesAsignados(prev => prev.filter(r => r.usuarioRolId !== usuarioRolId));
+      setMensajeRol({ texto: `Rol "${nombreRol}" revocado exitosamente.`, tipo: 'exito' });
     } catch (err) {
-      setMensajeRol({ texto: err.message, tipo: 'error' });
+      const errorMsg = err.response?.data?.detail || 'Error al revocar el rol';
+      setMensajeRol({ texto: errorMsg, tipo: 'error' });
     } finally {
       setGestionandoRol(null);
     }
   };
 
-  const handleAsignarRol = async () => {
+    const handleAsignarRol = async () => {
     if (!nuevoRolId) {
       setMensajeRol({ texto: 'Seleccione un rol para asignar', tipo: 'error' });
       return;
@@ -193,47 +168,13 @@ export default function UserForm({ usuario, roles, escuelas, onSubmit, onCancel,
     setMensajeRol({ texto: '', tipo: '' });
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/admin/usuarios/${usuario.usuarioId}/roles`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ rolId: parseInt(nuevoRolId) })
-      });
-
-      if (!response.ok) {
-        const text = await response.text();
-        let errorMsg = 'Error al asignar el rol';
-        try {
-          const err = JSON.parse(text);
-          errorMsg = err.detail || errorMsg;
-        } catch (e) {
-          errorMsg = text || errorMsg;
-        }
-        throw new Error(errorMsg);
-      }
-
-      // Manejar respuesta 201 con cuerpo o 204 sin cuerpo
-      if (response.status === 204) {
-        // Si no hay cuerpo, recargar roles desde el backend
-        const rolesRes = await fetch(`/api/admin/usuarios/${usuario.usuarioId}/roles`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (rolesRes.ok) {
-          const rolesData = await rolesRes.json();
-          setRolesAsignados(rolesData.filter(r => r.activo));
-        }
-      } else {
-        const nuevoRol = await response.json();
-        setRolesAsignados(prev => [...prev, nuevoRol]);
-      }
-      
+      const nuevoRol = await adminService.asignarRol(usuario.usuarioId, { rolId: parseInt(nuevoRolId) });
+      setRolesAsignados(prev => [...prev, nuevoRol]);
       setNuevoRolId('');
       setMensajeRol({ texto: 'Rol asignado exitosamente.', tipo: 'exito' });
     } catch (err) {
-      setMensajeRol({ texto: err.message, tipo: 'error' });
+      const errorMsg = err.response?.data?.detail || 'Error al asignar el rol';
+      setMensajeRol({ texto: errorMsg, tipo: 'error' });
     } finally {
       setGestionandoRol(null);
     }

@@ -59,6 +59,18 @@ enviarEvaluacion: (propuestaId, data) =>
   obtenerDocumentosPropuesta: (propuestaId) => 
     api.get(`/api/comite-tecnico/evaluador/${propuestaId}/documentos`),
 
+    obtenerArchivoDocumento: async (documentoId) => {
+    const response = await api.get(`/documentos/${documentoId}/ver`, {
+      responseType: 'blob', 
+    });
+    return response.data; 
+  },
+
+    descargarRubricaExcel: (propuestaId) => 
+    api.get(`/api/comite-tecnico/evaluador/${propuestaId}/rubrica/excel`, {
+      responseType: 'blob' 
+    }),
+
   obtenerEstadoIA: () => 
     api.get('/api/comite-tecnico/ia/estado'),
 

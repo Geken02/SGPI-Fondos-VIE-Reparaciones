@@ -4,6 +4,12 @@ import { vinculacionService } from '../services/vinculacionService';
 import { LimitedInput } from '../components/LimitedInput';
 import { useAuth } from '../context/AuthContext';
 
+const formatearFecha = (fechaRaw) => {
+  if (!fechaRaw) return '—';
+  const d = new Date(fechaRaw);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
 const VinculacionDashboard = () => {
   const navigate = useNavigate();
   const { usuario } = useAuth();
@@ -28,17 +34,30 @@ const VinculacionDashboard = () => {
           const coordId = p.investigadorCoordId || p.investigador_coord_id;
           return !coordId || coordId !== usuarioId;
         });
-        setPropuestas(data.map(p => ({
-          id: p.codigoPropuesta || `FVIE-2027-00${p.propuestaId}`,
-          propuestaId: p.propuestaId,
-          titulo: p.titulo,
-          estado: p.tieneDictamenVinculacion ? 'Completada' : 'Pendiente',
-          escuela: p.nombreEscuela ? p.nombreEscuela.slice(0, 3).toUpperCase() : 'IE',
-          investigador: p.investigadorCoordinador || 'Investigador TEC',
-          fecha: '22 ago 2027',
-          accion: p.tieneDictamenVinculacion ? 'Ver Dictamen' : 'Evaluar',
-          tipoAccion: p.tieneDictamenVinculacion ? 'outline' : 'primary'
-        })));
+
+        setPropuestas(propuestasFiltradas.map(p => {
+          const escuelaAbbr = p.codigoEscuela || (p.nombreEscuela ? (
+            p.nombreEscuela.length <= 4 
+              ? p.nombreEscuela 
+              : p.nombreEscuela.split(' ').filter(w => w.length > 2).map(w => w[0]).join('').slice(0, 4).toUpperCase()
+          ) : '—');
+
+          const tieneDictamen = !!(p.tieneDictamenVinculacion || p.dictamenId || p.numeroOficio);
+
+          return {
+            id: p.codigoPropuesta || (p.propuestaId ? `FVIE-${p.propuestaId}` : '—'),
+            propuestaId: p.propuestaId,
+            titulo: p.titulo || 'Sin título registrado',
+            estado: tieneDictamen ? 'Completada' : 'Pendiente',
+            tieneDictamenVinculacion: tieneDictamen,
+            escuela: escuelaAbbr,
+            nombreEscuelaCompleto: p.nombreEscuela || '',
+            investigador: p.investigadorCoordinador || 'No asignado',
+            fecha: formatearFecha(p.fechaEnvio || p.fechaCreacion),
+            accion: tieneDictamen ? 'Ver Dictamen' : 'Evaluar',
+            tipoAccion: tieneDictamen ? 'outline' : 'primary'
+          };
+        }));
       } else {
         setPropuestas([]);
       }
@@ -57,8 +76,10 @@ const VinculacionDashboard = () => {
     }
   };
 
+  const departamentosDisponibles = Array.from(new Set(propuestas.map(p => p.escuela).filter(e => e && e !== '—')));
+
   const propuestasFiltradas = propuestas.filter(p => {
-    const texto = `${p.id} ${p.titulo} ${p.investigador}`.toLowerCase();
+    const texto = `${p.id} ${p.titulo} ${p.investigador} ${p.escuela}`.toLowerCase();
     const coincideTexto = texto.includes(filtroTexto.toLowerCase());
     const coincideEstado = filtroEstado === 'Todas' || p.estado === filtroEstado;
     const coincideDpto = filtroDpto === 'Todos' || p.escuela === filtroDpto;
@@ -66,8 +87,8 @@ const VinculacionDashboard = () => {
   });
 
   const totalAsignadas = propuestas.length;
-  const pendientes = propuestas.filter(p => (p.estado || '').toLowerCase().includes('pend') || !p.tieneDictamenVinculacion).length;
-  const completadas = propuestas.filter(p => (p.estado || '').toLowerCase().includes('comp') || p.tieneDictamenVinculacion).length;
+  const pendientes = propuestas.filter(p => (p.estado || '').toLowerCase().includes('pend')).length;
+  const completadas = propuestas.filter(p => (p.estado || '').toLowerCase().includes('comp')).length;
 
   return (
     <div className="vinculacion-dashboard-container">
@@ -81,8 +102,6 @@ const VinculacionDashboard = () => {
             </p>
           </div>
         </div>
-
-        
 
         {/* Fila de 3 Tarjetas KPI */}
         <div className="kpi-cards-grid">
@@ -114,13 +133,13 @@ const VinculacionDashboard = () => {
         {/* Barra de Filtros */}
         <div className="proposals-filters-bar" style={{ marginTop: '24px' }}>
           <div className="filter-search-box">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
             <LimitedInput
               type="text"
-              placeholder="Buscar por código, título, investigador..."
+              placeholder="Buscar por código, título, escuela, investigador..."
               value={filtroTexto}
               onChange={(e) => setFiltroTexto(e.target.value)}
               maxLength={200}
@@ -137,7 +156,6 @@ const VinculacionDashboard = () => {
           >
             <option value="Todas">Estado: Todas ▾</option>
             <option value="Pendiente">Pendiente</option>
-            <option value="En curso">En curso</option>
             <option value="Completada">Completada</option>
           </select>
 
@@ -146,11 +164,10 @@ const VinculacionDashboard = () => {
             onChange={(e) => setFiltroDpto(e.target.value)}
             className="filter-select"
           >
-            <option value="Todos">Dpto: Todos ▾</option>
-            <option value="IE">IE (Electrónica)</option>
-            <option value="IC">IC (Computación)</option>
-            <option value="ATI">ATI</option>
-            <option value="MIT">MIT</option>
+            <option value="Todos">Dpto / Escuela: Todos ▾</option>
+            {departamentosDisponibles.map(dpto => (
+              <option key={dpto} value={dpto}>{dpto}</option>
+            ))}
           </select>
         </div>
 
@@ -172,7 +189,7 @@ const VinculacionDashboard = () => {
               {cargando ? (
                 <tr>
                   <td colSpan="7" style={{ textAlign: 'center', padding: '32px', color: '#627d98' }}>
-                    Cargando propuestas asignadas a Vinculación...
+                    Cargando propuestas asignadas a Vinculación desde la base de datos...
                   </td>
                 </tr>
               ) : propuestasFiltradas.length > 0 ? (
@@ -183,7 +200,7 @@ const VinculacionDashboard = () => {
                         {item.id}
                       </span>
                     </td>
-                    <td style={{ fontWeight: 500, color: '#002855', maxWidth: '320px' }}>
+                    <td className="propuesta-titulo-td" style={{ fontWeight: 500, maxWidth: '320px' }}>
                       {item.titulo}
                     </td>
                     <td>
@@ -192,7 +209,7 @@ const VinculacionDashboard = () => {
                       </span>
                     </td>
                     <td>
-                      <span className="badge-escuela-abbr">{item.escuela}</span>
+                      <span className="badge-escuela-abbr" title={item.nombreEscuelaCompleto}>{item.escuela}</span>
                     </td>
                     <td>{item.investigador}</td>
                     <td>{item.fecha}</td>
@@ -213,11 +230,11 @@ const VinculacionDashboard = () => {
                   <td colSpan="7" style={{ textAlign: 'center', padding: '48px 20px', color: '#627d98' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                       <div style={{ fontSize: '28px', color: '#0369A1' }}>📋</div>
-                      <div style={{ fontSize: '16px', fontWeight: 500, color: '#002855' }}>
+                      <div className="empty-state-title" style={{ fontSize: '16px', fontWeight: 500 }}>
                         No hay propuestas asignadas actualmente
                       </div>
                       <div style={{ fontSize: '13px', color: '#829ab1', maxWidth: '460px', lineHeight: 1.4 }}>
-                        Como evaluador nuevo de Vinculación, las propuestas de Desarrollo Tecnológico aparecerán aquí una vez que sean remitidas formalmente por las escuelas o el Comité Técnico.
+                        Las propuestas remitidas formalmente para análisis de Vinculación se sincronizan directamente con la base de datos institucional.
                       </div>
                     </div>
                   </td>

@@ -14,6 +14,64 @@ const InvestigadorDashboard = () => {
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroEscuela, setFiltroEscuela] = useState('Todas');
   const [filtroEstado, setFiltroEstado] = useState('Todos');
+  const [convocatoriaCercana, setConvocatoriaCercana] = useState(null);
+
+    const formatearFechaCierre = (fechaStr) => {
+    if (!fechaStr) return 'Por definir';
+    try {
+      const [year, month, day] = fechaStr.split('-');
+      const meses = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+      ];
+      const mesNum = parseInt(month, 10);
+      const diaNum = parseInt(day, 10);
+      const mesNombre = meses[mesNum - 1] || month;
+      return `${diaNum} de ${mesNombre}`;
+    } catch (_e) {
+      return fechaStr;
+    }
+  };
+
+  const cargarConvocatoriaMasCercana = async () => {
+    try {
+      const dataCatalogos = await propuestaService.obtenerCatalogosFormulario();
+      const lista = dataCatalogos?.convocatorias || [];
+      const ahora = new Date();
+
+      const ordenadas = lista
+        .filter(c => c && c.nombreConvocatoria)
+        .map(c => {
+          let dateObj = null;
+          let diffMs = Infinity;
+          if (c.fechaCierre) {
+            dateObj = new Date(c.fechaCierre + 'T23:59:59');
+            diffMs = dateObj.getTime() - ahora.getTime();
+          }
+          return {
+            id: c.convocatoriaId,
+            nombre: c.nombreConvocatoria,
+            fechaCierre: c.fechaCierre,
+            dateObj,
+            diffMs
+          };
+        })
+        .sort((a, b) => {
+          if (a.diffMs >= 0 && b.diffMs >= 0) return a.diffMs - b.diffMs;
+          if (a.diffMs >= 0) return -1;
+          if (b.diffMs >= 0) return 1;
+          return b.diffMs - a.diffMs;
+        });
+
+      if (ordenadas.length > 0) {
+        setConvocatoriaCercana(ordenadas[0]);
+      } else {
+        setConvocatoriaCercana(null);
+      }
+    } catch (_err) {
+      setConvocatoriaCercana(null);
+    }
+  };
 
   const cargarPropuestas = async () => {
     try {
@@ -30,6 +88,7 @@ const InvestigadorDashboard = () => {
 
   useEffect(() => {
     cargarPropuestas();
+    cargarConvocatoriaMasCercana();
 
     // Actualizar cuando se crea una nueva propuesta desde el modal flotante
     const handlePropuestaCreada = () => {
@@ -140,7 +199,14 @@ const InvestigadorDashboard = () => {
             <div className="kpi-donut-layout">
               {/* Gráfico Donut SVG */}
               <div className="donut-chart-wrapper">
-                <svg viewBox="0 0 36 36" className="donut-svg" role="img" aria-label="Gráfico de distribución de propuestas por estado">
+                <svg 
+                  viewBox="0 0 36 36" 
+                  className="donut-svg"
+                  role="img"
+                  aria-label={`Gráfico de estado de propuestas. Total: ${totalPropuestas}. En proceso: ${enProceso}, Aprobadas: ${aprobadas}, Rechazadas: ${rechazadas}, Canceladas: ${canceladas}`}
+                >
+                  <title>Distribución de estados de propuestas</title>
+                  <desc>{`Gráfico circular que muestra un total de ${totalPropuestas} propuestas: ${enProceso} en proceso, ${aprobadas} aprobadas, ${rechazadas} rechazadas y ${canceladas} canceladas.`}</desc>
                   {/* Pista circular de fondo */}
                   <path
                     className="donut-bg-track"
@@ -197,21 +263,21 @@ const InvestigadorDashboard = () => {
               </div>
 
               {/* Leyenda */}
-              <div className="kpi-legend">
+              <div className="kpi-legend" aria-label="Leyenda de estados">
                 <div className="kpi-legend-row">
-                  <span className="dot dot-cyan" style={{ background: '#0284c7', backgroundColor: '#0284c7' }}></span>
+                  <span className="dot dot-cyan" aria-hidden="true"></span>
                   <span className="legend-text"><strong>{enProceso}</strong> En proceso</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-dark" style={{ background: '#002855', backgroundColor: '#002855' }}></span>
+                  <span className="dot dot-dark" aria-hidden="true"></span>
                   <span className="legend-text"><strong>{aprobadas}</strong> Aprobadas</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-coral" style={{ background: '#EF3340', backgroundColor: '#EF3340' }}></span>
+                  <span className="dot dot-coral" aria-hidden="true"></span>
                   <span className="legend-text"><strong>{rechazadas}</strong> Rechazadas</span>
                 </div>
                 <div className="kpi-legend-row">
-                  <span className="dot dot-gray" style={{ background: '#94a3b8', backgroundColor: '#94a3b8' }}></span>
+                  <span className="dot dot-gray" aria-hidden="true"></span>
                   <span className="legend-text"><strong>{canceladas}</strong> Canceladas</span>
                 </div>
               </div>
@@ -289,6 +355,7 @@ const InvestigadorDashboard = () => {
                 value={filtroEscuela} 
                 onChange={(e) => setFiltroEscuela(e.target.value)}
                 className="filter-select"
+                aria-label="Filtrar propuestas por escuela"
               >
                 <option value="Todas">Escuela: Todas ▾</option>
                 <option value="Ingeniería Electrónica">Ingeniería Electrónica</option>
@@ -300,6 +367,7 @@ const InvestigadorDashboard = () => {
                 value={filtroEstado} 
                 onChange={(e) => setFiltroEstado(e.target.value)}
                 className="filter-select"
+                aria-label="Filtrar propuestas por estado"
               >
                 <option value="Todos">Estado: Todos ▾</option>
                 <option value="En proceso">En proceso</option>
@@ -410,24 +478,36 @@ const InvestigadorDashboard = () => {
             </div>
 
             <div className="quick-access-cards">
-              {/* Aviso 1: Convocatoria */}
-              <div 
-                className="quick-card"
-                onClick={() => alert('Información oficial de la Convocatoria Fondos VIE 2026. Cierre: 30 de Noviembre.')}
+              {/* Aviso 1: Convocatoria más cercana a cerrar */}
+              <button 
+                type="button"
+                className="quick-card quick-card-btn"
+                onClick={() => navigate('/dashboard/convocatorias')}
+                aria-label={convocatoriaCercana ? `${convocatoriaCercana.nombre}. Cierra el ${formatearFechaCierre(convocatoriaCercana.fechaCierre)}. Haga clic para consultar las bases.` : 'Ver convocatorias disponibles'}
               >
-                <div className="quick-card-icon">📅</div>
+                <div className="quick-card-icon" aria-hidden="true">📅</div>
                 <div className="quick-card-content">
-                  <div className="quick-card-title">Convocatoria VIE 2026</div>
-                  <div className="quick-card-sub">Cierra el 30 de Noviembre</div>
+                  <div className="quick-card-title">
+                    {convocatoriaCercana ? convocatoriaCercana.nombre : 'Convocatoria más cercana'}
+                  </div>
+                  <div className="quick-card-sub">
+                    {convocatoriaCercana?.fechaCierre 
+                      ? `Cierra el ${formatearFechaCierre(convocatoriaCercana.fechaCierre)}`
+                      : 'Sin fecha de cierre registrada'}
+                  </div>
                 </div>
-              </div>
+              </button>
 
               {/* Aviso 2: Plantillas */}
               <div 
                 className="quick-card"
+                role="button"
+                tabIndex={0}
+                aria-label="Plantillas de Presupuesto. Descargar formato oficial F02. Haga clic o presione Enter para descargar"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos VIE)...'); } }}
                 onClick={() => alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos VIE)...')}
               >
-                <div className="quick-card-icon">🧩</div>
+                <div className="quick-card-icon" aria-hidden="true">🧩</div>
                 <div className="quick-card-content">
                   <div className="quick-card-title">Plantillas de Presupuesto</div>
                   <div className="quick-card-sub">Descargar formato oficial F02</div>
@@ -437,9 +517,13 @@ const InvestigadorDashboard = () => {
               {/* Aviso 3: Reglamento */}
               <div 
                 className="quick-card"
+                role="button"
+                tabIndex={0}
+                aria-label="Reglamento de Investigación. Guía y normativa vigente. Haga clic o presione Enter para consultar"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alert('Abriendo Reglamento General de Investigación y Extensión del ITCR.'); } }}
                 onClick={() => alert('Abriendo Reglamento General de Investigación y Extensión del ITCR.')}
               >
-                <div className="quick-card-icon">📖</div>
+                <div className="quick-card-icon" aria-hidden="true">📖</div>
                 <div className="quick-card-content">
                   <div className="quick-card-title">Reglamento de Investigación</div>
                   <div className="quick-card-sub">Guía y normativa vigente</div>

@@ -12,72 +12,84 @@ const estadoInicial = {
   tipoHoraId: "",
   periodoNombramiento: "",
   presupuestoAprobado: "",
-  rutaArchivo: "",
 };
 
 export default function AcuerdosConsejo() {
   const { rolesUsuario = [] } = useAuth();
   const esDirectorEscuela = rolesUsuario.includes("DirectorEscuela");
+
   const [acuerdos, setAcuerdos] = useState([]);
   const [propuestas, setPropuestas] = useState([]);
+  const [tiposAcuerdo, setTiposAcuerdo] = useState([]);
+  const [tiposHora, setTiposHora] = useState([]);
   const [cargandoPropuestas, setCargandoPropuestas] = useState(false);
   const [formulario, setFormulario] = useState(estadoInicial);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [generandoDoc, setGenerandoDoc] = useState(null);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
 
+  // =========================================================================
+  // CARGA DE DATOS
+  // =========================================================================
   const cargarAcuerdos = async () => {
     try {
       setCargando(true);
       setError("");
-
       const respuesta = await consejoEscuelaService.listarAcuerdos();
-
       setAcuerdos(Array.isArray(respuesta) ? respuesta : respuesta?.items ?? []);
     } catch (err) {
       console.error("Error al cargar acuerdos:", err);
-      setError(
-        err.response?.data?.detail ||
-          "No fue posible cargar los acuerdos. Verificá tu sesión y los permisos."
-      );
+      setError("No fue posible cargar los acuerdos. Verificá tu sesión y los permisos.");
     } finally {
       setCargando(false);
     }
   };
 
+  const cargarCatalogos = async () => {
+    try {
+      const [tiposAc, tiposH] = await Promise.all([
+        consejoEscuelaService.listarTiposAcuerdo(),
+        consejoEscuelaService.listarTiposHora(),
+      ]);
+      setTiposAcuerdo(tiposAc || []);
+      setTiposHora(tiposH || []);
+    } catch (err) {
+      console.error("Error al cargar catálogos:", err);
+    }
+  };
+
+  const cargarPropuestas = async () => {
+    try {
+      setCargandoPropuestas(true);
+      const respuesta = await consejoEscuelaService.listarPropuestasDisponibles();
+      setPropuestas(Array.isArray(respuesta) ? respuesta : []);
+    } catch (err) {
+      console.error("Error al cargar propuestas:", err);
+      setError("No fue posible cargar las propuestas disponibles para registrar el acuerdo.");
+    } finally {
+      setCargandoPropuestas(false);
+    }
+  };
+
   useEffect(() => {
     cargarAcuerdos();
+    cargarCatalogos();
   }, []);
 
   useEffect(() => {
-    if (!esDirectorEscuela) return;
+    if (esDirectorEscuela && mostrarFormulario) {
+      cargarPropuestas();
+    }
+  }, [esDirectorEscuela, mostrarFormulario]);
 
-    const cargarPropuestas = async () => {
-      try {
-        setCargandoPropuestas(true);
-        const respuesta = await consejoEscuelaService.listarPropuestas();
-        const lista = Array.isArray(respuesta)
-          ? respuesta
-          : respuesta?.items ?? respuesta?.data ?? [];
-        setPropuestas(lista);
-      } catch (err) {
-        console.error("Error al cargar propuestas para el acuerdo:", err);
-        setError(
-          "No fue posible cargar las propuestas disponibles para registrar el acuerdo."
-        );
-      } finally {
-        setCargandoPropuestas(false);
-      }
-    };
-
-    cargarPropuestas();
-  }, [esDirectorEscuela]);
-
+  // =========================================================================
+  // MANEJADORES DE FORMULARIO
+  // =========================================================================
   const manejarCambio = (event) => {
     const { name, value } = event.target;
-
     setFormulario((actual) => ({
       ...actual,
       [name]: value,
@@ -86,7 +98,6 @@ export default function AcuerdosConsejo() {
 
   const manejarGuardar = async (event) => {
     event.preventDefault();
-
     setError("");
     setMensaje("");
 
@@ -103,46 +114,35 @@ export default function AcuerdosConsejo() {
     if (formulario.numeroAcuerdo.trim()) {
       datos.numeroAcuerdo = formulario.numeroAcuerdo.trim();
     }
-
     if (formulario.fechaAcuerdo) {
       datos.fechaAcuerdo = formulario.fechaAcuerdo;
     }
-
     if (formulario.horasAprobadas !== "") {
       datos.horasAprobadas = Number(formulario.horasAprobadas);
     }
-
     if (formulario.tipoHoraId !== "") {
       datos.tipoHoraId = Number(formulario.tipoHoraId);
     }
-
     if (formulario.periodoNombramiento.trim()) {
       datos.periodoNombramiento = formulario.periodoNombramiento.trim();
     }
-
     if (formulario.presupuestoAprobado !== "") {
       datos.presupuestoAprobado = Number(formulario.presupuestoAprobado);
-    }
-
-    if (formulario.rutaArchivo.trim()) {
-      datos.rutaArchivo = formulario.rutaArchivo.trim();
     }
 
     try {
       setGuardando(true);
 
-      await consejoEscuelaService.crearAcuerdo(datos);
+      // El backend genera automáticamente el documento Word y lo sube a S3
+      const respuesta = await consejoEscuelaService.crearAcuerdo(datos);
 
-      setMensaje("El acuerdo se registró correctamente.");
+      setMensaje("El acuerdo se registró correctamente y el documento oficial fue generado.");
       setFormulario(estadoInicial);
       setMostrarFormulario(false);
-
       await cargarAcuerdos();
     } catch (err) {
       console.error("Error al registrar acuerdo:", err);
-
       const detalle = err.response?.data?.detail;
-
       setError(
         typeof detalle === "string"
           ? detalle
@@ -153,31 +153,53 @@ export default function AcuerdosConsejo() {
     }
   };
 
-  const obtenerId = (acuerdo) =>
-    acuerdo.acuerdoId ?? acuerdo.id ?? "—";
+  // =========================================================================
+  // DESCARGA DE DOCUMENTO
+  // =========================================================================
+  const descargarDocumento = async (acuerdoId) => {
+    try {
+      setGenerandoDoc(acuerdoId);
+      setError("");
 
-  const obtenerPropuesta = (acuerdo) =>
-    acuerdo.propuestaId ??
-    acuerdo.propuesta?.propuestaId ??
-    acuerdo.propuesta?.codigoPropuesta ??
-    "—";
+      // El backend devuelve la URL de descarga directamente
+      const respuesta = await consejoEscuelaService.generarDocumentoAcuerdo(acuerdoId);
 
-  const obtenerTipo = (acuerdo) =>
-    acuerdo.tipoAcuerdo?.nombre ??
-    acuerdo.tipoAcuerdoNombre ??
-    acuerdo.tipoAcuerdoId ??
-    "—";
+      if (respuesta && respuesta.urlDescarga) {
+        window.open(respuesta.urlDescarga, "_blank");
+        setMensaje("Documento oficial descargado exitosamente.");
+      } else {
+        throw new Error("No se recibió URL de descarga");
+      }
+    } catch (err) {
+      console.error("Error al descargar documento:", err);
+      setError("No fue posible descargar el documento del acuerdo.");
+    } finally {
+      setGenerandoDoc(null);
+    }
+  };
+
+  // =========================================================================
+  // HELPERS DE VISUALIZACIÓN
+  // =========================================================================
+  const obtenerTipoAcuerdoNombre = (tipoId) => {
+    const tipo = tiposAcuerdo.find((t) => t.tipoAcuerdoId === tipoId);
+    return tipo?.nombre || tipoId;
+  };
+
+  const obtenerTipoHoraNombre = (tipoId) => {
+    const tipo = tiposHora.find((t) => t.tipoHoraId === tipoId);
+    return tipo ? `${tipo.codigo} - ${tipo.descripcion}` : tipoId;
+  };
 
   const obtenerFecha = (fecha) => {
     if (!fecha) return "—";
-
     const fechaLocal = new Date(`${fecha}T00:00:00`);
-
-    return Number.isNaN(fechaLocal.getTime())
-      ? fecha
-      : fechaLocal.toLocaleDateString("es-CR");
+    return Number.isNaN(fechaLocal.getTime()) ? fecha : fechaLocal.toLocaleDateString("es-CR");
   };
 
+  // =========================================================================
+  // RENDER
+  // =========================================================================
   return (
     <main className="acuerdos-consejo">
       <header className="acuerdos-encabezado">
@@ -185,36 +207,31 @@ export default function AcuerdosConsejo() {
           <p className="acuerdos-subtitulo">Consejo de Escuela</p>
           <h1>Gestión de acuerdos</h1>
           <p className="acuerdos-descripcion">
-            Consulta y registra los acuerdos relacionados con las propuestas
-            de investigación.
+            Consulta y registra los acuerdos relacionados con las propuestas de investigación.
           </p>
         </div>
 
         {esDirectorEscuela && (
-<button
-          type="button"
-          className="acuerdos-boton-principal"
-          onClick={() => {
-            setError("");
-            setMensaje("");
-            setMostrarFormulario((actual) => !actual);
-          }}
-        >
-          {mostrarFormulario ? "Cancelar" : "＋ Nuevo acuerdo"}
-        </button>
+          <button
+            type="button"
+            className="acuerdos-boton-principal"
+            onClick={() => {
+              setError("");
+              setMensaje("");
+              setMostrarFormulario((actual) => !actual);
+            }}
+          >
+            {mostrarFormulario ? "Cancelar" : "＋ Nuevo acuerdo"}
+          </button>
         )}
       </header>
 
       {mensaje && (
-        <div className="acuerdos-alerta acuerdos-alerta-exito">
-          {mensaje}
-        </div>
+        <div className="acuerdos-alerta acuerdos-alerta-exito">{mensaje}</div>
       )}
 
       {error && (
-        <div className="acuerdos-alerta acuerdos-alerta-error">
-          {error}
-        </div>
+        <div className="acuerdos-alerta acuerdos-alerta-error">{error}</div>
       )}
 
       {esDirectorEscuela && mostrarFormulario && (
@@ -223,6 +240,7 @@ export default function AcuerdosConsejo() {
 
           <form onSubmit={manejarGuardar}>
             <div className="acuerdos-formulario-grid">
+              {/* Propuesta */}
               <label>
                 Propuesta *
                 <select
@@ -236,8 +254,8 @@ export default function AcuerdosConsejo() {
                     {cargandoPropuestas
                       ? "Cargando propuestas..."
                       : propuestas.length === 0
-                        ? "No hay propuestas disponibles"
-                        : "Seleccione una propuesta"}
+                      ? "No hay propuestas disponibles"
+                      : "Seleccione una propuesta"}
                   </option>
                   {propuestas.map((propuesta) => (
                     <option
@@ -252,6 +270,7 @@ export default function AcuerdosConsejo() {
                 </select>
               </label>
 
+              {/* Tipo de acuerdo */}
               <label>
                 Tipo de acuerdo *
                 <select
@@ -260,13 +279,16 @@ export default function AcuerdosConsejo() {
                   onChange={manejarCambio}
                   required
                 >
-                  <option value="">Seleccione un tipo de acuerdo</option>
-                  <option value="1">Aprobación</option>
-                  <option value="2">Rechazo</option>
-                  <option value="3">Devolución</option>
+                  <option value="">Seleccione un tipo</option>
+                  {tiposAcuerdo.map((tipo) => (
+                    <option key={tipo.tipoAcuerdoId} value={tipo.tipoAcuerdoId}>
+                      {tipo.nombre}
+                    </option>
+                  ))}
                 </select>
               </label>
 
+              {/* Número de acuerdo */}
               <label>
                 Número de acuerdo
                 <input
@@ -278,6 +300,7 @@ export default function AcuerdosConsejo() {
                 />
               </label>
 
+              {/* Fecha */}
               <label>
                 Fecha del acuerdo
                 <input
@@ -288,6 +311,7 @@ export default function AcuerdosConsejo() {
                 />
               </label>
 
+              {/* Horas aprobadas */}
               <label>
                 Horas aprobadas
                 <input
@@ -300,17 +324,24 @@ export default function AcuerdosConsejo() {
                 />
               </label>
 
+              {/* Tipo de hora */}
               <label>
-                Tipo de hora (ID)
-                <input
-                  type="number"
+                Tipo de hora
+                <select
                   name="tipoHoraId"
-                  min="1"
                   value={formulario.tipoHoraId}
                   onChange={manejarCambio}
-                />
+                >
+                  <option value="">Seleccione tipo de hora</option>
+                  {tiposHora.map((tipo) => (
+                    <option key={tipo.tipoHoraId} value={tipo.tipoHoraId}>
+                      {tipo.codigo} - {tipo.descripcion}
+                    </option>
+                  ))}
+                </select>
               </label>
 
+              {/* Período */}
               <label>
                 Período de nombramiento
                 <input
@@ -322,6 +353,7 @@ export default function AcuerdosConsejo() {
                 />
               </label>
 
+              {/* Presupuesto */}
               <label>
                 Presupuesto aprobado
                 <input
@@ -331,17 +363,6 @@ export default function AcuerdosConsejo() {
                   step="0.01"
                   value={formulario.presupuestoAprobado}
                   onChange={manejarCambio}
-                />
-              </label>
-
-              <label className="acuerdos-campo-completo">
-                Ruta del archivo
-                <input
-                  type="text"
-                  name="rutaArchivo"
-                  value={formulario.rutaArchivo}
-                  onChange={manejarCambio}
-                  placeholder="Ruta o referencia del documento"
                 />
               </label>
             </div>
@@ -370,6 +391,9 @@ export default function AcuerdosConsejo() {
         </section>
       )}
 
+      {/* =========================================================================
+          LISTADO DE ACUERDOS
+          ========================================================================= */}
       <section className="acuerdos-panel">
         <div className="acuerdos-listado-encabezado">
           <div>
@@ -390,9 +414,7 @@ export default function AcuerdosConsejo() {
         {cargando ? (
           <p className="acuerdos-estado">Cargando acuerdos...</p>
         ) : acuerdos.length === 0 ? (
-          <p className="acuerdos-estado">
-            No hay acuerdos registrados para mostrar.
-          </p>
+          <p className="acuerdos-estado">No hay acuerdos registrados para mostrar.</p>
         ) : (
           <div className="acuerdos-tabla-contenedor">
             <table className="acuerdos-tabla">
@@ -404,31 +426,79 @@ export default function AcuerdosConsejo() {
                   <th>Número</th>
                   <th>Fecha</th>
                   <th>Horas</th>
+                  <th>Tipo Hora</th>
                   <th>Presupuesto</th>
+                  <th>Documento Oficial</th>
                 </tr>
               </thead>
 
               <tbody>
-                {acuerdos.map((acuerdo) => (
-                  <tr key={obtenerId(acuerdo)}>
-                    <td>{obtenerId(acuerdo)}</td>
-                    <td>{obtenerPropuesta(acuerdo)}</td>
-                    <td>{obtenerTipo(acuerdo)}</td>
-                    <td>{acuerdo.numeroAcuerdo || "—"}</td>
-                    <td>{obtenerFecha(acuerdo.fechaAcuerdo)}</td>
-                    <td>{acuerdo.horasAprobadas ?? "—"}</td>
-                    <td>
-                      {acuerdo.presupuestoAprobado == null
-                        ? "—"
-                        : Number(
-                            acuerdo.presupuestoAprobado
-                          ).toLocaleString("es-CR", {
-                            style: "currency",
-                            currency: "CRC",
-                          })}
-                    </td>
-                  </tr>
-                ))}
+                {acuerdos.map((acuerdo) => {
+                  const id = acuerdo.acuerdoId ?? acuerdo.id ?? "—";
+                  const propuesta =
+                    acuerdo.propuestaId ??
+                    acuerdo.propuesta?.propuestaId ??
+                    acuerdo.propuesta?.codigoPropuesta ??
+                    "—";
+                  const tipo =
+                    acuerdo.tipoAcuerdo?.nombre ??
+                    acuerdo.tipoAcuerdoNombre ??
+                    acuerdo.tipoAcuerdoId ??
+                    "—";
+
+                  return (
+                    <tr key={id}>
+                      <td>{id}</td>
+                      <td>{propuesta}</td>
+                      <td>{obtenerTipoAcuerdoNombre(acuerdo.tipoAcuerdoId)}</td>
+                      <td>{acuerdo.numeroAcuerdo || "—"}</td>
+                      <td>{obtenerFecha(acuerdo.fechaAcuerdo)}</td>
+                      <td>{acuerdo.horasAprobadas ?? "—"}</td>
+                      <td>{obtenerTipoHoraNombre(acuerdo.tipoHoraId)}</td>
+                      <td>
+                        {acuerdo.presupuestoAprobado == null
+                          ? "—"
+                          : Number(acuerdo.presupuestoAprobado).toLocaleString("es-CR", {
+                              style: "currency",
+                              currency: "CRC",
+                            })}
+                      </td>
+                      <td>
+                        {acuerdo.rutaArchivo ? (
+                          <button
+                            type="button"
+                            className="acuerdos-boton-accion"
+                            onClick={() => descargarDocumento(id)}
+                            disabled={generandoDoc === id}
+                            title="Descargar documento oficial (Form-07/Form-08)"
+                            style={{
+                              backgroundColor: "#10b981",
+                              color: "white",
+                              border: "none",
+                              padding: "6px 12px",
+                              borderRadius: "4px",
+                              cursor: generandoDoc === id ? "not-allowed" : "pointer",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {generandoDoc === id ? "⏳ Descargando..." : "📄 Descargar"}
+                          </button>
+                        ) : (
+                          <span
+                            style={{
+                              fontSize: "12px",
+                              color: "#64748b",
+                              fontStyle: "italic",
+                            }}
+                          >
+                            Documento en proceso...
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -437,4 +507,3 @@ export default function AcuerdosConsejo() {
     </main>
   );
 }
-

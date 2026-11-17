@@ -46,7 +46,7 @@ const ExpedienteConsolidado = () => {
       <section className="gv-card gv-panel-revision">
         <Pasos actual={1} />
 
-        <div className="cie-tabs" role="tablist">
+        <div className="cie-tabs" role="tablist" aria-label="Secciones del expediente consolidado">
           {TABS.map((t) => (
             <button key={t} type="button" role="tab" aria-selected={tab === t}
               className={tab === t ? 'activa' : ''} onClick={() => setTab(t)}>{t}</button>
@@ -156,17 +156,17 @@ const ExpedienteConsolidado = () => {
       </section>
 
       <div className="cie-acciones">
-        <button type="button" className="cie-btn-outline" onClick={() => navigate('/cie/expedientes')}>
-          <Icono nombre="arrowLeft" size={15} />Volver a la bandeja
+        <button type="button" className="cie-btn-outline" onClick={() => navigate('/cie/expedientes')} aria-label="Volver a la bandeja de propuestas del CIE">
+          <Icono nombre="arrowLeft" size={15} aria-hidden="true" />Volver a la bandeja
         </button>
         {e.resuelta ? (
-          <button type="button" className="gv-btn-primario" onClick={() => navigate('/cie/resoluciones')}>
-            Ver en el historial de resoluciones <Icono nombre="arrowRight" size={16} />
+          <button type="button" className="gv-btn-primario" onClick={() => navigate('/cie/resoluciones')} aria-label="Ver en el historial de resoluciones">
+            Ver en el historial de resoluciones <Icono nombre="arrowRight" size={16} aria-hidden="true" />
           </button>
         ) : (
           <button type="button" className="gv-btn-primario"
-            onClick={() => navigate(`/cie/expedientes/${codigo}/rubrica`)}>
-            Evaluar con rúbrica VIE <Icono nombre="arrowRight" size={16} />
+            onClick={() => navigate(`/cie/expedientes/${codigo}/rubrica`)} aria-label="Evaluar propuesta con la rúbrica VIE">
+            Evaluar con rúbrica VIE <Icono nombre="arrowRight" size={16} aria-hidden="true" />
           </button>
         )}
       </div>

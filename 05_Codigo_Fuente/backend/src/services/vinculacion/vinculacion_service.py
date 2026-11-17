@@ -10,7 +10,7 @@ from src.models.convocatorias import EstadosPropuesta
 from src.models.escuelas import Escuela
 from src.models.usuarios import Usuario
 from src.models.notificaciones import Notificaciones
-from src.models.catalogos import TiposInnovacion, LineasInvestigacion, Modalidades
+from src.models.catalogos import TiposInnovacion, LineasInvestigacion, Modalidades, HistorialEstadosPropuesta
 from src.api.schemas.vinculacion.dictamenes import (
     PropuestaVinculacionResumen,
     PropuestaVinculacionDetalle,
@@ -151,9 +151,10 @@ def crear_dictamen_vinculacion(
             detail="No puede evaluar una propuesta de la cual usted es el investigador coordinador"
         )
 
-    # Crear el registro del dictamen usando los setters de la clase
+    # Tipo 1 de TiposDictamen: Vinculacion
     dictamen = Dictamenes()
     dictamen.setPropuestaId(datos.propuestaId)
+    dictamen.setTipoDictamenId(1)
     dictamen.setNumeroOficio(datos.numeroOficio)
     dictamen.setContenido(datos.contenido)
     dictamen.setRutaArchivo(datos.rutaArchivo)
@@ -162,11 +163,37 @@ def crear_dictamen_vinculacion(
 
     db.add(dictamen)
 
-    # Actualizar estado de la propuesta a EN_COMITE (ID 4) al emitir dictamen de Vinculación
-    # Tras emitir el dictamen, la propuesta pasa formalmente a Evaluación por Comité Técnico (ID 4)
-    propuesta.setEstadoId(4)
-    propuesta.setUsuarioAuditoriaId(usuario_id)
-    propuesta.setUltimaAuditoria(datetime.now(timezone.utc))
+    # Al emitir el dictamen la propuesta sale de vinculación y pasa a comité técnico.
+    # Se resuelve por código: en el catálogo EN_COMITE es el estado siguiente a EN_VINCULACION.
+    estado_comite = db.query(EstadosPropuesta).filter(
+        EstadosPropuesta.codigoEstadoPropuesta == "EN_COMITE"
+    ).first()
+    if estado_comite is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No está configurado el estado EN_COMITE"
+        )
+
+    estado_actual = db.query(EstadosPropuesta).filter(
+        EstadosPropuesta.estadoPropuestaId == propuesta.getEstadoId()
+    ).first()
+    aun_en_vinculacion = estado_actual is None or (
+        estado_actual.codigoEstadoPropuesta != "EN_COMITE"
+        and not estado_actual.esFinal
+        and estado_actual.orden < estado_comite.orden
+    )
+    if aun_en_vinculacion and propuesta.getEstadoId() != estado_comite.estadoPropuestaId:
+        estado_anterior_id = propuesta.getEstadoId()
+        propuesta.setEstadoId(estado_comite.estadoPropuestaId)
+        propuesta.setUsuarioAuditoriaId(usuario_id)
+        propuesta.setUltimaAuditoria(datetime.now(timezone.utc))
+        db.add(HistorialEstadosPropuesta(
+            propuestaId=propuesta.getPropuestaId(),
+            estadoAnteriorId=estado_anterior_id,
+            estadoNuevoId=estado_comite.estadoPropuestaId,
+            usuarioResponsableId=usuario_id,
+            observaciones="Dictamen de vinculación emitido. La propuesta pasa a comité técnico."
+        ))
 
     # Notificación para el investigador de la propuesta
     if propuesta.getInvestigadorCoordId():

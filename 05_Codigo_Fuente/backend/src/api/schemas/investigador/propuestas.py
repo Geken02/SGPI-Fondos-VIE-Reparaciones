@@ -29,6 +29,7 @@ class PropuestaUpdate(BaseModel):
     montoTotal: Optional[Decimal] = None
     nivelTrlActual: Optional[int] = Field(None, ge=1, le=9)
     nivelTrlEsperado: Optional[int] = Field(None, ge=1, le=9)
+    escuelaId: Optional[int] = None 
     fechaInicio: Optional[date] = None
     fechaFinalizacion: Optional[date] = None
 

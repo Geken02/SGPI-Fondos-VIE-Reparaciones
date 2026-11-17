@@ -30,7 +30,7 @@ export const EstadoBadge = ({ estado }) => {
   const e = ESTADOS_BANDEJA[estado] || { etiqueta: estado, clase: 'revision' };
   return (
     <span className={`gv-badge ${e.clase}`}>
-      <span className="gv-badge-punto" />{e.etiqueta}
+      <span className="gv-badge-punto" aria-hidden="true" />{e.etiqueta}
     </span>
   );
 };
@@ -38,7 +38,7 @@ export const EstadoBadge = ({ estado }) => {
 // Estado de la propuesta según el catálogo (nombre viene de la BD)
 export const EstadoPropuestaBadge = ({ codigo, nombre }) => (
   <span className={`gv-badge ${claseEstadoPropuesta(codigo)}`}>
-    <span className="gv-badge-punto" />{nombre}
+    <span className="gv-badge-punto" aria-hidden="true" />{nombre}
   </span>
 );
 
@@ -54,8 +54,8 @@ export const ErrorCarga = ({ error, alReintentar }) => (
 );
 
 export const VolverALaBandeja = () => (
-  <Link to={RUTA_BANDEJA} className="gv-volver">
-    <Icono nombre="arrowLeft" size={14} />
+  <Link to={RUTA_BANDEJA} className="gv-volver" aria-label="Volver a la bandeja de propuestas del CIE">
+    <Icono nombre="arrowLeft" size={14} aria-hidden="true" />
     Volver a la bandeja
   </Link>
 );
@@ -70,7 +70,7 @@ export const EncabezadoPagina = ({ titulo, subtitulo }) => (
 const PASOS = ['Expediente', 'Evaluación', 'Resolución', 'Dictamen'];
 
 export const Pasos = ({ actual }) => (
-  <ol className="gv-pasos">
+  <ol className="gv-pasos" aria-label="Pasos del proceso de resolución del CIE">
     {PASOS.map((nombre, i) => {
       const n = i + 1;
       return (
@@ -84,14 +84,14 @@ export const Pasos = ({ actual }) => (
 );
 
 export const CabeceraExpediente = ({ expediente }) => (
-  <section className="gv-card gv-expediente-info">
-    <div className="gv-expediente-icono"><Icono nombre="fileText" size={26} /></div>
+  <section className="gv-card gv-expediente-info" aria-label="Información del expediente">
+    <div className="gv-expediente-icono" aria-hidden="true"><Icono nombre="fileText" size={26} /></div>
     <div className="gv-expediente-datos">
       <div className="gv-expediente-codigo">{expediente.codigo}</div>
       <div className="gv-expediente-titulo">{expediente.titulo}</div>
       <div className="cie-meta">
-        <span><Icono nombre="usuario" size={14} />{expediente.investigador}</span>
-        <span><Icono nombre="escuela" size={14} />{expediente.escuela}</span>
+        <span><Icono nombre="usuario" size={14} aria-hidden="true" />{expediente.investigador}</span>
+        <span><Icono nombre="escuela" size={14} aria-hidden="true" />{expediente.escuela}</span>
       </div>
     </div>
     <div className="gv-expediente-lateral">

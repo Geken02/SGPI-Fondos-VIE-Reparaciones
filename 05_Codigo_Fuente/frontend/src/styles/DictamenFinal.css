@@ -1,0 +1,539 @@
+/* src/styles/DictamenFinal.css */
+
+/* ==========================================================================
+   ESTILOS BASE - DICTAMEN FINAL
+   ========================================================================== */
+
+.dictamen-container {
+  padding: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+/* Header */
+.dictamen-header {
+  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.dictamen-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #002855;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.dictamen-back-btn:hover {
+  background: #f1f5f9;
+}
+
+.dictamen-header-content {
+  flex: 1;
+}
+
+.dictamen-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.dictamen-title {
+  font-size: 22px;
+  color: #0f172a;
+  margin: 0;
+  font-weight: 600;
+}
+
+.dictamen-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dictamen-badge.recomendable {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.dictamen-badge.no-recomendable {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.dictamen-subtitle {
+  color: #64748b;
+  margin: 6px 0 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Cards */
+.dictamen-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+}
+
+.dictamen-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  color: #002855;
+  margin: 0 0 20px 0;
+  font-weight: 600;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+/* Summary Grid */
+.dictamen-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.dictamen-summary-card {
+  padding: 20px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.dictamen-summary-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #002855;
+  margin-bottom: 4px;
+}
+
+.dictamen-summary-label {
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Table */
+.dictamen-subtitle-text {
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.dictamen-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dictamen-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background-color: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.dictamen-table td {
+  padding: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+  color: #334155;
+}
+
+.dictamen-avatar-icon {
+  width: 28px;
+  height: 28px;
+  background-color: #e6f0ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #002855;
+}
+
+.dictamen-calificacion-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dictamen-calificacion-badge.aprobado {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.dictamen-calificacion-badge.rechazado {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* Form */
+.dictamen-form-group {
+  margin-bottom: 20px;
+}
+
+.dictamen-label {
+  display: block;
+  font-size: 13px;
+  color: #334155;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.dictamen-radio-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.dictamen-radio-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  background-color: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  transition: all 0.2s;
+}
+
+.dictamen-radio-btn:hover {
+  border-color: #cbd5e1;
+}
+
+.dictamen-radio-btn.active-green {
+  background-color: #10b981;
+  border-color: #10b981;
+  color: white;
+}
+
+.dictamen-radio-btn.active-red {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  color: white;
+}
+
+.dictamen-helper-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 8px;
+}
+
+.dictamen-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  background-color: white;
+  box-sizing: border-box;
+}
+
+.dictamen-textarea:focus {
+  outline: none;
+  border-color: #002855;
+  box-shadow: 0 0 0 3px rgba(0, 40, 85, 0.1);
+}
+
+.dictamen-char-count {
+  font-size: 12px;
+  color: #64748b;
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* Actions */
+.dictamen-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.dictamen-btn-cancel {
+  padding: 10px 20px;
+  background-color: white;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.dictamen-btn-cancel:hover {
+  background-color: #f1f5f9;
+}
+
+.dictamen-btn-submit {
+  padding: 10px 24px;
+  background-color: #002855;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: opacity 0.2s, background-color 0.2s;
+}
+
+.dictamen-btn-submit:hover:not(:disabled) {
+  background-color: #001a38;
+}
+
+.dictamen-btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Loading & Error */
+.dictamen-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: #64748b;
+}
+
+.dictamen-spinner {
+  border: 3px solid #f3f4f6;
+  border-top: 3px solid #002855;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: dictamen-spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes dictamen-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.dictamen-error {
+  text-align: center;
+  padding: 60px 20px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.dictamen-error h2 {
+  color: #ef4444;
+  margin-bottom: 16px;
+}
+
+.dictamen-btn-back {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background-color: #002855;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* ==========================================================================
+   PARCHE DE ALTO CONTRASTE - DICTAMEN FINAL
+   ========================================================================== */
+
+.high-contrast-mode .dictamen-container {
+  background-color: #000000 !important;
+}
+
+.high-contrast-mode .dictamen-card {
+  background-color: #000000 !important;
+  border-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .dictamen-title,
+.high-contrast-mode .dictamen-card-title,
+.high-contrast-mode .dictamen-subtitle-text,
+.high-contrast-mode .dictamen-summary-value,
+.high-contrast-mode .dictamen-table td,
+.high-contrast-mode .dictamen-label {
+  color: #FFFFFF !important;
+}
+
+.high-contrast-mode .dictamen-subtitle,
+.high-contrast-mode .dictamen-summary-label,
+.high-contrast-mode .dictamen-table th,
+.high-contrast-mode .dictamen-helper-text,
+.high-contrast-mode .dictamen-char-count,
+.high-contrast-mode .dictamen-loading {
+  color: #CCCCCC !important;
+}
+
+/* Botones de navegación y cancelar */
+.high-contrast-mode .dictamen-back-btn,
+.high-contrast-mode .dictamen-btn-cancel,
+.high-contrast-mode .dictamen-btn-back {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .dictamen-back-btn:hover,
+.high-contrast-mode .dictamen-btn-cancel:hover,
+.high-contrast-mode .dictamen-btn-back:hover {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* Botón de enviar */
+.high-contrast-mode .dictamen-btn-submit {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .dictamen-btn-submit:hover:not(:disabled) {
+  background-color: #CCCC00 !important;
+}
+
+/* Badges de estado */
+.high-contrast-mode .dictamen-badge,
+.high-contrast-mode .dictamen-badge.recomendable,
+.high-contrast-mode .dictamen-badge.no-recomendable {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .dictamen-calificacion-badge,
+.high-contrast-mode .dictamen-calificacion-badge.aprobado,
+.high-contrast-mode .dictamen-calificacion-badge.rechazado {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+/* Summary cards */
+.high-contrast-mode .dictamen-summary-card {
+  background-color: #1a1a1a !important;
+  border-color: #FFFFFF !important;
+}
+
+/* Tabla */
+.high-contrast-mode .dictamen-table th {
+  background-color: #1a1a1a !important;
+  border-bottom-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .dictamen-table td {
+  border-bottom-color: #333333 !important;
+}
+
+.high-contrast-mode .dictamen-avatar-icon {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+/* Radio buttons */
+.high-contrast-mode .dictamen-radio-btn {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border-color: #FFFF00 !important;
+}
+
+.high-contrast-mode .dictamen-radio-btn.active-green,
+.high-contrast-mode .dictamen-radio-btn.active-red {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border-color: #FFFFFF !important;
+}
+
+/* Textareas */
+.high-contrast-mode .dictamen-textarea {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+}
+
+.high-contrast-mode .dictamen-textarea:focus {
+  border-color: #FFFF00 !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.3) !important;
+}
+
+/* Spinner */
+.high-contrast-mode .dictamen-spinner {
+  border-color: #555555 !important;
+  border-top-color: #FFFF00 !important;
+}
+
+/* FIX CRÍTICO: Íconos SVG y textos dentro de botones */
+.high-contrast-mode .dictamen-back-btn svg,
+.high-contrast-mode .dictamen-card-title svg,
+.high-contrast-mode .dictamen-helper-text svg,
+.high-contrast-mode .dictamen-avatar-icon svg {
+  stroke: #FFFF00 !important;
+}
+
+/* Íconos dentro de botones activos (fondo amarillo) deben ser NEGROS */
+.high-contrast-mode .dictamen-radio-btn.active-green svg,
+.high-contrast-mode .dictamen-radio-btn.active-red svg,
+.high-contrast-mode .dictamen-btn-submit svg {
+  stroke: #000000 !important;
+}
+
+/* Asegurar que el texto dentro de los botones no sea blanco por herencia */
+.high-contrast-mode .dictamen-btn-submit,
+.high-contrast-mode .dictamen-btn-submit span {
+  color: #000000 !important;
+}
+
+.high-contrast-mode .dictamen-radio-btn.active-green,
+.high-contrast-mode .dictamen-radio-btn.active-green span {
+  color: #000000 !important;
+}
+
+.high-contrast-mode .dictamen-radio-btn.active-red,
+.high-contrast-mode .dictamen-radio-btn.active-red span {
+  color: #000000 !important;
+}

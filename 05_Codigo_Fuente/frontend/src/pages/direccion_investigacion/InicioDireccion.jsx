@@ -43,8 +43,8 @@ const InicioDireccion = () => {
         <>
           <section className="gv-resumen" aria-label="Resumen de dictámenes">
             {indicadores.map((i) => (
-              <article className="gv-card gv-tarjeta-resumen" key={i.etiqueta}>
-                <div className={`gv-resumen-icono ${i.clase}`}><Icono nombre={i.icono} size={23} /></div>
+              <article className="gv-card gv-tarjeta-resumen" key={i.etiqueta} role="region" aria-label={`${i.etiqueta}: ${i.valor}`}>
+                <div className={`gv-resumen-icono ${i.clase}`} aria-hidden="true"><Icono nombre={i.icono} size={23} /></div>
                 <div>
                   <div className="gv-resumen-valor">{i.valor}</div>
                   <div className="gv-resumen-etiqueta">{i.etiqueta}</div>
@@ -55,22 +55,22 @@ const InicioDireccion = () => {
 
           <section className="dir-accesos" aria-label="Accesos rápidos">
             {ACCESOS.map((a) => (
-              <Link key={a.to} className="gv-card cie-inicio-acceso" to={a.to}>
-                <span className="cie-inicio-acceso-icono"><Icono nombre={a.icono} size={24} /></span>
+              <Link key={a.to} className="gv-card cie-inicio-acceso" to={a.to} aria-label={`${a.titulo}: ${a.texto}`}>
+                <span className="cie-inicio-acceso-icono" aria-hidden="true"><Icono nombre={a.icono} size={24} /></span>
                 <span className="cie-inicio-acceso-texto"><strong>{a.titulo}</strong><span>{a.texto}</span></span>
-                <Icono nombre="arrowRight" size={19} />
+                <Icono nombre="arrowRight" size={19} aria-hidden="true" />
               </Link>
             ))}
           </section>
 
-          <section className="gv-card cie-inicio-recientes">
+          <section className="gv-card cie-inicio-recientes" aria-label="Dictámenes pendientes">
             <div className="cie-inicio-seccion-cabecera">
               <div>
                 <h2>Dictámenes pendientes</h2>
                 <p>Resoluciones del CIE que aún requieren documento oficial o notificación.</p>
               </div>
-              <Link to={`${RUTA_BASE}/dictamenes`} className="cie-inicio-ver-todos">
-                Ver todos <Icono nombre="arrowRight" size={15} />
+              <Link to={`${RUTA_BASE}/dictamenes`} className="cie-inicio-ver-todos" aria-label="Ver todos los dictámenes recibidos">
+                Ver todos <Icono nombre="arrowRight" size={15} aria-hidden="true" />
               </Link>
             </div>
 
@@ -80,7 +80,7 @@ const InicioDireccion = () => {
               <div className="cie-inicio-lista">
                 {pendientes.map((d) => (
                   <article className="cie-inicio-fila" key={d.codigo}>
-                    <div className="cie-inicio-fila-icono"><Icono nombre="fileText" size={20} /></div>
+                    <div className="cie-inicio-fila-icono" aria-hidden="true"><Icono nombre="fileText" size={20} /></div>
                     <div className="cie-inicio-fila-datos">
                       <strong>{d.titulo}</strong>
                       <span>{d.codigo} · {d.investigador}</span>
@@ -88,7 +88,7 @@ const InicioDireccion = () => {
                     </div>
                     <div className="cie-inicio-fila-estado">
                       <EstadoTramiteBadge estado={d.estado} />
-                      <Link to={`${RUTA_BASE}/dictamenes/${encodeURIComponent(d.codigo)}`} className="gv-btn-ver">Revisar</Link>
+                      <Link to={`${RUTA_BASE}/dictamenes/${encodeURIComponent(d.codigo)}`} className="gv-btn-ver" aria-label={`Revisar dictamen de ${d.codigo}: ${d.titulo}`}>Revisar</Link>
                     </div>
                   </article>
                 ))}

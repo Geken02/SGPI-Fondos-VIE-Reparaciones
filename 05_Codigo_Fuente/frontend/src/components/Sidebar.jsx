@@ -41,13 +41,14 @@ const Sidebar = () => {
 
   const isItemActive = (path, isRouterActive) => {
     if (isRouterActive) return true;
+    if (path === '/dashboard/bandeja-evaluacion' && (location.pathname === '/dashboard' || location.pathname === '/dashboard/' || location.pathname.includes('/evaluar-propuesta') || location.pathname.includes('/vinculacion') || location.pathname.includes('/bandeja-evaluacion'))) return true;
     if (path === '/comite-tecnico/propuestas-asignadas' && location.pathname.includes('/expediente/')) return true;
     if (path === '/comite-tecnico/propuestas-asignadas' && location.pathname.includes('/dictamen/')) return true;
     if (path === '/dashboard/dictamenes' && location.pathname.includes('/detalle-dictamen')) return true;
     return false;
   };
 
-  // para que los lectores de pantalla los ignoren (el texto visible ya describe el ícono).
+  // Iconos SVG (aria-hidden="true" para que los lectores de pantalla los ignoren, el texto visible ya describe el ícono)
   const IconoInicio = (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -311,11 +312,6 @@ const Sidebar = () => {
     if (esVinculacion) {
       return (
         <>
-          <div className="sidebar-group-title">General</div>
-          <NavLink to="/dashboard" end className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
-            <span className="sidebar-pill-icon">{IconoInicio}</span>
-            <span className="sidebar-pill-label">Inicio</span>
-          </NavLink>
           <div className="sidebar-group-title">Evaluación</div>
           <NavLink to="/dashboard/bandeja-evaluacion" className={({ isActive }) => `sidebar-pill-btn ${isItemActive('/dashboard/bandeja-evaluacion', isActive) ? 'active' : ''}`}>
             <span className="sidebar-pill-icon">{IconoEvaluacion}</span>
@@ -357,10 +353,7 @@ const Sidebar = () => {
             <span className="sidebar-pill-icon">{IconoChecklist}</span>
             <span className="sidebar-pill-label">Subsanaciones</span>
           </NavLink>
-          <NavLink to="/gestora/configuracion" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
-            <span className="sidebar-pill-icon">{IconoConfig}</span>
-            <span className="sidebar-pill-label">Configuración</span>
-          </NavLink>
+          {/* NOTA: "Configuración" se eliminó de aquí porque ahora se gestiona desde el ProfileDropdown */}
         </>
       );
     }
@@ -377,10 +370,7 @@ const Sidebar = () => {
             <span className="sidebar-pill-icon">{IconoDocumento}</span>
             <span className="sidebar-pill-label">Documentos Oficiales</span>
           </NavLink>
-          <NavLink to="/direccion/configuracion" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
-            <span className="sidebar-pill-icon">{IconoConfig}</span>
-            <span className="sidebar-pill-label">Configuración</span>
-          </NavLink>
+          {/* NOTA: "Configuración" se eliminó de aquí porque ahora se gestiona desde el ProfileDropdown */}
         </>
       );
     }

@@ -23,6 +23,21 @@ const consejoEscuelaService = {
     return response.data;
   },
 
+    listarTiposAcuerdo: async () => {
+    const response = await api.get('/consejo-escuela/acuerdos/catalogos/tipos-acuerdo');
+    return response.data;
+  },
+
+    listarTiposHora: async () => {
+    const response = await api.get('/consejo-escuela/acuerdos/catalogos/tipos-hora');
+    return response.data;
+  },
+
+  listarPropuestasDisponibles: async () => {
+    const response = await api.get('/consejo-escuela/acuerdos/propuestas-disponibles');
+    return response.data;
+  },
+
   obtenerAcuerdo: async (acuerdoId) => {
     const response = await api.get(`${BASE_ACUERDOS}/${acuerdoId}`);
     return response.data;
@@ -37,6 +52,14 @@ const consejoEscuelaService = {
     const response = await api.patch(
       `${BASE_ACUERDOS}/${acuerdoId}`,
       datos
+    );
+    return response.data;
+  },
+    generarDocumentoAcuerdo: async (acuerdoId) => {
+    const response = await api.post(
+      `/consejo-escuela/acuerdos/${acuerdoId}/generar-documento`,
+      {},
+      { responseType: 'blob' }
     );
     return response.data;
   },

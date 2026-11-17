@@ -2065,3 +2065,50 @@
 .high-contrast-mode .btn-volver:hover {
   background: #CCCC00 !important;
 }
+
+/* ==========================================================================
+   PARCHE V2 - RÚBRICA: TEXTOS SOBRE FONDOS AMARILLOS
+   ========================================================================== */
+
+/* 1. Item ACTIVO del sidebar de la rúbrica → todo NEGRO sobre amarillo */
+.high-contrast-mode .rubrica-container .nav-item.active {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .rubrica-container .nav-item.active .nav-nombre,
+.high-contrast-mode .rubrica-container .nav-item.active .nav-peso,
+.high-contrast-mode .rubrica-container .nav-item.active span {
+  color: #000000 !important;
+}
+
+/* El número del ícono circular del item activo → amarillo sobre negro */
+.high-contrast-mode .rubrica-container .nav-item.active .nav-icon {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+/* 2. Items INACTIVOS → texto amarillo sobre negro */
+.high-contrast-mode .rubrica-container .nav-item .nav-nombre {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .rubrica-container .nav-item .nav-peso {
+  color: #CCCCCC !important;
+}
+
+/* 3. Items COMPLETADOS (done) → verde */
+.high-contrast-mode .rubrica-container .nav-item.done .nav-nombre {
+  color: #00FF00 !important;
+}
+
+/* 4. Tarjetas de nivel seleccionadas → el nombre debe leerse */
+.high-contrast-mode .rubrica-container .nivel-card.selected .nivel-nombre {
+  color: #FFFFFF !important;
+}
+
+/* 5. Cualquier SVG decorativo de la rúbrica → sin relleno azul */
+.high-contrast-mode .rubrica-container svg {
+  fill: none !important;
+}

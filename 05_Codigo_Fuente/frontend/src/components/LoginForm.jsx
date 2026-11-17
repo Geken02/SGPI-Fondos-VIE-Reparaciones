@@ -12,6 +12,7 @@ const LoginForm = () => {
   const [errores, setErrores] = useState({});
   const [errorGeneral, setErrorGeneral] = useState('');
   const [cargando, setCargando] = useState(false);
+  
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -52,13 +53,11 @@ const LoginForm = () => {
     setCargando(true);
 
     try {
-      await login(correo, contrasena);
-      navigate('/dashboard/admin'); 
-      navigate('/dashboard');
-      navigate('/dashboard/admin'); 
+      // 1. ÚNICA llamada al servicio de autenticación
       const perfil = await login(correo, contrasena);
       const roles = perfil?.roles ?? [];
 
+      // 2. Redirección determinista basada en el rol (sin colisiones de navigate)
       if (roles.includes('MiembroCIE')) {
         navigate('/miembro-cie', { replace: true });
       } else {

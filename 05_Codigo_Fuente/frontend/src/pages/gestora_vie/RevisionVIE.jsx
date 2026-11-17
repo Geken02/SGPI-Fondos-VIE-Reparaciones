@@ -19,8 +19,8 @@ const mensajeDeError = (error) =>
     : 'No se pudo cargar el expediente. Verifica que el servidor esté en ejecución e intenta de nuevo.';
 
 const VolverALaBandeja = () => (
-  <Link to={RUTA_BANDEJA} className="gv-volver">
-    <Icono nombre="arrowLeft" tamano={14} />
+  <Link to={RUTA_BANDEJA} className="gv-volver" aria-label="Volver a la bandeja principal de expedientes">
+    <Icono nombre="arrowLeft" tamano={14} aria-hidden="true" />
     Volver a la bandeja
   </Link>
 );
@@ -81,8 +81,8 @@ const DetalleRevision = ({ codigo }) => {
       <p className="gv-subtitulo">Verifica el cumplimiento de requisitos y gestiona las subsanaciones.</p>
 
       {/* Datos del expediente */}
-      <section className="gv-card gv-expediente-info">
-        <div className="gv-expediente-icono">
+      <section className="gv-card gv-expediente-info" aria-label="Información del expediente">
+        <div className="gv-expediente-icono" aria-hidden="true">
           <Icono nombre="fileText" tamano={26} />
         </div>
 
@@ -96,7 +96,7 @@ const DetalleRevision = ({ codigo }) => {
 
         <div className="gv-expediente-lateral">
           <span className={`gv-badge ${estado.clase}`} title={expediente.estadoDetalle}>
-            <span className="gv-badge-punto" />
+            <span className="gv-badge-punto" aria-hidden="true" />
             {estado.etiqueta}
           </span>
           <span className="gv-expediente-fecha">
@@ -105,9 +105,9 @@ const DetalleRevision = ({ codigo }) => {
         </div>
       </section>
 
-      <section className="gv-card gv-panel-revision">
+      <section className="gv-card gv-panel-revision" aria-label="Panel de revisión normativa">
         {/* Pasos */}
-        <ol className="gv-pasos">
+        <ol className="gv-pasos" aria-label="Pasos de revisión">
           {PASOS.map((nombre, i) => {
             const numero = i + 1;
             const clase =
@@ -141,7 +141,7 @@ const DetalleRevision = ({ codigo }) => {
                       <td>{req.nombre}</td>
                       <td>
                         <span className={`gv-badge ${est.clase}`}>
-                          <span className="gv-badge-punto" />
+                          <span className="gv-badge-punto" aria-hidden="true" />
                           {est.etiqueta}
                         </span>
                       </td>
@@ -162,7 +162,7 @@ const DetalleRevision = ({ codigo }) => {
                   const est = ESTADOS_DOCUMENTO[doc.estado];
                   return (
                     <li key={doc.id}>
-                      <span className={`gv-doc-icono ${doc.estado === 'FALTANTE' ? 'falta' : ''}`}>
+                      <span className={`gv-doc-icono ${doc.estado === 'FALTANTE' ? 'falta' : ''}`} aria-hidden="true">
                         <Icono nombre="fileText" tamano={16} />
                       </span>
                       <span className="gv-doc-nombre">{doc.nombre}</span>
@@ -173,9 +173,9 @@ const DetalleRevision = ({ codigo }) => {
               </ul>
             </div>
 
-            <button type="button" className="gv-btn-primario" onClick={irSiguientePaso}>
+            <button type="button" className="gv-btn-primario" onClick={irSiguientePaso} aria-label="Avanzar al siguiente paso: Revisión de documentos">
               Siguiente: Revisión de documentos
-              <Icono nombre="arrowRight" tamano={16} />
+              <Icono nombre="arrowRight" tamano={16} aria-hidden="true" />
             </button>
           </div>
         </div>

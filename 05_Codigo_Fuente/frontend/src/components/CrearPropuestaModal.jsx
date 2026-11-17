@@ -29,8 +29,7 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
         const data = await propuestaService.obtenerCatalogosFormulario();
         if (data?.convocatorias?.length > 0) {
           setConvocatorias(data.convocatorias);
-          const primeraAbierta = data.convocatorias.find(c => !c.cerrada) || data.convocatorias[0];
-          setConvocatoriaId(primeraAbierta.convocatoriaId);
+          setConvocatoriaId(data.convocatorias[0].convocatoriaId);
         } else {
           // Fallback con nombres institucionales VIE
           setConvocatorias([
@@ -86,12 +85,6 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
     }
     if (titulo.trim().length < 5) {
       setErrorMsg('El título preliminar debe tener al menos 5 caracteres.');
-      return;
-    }
-
-    const convSel = convocatorias.find(c => c.convocatoriaId === Number(convocatoriaId));
-    if (convSel?.cerrada) {
-      setErrorMsg(`La convocatoria '${convSel.nombreConvocatoria}' se encuentra cerrada. No es posible crear propuestas para convocatorias cerradas.`);
       return;
     }
 
@@ -258,8 +251,8 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
                   disabled={guardando}
                 >
                   {convocatorias.map((c) => (
-                    <option key={c.convocatoriaId} value={c.convocatoriaId} disabled={c.cerrada} style={{ color: c.cerrada ? '#94a3b8' : '#0f172a' }}>
-                      {c.nombreConvocatoria} {c.cerrada ? '— ⛔ (Cerrada)' : '— ✅ (Abierta)'}
+                    <option key={c.convocatoriaId} value={c.convocatoriaId}>
+                      {c.nombreConvocatoria}
                     </option>
                   ))}
                 </select>
@@ -308,9 +301,9 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
                     <span className="propietario-rol">Profesor - Investigador Coordinador</span>
                   </div>
                 </div>
-                <div className="link-incorporar-equipo">
-                  + Incorporar co-propietario o integrantes del equipo luego de crear
-                </div>
+                <span className="link-incorporar-equipo">
+                  Incorporar co-propietario o integrantes del equipo luego de crear
+                </span>
               </div>
             </div>
 
@@ -319,7 +312,11 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
               <button 
                 type="button" 
                 className="btn-modal-cancelar"
-                onClick={onClose}
+                onClick={() => {
+                  if (confirm('¿Está seguro de que desea cancelar?')) {
+                    onClose();
+                  }
+                }}
                 disabled={guardando}
               >
                 Cancelar

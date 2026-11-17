@@ -103,6 +103,9 @@ const InvestigadorConvocatorias = () => {
   }, []);
 
   const toggleFavorita = (id) => {
+    if (favoritas.includes(id)) {
+      if (!confirm('¿Está seguro de que desea quitar esta convocatoria de sus favoritas?')) return;
+    }
     setFavoritas((prev) => 
       prev.includes(id) ? prev.filter(fId => fId !== id) : [...prev, id]
     );
@@ -172,6 +175,7 @@ const InvestigadorConvocatorias = () => {
               onChange={(e) => setFiltroTexto(e.target.value)}
               maxLength={200}
               className="filter-search-input"
+              aria-label="Buscar convocatorias por palabra clave, temática o entidad"
               containerStyle={{ flex: 1 }}
               style={{ border: 'none', outline: 'none', background: 'transparent' }}
             />
@@ -181,6 +185,7 @@ const InvestigadorConvocatorias = () => {
             value={filtroTipo} 
             onChange={(e) => setFiltroTipo(e.target.value)}
             className="filter-select"
+            aria-label="Filtrar convocatorias por tipo de fondo"
           >
             <option value="Todos">Tipo de Fondo: Todos ▾</option>
             <option value="TRADICIONAL">Fondo Tradicional</option>
@@ -194,6 +199,7 @@ const InvestigadorConvocatorias = () => {
             value={filtroArea} 
             onChange={(e) => setFiltroArea(e.target.value)}
             className="filter-select"
+            aria-label="Filtrar convocatorias por área de conocimiento"
           >
             <option value="Todas">Área Conocimiento: Todas ▾</option>
             <option value="Ingeniería y Tecnología">Ingeniería y Tecnología</option>
@@ -204,6 +210,7 @@ const InvestigadorConvocatorias = () => {
           <button 
             type="button" 
             className="btn-limpiar-filtros"
+            aria-label="Limpiar todos los filtros de convocatorias"
             onClick={limpiarFiltros}
           >
             Limpiar Filtros
@@ -235,8 +242,10 @@ const InvestigadorConvocatorias = () => {
                       className={`btn-favorite-star ${esFav ? 'is-fav' : ''}`}
                       onClick={() => toggleFavorita(conv.id)}
                       title={esFav ? 'Quitar de favoritas' : 'Marcar como favorita'}
+                      aria-label={esFav ? `Quitar ${conv.nombre} de convocatorias favoritas` : `Marcar ${conv.nombre} como favorita`}
                     >
-                      ★
+                      <span aria-hidden="true">★</span>
+                      <span className="sr-only">{esFav ? 'Favorita' : 'No favorita'}</span>
                     </button>
                   </div>
 
@@ -258,23 +267,16 @@ const InvestigadorConvocatorias = () => {
 
                   {/* Aviso de Propuesta Activa para esta Convocatoria si existe en la BD */}
                   {propActiva && (
-                    <div style={{
-                      margin: '12px 0',
-                      padding: '10px 12px',
-                      backgroundColor: '#eff6ff',
-                      border: '1px solid #bfdbfe',
-                      borderRadius: '6px',
-                      fontSize: '13px'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <span style={{ color: '#1e40af', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div className="convocatoria-propuesta-activa-box">
+                      <div className="propuesta-activa-header">
+                        <span className="propuesta-activa-code">
                           <span>📋</span> En trámite: {propActiva.codigoPropuesta}
                         </span>
-                        <span className="badge-status badge-warning" style={{ fontSize: '11px' }}>
+                        <span className="badge-status badge-warning">
                           {propActiva.nombreEstado || 'Borrador'}
                         </span>
                       </div>
-                      <div style={{ color: '#1e3a8a', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div className="propuesta-activa-title">
                         "{propActiva.titulo || 'Sin título'}"
                       </div>
                     </div>
@@ -286,14 +288,13 @@ const InvestigadorConvocatorias = () => {
                       <>
                         <button 
                           type="button" 
-                          className="btn-conv-aplicar"
-                          style={{ backgroundColor: '#002855', borderColor: '#002855' }}
+                          className="btn-conv-aplicar btn-conv-continuar"
                           onClick={() => navigate(`/dashboard/form4?propuestaId=${propActiva.propuestaId}`)}
                         >
                           Continuar {propActiva.codigoPropuesta} →
                         </button>
                         {!conv.puedeAplicar ? (
-                          <span style={{ fontSize: '11px', color: '#b91c1c', fontWeight: 600, display: 'inline-flex', alignItems: 'center' }}>
+                          <span className="badge-convocatoria-cerrada-label">
                             ⛔ Cerrada
                           </span>
                         ) : (
@@ -302,7 +303,6 @@ const InvestigadorConvocatorias = () => {
                             className="btn-conv-documentos"
                             onClick={() => abrirModalCrearPropuesta(conv.id)}
                             title="Crear otra propuesta para esta convocatoria"
-                            style={{ whiteSpace: 'nowrap' }}
                           >
                             + Nueva
                           </button>
@@ -321,7 +321,6 @@ const InvestigadorConvocatorias = () => {
                         type="button" 
                         className="btn-conv-proximamente"
                         disabled
-                        style={{ backgroundColor: '#f1f5f9', color: '#94a3b8', border: '1px solid #cbd5e1', cursor: 'not-allowed' }}
                       >
                         ⛔ Convocatoria Cerrada
                       </button>
@@ -362,30 +361,14 @@ const InvestigadorConvocatorias = () => {
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
                 {modalDocs.documentos.map((doc, i) => (
-                  <div key={i} style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center', 
-                    padding: '10px 14px', 
-                    background: '#f8fafc', 
-                    border: '1px solid #e2e8f0', 
-                    borderRadius: '6px' 
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#1e293b' }}>
+                  <div key={i} className="convocatoria-modal-doc-item">
+                    <div className="doc-item-left">
                       <span>📄</span>
                       <span>{doc}</span>
                     </div>
                     <button 
                       type="button" 
-                      style={{ 
-                        border: 'none', 
-                        background: '#0369A1', 
-                        color: '#fff', 
-                        padding: '4px 10px', 
-                        borderRadius: '4px', 
-                        fontSize: '12px', 
-                        cursor: 'pointer' 
-                      }}
+                      className="btn-doc-download-action"
                       onClick={() => alert(`Descargando documento institucional: ${doc}`)}
                     >
                       Descargar

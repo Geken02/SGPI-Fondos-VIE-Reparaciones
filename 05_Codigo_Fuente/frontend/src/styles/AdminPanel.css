@@ -159,9 +159,12 @@
 }
 
 .stat-label {
-  font-size: 14px;
-  color: var(--color-texto-secundario);
-  margin-bottom: 12px;
+  font-size: 14px !important;
+  color: #475569 !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  line-height: 1.4 !important;
 }
 
 .stat-progress {

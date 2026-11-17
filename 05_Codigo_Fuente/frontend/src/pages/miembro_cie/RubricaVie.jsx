@@ -136,13 +136,14 @@ const RubricaVie = () => {
               <h3 className="gv-subcard-titulo">Observaciones técnicas y estratégicas</h3>
               <div className="cie-cuerpo">
                 <AreaTexto value={observaciones} onChange={setObservaciones}
-                  placeholder="Ingrese sus observaciones sobre la propuesta..." max={4000} />
+                  placeholder="Ingrese sus observaciones sobre la propuesta..." max={4000}
+                  aria-label="Observaciones técnicas y estratégicas sobre la propuesta" />
               </div>
             </div>
             <div className="gv-subcard">
               <h3 className="gv-subcard-titulo">Recomendación de la evaluación</h3>
               <div className="cie-cuerpo">
-                <div className="cie-radios">
+                <div className="cie-radios" role="radiogroup" aria-label="Recomendación de la evaluación">
                   {RECOMENDACIONES_CIE.map((opcion) => (
                     <Radio key={opcion} name="recomendacion-cie" value={opcion}
                       checked={recomendacion === opcion} onChange={setRecomendacion}>{opcion}</Radio>
@@ -159,11 +160,11 @@ const RubricaVie = () => {
       {errorGuardar && <p className="cie-error cie-error-pagina" role="alert">{errorGuardar}</p>}
 
       <div className="cie-acciones">
-        <button type="button" className="cie-btn-outline" onClick={() => navigate(`/cie/expedientes/${codigo}`)}>
-          <Icono nombre="arrowLeft" size={15} />Volver al expediente
+        <button type="button" className="cie-btn-outline" onClick={() => navigate(`/cie/expedientes/${codigo}`)} aria-label="Volver al expediente consolidado">
+          <Icono nombre="arrowLeft" size={15} aria-hidden="true" />Volver al expediente
         </button>
-        <button type="button" className="gv-btn-primario" onClick={guardar} disabled={guardando || criterios.length === 0 || !completos || faltaRecomendacion}>
-          {guardando ? 'Guardando...' : 'Guardar rúbrica y continuar'} <Icono nombre="arrowRight" size={16} />
+        <button type="button" className="gv-btn-primario" onClick={guardar} disabled={guardando || criterios.length === 0 || !completos || faltaRecomendacion} aria-label="Guardar rúbrica y continuar a resolución">
+          {guardando ? 'Guardando...' : 'Guardar rúbrica y continuar'} <Icono nombre="arrowRight" size={16} aria-hidden="true" />
         </button>
       </div>
     </>

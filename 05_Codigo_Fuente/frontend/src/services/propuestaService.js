@@ -79,6 +79,16 @@ export const propuestaService = {
     return response.data;
   },
 
+  listarDocumentosPropuesta: async (propuestaId) => {
+    try {
+      const response = await api.get(`/api/comite-tecnico/evaluador/${propuestaId}/documentos`);
+      return response.data?.documentos || [];
+    } catch (error) {
+      console.warn('Error al listar documentos de la propuesta:', error);
+      return [];
+    }
+  },
+
   obtenerSubsanaciones: async (propuestaId) => {
     try {
       const response = await api.get(`/investigador/propuestas/${propuestaId}/subsanaciones`);
@@ -109,13 +119,28 @@ export const propuestaService = {
 
   subirDocumentoFormulario: async (propuestaId, tipoDocumentoId, archivo) => {
     const formData = new FormData();
-    formData.append('archivo', archivo);
-    formData.append('tipo_documento_id', tipoDocumentoId);
     
-    // ✅ Axios detecta FormData y agrega el "boundary" automáticamente.
-    const response = await api.post(`/api/propuestas/${propuestaId}/archivos`, formData);
+    const nombreSeguro = archivo.name || `archivo_tipo_${tipoDocumentoId}`;
     
-    return response.data;
-  }
+    formData.append('archivo', archivo, nombreSeguro);
+    formData.append('tipo_documento_id', String(tipoDocumentoId));
 
+    const baseURL = import.meta.env.VITE_API_URL || 'https://sgpi-fondos-vie-reparaciones.onrender.com';
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${baseURL}/api/propuestas/${propuestaId}/archivos`, {
+      method: 'POST',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Error al subir el archivo a Supabase S3');
+    }
+
+    return await response.json();
+  }
 };

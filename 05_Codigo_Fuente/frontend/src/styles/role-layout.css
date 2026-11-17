@@ -63,3 +63,51 @@
 :root[data-gestora-densidad="normal"] .role-layout-gestora .gv-tabla td { padding-top: 12px; padding-bottom: 12px; }
 :root[data-gestora-densidad="amplia"] .role-layout-gestora .gv-tabla th,
 :root[data-gestora-densidad="amplia"] .role-layout-gestora .gv-tabla td { padding-top: 18px; padding-bottom: 18px; }
+
+
+/* ==========================================================================
+   AJUSTES INSTITUCIONALES — VIE, CIE y Dirección de Investigación
+   Se aplican solo dentro de .role-layout y se desactivan en modo alto contraste.
+   ========================================================================== */
+
+/* 1. Azul institucional del TEC (#002855) en botones, enlaces, foco y acentos,
+      y textos secundarios con contraste mínimo AA (4.5:1) sobre el fondo de página. */
+body:not(.high-contrast-mode) .role-layout {
+  --tec-boton-primario: #002855;
+  --tec-boton-hover: #003570;
+  --tec-texto-muted: #486581;
+  --tec-texto-caption: #546a80;
+}
+/* El foco global usa el color primario: sobre el sidebar azul se vería igual que el fondo. */
+body:not(.high-contrast-mode) .role-layout .tec-sidebar *:focus-visible { outline-color: #ffffff !important; }
+/* Rojo institucional oscurecido para texto (el #EF3340 sobre blanco da 4.0:1). */
+body:not(.high-contrast-mode) .role-layout .profile-popover-logout { color: #c41e2a; }
+
+/* 2. Un solo formato de card en todas las ventanas */
+.role-content .gv-card {
+  background: #fff;
+  border: 1px solid var(--tec-borde);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgb(15 23 42 / 3%);
+}
+.role-content :is(.dir-subcard, .gestora-ayuda-banner) { border-radius: 8px; }
+
+/* 4. Solo los encabezados de tabla van en MAYÚSCULA; el resto del texto respeta su formato original. */
+.role-layout .sidebar-group-title,
+.role-layout .profile-roles-label,
+.role-layout .badge-status,
+.role-layout .estado-badge,
+.role-layout .kpi-card-label,
+.role-layout .section-header-title,
+.role-layout .gv-seccion-titulo,
+.role-layout .gestora-marca-texto small,
+.role-layout .gestora-faq-pregunta small {
+  text-transform: none !important;
+  letter-spacing: normal;
+}
+.role-layout th,
+.role-content .gv-tabla th,
+.role-content .cie-criterios-head {
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px;
+}

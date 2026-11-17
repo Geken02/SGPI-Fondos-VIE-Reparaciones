@@ -4,6 +4,17 @@ import React from 'react';
  * Componente de Input con control visual estricto de límite de caracteres,
  * bloqueo de caracteres excedentes, alerta visual roja y prevención de números negativos.
  */
+export const formatearMontoEspacios = (val) => {
+  if (val === '' || val === null || val === undefined) return '';
+  const str = String(val).replace(/\s+/g, '');
+  if (!str) return '';
+  const partes = str.split('.');
+  const enteros = partes[0].replace(/\D/g, '');
+  if (!enteros) return '';
+  const formateado = enteros.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return partes.length > 1 ? `${formateado}.${partes[1].slice(0, 2)}` : formateado;
+};
+
 export const LimitedInput = ({
   label,
   value = '',
@@ -21,16 +32,37 @@ export const LimitedInput = ({
   step,
   name,
   id,
-  showCounter = true,
+  showCounter,
+  formatoMonto = false,
+  onFocus,
+  onBlur,
   ...props
 }) => {
-  const strVal = value !== null && value !== undefined ? String(value) : '';
-  const currentLength = strVal.length;
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  const rawVal = value !== null && value !== undefined ? String(value).replace(/\s+/g, '') : '';
+  const currentLength = rawVal.length;
   const isAtLimit = Boolean(maxLength && currentLength >= maxLength);
+  const shouldShowCounter = showCounter !== undefined ? showCounter : Boolean(label);
+
+  const displayValue = formatoMonto
+    ? (isFocused ? rawVal : formatearMontoEspacios(rawVal))
+    : (value !== null && value !== undefined ? value : '');
 
   const handleChange = (e) => {
     let val = e.target.value;
-    if (type === 'number') {
+    if (formatoMonto) {
+      val = val.replace(/\s+/g, '');
+      const parts = val.split('.');
+      let clean = parts[0].replace(/\D/g, '');
+      if (parts.length > 1) {
+        clean = clean + '.' + parts[1].replace(/\D/g, '').slice(0, 2);
+      }
+      val = clean;
+      if (maxLength && val.length > maxLength) {
+        val = val.slice(0, maxLength);
+      }
+    } else if (type === 'number') {
       const minVal = min !== undefined ? Number(min) : 0;
       if (val !== '' && Number(val) < minVal) {
         val = String(minVal);
@@ -44,8 +76,18 @@ export const LimitedInput = ({
     }
   };
 
+  const handleFocus = (e) => {
+    setIsFocused(true);
+    if (onFocus) onFocus(e);
+  };
+
+  const handleBlur = (e) => {
+    setIsFocused(false);
+    if (onBlur) onBlur(e);
+  };
+
   const handleKeyDown = (e) => {
-    if (type === 'number') {
+    if (type === 'number' || formatoMonto) {
       // Bloquear signo negativo, positivo y exponencial
       if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
         e.preventDefault();
@@ -55,15 +97,15 @@ export const LimitedInput = ({
   };
 
   return (
-    <div className="limited-field-container" style={{ display: 'flex', flexDirection: 'column', width: '100%', ...containerStyle }}>
-      {(label || (maxLength && showCounter)) && (
+    <div className="limited-field-container" style={{ display: 'flex', flexDirection: 'column', width: '100%', ...(label || (maxLength && shouldShowCounter) ? {} : { justifyContent: 'center' }), ...containerStyle }}>
+      {(label || (maxLength && shouldShowCounter)) && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
           {label && (
-            <label style={{ fontSize: '13px', fontWeight: 600, color: '#002855' }}>
+            <label className="limited-input-label" style={{ fontSize: '13px', fontWeight: 600 }}>
               {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
             </label>
           )}
-          {maxLength && showCounter && type !== 'number' && type !== 'date' && (
+          {maxLength && shouldShowCounter && type !== 'number' && type !== 'date' && (
             <span 
               className={`limited-counter ${isAtLimit ? 'at-limit' : ''}`}
               style={{
@@ -79,12 +121,16 @@ export const LimitedInput = ({
         </div>
       )}
       <input
-        type={type}
+        type={formatoMonto ? 'text' : type}
+        inputMode={formatoMonto ? 'numeric' : undefined}
         id={id}
         name={name}
-        value={value}
+        value={displayValue}
         onChange={handleChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         onKeyDown={handleKeyDown}
+        title={formatoMonto && rawVal ? `₡ ${formatearMontoEspacios(rawVal)}` : undefined}
         maxLength={maxLength}
         min={type === 'number' ? (min !== undefined ? min : 0) : min}
         max={max}
@@ -150,7 +196,7 @@ export const LimitedTextarea = ({
       {(label || (maxLength && showCounter)) && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
           {label && (
-            <label style={{ fontSize: '13px', fontWeight: 600, color: '#002855' }}>
+            <label className="limited-input-label" style={{ fontSize: '13px', fontWeight: 600 }}>
               {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
             </label>
           )}

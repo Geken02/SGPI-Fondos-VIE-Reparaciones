@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import '../styles/gestora.css';
 import '../styles/cie.css';
 
@@ -111,13 +111,14 @@ export default function PreviewCie() {
               ))}
             </div>
 
-            <div className="gv-filtros">
+            <div className="gv-filtros" role="search" aria-label="Filtro de búsqueda de demostración">
               <label className="gv-campo gv-campo-busqueda">
                 <input
                   type="search"
                   placeholder="Buscar código, título o investigador..."
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
+                  aria-label="Buscar código, título o investigador"
                 />
               </label>
             </div>

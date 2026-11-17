@@ -1046,3 +1046,81 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   PARCHE V2 - EXPEDIENTE: ICONOS SVG Y TEXTOS SOBRE FONDOS AMARILLOS
+   (Gana sobre el parche anterior por orden de cascada + !important)
+   ========================================================================== */
+
+/* Regla general: ningún SVG del expediente debe tener relleno azul */
+.high-contrast-mode .exp-container svg {
+  fill: none !important;
+}
+
+/* 1. Íconos sobre fondo NEGRO/GRIS → AMARILLOS */
+.high-contrast-mode .exp-meta-icon svg,
+.high-contrast-mode .exp-back-btn svg,
+.high-contrast-mode .exp-icon-btn svg,
+.high-contrast-mode .exp-info-box svg,
+.high-contrast-mode .exp-alert-box svg,
+.high-contrast-mode .exp-doc-icon-box svg,
+.high-contrast-mode .exp-doc-download svg,
+.high-contrast-mode .exp-notas-title svg,
+.high-contrast-mode .exp-nav-item svg,
+.high-contrast-mode .exp-status-box.readonly svg {
+  stroke: #FFFF00 !important;
+}
+
+.high-contrast-mode .exp-meta-icon,
+.high-contrast-mode .exp-back-btn,
+.high-contrast-mode .exp-icon-btn,
+.high-contrast-mode .exp-doc-download {
+  color: #FFFF00 !important;
+}
+
+/* 2. Íconos sobre fondo AMARILLO → NEGROS (el bug de la captura) */
+.high-contrast-mode .exp-doc-header-icon svg,
+.high-contrast-mode .exp-btn-evaluar svg,
+.high-contrast-mode .exp-nav-item.active svg {
+  stroke: #000000 !important;
+}
+
+.high-contrast-mode .exp-doc-header-icon,
+.high-contrast-mode .exp-btn-evaluar {
+  color: #000000 !important;
+}
+
+/* 3. Item activo del menú lateral → TODO negro sobre amarillo */
+.high-contrast-mode .exp-nav-item.active {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .exp-nav-item.active .exp-nav-label,
+.high-contrast-mode .exp-nav-item.active span {
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+/* 4. Estado "Evaluación Completada" → check verde sobre negro */
+.high-contrast-mode .exp-status-box.completed svg {
+  stroke: #00FF00 !important;
+}
+
+/* 5. Botón "Registrar Evaluación" → texto negro sobre amarillo */
+.high-contrast-mode .exp-btn-evaluar {
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+/* 6. Header de sección "Metodología" → caja amarilla con ícono negro */
+.high-contrast-mode .exp-doc-header-icon {
+  background-color: #FFFF00 !important;
+  border: 1px solid #FFFFFF !important;
+}
+
+/* 7. Caja de metadata superior → íconos amarillos sobre gris */
+.high-contrast-mode .exp-meta-icon {
+  background-color: #1a1a1a !important;
+  border: 1px solid #FFFF00 !important;
+}
