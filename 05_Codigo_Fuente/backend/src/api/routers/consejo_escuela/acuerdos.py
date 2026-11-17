@@ -11,6 +11,7 @@ from src.api.schemas.consejo_escuela.acuerdos import (
 from src.services.consejo_escuela import acuerdo_service
 
 
+
 router = APIRouter(
     prefix="/consejo-escuela/acuerdos",
     tags=["Consejo de Escuela - Acuerdos"],

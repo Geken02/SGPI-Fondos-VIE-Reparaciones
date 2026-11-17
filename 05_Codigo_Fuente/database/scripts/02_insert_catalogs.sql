@@ -202,9 +202,9 @@ INSERT INTO RubrosPropuesta (nombreRubro, descripcionRubro, activo) VALUES
 ON CONFLICT DO NOTHING;
 
 INSERT INTO TiposAcuerdo (nombreTipoAcuerdo, descripcion, activo) VALUES
-('Aprobacion', 'Acuerdo de aprobación del Consejo', TRUE),
+('Aprobación', 'Acuerdo de aprobación del Consejo', TRUE),
 ('Rechazo', 'Acuerdo de rechazo de la propuesta', TRUE),
-('Devolucion', 'Devolución para ajustes menores', TRUE)
+('Devolución', 'Devolución para ajustes menores', TRUE)
 ON CONFLICT DO NOTHING;
 
 -- =============================================================================

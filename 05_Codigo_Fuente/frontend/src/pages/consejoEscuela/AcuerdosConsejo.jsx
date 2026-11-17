@@ -254,14 +254,17 @@ export default function AcuerdosConsejo() {
 
               <label>
                 Tipo de acuerdo *
-                <input
-                  type="number"
+                <select
                   name="tipoAcuerdoId"
-                  min="1"
                   value={formulario.tipoAcuerdoId}
                   onChange={manejarCambio}
                   required
-                />
+                >
+                  <option value="">Seleccione un tipo de acuerdo</option>
+                  <option value="1">Aprobación</option>
+                  <option value="2">Rechazo</option>
+                  <option value="3">Devolución</option>
+                </select>
               </label>
 
               <label>
