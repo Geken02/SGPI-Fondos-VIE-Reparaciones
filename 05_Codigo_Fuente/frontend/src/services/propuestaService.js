@@ -74,6 +74,40 @@ export const propuestaService = {
     return response.data;
   },
 
+  obtenerPlanAccion: async (id) => {
+    try {
+      const response = await api.get(`/investigador/propuestas/${id}/plan-accion`);
+      return response.data || { objetivosEspecificos: [], actividades: [] };
+    } catch (_e) {
+      return { objetivosEspecificos: [], actividades: [] };
+    }
+  },
+
+  guardarPlanAccion: async (id, datos) => {
+    const response = await api.put(`/investigador/propuestas/${id}/plan-accion`, datos);
+    return response.data;
+  },
+
+  guardarAspectosEticos: async (id, datos) => {
+    const response = await api.put(`/investigador/propuestas/${id}/aspectos-eticos`, datos);
+    return response.data;
+  },
+
+  guardarFinanciamientoExterno: async (id, financiamientos) => {
+    const response = await api.put(`/investigador/propuestas/${id}/financiamiento`, { financiamientos });
+    return response.data;
+  },
+
+  guardarReferencias: async (id, referencias) => {
+    const response = await api.put(`/investigador/propuestas/${id}/referencias`, { referencias });
+    return response.data;
+  },
+
+  guardarProductosAcademicos: async (id, productos) => {
+    const response = await api.put(`/investigador/propuestas/${id}/productos-academicos`, { productos });
+    return response.data;
+  },
+
   enviarRevision: async (id) => {
     const response = await api.post(`/investigador/propuestas/${id}/enviar`);
     return response.data;

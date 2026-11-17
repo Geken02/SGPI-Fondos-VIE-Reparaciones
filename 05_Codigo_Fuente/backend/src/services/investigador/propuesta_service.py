@@ -9,8 +9,17 @@ from src.models.propuestas import Propuesta
 from src.models.propuesta_contenido import PropuestaContenido, PropuestaDeclaraciones
 from src.models.propuesta_equipo import IntegrantesEquipoPropuesta, RolesEquipo, ColaboradoresExternos
 from datetime import date
-from src.models.presupuesto import PresupuestoPropuesta
-from src.models.propuesta_plan import Actividades
+from src.models.presupuesto import PresupuestoPropuesta, FinanciamientoExterno
+from src.models.propuesta_plan import (
+    Actividades,
+    ObjetivosEspecificos,
+    Riesgos,
+    MedidasMitigacion,
+    ParticipantesActividad,
+)
+from src.models.aspectos_eticos import AspectosEticos
+from src.models.bibliografia import FuentesBibliograficas, PropuestaReferencia
+from src.models.catalogos import TiposHora
 from src.models.propuesta_documentos import PropuestaDocumentos
 from src.models.productos_academicos import ProductosAcademicos
 from src.models.convocatorias import EstadosPropuesta, Convocatorias, EtapasConvocatoria
@@ -39,7 +48,21 @@ from src.api.schemas.investigador.propuestas import (
     PropuestaDetalleResponse,
     IntegranteEquipoResponse,
     ProductoAcademicoResponse,
-    RubroPresupuestoResponse
+    RubroPresupuestoResponse,
+    PlanAccionRiesgosUpdate,
+    PlanAccionRiesgosResponse,
+    AspectosEticosUpdate,
+    AspectosEticosResponse,
+    FinanciamientoExternoUpdate,
+    FinanciamientoExternoResponse,
+    ReferenciasUpdate,
+    FuenteBibliograficaResponse,
+    ProductosAcademicosUpdate,
+    ParticipanteActividadResponse,
+    MedidaMitigacionResponse,
+    RiesgoResponse,
+    ActividadResponse,
+    ObjetivoEspecificoResponse,
 )
 
 
@@ -87,6 +110,45 @@ def obtener_propuesta_con_acceso(
     return propuesta
 
 
+def _resolver_estado_borrador_id(db: Session) -> int:
+    """Resuelve el ID real del estado 'Borrador' desde el catálogo EstadosPropuesta."""
+    estado = db.query(EstadosPropuesta).filter(
+        EstadosPropuesta.codigoEstadoPropuesta == "BORRADOR"
+    ).first()
+    if not estado:
+        estado = db.query(EstadosPropuesta).order_by(EstadosPropuesta.orden).first()
+    return estado.estadoPropuestaId if estado else 1
+
+
+def _resolver_etapa_formulacion_id(db: Session, convocatoria_id: int) -> int:
+    """Resuelve la primera etapa de la convocatoria (Formulación) desde EtapasConvocatoria."""
+    etapa = db.query(EtapasConvocatoria).filter(
+        EtapasConvocatoria.convocatoriaId == convocatoria_id
+    ).order_by(EtapasConvocatoria.fechaInicio).first()
+    if not etapa:
+        etapa = db.query(EtapasConvocatoria).order_by(EtapasConvocatoria.etapaId).first()
+    return etapa.etapaId if etapa else 1
+
+
+def _resolver_tipo_hora_id(db: Session) -> int:
+    """Resuelve el tipo de hora por defecto (VIE) desde el catálogo TiposHora."""
+    tipo = db.query(TiposHora).filter(TiposHora.codigoTipo == "VIE").first()
+    if not tipo:
+        tipo = db.query(TiposHora).order_by(TiposHora.tipoHoraId).first()
+    return tipo.tipoHoraId if tipo else 1
+
+
+def _resolver_rol_equipo_id(db: Session, nombre_rol: str, excluir_rol_id: Optional[int] = None) -> int:
+    """Resuelve un rol de equipo por nombre desde el catálogo RolesEquipo."""
+    rol = db.query(RolesEquipo).filter(RolesEquipo.nombreRol == nombre_rol).first()
+    if not rol:
+        query = db.query(RolesEquipo)
+        if excluir_rol_id is not None:
+            query = query.filter(RolesEquipo.rolEquipoId != excluir_rol_id)
+        rol = query.order_by(RolesEquipo.rolEquipoId).first()
+    return rol.rolEquipoId if rol else 1
+
+
 def crear_propuesta(
     db: Session,
     usuario: Usuario,
@@ -94,6 +156,7 @@ def crear_propuesta(
 ) -> Propuesta:
     """
     Crea una nueva propuesta en estado BORRADOR y genera su código oficial preliminar.
+    Todos los IDs de catálogo se resuelven contra la base de datos (sin valores inventados).
     """
     codigo = generar_codigo_propuesta(db)
 
@@ -125,8 +188,8 @@ def crear_propuesta(
     nueva_propuesta.setEscuelaId(esc_id)
     nueva_propuesta.setLineaInvestigacionId(datos.lineaInvestigacionId)
     nueva_propuesta.setModalidadId(datos.modalidadId)
-    nueva_propuesta.setEstadoId(1)  # 1 = Borrador
-    nueva_propuesta.setEtapaId(1)   # 1 = Formulación
+    nueva_propuesta.setEstadoId(_resolver_estado_borrador_id(db))  # Estado real 'Borrador'
+    nueva_propuesta.setEtapaId(_resolver_etapa_formulacion_id(db, conv_id))  # Etapa real de la convocatoria
     nueva_propuesta.setMontoTotal(Decimal("0.00"))
     nueva_propuesta.setNivelTrlActual(datos.nivelTrlActual or 1)
     nueva_propuesta.setNivelTrlEsperado(datos.nivelTrlEsperado or 3)
@@ -160,8 +223,8 @@ def crear_propuesta(
     coord = IntegrantesEquipoPropuesta()
     coord.setPropuestaId(nueva_propuesta.getPropuestaId())
     coord.setUsuarioId(usuario.usuarioId)
-    coord.setTipoHoraId(1)
-    coord.setRolEquipoId(1)  # 1 = Coordinador
+    coord.setTipoHoraId(_resolver_tipo_hora_id(db))
+    coord.setRolEquipoId(_resolver_rol_equipo_id(db, "Coordinador"))
     coord.setHorasSemanales(Decimal("20.00"))
     coord.setUsuarioAuditoriaId(usuario.usuarioId)
     db.add(coord)
@@ -382,6 +445,59 @@ def obtener_propuesta_detalle(
             )
         )
 
+    # Plan de Acción y Gestión de Riesgos (sección 3)
+    plan_accion_resp = obtener_plan_accion_riesgos(
+        db=db, propuesta_id=propuesta_id, usuario_id=usuario_id
+    )
+
+    # Aspectos Éticos (sección 3) - entidad 1:1
+    aspecto_orm = db.query(AspectosEticos).filter(
+        AspectosEticos.propuestaId == propuesta_id
+    ).first()
+    aspectos_resp = AspectosEticosResponse(
+        involucraSeresHumanos=bool(aspecto_orm.getInvolucraSeresHumanos()),
+        involucraBiodiversidad=bool(aspecto_orm.getInvolucraBiodiversidad()),
+        involucraAnimales=bool(aspecto_orm.getInvolucraAnimales()),
+        involucraTerritoriosIndigenas=bool(aspecto_orm.getInvolucraTerritoriosIndigenas()),
+        justificacionExencion=aspecto_orm.getJustificacionExencion(),
+        enteRegulatorioId=aspecto_orm.getEnteRegulatorioId(),
+        estadoAvalId=aspecto_orm.getEstadoAvalId()
+    ) if aspecto_orm else None
+
+    # Financiamiento externo (sección 3)
+    financiamiento_orm = db.query(FinanciamientoExterno).filter(
+        FinanciamientoExterno.propuestaId == propuesta_id
+    ).all()
+    financiamiento_resp = [
+        FinanciamientoExternoResponse(
+            financiamientoId=f.getFinanciamientoId(),
+            tipoFinanciamientoId=f.getTipoFinanciamientoId(),
+            anio=f.getAnio(),
+            monto=f.getMonto(),
+            numeroOficio=f.getNumeroOficio(),
+            entidadEmisoraId=f.getEntidadEmisoraId()
+        ) for f in financiamiento_orm
+    ]
+
+    # Referencias bibliográficas (sección 3: FuentesBibliograficas + PropuestaReferencia)
+    referencias_orm = db.query(PropuestaReferencia).filter(
+        PropuestaReferencia.propuestaId == propuesta_id
+    ).order_by(PropuestaReferencia.ordenReferencia).all()
+    referencias_resp = []
+    for ref in referencias_orm:
+        fuente = db.query(FuentesBibliograficas).filter(
+            FuentesBibliograficas.fuenteId == ref.getFuenteId()
+        ).first()
+        if fuente:
+            referencias_resp.append(FuenteBibliograficaResponse(
+                fuenteId=fuente.getFuenteId(),
+                titulo=fuente.getTitulo(),
+                anioPublicacion=fuente.getAnioPublicacion(),
+                doi=fuente.getDoi(),
+                revistaFuente=fuente.getRevistaFuente(),
+                esIndexadaWoSScopus=bool(fuente.getEsIndexadaWoSScopus())
+            ))
+
     contenido_resp = ContenidoForm04Response(
         resumen=contenido.getResumen() if contenido else None,
         palabrasClave=contenido.getPalabrasClave() if contenido else None,
@@ -443,7 +559,11 @@ def obtener_propuesta_detalle(
         colaboradoresExternos=colaboradores_resp,
         productosAcademicos=productos_resp,
         presupuesto=presupuesto_resp,
-        subsanaciones=subsanaciones_resp
+        subsanaciones=subsanaciones_resp,
+        planAccion=plan_accion_resp,
+        aspectosEticos=aspectos_resp,
+        financiamientoExterno=financiamiento_resp,
+        referencias=referencias_resp
     )
 
 
@@ -620,7 +740,7 @@ def eliminar_integrante_equipo(
     propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
 
     integrante = db.query(IntegrantesEquipoPropuesta).filter(
-        IntegrantesEquipoPropuesta.integranteId == integrante_id,
+        IntegrantesEquipoPropuesta.integranteEquipoId == integrante_id,
         IntegrantesEquipoPropuesta.propuestaId == propuesta_id
     ).first()
 
@@ -962,6 +1082,11 @@ def guardar_equipo_completo(
     propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
     coord_id = propuesta.getInvestigadorCoordId()
 
+    # IDs reales de catálogo (evita valores hardcodeados / inventados)
+    rol_coordinador_id = _resolver_rol_equipo_id(db, "Coordinador")
+    rol_default_id = _resolver_rol_equipo_id(db, "Investigador", excluir_rol_id=rol_coordinador_id)
+    tipo_hora_default_id = _resolver_tipo_hora_id(db)
+
     # 1. Integrantes TEC
     db.query(IntegrantesEquipoPropuesta).filter(
         IntegrantesEquipoPropuesta.propuestaId == propuesta_id
@@ -981,9 +1106,9 @@ def guardar_equipo_completo(
         nuevo_inte = IntegrantesEquipoPropuesta()
         nuevo_inte.setPropuestaId(propuesta_id)
         nuevo_inte.setUsuarioId(inte.usuarioId)
-        nuevo_inte.setTipoHoraId(inte.tipoHoraId or 1)
+        nuevo_inte.setTipoHoraId(inte.tipoHoraId or tipo_hora_default_id)
         nuevo_inte.setHorasSemanales(inte.horasSemanales or Decimal("10.0"))
-        nuevo_inte.setRolEquipoId(1 if inte.usuarioId == coord_id else (inte.rolEquipoId or 2))
+        nuevo_inte.setRolEquipoId(rol_coordinador_id if inte.usuarioId == coord_id else (inte.rolEquipoId or rol_default_id))
         nuevo_inte.setOrcid(inte.orcid)
         nuevo_inte.setUsuarioAuditoriaId(usuario_id)
         db.add(nuevo_inte)
@@ -992,9 +1117,9 @@ def guardar_equipo_completo(
         coord = IntegrantesEquipoPropuesta()
         coord.setPropuestaId(propuesta_id)
         coord.setUsuarioId(coord_id)
-        coord.setTipoHoraId(1)
+        coord.setTipoHoraId(tipo_hora_default_id)
         coord.setHorasSemanales(Decimal("10.0"))
-        coord.setRolEquipoId(1)
+        coord.setRolEquipoId(rol_coordinador_id)
         coord.setUsuarioAuditoriaId(usuario_id)
         db.add(coord)
 
@@ -1071,3 +1196,381 @@ def obtener_equipo_propuesta(
         "integrantes": integrantes_resp,
         "colaboradoresExternos": colabs_resp
     }
+
+
+# ==============================================================================
+# NÚCLEO DE PROPUESTAS (Sección 3): PLAN DE ACCIÓN, RIESGOS, ÉTICA,
+# FINANCIAMIENTO, REFERENCIAS Y PRODUCTOS ACADÉMICOS
+# Todas las funciones son idempotentes (reemplazo transaccional) para que el
+# autoguardado pueda ejecutarse repetidamente sin duplicar registros.
+# ==============================================================================
+
+def obtener_plan_accion_riesgos(
+    db: Session,
+    propuesta_id: int,
+    usuario_id: int
+) -> PlanAccionRiesgosResponse:
+    """
+    Retorna el Plan de Acción completo: ObjetivosEspecificos -> Actividades ->
+    ParticipantesActividad y Riesgos -> MedidasMitigacion.
+    """
+    obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
+
+    objetivos_orm = db.query(ObjetivosEspecificos).filter(
+        ObjetivosEspecificos.propuestaId == propuesta_id
+    ).order_by(ObjetivosEspecificos.numeroObjetivo).all()
+    objetivos_resp = [
+        ObjetivoEspecificoResponse(
+            objetivoEspecificoId=o.getObjetivoEspecificoId(),
+            numeroObjetivo=o.getNumeroObjetivo(),
+            descripcion=o.getDescripcion()
+        ) for o in objetivos_orm
+    ]
+
+    actividades_orm = db.query(Actividades).filter(
+        Actividades.propuestaId == propuesta_id
+    ).order_by(Actividades.actividadId).all()
+
+    actividades_resp = []
+    for act in actividades_orm:
+        act_id = act.getActividadId()
+
+        participantes_orm = db.query(ParticipantesActividad).filter(
+            ParticipantesActividad.actividadId == act_id
+        ).all()
+        participantes_resp = [
+            ParticipanteActividadResponse(
+                participanteActividadId=p.getParticipanteActividadId(),
+                actividadId=p.getActividadId(),
+                usuarioId=p.getUsuarioId(),
+                tipoResponsabilidadId=p.getTipoResponsabilidadId()
+            ) for p in participantes_orm
+        ]
+
+        riesgos_orm = db.query(Riesgos).filter(Riesgos.actividadId == act_id).all()
+        riesgos_resp = []
+        for r in riesgos_orm:
+            medidas_orm = db.query(MedidasMitigacion).filter(
+                MedidasMitigacion.riesgoId == r.getRiesgoId()
+            ).all()
+            medidas_resp = [
+                MedidaMitigacionResponse(
+                    medidaMitigacionId=m.getMedidaMitigacionId(),
+                    riesgoId=m.getRiesgoId(),
+                    descripcionMedida=m.getDescripcionMedida(),
+                    usuarioResponsableId=m.getUsuarioResponsableId(),
+                    esPermisoEtico=bool(m.getEsPermisoEtico())
+                ) for m in medidas_orm
+            ]
+            riesgos_resp.append(RiesgoResponse(
+                riesgoId=r.getRiesgoId(),
+                actividadId=r.getActividadId(),
+                descripcionRiesgo=r.getDescripcionRiesgo(),
+                probabilidad=r.getProbabilidad(),
+                impacto=r.getImpacto(),
+                medidas=medidas_resp
+            ))
+
+        actividades_resp.append(ActividadResponse(
+            actividadId=act_id,
+            objetivoEspecificoId=act.getObjetivoEspecificoId(),
+            descripcionActividad=act.getDescripcionActividad(),
+            resultadoEsperado=act.getResultadoEsperado(),
+            mesInicio=act.getMesInicio(),
+            duracionMeses=act.getDuracionMeses(),
+            anioEjecucion=act.getAnioEjecucion(),
+            esGira=bool(act.getEsGira()),
+            esPasantia=bool(act.getEsPasantia()),
+            requiereInformeAvance=bool(act.getRequiereInformeAvance()),
+            participantes=participantes_resp,
+            riesgos=riesgos_resp
+        ))
+
+    return PlanAccionRiesgosResponse(
+        objetivosEspecificos=objetivos_resp,
+        actividades=actividades_resp
+    )
+
+
+def guardar_plan_accion_riesgos(
+    db: Session,
+    propuesta_id: int,
+    usuario_id: int,
+    datos: PlanAccionRiesgosUpdate
+) -> PlanAccionRiesgosResponse:
+    """
+    Reemplaza de forma atómica y en una sola transacción el Plan de Acción y
+    Gestión de Riesgos: ObjetivosEspecificos, Actividades, ParticipantesActividad,
+    Riesgos y MedidasMitigacion. Es idempotente, por lo que el autoguardado puede
+    invocarse repetidamente sin generar duplicados ni filas huérfanas.
+    """
+    propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
+    anio_base = propuesta.getFechaInicio().year if propuesta.getFechaInicio() else date.today().year
+
+    try:
+        # 1. Purgar estructura previa (de hijos a padres) para evitar FKs huérfanas
+        actividades_previas = db.query(Actividades).filter(Actividades.propuestaId == propuesta_id).all()
+        ids_actividades = [a.getActividadId() for a in actividades_previas]
+        if ids_actividades:
+            ids_riesgos = [
+                r.getRiesgoId() for r in db.query(Riesgos).filter(Riesgos.actividadId.in_(ids_actividades)).all()
+            ]
+            if ids_riesgos:
+                db.query(MedidasMitigacion).filter(
+                    MedidasMitigacion.riesgoId.in_(ids_riesgos)
+                ).delete(synchronize_session=False)
+                db.query(Riesgos).filter(Riesgos.riesgoId.in_(ids_riesgos)).delete(synchronize_session=False)
+            db.query(ParticipantesActividad).filter(
+                ParticipantesActividad.actividadId.in_(ids_actividades)
+            ).delete(synchronize_session=False)
+            db.query(Actividades).filter(Actividades.propuestaId == propuesta_id).delete(synchronize_session=False)
+        db.query(ObjetivosEspecificos).filter(
+            ObjetivosEspecificos.propuestaId == propuesta_id
+        ).delete(synchronize_session=False)
+        db.flush()
+
+        # 2. Objetivos específicos
+        objetivos_creados = []
+        for idx, obj in enumerate(datos.objetivosEspecificos):
+            objetivo = ObjetivosEspecificos()
+            objetivo.setPropuestaId(propuesta_id)
+            objetivo.setNumeroObjetivo(obj.numeroObjetivo or (idx + 1))
+            objetivo.setDescripcion((obj.descripcion or "").strip())
+            objetivo.setUsuarioAuditoriaId(usuario_id)
+            db.add(objetivo)
+            objetivos_creados.append(objetivo)
+        db.flush()
+
+        # 3. Actividades con participantes, riesgos y medidas de mitigación
+        for act in datos.actividades:
+            indice = act.objetivoEspecificoIndice
+            if not objetivos_creados:
+                objetivo_contenedor = ObjetivosEspecificos()
+                objetivo_contenedor.setPropuestaId(propuesta_id)
+                objetivo_contenedor.setNumeroObjetivo(1)
+                objetivo_contenedor.setDescripcion((act.descripcionActividad or "Objetivo general").strip()[:500])
+                objetivo_contenedor.setUsuarioAuditoriaId(usuario_id)
+                db.add(objetivo_contenedor)
+                db.flush()
+                objetivos_creados.append(objetivo_contenedor)
+            if indice is None or indice < 0 or indice >= len(objetivos_creados):
+                indice = 0
+
+            mes_inicio = act.mesInicio or 1
+            anio_ejecucion = act.anioEjecucion or (anio_base + (mes_inicio - 1) // 12)
+
+            actividad = Actividades()
+            actividad.setPropuestaId(propuesta_id)
+            actividad.setObjetivoEspecificoId(objetivos_creados[indice].getObjetivoEspecificoId())
+            actividad.setDescripcionActividad((act.descripcionActividad or "").strip())
+            actividad.setResultadoEsperado((act.resultadoEsperado or "").strip())
+            actividad.setMesInicio(mes_inicio)
+            actividad.setDuracionMeses(Decimal(str(act.duracionMeses or 1)))
+            actividad.setAnioEjecucion(anio_ejecucion)
+            actividad.setEsGira(bool(act.esGira))
+            actividad.setEsPasantia(bool(act.esPasantia))
+            actividad.setRequiereInformeAvance(bool(act.requiereInformeAvance))
+            actividad.setUsuarioAuditoriaId(usuario_id)
+            db.add(actividad)
+            db.flush()
+            act_id = actividad.getActividadId()
+
+            for part in act.participantes:
+                if not part.usuarioId or not part.tipoResponsabilidadId:
+                    continue
+                participante = ParticipantesActividad()
+                participante.setActividadId(act_id)
+                participante.setUsuarioId(part.usuarioId)
+                participante.setTipoResponsabilidadId(part.tipoResponsabilidadId)
+                participante.setUsuarioAuditoriaId(usuario_id)
+                db.add(participante)
+
+            for r in act.riesgos:
+                if not (r.descripcionRiesgo or "").strip():
+                    continue
+                riesgo = Riesgos()
+                riesgo.setActividadId(act_id)
+                riesgo.setDescripcionRiesgo(r.descripcionRiesgo.strip())
+                riesgo.setProbabilidad(r.probabilidad)
+                riesgo.setImpacto(r.impacto)
+                riesgo.setUsuarioAuditoriaId(usuario_id)
+                db.add(riesgo)
+                db.flush()
+                for m in r.medidas:
+                    if not (m.descripcionMedida or "").strip():
+                        continue
+                    medida = MedidasMitigacion()
+                    medida.setRiesgoId(riesgo.getRiesgoId())
+                    medida.setDescripcionMedida(m.descripcionMedida.strip())
+                    medida.setUsuarioResponsableId(m.usuarioResponsableId or propuesta.getInvestigadorCoordId())
+                    medida.setEsPermisoEtico(bool(m.esPermisoEtico))
+                    medida.setUsuarioAuditoriaId(usuario_id)
+                    db.add(medida)
+
+        db.commit()
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No se pudo guardar el Plan de Acción y Riesgos: {exc}"
+        )
+
+    return obtener_plan_accion_riesgos(db=db, propuesta_id=propuesta_id, usuario_id=usuario_id)
+
+
+def guardar_aspectos_eticos(
+    db: Session,
+    propuesta_id: int,
+    usuario_id: int,
+    datos: AspectosEticosUpdate
+) -> AspectosEticos:
+    """
+    Inserta o actualiza (upsert por propuestaId) los Aspectos Éticos de la propuesta.
+    """
+    obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
+
+    aspecto = db.query(AspectosEticos).filter(AspectosEticos.propuestaId == propuesta_id).first()
+    if not aspecto:
+        aspecto = AspectosEticos()
+        aspecto.setPropuestaId(propuesta_id)
+        db.add(aspecto)
+
+    aspecto.setInvolucraSeresHumanos(bool(datos.involucraSeresHumanos))
+    aspecto.setInvolucraBiodiversidad(bool(datos.involucraBiodiversidad))
+    aspecto.setInvolucraAnimales(bool(datos.involucraAnimales))
+    aspecto.setInvolucraTerritoriosIndigenas(bool(datos.involucraTerritoriosIndigenas))
+    aspecto.setJustificacionExencion(datos.justificacionExencion)
+    aspecto.setEnteRegulatorioId(datos.enteRegulatorioId)
+    aspecto.setEstadoAvalId(datos.estadoAvalId)
+    aspecto.setUsuarioAuditoriaId(usuario_id)
+    aspecto.setUltimaAuditoria(datetime.now(timezone.utc))
+
+    db.commit()
+    db.refresh(aspecto)
+    return aspecto
+
+
+def guardar_financiamiento_externo(
+    db: Session,
+    propuesta_id: int,
+    usuario_id: int,
+    datos: FinanciamientoExternoUpdate
+) -> List[FinanciamientoExterno]:
+    """
+    Reemplaza atómicamente las fuentes de FinanciamientoExterno de la propuesta.
+    """
+    obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
+
+    db.query(FinanciamientoExterno).filter(
+        FinanciamientoExterno.propuestaId == propuesta_id
+    ).delete(synchronize_session=False)
+
+    nuevos = []
+    for fin in datos.financiamientos:
+        item = FinanciamientoExterno()
+        item.setPropuestaId(propuesta_id)
+        item.setTipoFinanciamientoId(fin.tipoFinanciamientoId)
+        item.setAnio(fin.anio)
+        item.setMonto(Decimal(str(fin.monto or 0)))
+        item.setNumeroOficio(fin.numeroOficio)
+        item.setEntidadEmisoraId(fin.entidadEmisoraId)
+        item.setUsuarioAuditoriaId(usuario_id)
+        db.add(item)
+        nuevos.append(item)
+
+    db.commit()
+    for item in nuevos:
+        db.refresh(item)
+    return nuevos
+
+
+def guardar_referencias(
+    db: Session,
+    propuesta_id: int,
+    usuario_id: int,
+    datos: ReferenciasUpdate
+) -> List[FuenteBibliograficaResponse]:
+    """
+    Reemplaza las referencias bibliográficas de la propuesta: reutiliza fuentes
+    existentes por DOI (o las crea) y reconstruye los vínculos PropuestaReferencia.
+    """
+    obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
+
+    db.query(PropuestaReferencia).filter(
+        PropuestaReferencia.propuestaId == propuesta_id
+    ).delete(synchronize_session=False)
+    db.flush()
+
+    resultado = []
+    for orden, ref in enumerate(datos.referencias, start=1):
+        fuente = None
+        doi = (ref.doi or "").strip() or None
+        if doi:
+            fuente = db.query(FuentesBibliograficas).filter(FuentesBibliograficas.doi == doi).first()
+        if not fuente:
+            fuente = FuentesBibliograficas()
+            fuente.setDoi(doi)
+            fuente.setTitulo(ref.titulo)
+            fuente.setAnioPublicacion(ref.anioPublicacion)
+            fuente.setRevistaFuente(ref.revistaFuente)
+            fuente.setEsIndexadaWoSScopus(bool(ref.esIndexadaWoSScopus))
+            fuente.setUsuarioAuditoriaId(usuario_id)
+            db.add(fuente)
+            db.flush()
+
+        vinculo = PropuestaReferencia()
+        vinculo.setPropuestaId(propuesta_id)
+        vinculo.setFuenteId(fuente.getFuenteId())
+        vinculo.setOrdenReferencia(orden)
+        vinculo.setUsuarioAuditoriaId(usuario_id)
+        db.add(vinculo)
+
+        resultado.append(FuenteBibliograficaResponse(
+            fuenteId=fuente.getFuenteId(),
+            titulo=fuente.getTitulo(),
+            anioPublicacion=fuente.getAnioPublicacion(),
+            doi=fuente.getDoi(),
+            revistaFuente=fuente.getRevistaFuente(),
+            esIndexadaWoSScopus=bool(fuente.getEsIndexadaWoSScopus())
+        ))
+
+    db.commit()
+    return resultado
+
+
+def guardar_productos_academicos(
+    db: Session,
+    propuesta_id: int,
+    usuario_id: int,
+    datos: ProductosAcademicosUpdate
+) -> List[ProductosAcademicos]:
+    """
+    Reemplaza atómicamente los ProductosAcademicos comprometidos en la propuesta.
+    """
+    obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
+
+    db.query(ProductosAcademicos).filter(
+        ProductosAcademicos.propuestaId == propuesta_id
+    ).delete(synchronize_session=False)
+
+    nuevos = []
+    for prod in datos.productos:
+        item = ProductosAcademicos()
+        item.setPropuestaId(propuesta_id)
+        item.setTipoProductoAcademicoId(prod.tipoProductoAcademicoId)
+        item.setObjetivoEspecificoId(prod.objetivoEspecificoId)
+        item.setDescripcion(prod.descripcion)
+        item.setCantidadComprometida(prod.cantidadComprometida)
+        item.setFechaEntregaEstimada(prod.fechaEntregaEstimada)
+        item.setEsPropiedadIndustrial(bool(prod.esPropiedadIndustrial))
+        item.setUsuarioAuditoriaId(usuario_id)
+        db.add(item)
+        nuevos.append(item)
+
+    db.commit()
+    for item in nuevos:
+        db.refresh(item)
+    return nuevos

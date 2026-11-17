@@ -24,7 +24,16 @@ from src.api.schemas.investigador.propuestas import (
     SubsanacionRespuestaRequest,
     SubsanacionCrearRequest,
     PropuestaResumenResponse,
-    PropuestaDetalleResponse
+    PropuestaDetalleResponse,
+    PlanAccionRiesgosUpdate,
+    PlanAccionRiesgosResponse,
+    AspectosEticosUpdate,
+    AspectosEticosResponse,
+    FinanciamientoExternoUpdate,
+    FinanciamientoExternoResponse,
+    ReferenciasUpdate,
+    FuenteBibliograficaResponse,
+    ProductosAcademicosUpdate
 )
 from src.services.investigador.propuesta_service import (
     crear_propuesta,
@@ -43,7 +52,13 @@ from src.services.investigador.propuesta_service import (
     enviar_propuesta_revision,
     obtener_subsanaciones_propuesta,
     responder_subsanacion,
-    solicitar_subsanacion
+    solicitar_subsanacion,
+    obtener_plan_accion_riesgos,
+    guardar_plan_accion_riesgos,
+    guardar_aspectos_eticos,
+    guardar_financiamiento_externo,
+    guardar_referencias,
+    guardar_productos_academicos
 )
 
 router = APIRouter(
@@ -105,9 +120,17 @@ def obtener_catalogos_formulario(
 ):
     from src.models.convocatorias import Convocatorias, EstadosPropuesta
     from src.models.escuelas import Escuela, Campus
-    from src.models.catalogos import NivelesTrl
+    from src.models.catalogos import (
+        NivelesTrl, TiposHora, Modalidades, TiposInnovacion, LineasInvestigacion
+    )
     from src.models.usuarios import Usuario
     from src.models.propuesta_equipo import RolesEquipo
+    from src.models.propuesta_plan import TiposResponsabilidad
+    from src.models.aspectos_eticos import EntesRegulatorios, EstadosAval
+    from src.models.presupuesto import (
+        TiposFinanciamiento, EntidadesEmisoras, RubrosPropuesta
+    )
+    from src.models.productos_academicos import TiposProductosAcademicos
     from datetime import date
 
     hoy = date.today()
@@ -120,6 +143,26 @@ def obtener_catalogos_formulario(
     niveles_trl = db.query(NivelesTrl).filter(NivelesTrl.activo == True).order_by(NivelesTrl.nivelTrlId).all()
     investigadores = db.query(Usuario).filter(Usuario.activo == True).order_by(Usuario.nombreUsuario).all()
     roles_equipo = db.query(RolesEquipo).filter(RolesEquipo.activo == True).all()
+    # Catálogos auxiliares (llaves foráneas de la sección 3 del esquema)
+    rubros = db.query(RubrosPropuesta).filter(RubrosPropuesta.activo == True).all()
+    tipos_producto = db.query(TiposProductosAcademicos).filter(
+        TiposProductosAcademicos.activo == True
+    ).all()
+    tipos_responsabilidad = db.query(TiposResponsabilidad).filter(
+        TiposResponsabilidad.activo == True
+    ).all()
+    entes_regulatorios = db.query(EntesRegulatorios).filter(EntesRegulatorios.activo == True).all()
+    estados_aval = db.query(EstadosAval).filter(EstadosAval.activo == True).all()
+    tipos_hora = db.query(TiposHora).filter(TiposHora.activo == True).all()
+    tipos_financiamiento = db.query(TiposFinanciamiento).filter(
+        TiposFinanciamiento.activo == True
+    ).all()
+    entidades_emisoras = db.query(EntidadesEmisoras).filter(EntidadesEmisoras.activo == True).all()
+    tipos_innovacion = db.query(TiposInnovacion).filter(TiposInnovacion.activo == True).all()
+    modalidades = db.query(Modalidades).filter(Modalidades.activo == True).all()
+    lineas_investigacion = db.query(LineasInvestigacion).filter(
+        LineasInvestigacion.activo == True
+    ).all()
 
     convocatorias_data = []
     for c in convocatorias:
@@ -182,6 +225,83 @@ def obtener_catalogos_formulario(
                 "rolEquipoId": r.rolEquipoId,
                 "nombreRol": r.nombreRol
             } for r in roles_equipo
+        ],
+        "rubros": [
+            {
+                "rubroId": r.getRubroId(),
+                "nombreRubro": r.getNombreRubro(),
+                "descripcionRubro": r.getDescripcionRubro()
+            } for r in rubros
+        ],
+        "tiposProductoAcademico": [
+            {
+                "tipoProductoAcademicoId": t.tipoProductoAcademicoId,
+                "nombreTipoProductoAcademico": t.nombreTipoProductoAcademico,
+                "descripcion": t.descripcion
+            } for t in tipos_producto
+        ],
+        "tiposResponsabilidad": [
+            {
+                "tipoResponsabilidadId": t.getTipoResponsabilidadId(),
+                "nombreTipoResponsabilidad": t.getNombreTipoResponsabilidad(),
+                "descripcion": t.getDescripcion()
+            } for t in tipos_responsabilidad
+        ],
+        "entesRegulatorios": [
+            {
+                "enteRegulatorioId": e.getEnteRegulatorioId(),
+                "nombreEnteRegulatorio": e.getNombreEnteRegulatorio(),
+                "descripcion": e.getDescripcion()
+            } for e in entes_regulatorios
+        ],
+        "estadosAval": [
+            {
+                "estadoAvalId": e.getEstadoAvalId(),
+                "nombreEstadoAval": e.getNombreEstadoAval(),
+                "descripcion": e.getDescripcion()
+            } for e in estados_aval
+        ],
+        "tiposHora": [
+            {
+                "tipoHoraId": t.tipoHoraId,
+                "codigoTipo": t.codigoTipo,
+                "descripcion": t.descripcion
+            } for t in tipos_hora
+        ],
+        "tiposFinanciamiento": [
+            {
+                "tipoFinanciamientoId": t.getTipoFinanciamientoId(),
+                "nombreTipoFinanciamiento": t.getNombreTipoFinanciamiento(),
+                "descripcion": t.getDescripcion()
+            } for t in tipos_financiamiento
+        ],
+        "entidadesEmisoras": [
+            {
+                "entidadEmisoraId": e.getEntidadEmisoraId(),
+                "nombreEntidadEmisora": e.getNombreEntidadEmisora(),
+                "descripcion": e.getDescripcion()
+            } for e in entidades_emisoras
+        ],
+        "tiposInnovacion": [
+            {
+                "tipoInnovacionId": t.tipoInnovacionId,
+                "nombreTipoInnovacion": t.nombreTipoInnovacion,
+                "descripcion": t.descripcion
+            } for t in tipos_innovacion
+        ],
+        "modalidades": [
+            {
+                "modalidadId": m.modalidadId,
+                "nombreModalidad": m.nombreModalidad,
+                "descripcion": m.descripcion
+            } for m in modalidades
+        ],
+        "lineasInvestigacion": [
+            {
+                "lineaId": l.lineaId,
+                "nombreLinea": l.nombreLinea,
+                "descripcion": l.descripcion
+            } for l in lineas_investigacion
         ]
     }
 
@@ -490,6 +610,207 @@ def reemplazar_presupuesto(
             anioEjecucion=item.getAnioEjecucion(),
             esDuradero=item.getEsDuradero()
         ) for item in items
+    ]
+
+
+@router.get(
+    "/{propuesta_id}/plan-accion",
+    response_model=PlanAccionRiesgosResponse,
+    summary="Consultar Plan de Acción y Gestión de Riesgos",
+    description="Retorna objetivos específicos, actividades, participantes y riesgos con sus medidas de mitigación."
+)
+def consultar_plan_accion(
+    propuesta_id: int,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_activo)
+):
+    return obtener_plan_accion_riesgos(
+        db=db,
+        propuesta_id=propuesta_id,
+        usuario_id=usuario_actual.usuarioId
+    )
+
+
+@router.put(
+    "/{propuesta_id}/plan-accion",
+    response_model=PlanAccionRiesgosResponse,
+    summary="Guardar Plan de Acción y Gestión de Riesgos",
+    description="Reemplaza de forma transaccional e idempotente ObjetivosEspecificos, Actividades, ParticipantesActividad, Riesgos y MedidasMitigacion."
+)
+def guardar_plan_accion(
+    propuesta_id: int,
+    datos: PlanAccionRiesgosUpdate,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_activo)
+):
+    return guardar_plan_accion_riesgos(
+        db=db,
+        propuesta_id=propuesta_id,
+        usuario_id=usuario_actual.usuarioId,
+        datos=datos
+    )
+
+
+@router.get(
+    "/{propuesta_id}/aspectos-eticos",
+    response_model=AspectosEticosResponse,
+    summary="Consultar Aspectos Éticos de la propuesta"
+)
+def consultar_aspectos_eticos(
+    propuesta_id: int,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_activo)
+):
+    from src.models.aspectos_eticos import AspectosEticos
+    obtener_propuesta_detalle(db=db, propuesta_id=propuesta_id, usuario_id=usuario_actual.usuarioId)
+    aspecto = db.query(AspectosEticos).filter(AspectosEticos.propuestaId == propuesta_id).first()
+    if not aspecto:
+        return AspectosEticosResponse()
+    return AspectosEticosResponse(
+        involucraSeresHumanos=bool(aspecto.getInvolucraSeresHumanos()),
+        involucraBiodiversidad=bool(aspecto.getInvolucraBiodiversidad()),
+        involucraAnimales=bool(aspecto.getInvolucraAnimales()),
+        involucraTerritoriosIndigenas=bool(aspecto.getInvolucraTerritoriosIndigenas()),
+        justificacionExencion=aspecto.getJustificacionExencion(),
+        enteRegulatorioId=aspecto.getEnteRegulatorioId(),
+        estadoAvalId=aspecto.getEstadoAvalId()
+    )
+
+
+@router.put(
+    "/{propuesta_id}/aspectos-eticos",
+    response_model=AspectosEticosResponse,
+    summary="Guardar (upsert) Aspectos Éticos de la propuesta",
+    description="Inserta o actualiza los aspectos éticos y ambientales vinculando los catálogos EntesRegulatorios y EstadosAval."
+)
+def guardar_aspectos(
+    propuesta_id: int,
+    datos: AspectosEticosUpdate,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_activo)
+):
+    aspecto = guardar_aspectos_eticos(
+        db=db,
+        propuesta_id=propuesta_id,
+        usuario_id=usuario_actual.usuarioId,
+        datos=datos
+    )
+    return AspectosEticosResponse(
+        involucraSeresHumanos=bool(aspecto.getInvolucraSeresHumanos()),
+        involucraBiodiversidad=bool(aspecto.getInvolucraBiodiversidad()),
+        involucraAnimales=bool(aspecto.getInvolucraAnimales()),
+        involucraTerritoriosIndigenas=bool(aspecto.getInvolucraTerritoriosIndigenas()),
+        justificacionExencion=aspecto.getJustificacionExencion(),
+        enteRegulatorioId=aspecto.getEnteRegulatorioId(),
+        estadoAvalId=aspecto.getEstadoAvalId()
+    )
+
+
+@router.get(
+    "/{propuesta_id}/financiamiento",
+    response_model=List[FinanciamientoExternoResponse],
+    summary="Consultar financiamiento externo y fuentes adicionales"
+)
+def consultar_financiamiento(
+    propuesta_id: int,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_activo)
+):
+    from src.models.presupuesto import FinanciamientoExterno
+    obtener_propuesta_detalle(db=db, propuesta_id=propuesta_id, usuario_id=usuario_actual.usuarioId)
+    items = db.query(FinanciamientoExterno).filter(
+        FinanciamientoExterno.propuestaId == propuesta_id
+    ).all()
+    return [
+        FinanciamientoExternoResponse(
+            financiamientoId=f.getFinanciamientoId(),
+            tipoFinanciamientoId=f.getTipoFinanciamientoId(),
+            anio=f.getAnio(),
+            monto=f.getMonto(),
+            numeroOficio=f.getNumeroOficio(),
+            entidadEmisoraId=f.getEntidadEmisoraId()
+        ) for f in items
+    ]
+
+
+@router.put(
+    "/{propuesta_id}/financiamiento",
+    response_model=List[FinanciamientoExternoResponse],
+    summary="Reemplazar financiamiento externo de la propuesta",
+    description="Reemplaza de forma atómica las fuentes de financiamiento, tomando los IDs reales de TiposFinanciamiento y EntidadesEmisoras."
+)
+def reemplazar_financiamiento(
+    propuesta_id: int,
+    datos: FinanciamientoExternoUpdate,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_activo)
+):
+    items = guardar_financiamiento_externo(
+        db=db,
+        propuesta_id=propuesta_id,
+        usuario_id=usuario_actual.usuarioId,
+        datos=datos
+    )
+    return [
+        FinanciamientoExternoResponse(
+            financiamientoId=f.getFinanciamientoId(),
+            tipoFinanciamientoId=f.getTipoFinanciamientoId(),
+            anio=f.getAnio(),
+            monto=f.getMonto(),
+            numeroOficio=f.getNumeroOficio(),
+            entidadEmisoraId=f.getEntidadEmisoraId()
+        ) for f in items
+    ]
+
+
+@router.put(
+    "/{propuesta_id}/referencias",
+    response_model=List[FuenteBibliograficaResponse],
+    summary="Reemplazar referencias bibliográficas de la propuesta",
+    description="Reutiliza FuentesBibliograficas por DOI (o las crea) y reconstruye los vínculos en PropuestaReferencia."
+)
+def reemplazar_referencias(
+    propuesta_id: int,
+    datos: ReferenciasUpdate,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_activo)
+):
+    return guardar_referencias(
+        db=db,
+        propuesta_id=propuesta_id,
+        usuario_id=usuario_actual.usuarioId,
+        datos=datos
+    )
+
+
+@router.put(
+    "/{propuesta_id}/productos-academicos",
+    response_model=List[ProductoAcademicoResponse],
+    summary="Reemplazar productos académicos comprometidos",
+    description="Reemplaza de forma atómica los productos académicos de la propuesta vinculando TiposProductosAcademicos y ObjetivosEspecificos reales."
+)
+def reemplazar_productos(
+    propuesta_id: int,
+    datos: ProductosAcademicosUpdate,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_activo)
+):
+    productos = guardar_productos_academicos(
+        db=db,
+        propuesta_id=propuesta_id,
+        usuario_id=usuario_actual.usuarioId,
+        datos=datos
+    )
+    return [
+        ProductoAcademicoResponse(
+            productoId=p.getProductoId(),
+            propuestaId=p.getPropuestaId(),
+            tipoProductoAcademicoId=p.getTipoProductoAcademicoId(),
+            descripcion=p.getDescripcion(),
+            cantidadComprometida=p.getCantidadComprometida(),
+            fechaEntregaEstimada=p.getFechaEntregaEstimada(),
+            esPropiedadIndustrial=p.getEsPropiedadIndustrial()
+        ) for p in productos
     ]
 
 

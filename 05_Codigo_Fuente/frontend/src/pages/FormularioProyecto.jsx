@@ -5,6 +5,16 @@ import { propuestaService } from '../services/propuestaService';
 import { LimitedInput, LimitedTextarea } from '../components/LimitedInput';
 import { exportarForm04PDF, generarBlobForm04PDF } from '../utils/exportUtils';
 import IconoCie from '../components/cie/IconoCie';
+import {
+  construirPayloadPlanAccion,
+  construirPayloadAspectosEticos,
+  construirPayloadFinanciamiento,
+  construirPayloadReferencias,
+  construirPayloadProductos,
+  construirPayloadPresupuesto,
+  resolverTipoHoraId,
+  resolverRolEquipoId
+} from '../utils/planAccionUtils';
 
 const FormularioProyecto = () => {
   const { usuario } = useAuth();
@@ -63,6 +73,18 @@ const FormularioProyecto = () => {
   const [investigadoresDisponibles, setInvestigadoresDisponibles] = useState([]);
   const [rolesEquipoDisponibles, setRolesEquipoDisponibles] = useState([]);
   const [colaboradoresExternos, setColaboradoresExternos] = useState([]);
+  // Catálogos auxiliares (llaves foráneas de la sección 3 del esquema)
+  const [catalogosAux, setCatalogosAux] = useState({
+    tiposHora: [],
+    rolesEquipo: [],
+    tiposResponsabilidad: [],
+    tiposFinanciamiento: [],
+    tiposProductoAcademico: [],
+    rubros: [],
+    entidadesEmisoras: [],
+    entesRegulatorios: [],
+    estadosAval: []
+  });
   // Cartas de compromiso por colaborador externo: { [colId]: { nombre, tamano, subiendo, subido, error } }
   const [cartasCompromiso, setCartasCompromiso] = useState({});
   const cartaInputRefs = useRef({});
@@ -86,6 +108,15 @@ const FormularioProyecto = () => {
   const [riesgosMitigacion, setRiesgosMitigacion] = useState([]);
   const isInitialMount = useRef(true);
   const lastSyncedActividades = useRef('');
+
+  // Persistencia en backend: serializa escrituras (evita concurrencia) y
+  // reintenta una vez si llega un cambio mientras hay un guardado en curso.
+  const [cargaCompletada, setCargaCompletada] = useState(false);
+  const persistenciaEnCursoRef = useRef(false);
+  const persistenciaPendienteRef = useRef(false);
+  const persistirRef = useRef(null);
+  const autosaveForm04Timer = useRef(null);
+  const ultimaFirmaAutosaveRef = useRef(null);
 
 
   // Sincronizar riesgosMitigacion automaticamente desde actividadesCronograma (Item 2 desde Tabla 1)
@@ -221,6 +252,18 @@ const FormularioProyecto = () => {
         if (cat?.rolesEquipo) {
           setRolesEquipoDisponibles(cat.rolesEquipo);
         }
+        // Catálogos auxiliares usados como llaves foráneas al persistir (sección 3).
+        setCatalogosAux({
+          tiposHora: cat?.tiposHora || [],
+          rolesEquipo: cat?.rolesEquipo || [],
+          tiposResponsabilidad: cat?.tiposResponsabilidad || [],
+          tiposFinanciamiento: cat?.tiposFinanciamiento || [],
+          tiposProductoAcademico: cat?.tiposProductoAcademico || [],
+          rubros: cat?.rubros || [],
+          entidadesEmisoras: cat?.entidadesEmisoras || [],
+          entesRegulatorios: cat?.entesRegulatorios || [],
+          estadosAval: cat?.estadosAval || []
+        });
       } catch (_e) {
         console.warn('Error cargando catálogo de investigadores:', _e);
       }
@@ -233,6 +276,7 @@ const FormularioProyecto = () => {
       setInvestigadoresTEC([
         {
           id: 1,
+          usuarioId: usuario.id,
           nombre: `${usuario.nombre} ${usuario.apellido1 || ''}`.trim(),
           orcid: '',
           instancia: usuario.escuela || 'Escuela Base TEC',
@@ -428,6 +472,7 @@ const FormularioProyecto = () => {
 
     cargarPropuestaBD().finally(() => {
       isInitialMount.current = false;
+      setCargaCompletada(true);
     });
   }, [propuestaIdUrl]);
 
@@ -577,7 +622,7 @@ const FormularioProyecto = () => {
       const nomCoord = `${usuario.nombre} ${usuario.apellido1 || ''}`.trim();
       const inits = ((usuario.nombre[0] || '') + (usuario.apellido1 ? usuario.apellido1[0] : '')).toUpperCase() || 'IP';
       vistos.add(nomCoord.toLowerCase());
-      lista.push({ nombre: nomCoord, iniciales: inits, rol: 'Persona coordinadora' });
+      lista.push({ nombre: nomCoord, iniciales: inits, rol: 'Persona coordinadora', usuarioId: usuario?.id ?? null });
     }
     (investigadoresTEC || []).forEach(inv => {
       const nom = (inv.nombre || '').trim();
@@ -585,7 +630,7 @@ const FormularioProyecto = () => {
         vistos.add(nom.toLowerCase());
         const partes = nom.split(/\s+/);
         const inits = partes.length >= 2 ? (partes[0][0] + partes[1][0]).toUpperCase() : nom.slice(0, 2).toUpperCase();
-        lista.push({ nombre: nom, iniciales: inits, rol: inv.rol || 'Co-Investigador(a)' });
+        lista.push({ nombre: nom, iniciales: inits, rol: inv.rol || 'Co-Investigador(a)', usuarioId: inv.usuarioId ?? null });
       }
     });
     (colaboradoresExternos || []).forEach(col => {
@@ -594,7 +639,7 @@ const FormularioProyecto = () => {
         vistos.add(nom.toLowerCase());
         const partes = nom.split(/\s+/);
         const inits = partes.length >= 2 ? (partes[0][0] + partes[1][0]).toUpperCase() : nom.slice(0, 2).toUpperCase();
-        lista.push({ nombre: nom, iniciales: inits, rol: col.institucion ? `Externo (${col.institucion})` : 'Colaborador externo' });
+        lista.push({ nombre: nom, iniciales: inits, rol: col.institucion ? `Externo (${col.institucion})` : 'Colaborador externo', usuarioId: null });
       }
     });
     return lista;
@@ -675,6 +720,215 @@ const FormularioProyecto = () => {
     }
   };
 
+  // Persistencia completa en la base de datos (sección 3 del esquema).
+  // Serializa las escrituras (evita concurrencia) y es idempotente: los servicios
+  // del backend reemplazan colecciones en transacción y hacen upsert en las 1:1.
+  const persistirEnBackend = async (idParaGuardar) => {
+    if (!idParaGuardar) return;
+    if (persistenciaEnCursoRef.current) {
+      persistenciaPendienteRef.current = true;
+      return;
+    }
+    persistenciaEnCursoRef.current = true;
+    try {
+      // Cabecera (título, fechas, TRL)
+      await propuestaService.actualizarCabecera(idParaGuardar, {
+        titulo: nombreProyecto || 'Borrador de Propuesta',
+        fechaInicio: fechaInicio || null,
+        fechaFinalizacion: fechaFin || null,
+        nivelTrlActual: Number(trlSeleccionado) || 1
+      });
+
+      // Contenido narrativo
+      await propuestaService.guardarContenido(idParaGuardar, {
+        resumen,
+        palabrasClave,
+        abstract,
+        problemaInvestigacion,
+        objetivoGeneral,
+        objetivosEspecificos: objetivosEspecificos.join(';\n'),
+        estadoArte,
+        metodologia,
+        estrategiaDivulgacion: JSON.stringify(divulgacion),
+        hojaRuta
+      });
+
+      // Declaraciones
+      await propuestaService.guardarDeclaraciones(idParaGuardar, {
+        tieneFinanciamientoPrevio: !!otrasFuentes.aplica,
+        tieneContinuidadProyecto: !!vinculacionTecnica.aplica,
+        requiereInstrumentoJuridico: !!requiereInstrumento.aplica,
+        tieneBasePosgrado: basePosgrado.aplica !== 'No',
+        tieneInformacionConfidencial: !!infoConfidencial.aplica,
+        tienePotencialPI: !!potencialPI.aplica,
+        poseeInnovacion: !!poseeInnovacion.aplica,
+        aceptaResguardoRepositorio: !!resguardoCompromiso,
+        aceptaDeclaracionJurada: true
+      });
+
+      // Equipo y colaboradores (tomando los IDs reales de los catálogos RolesEquipo / TiposHora)
+      const tipoHoraVie = resolverTipoHoraId(catalogosAux.tiposHora, 'VIE') ?? 1;
+      // Solo se persisten integrantes con un usuarioId real (FK a Usuarios). Las filas
+      // aún incompletas (sin persona seleccionada) se omiten para no romper el autoguardado.
+      const integrantesValidos = investigadoresTEC
+        .map(inv => {
+          const usuarioId = Number(inv.usuarioId)
+            || ((inv.rol && inv.rol.includes('Coord')) ? Number(usuario?.id) : 0)
+            || 0;
+          return {
+            usuarioId,
+            tipoHoraId: tipoHoraVie,
+            horasSemanales: parseFloat(String(inv.horas || '10').replace(/[^\d.]/g, '')) || 10.0,
+            rolEquipoId: resolverRolEquipoId(inv.rol, catalogosAux.rolesEquipo)
+              ?? ((inv.rol && inv.rol.includes('Coord')) ? 1 : (Number(inv.rolEquipoId) || 2)),
+            orcid: inv.orcid || null
+          };
+        })
+        .filter(inv => inv.usuarioId > 0);
+
+      await propuestaService.guardarEquipoCompleto(idParaGuardar, {
+        integrantes: integrantesValidos,
+        colaboradoresExternos: colaboradoresExternos.filter(c => c.nombre && c.nombre.trim()).map(col => ({
+          nombreColaborador: col.nombre.trim(),
+          apellido1Colaborador: col.apellido1 || null,
+          apellido2Colaborador: col.apellido2 || null,
+          idOrcid: col.orcid || null,
+          institucionEmpresa: col.institucion || 'Institución Externa'
+        }))
+      });
+
+      const anioBaseCalculado = (() => {
+        const anio = fechaInicio ? new Date(fechaInicio).getFullYear() : null;
+        return Number.isFinite(anio) && anio > 0 ? anio : new Date().getFullYear();
+      })();
+
+      // Plan de Acción y Gestión de Riesgos -> ObjetivosEspecificos, Actividades,
+      // ParticipantesActividad, Riesgos y MedidasMitigacion.
+      try {
+        await propuestaService.guardarPlanAccion(idParaGuardar, construirPayloadPlanAccion({
+          objetivosEspecificos,
+          actividades: actividadesCronograma,
+          personas: obtenerIntegrantesLista(),
+          tiposResponsabilidad: catalogosAux.tiposResponsabilidad
+        }));
+      } catch (err) {
+        console.warn('No se pudo guardar el Plan de Acción y Riesgos:', err);
+      }
+
+      // Aspectos Éticos (upsert 1:1 por propuestaId)
+      try {
+        await propuestaService.guardarAspectosEticos(
+          idParaGuardar,
+          construirPayloadAspectosEticos(aspectosEticos)
+        );
+      } catch (err) {
+        console.warn('No se pudieron guardar los Aspectos Éticos:', err);
+      }
+
+      // Financiamiento Externo / fuentes adicionales (TiposFinanciamiento reales)
+      try {
+        await propuestaService.guardarFinanciamientoExterno(
+          idParaGuardar,
+          construirPayloadFinanciamiento({
+            fuentesAdicionales,
+            anioBase: anioBaseCalculado,
+            tiposFinanciamiento: catalogosAux.tiposFinanciamiento
+          })
+        );
+      } catch (err) {
+        console.warn('No se pudo guardar el Financiamiento Externo:', err);
+      }
+
+      // Referencias bibliográficas (FuentesBibliograficas + PropuestaReferencia)
+      try {
+        await propuestaService.guardarReferencias(
+          idParaGuardar,
+          construirPayloadReferencias(referenciasBibliograficas)
+        );
+      } catch (err) {
+        console.warn('No se pudieron guardar las Referencias bibliográficas:', err);
+      }
+
+      // Productos académicos comprometidos (TiposProductosAcademicos reales)
+      try {
+        await propuestaService.guardarProductosAcademicos(idParaGuardar, construirPayloadProductos({
+          productos14a,
+          productos14b,
+          tiposProductoAcademico: catalogosAux.tiposProductoAcademico
+        }));
+      } catch (err) {
+        console.warn('No se pudieron guardar los Productos Académicos:', err);
+      }
+
+      // Presupuesto plurianual (RubrosPropuesta reales)
+      try {
+        await propuestaService.guardarPresupuestoCompleto(idParaGuardar, construirPayloadPresupuesto({
+          presupuestoAnual,
+          anioBase: anioBaseCalculado,
+          rubros: catalogosAux.rubros
+        }));
+      } catch (err) {
+        console.warn('No se pudo guardar el Presupuesto:', err);
+      }
+    } finally {
+      persistenciaEnCursoRef.current = false;
+      if (persistenciaPendienteRef.current) {
+        persistenciaPendienteRef.current = false;
+        setTimeout(() => { persistirRef.current?.(idParaGuardar); }, 0);
+      }
+    }
+  };
+  persistirRef.current = persistirEnBackend;
+
+  // Autoguardado completo en la base de datos (todas las tablas de la sección 3).
+  // La persistencia es idempotente (el backend reemplaza colecciones en transacción
+  // y hace upsert en las 1:1) y la escritura está serializada, de modo que el
+  // autoguardado no genera duplicados ni condiciones de carrera. Se aplica un
+  // debounce + comparación de firma para no saturar la API mientras el usuario escribe.
+  useEffect(() => {
+    if (!cargaCompletada) return;
+    const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
+    if (!id || id === 'undefined') return;
+
+    const firma = JSON.stringify({
+      nombreProyecto, fechaInicio, fechaFin, trlSeleccionado,
+      resumen, palabrasClave, abstract, problemaInvestigacion,
+      objetivoGeneral, objetivosEspecificos, estadoArte, metodologia,
+      divulgacion, hojaRuta, otrasFuentes, vinculacionTecnica,
+      requiereInstrumento, basePosgrado, infoConfidencial, potencialPI,
+      poseeInnovacion, resguardoCompromiso, investigadoresTEC,
+      colaboradoresExternos, aspectosEticos, fuentesAdicionales,
+      referenciasBibliograficas, productos14a, productos14b,
+      presupuestoAnual, actividadesCronograma
+    });
+    if (firma === ultimaFirmaAutosaveRef.current) return;
+    ultimaFirmaAutosaveRef.current = firma;
+
+    if (autosaveForm04Timer.current) clearTimeout(autosaveForm04Timer.current);
+    autosaveForm04Timer.current = setTimeout(() => {
+      setMensajeGuardado('Autoguardando...');
+      Promise.resolve(persistirRef.current?.(id))
+        .then(() => {
+          const hh = new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
+          setMensajeGuardado(`Autoguardado ${hh}`);
+        })
+        .catch((err) => {
+          console.warn('Error en el autoguardado del Form-04:', err);
+        });
+    }, 1500);
+
+    return () => { if (autosaveForm04Timer.current) clearTimeout(autosaveForm04Timer.current); };
+  }, [
+    cargaCompletada, propuestaIdUrl, nombreProyecto, fechaInicio, fechaFin,
+    trlSeleccionado, resumen, palabrasClave, abstract, problemaInvestigacion,
+    objetivoGeneral, objetivosEspecificos, estadoArte, metodologia, divulgacion,
+    hojaRuta, otrasFuentes, vinculacionTecnica, requiereInstrumento,
+    basePosgrado, infoConfidencial, potencialPI, poseeInnovacion,
+    resguardoCompromiso, investigadoresTEC, colaboradoresExternos,
+    aspectosEticos, fuentesAdicionales, referenciasBibliograficas,
+    productos14a, productos14b, presupuestoAnual, actividadesCronograma
+  ]);
+
 const guardarBorradorActual = async () => {
   setGuardando(true);
   const ahora = new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
@@ -716,67 +970,13 @@ const guardarBorradorActual = async () => {
   // 2. Si hay ID de propuesta, sincronizar con la base de datos
   if (idParaGuardar) {
     try {
-      // Cabecera (título, fechas, TRL)
-      await propuestaService.actualizarCabecera(idParaGuardar, {
-        titulo: nombreProyecto || 'Borrador de Propuesta',
-        fechaInicio: fechaInicio || null,
-        fechaFinalizacion: fechaFin || null,
-        nivelTrlActual: Number(trlSeleccionado) || 1
-      });
-
-      // Contenido narrativo
-      const payloadContenido = {
-        resumen: resumen,
-        palabrasClave: palabrasClave,
-        abstract: abstract,
-        problemaInvestigacion: problemaInvestigacion,
-        objetivoGeneral: objetivoGeneral,
-        objetivosEspecificos: objetivosEspecificos.join(';\n'),
-        estadoArte: estadoArte,
-        metodologia: metodologia,
-        estrategiaDivulgacion: JSON.stringify(divulgacion),
-        hojaRuta: hojaRuta
-      };
-      await propuestaService.guardarContenido(idParaGuardar, payloadContenido);
-
-      // Declaraciones
-      const payloadDeclaraciones = {
-        tieneFinanciamientoPrevio: !!otrasFuentes.aplica,
-        tieneContinuidadProyecto: !!vinculacionTecnica.aplica,
-        requiereInstrumentoJuridico: !!requiereInstrumento.aplica,
-        tieneBasePosgrado: basePosgrado.aplica !== 'No',
-        tieneInformacionConfidencial: !!infoConfidencial.aplica,
-        tienePotencialPI: !!potencialPI.aplica,
-        poseeInnovacion: !!poseeInnovacion.aplica,
-        aceptaResguardoRepositorio: !!resguardoCompromiso,
-        aceptaDeclaracionJurada: true
-      };
-      await propuestaService.guardarDeclaraciones(idParaGuardar, payloadDeclaraciones);
-
-      // Sincronizar Equipo de Investigación y Colaboradores Externos en la BD (UNA SOLA VEZ)
-      const payloadEquipo = {
-        integrantes: investigadoresTEC.map(inv => ({
-          usuarioId: Number(inv.usuarioId || inv.id) || usuario?.id || 1,
-          tipoHoraId: 1,
-          horasSemanales: parseFloat(String(inv.horas || '10').replace(/[^\d.]/g, '')) || 10.0,
-          rolEquipoId: (inv.rol && inv.rol.includes('Coord')) ? 1 : (Number(inv.rolEquipoId) || 2),
-          orcid: inv.orcid || null
-        })),
-        colaboradoresExternos: colaboradoresExternos.filter(c => c.nombre && c.nombre.trim()).map(col => ({
-          nombreColaborador: col.nombre.trim(),
-          apellido1Colaborador: col.apellido1 || null,
-          apellido2Colaborador: col.apellido2 || null,
-          idOrcid: col.orcid || null,
-          institucionEmpresa: col.institucion || 'Institución Externa'
-        }))
-      };
-      await propuestaService.guardarEquipoCompleto(idParaGuardar, payloadEquipo);
+      // Persistencia completa e idempotente de TODAS las tablas de la sección 3
+      // (cabecera, contenido, declaraciones, equipo, plan de acción/riesgos,
+      // aspectos éticos, financiamiento, referencias, productos y presupuesto).
+      await persistirEnBackend(idParaGuardar);
 
       // ========================================================================
-      // NUEVO: Generar y Subir el PDF del Form-04 a SeaweedFS automáticamente
-      // ========================================================================
-           // ========================================================================
-      // NUEVO: Generar y Subir el PDF del Form-04 a SeaweedFS automáticamente
+      // Generar y Subir el PDF del Form-04 a SeaweedFS automáticamente
       // ========================================================================
       try {
         // Validación 1: Verificar que la función esté importada
@@ -2522,9 +2722,12 @@ const guardarBorradorActual = async () => {
                                 }}
                               >
                                 <option value="">—</option>
-                                <option value="Ejecuta">Ejecuta</option>
-                                <option value="Supervisa">Supervisa</option>
-                                <option value="Colabora">Colabora</option>
+                                {[...new Set([
+                                  ...catalogosAux.tiposResponsabilidad.map(t => t.nombreTipoResponsabilidad),
+                                  ...(act.responsabilidad ? [act.responsabilidad] : [])
+                                ])].map((op) => (
+                                  <option key={op} value={op}>{op}</option>
+                                ))}
                               </select>
                             </td>
 
