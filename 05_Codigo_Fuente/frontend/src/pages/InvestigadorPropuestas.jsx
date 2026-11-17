@@ -7,6 +7,7 @@ import { LimitedInput, LimitedTextarea } from '../components/LimitedInput';
 import { descargarPropuestaPDF, descargarPlanRiesgoExcel, descargarPresupuestoDirectoExcel } from '../utils/exportUtils';
 import UniversalViewer from '../components/UniversalViewer';
 import IconoCie from '../components/cie/IconoCie';
+import { claseBadgeEstado, etiquetaEstado } from '../data/estadosPropuesta';
 
 const documentoMasReciente = (documentos, coincide) => {
   const encontrados = (documentos || []).filter(coincide);
@@ -207,6 +208,9 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
   const [filtroEstado, setFiltroEstado] = useState('Todos');
   const [filtroFecha, setFiltroFecha] = useState('');
   const [acordeonAbierto, setAcordeonAbierto] = useState({});
+  // Catálogos de filtros obtenidos desde la base de datos
+  const [catalogosPropuesta, setCatalogosPropuesta] = useState({ escuelas: [], estadosPropuesta: [] });
+  const [cargandoCatalogos, setCargandoCatalogos] = useState(true);
 
   // Estados locales para la gestión de subsanaciones
   const [respuestasSubsanacion, setRespuestasSubsanacion] = useState({});
@@ -214,6 +218,21 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
   const [reenviando, setReenviando] = useState({});
   const [documentosPorPropuesta, setDocumentosPorPropuesta] = useState({});
   const [documentoAbierto, setDocumentoAbierto] = useState(null);
+
+  const cargarCatalogos = async () => {
+    try {
+      setCargandoCatalogos(true);
+      const data = await propuestaService.obtenerCatalogosFormulario();
+      setCatalogosPropuesta({
+        escuelas: data?.escuelas || [],
+        estadosPropuesta: data?.estadosPropuesta || []
+      });
+    } catch (_err) {
+      setCatalogosPropuesta({ escuelas: [], estadosPropuesta: [] });
+    } finally {
+      setCargandoCatalogos(false);
+    }
+  };
 
   const cargarPropuestas = async () => {
     try {
@@ -259,6 +278,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
     } catch (_e) {}
 
     cargarPropuestas();
+    cargarCatalogos();
 
     const handlePropuestaCreada = () => {
       cargarPropuestas();
@@ -368,19 +388,33 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
     }
   };
 
+  // Opciones de estado construidas desde el catálogo de la BD (+ subsanación derivada de los datos)
+  const haySubsanacion = propuestas.some(p =>
+    p.estadoId === 10 ||
+    (p.nombreEstado || '').toLowerCase().includes('subsan') ||
+    Boolean(p.subsanacionActiva && (p.subsanacionActiva.estadoSubsanacionId === 1 || p.subsanacionActiva.estadoSubsanacionId === 3))
+  );
+  const opcionesEstado = [
+    ...catalogosPropuesta.estadosPropuesta.map(e => ({
+      value: String(e.estadoPropuestaId),
+      label: e.nombreEstadoPropuesta
+    })),
+    ...(haySubsanacion ? [{ value: 'SUBSANACION', label: 'En Subsanación' }] : [])
+  ];
+  const nombreEstadoSeleccionado = opcionesEstado.find(o => o.value === filtroEstado)?.label || '';
+
   const propuestasFiltradas = propuestas.filter((p) => {
     const texto = ((p.titulo || '') + ' ' + (p.codigoPropuesta || '')).toLowerCase();
     const coincideTexto = texto.includes(filtroTexto.toLowerCase());
-    const coincideEscuela = filtroEscuela === 'Todas' || (p.escuela || p.nombreEscuela || '').includes(filtroEscuela);
+    const coincideEscuela = filtroEscuela === 'Todas' || (p.escuela || p.nombreEscuela || '').toLowerCase().includes(filtroEscuela.toLowerCase());
     const coincideEstado = filtroEstado === 'Todos' || (() => {
       const nom = (p.nombreEstado || p.estadoBadge || '').toLowerCase();
-      if (filtroEstado === 'Enviada') {
-        return p.estadoId === 2 || p.estadoId === 3 || nom.includes('enviad') || nom.includes('vinculac');
+      if (filtroEstado === 'SUBSANACION') {
+        return p.estadoId === 10 || nom.includes('subsan')
+          || Boolean(p.subsanacionActiva && (p.subsanacionActiva.estadoSubsanacionId === 1 || p.subsanacionActiva.estadoSubsanacionId === 3));
       }
-      if (filtroEstado === 'Evaluación') {
-        return p.estadoId === 3 || nom.includes('eval');
-      }
-      return nom.includes(filtroEstado.toLowerCase());
+      return String(p.estadoId) === filtroEstado
+        || (nombreEstadoSeleccionado && nom.includes(nombreEstadoSeleccionado.toLowerCase()));
     })();
     return coincideTexto && coincideEscuela && coincideEstado;
   });
@@ -471,12 +505,12 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
               value={filtroEscuela}
               onChange={(e) => setFiltroEscuela(e.target.value)}
               aria-label="Filtrar propuestas por escuela"
+              disabled={cargandoCatalogos}
             >
               <option value="Todas">Todas las Escuelas</option>
-              <option value="Electrónica">Ing. Electrónica</option>
-              <option value="Computación">Ing. en Computación</option>
-              <option value="Biotecnología">Biotecnología</option>
-              <option value="Química">Química</option>
+              {catalogosPropuesta.escuelas.map((esc) => (
+                <option key={esc.escuelaId} value={esc.nombreEscuela}>{esc.nombreEscuela}</option>
+              ))}
             </select>
           </div>
 
@@ -488,13 +522,12 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
               value={filtroEstado}
               onChange={(e) => setFiltroEstado(e.target.value)}
               aria-label="Filtrar propuestas por estado"
+              disabled={cargandoCatalogos}
             >
               <option value="Todos">Todos los Estados</option>
-              <option value="Borrador">Borrador</option>
-              <option value="Subsanación">En Subsanación</option>
-              <option value="Enviada">Enviada a Vinculación</option>
-              <option value="Evaluación">En Evaluación</option>
-              <option value="Aprobada">Aprobada</option>
+              {opcionesEstado.map((op) => (
+                <option key={op.value} value={op.value}>{op.label}</option>
+              ))}
             </select>
           </div>
 
@@ -545,14 +578,12 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                 (prop.nombreEstado || '').toLowerCase().includes('evaluaci')
               );
 
-              // 3. Calcular nombre/texto del estado
+              // 3. Texto del estado (mapeo central basado en los estados de la BD)
               const estado = esCancelada
                 ? 'Cancelada'
                 : esSubsanacion
                 ? 'En Subsanación'
-                : fueEnviadaAVinculacion
-                ? (prop.estadoId === 3 || (prop.nombreEstado || '').toLowerCase().includes('eval') ? 'En Evaluación de Vinculación' : 'Enviada a Vinculación')
-                : (prop.nombreEstado || prop.estadoBadge || 'Borrador');
+                : etiquetaEstado(prop.estadoId, prop.nombreEstado || prop.estadoBadge);
 
               // 4. Evaluar si es borrador (desactivado si está cancelada, en subsanación o ya enviada)
               const esBorrador = !esCancelada && !esSubsanacion && !fueEnviadaAVinculacion && (prop.estadoId === 1 || estado.toLowerCase().includes('borrador'));
@@ -560,11 +591,9 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
               // 5. Bloquear Editar/Subir Doc si ya fue enviada a Vinculación o está cancelada
               const estaBloqueadaParaEdicion = esCancelada || fueEnviadaAVinculacion || (!esBorrador && !esSubsanacion);
 
-              const badgeClass = esSubsanacion ? 'badge-subsanacion'
-                                : esCancelada ? 'badge-cancelada'
-                                : estado.toLowerCase().includes('eval') ? 'badge-warning warning'
-                                : estado.toLowerCase().includes('aprob') ? 'badge-success success'
-                                : 'badge-info info';
+              const badgeClass = esSubsanacion ? 'badge-status badge-subsanacion'
+                                : esCancelada ? 'badge-status badge-cancelada'
+                                : claseBadgeEstado(prop.estadoId, prop.nombreEstado || prop.estadoBadge);
 
               return (
                 <div key={itemKey} id={`propuesta-card-${itemKey}`} className={`propuesta-accordion-card ${estaAbierto ? 'is-expanded' : ''} ${esSubsanacion ? 'is-subsanacion' : ''} ${esCancelada ? 'is-cancelada' : ''}`}
@@ -576,7 +605,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                       <span className="meta-separator">|</span>
                       <span className="propuesta-escuela-text">{prop.escuela || prop.nombreEscuela || 'Escuela Ing. Electrónica'}</span>
                       <span className="meta-separator">|</span>
-                      <span className={`badge-status ${badgeClass}`}>{estado}</span>
+                      <span className={badgeClass}>{estado}</span>
                       {esSubsanacion && (
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#b45309', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <IconoCie nombre="alertTriangle" tamano={14} /> Requiere Acción

@@ -30,6 +30,15 @@ const InvestigadorHistorial = () => {
     cargarHistorial();
   }, []);
 
+  // Años disponibles derivados del historial real de la BD
+  const aniosDisponibles = Array.from(
+    new Set(
+      proyectosCerrados
+        .map((p) => (p.fechaCreacion ? new Date(p.fechaCreacion).getFullYear() : null))
+        .filter(Boolean)
+    )
+  ).sort((a, b) => b - a);
+
   const proyectosFiltrados = proyectosCerrados.filter((p) => {
     if (filtroAno === 'Todos') return true;
     const anioProp = p.fechaCreacion ? new Date(p.fechaCreacion).getFullYear() : null;
@@ -86,11 +95,12 @@ const InvestigadorHistorial = () => {
               value={filtroAno} 
               onChange={(e) => setFiltroAno(e.target.value)}
               className="filter-select"
+              disabled={cargando}
             >
-              <option value="Todos">Todos los años (2020-2026) ▾</option>
-              <option value="2026">Año 2026</option>
-              <option value="2025">Año 2025</option>
-              <option value="2024">Año 2024</option>
+              <option value="Todos">Todos los años ▾</option>
+              {aniosDisponibles.map((anio) => (
+                <option key={anio} value={String(anio)}>Año {anio}</option>
+              ))}
             </select>
           </div>
         </div>

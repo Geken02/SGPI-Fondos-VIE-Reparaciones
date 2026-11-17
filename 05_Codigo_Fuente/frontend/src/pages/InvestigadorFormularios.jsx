@@ -106,6 +106,10 @@ const InvestigadorFormularios = () => {
     setFiltroFecha('');
   };
 
+  // Opciones de filtros derivadas de la definición de formularios (única fuente de verdad)
+  const codigosFormulario = Array.from(new Set(FORM_TYPES.map(f => f.codigo)));
+  const tiposFormulario = Array.from(new Set(FORM_TYPES.map(f => f.tipo)));
+
   /* ── navegar a formulario ──────────────────────────────────────── */
   const handleEditar = (item) => {
     navigate(`${item.route}?propuestaId=${item.propuestaId}`);
@@ -159,11 +163,12 @@ const InvestigadorFormularios = () => {
             onChange={(e) => setFiltroCodigo(e.target.value)}
             className="filter-select"
             aria-label="Filtrar por código de formulario"
+            disabled={cargando}
           >
             <option value="Todos">Formulario: Todos ▾</option>
-            <option value="Form 04">Form 04</option>
-            <option value="Form 05">Form 05</option>
-            <option value="Form 06">Form 06</option>
+            {codigosFormulario.map(codigo => (
+              <option key={codigo} value={codigo}>{codigo}</option>
+            ))}
           </select>
 
           <select
@@ -171,11 +176,12 @@ const InvestigadorFormularios = () => {
             onChange={(e) => setFiltroTipo(e.target.value)}
             className="filter-select"
             aria-label="Filtrar por tipo de formulario"
+            disabled={cargando}
           >
             <option value="Todos">Tipo: Todos ▾</option>
-            <option value="Oficial VIE">Oficial VIE</option>
-            <option value="Planificación">Planificación</option>
-            <option value="Financiero">Financiero</option>
+            {tiposFormulario.map(tipo => (
+              <option key={tipo} value={tipo}>{tipo}</option>
+            ))}
           </select>
 
           <LimitedInput

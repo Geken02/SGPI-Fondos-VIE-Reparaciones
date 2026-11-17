@@ -5,6 +5,7 @@ import { useModal } from '../context/ModalContext';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from '../components/LimitedInput';
 import IconoCie from '../components/cie/IconoCie';
+import { claseBadgeEstado, etiquetaEstado } from '../data/estadosPropuesta';
 
 const InvestigadorDashboard = () => {
   const navigate = useNavigate();
@@ -16,6 +17,9 @@ const InvestigadorDashboard = () => {
   const [filtroEscuela, setFiltroEscuela] = useState('Todas');
   const [filtroEstado, setFiltroEstado] = useState('Todos');
   const [convocatoriaCercana, setConvocatoriaCercana] = useState(null);
+  // Catálogos de filtros obtenidos desde la base de datos
+  const [catalogosPropuesta, setCatalogosPropuesta] = useState({ escuelas: [], estadosPropuesta: [] });
+  const [cargandoCatalogos, setCargandoCatalogos] = useState(true);
 
     const formatearFechaCierre = (fechaStr) => {
     if (!fechaStr) return 'Por definir';
@@ -37,6 +41,10 @@ const InvestigadorDashboard = () => {
   const cargarConvocatoriaMasCercana = async () => {
     try {
       const dataCatalogos = await propuestaService.obtenerCatalogosFormulario();
+      setCatalogosPropuesta({
+        escuelas: dataCatalogos?.escuelas || [],
+        estadosPropuesta: dataCatalogos?.estadosPropuesta || []
+      });
       const lista = dataCatalogos?.convocatorias || [];
       const ahora = new Date();
 
@@ -71,6 +79,9 @@ const InvestigadorDashboard = () => {
       }
     } catch (_err) {
       setConvocatoriaCercana(null);
+      setCatalogosPropuesta({ escuelas: [], estadosPropuesta: [] });
+    } finally {
+      setCargandoCatalogos(false);
     }
   };
 
@@ -105,25 +116,19 @@ const InvestigadorDashboard = () => {
 
   // Filtrado de propuestas
   const listaPropuestas = Array.isArray(propuestas) ? propuestas : [];
+  const opcionesEstado = catalogosPropuesta.estadosPropuesta.map(e => ({
+    value: String(e.estadoPropuestaId),
+    label: e.nombreEstadoPropuesta
+  }));
+  const nombreEstadoSeleccionado = opcionesEstado.find(o => o.value === filtroEstado)?.label || '';
   const propuestasFiltradas = listaPropuestas.filter((p) => {
     const texto = (p.titulo || '') + ' ' + (p.codigoPropuesta || '');
     const cumpleTexto = texto.toLowerCase().includes(filtroTexto.toLowerCase());
-    const cumpleEscuela = filtroEscuela === 'Todas' || (p.escuela || p.nombreEscuela || '').includes(filtroEscuela);
+    const cumpleEscuela = filtroEscuela === 'Todas' || (p.escuela || p.nombreEscuela || '').toLowerCase().includes(filtroEscuela.toLowerCase());
     const cumpleEstado = filtroEstado === 'Todos' || (() => {
       const nom = (p.estado || p.nombreEstado || p.estadoBadge || '').toLowerCase();
-      if (filtroEstado === 'En proceso') {
-        return p.estadoId !== 7 && p.estadoId !== 8 && p.estadoId !== 9;
-      }
-      if (filtroEstado === 'Aprobada') {
-        return p.estadoId === 7 || nom.includes('aprob');
-      }
-      if (filtroEstado === 'Rechazada') {
-        return p.estadoId === 8 || nom.includes('rechaz');
-      }
-      if (filtroEstado === 'Cancelada') {
-        return p.estadoId === 9 || nom.includes('cancel');
-      }
-      return nom.includes(filtroEstado.toLowerCase());
+      return String(p.estadoId) === filtroEstado
+        || (nombreEstadoSeleccionado && nom.includes(nombreEstadoSeleccionado.toLowerCase()));
     })();
     return cumpleTexto && cumpleEscuela && cumpleEstado;
   });
@@ -357,11 +362,12 @@ const InvestigadorDashboard = () => {
                 onChange={(e) => setFiltroEscuela(e.target.value)}
                 className="filter-select"
                 aria-label="Filtrar propuestas por escuela"
+                disabled={cargandoCatalogos}
               >
                 <option value="Todas">Escuela: Todas ▾</option>
-                <option value="Ingeniería Electrónica">Ingeniería Electrónica</option>
-                <option value="Ingeniería en Computación">Ingeniería en Computación</option>
-                <option value="Química">Química</option>
+                {catalogosPropuesta.escuelas.map((esc) => (
+                  <option key={esc.escuelaId} value={esc.nombreEscuela}>{esc.nombreEscuela}</option>
+                ))}
               </select>
 
               <select 
@@ -369,13 +375,12 @@ const InvestigadorDashboard = () => {
                 onChange={(e) => setFiltroEstado(e.target.value)}
                 className="filter-select"
                 aria-label="Filtrar propuestas por estado"
+                disabled={cargandoCatalogos}
               >
                 <option value="Todos">Estado: Todos ▾</option>
-                <option value="En proceso">En proceso</option>
-                <option value="Aprobada">Aprobada</option>
-                <option value="Rechazada">Rechazada</option>
-                <option value="Cancelada">Cancelada</option>
-                <option value="Borrador">Borrador</option>
+                {opcionesEstado.map((op) => (
+                  <option key={op.value} value={op.value}>{op.label}</option>
+                ))}
               </select>
             </div>
 
@@ -388,8 +393,8 @@ const InvestigadorDashboard = () => {
                   <div key={prop.propuestaId} className="proposal-item-card">
                     {/* Encabezado de la tarjeta con Badges */}
                     <div className="proposal-card-top">
-                      <span className={`badge-status ${prop.tipoBadge || 'info'}`}>
-                        {(prop.estadoId === 2 || prop.nombreEstado === 'Enviada a VIE' || prop.estadoBadge === 'Enviada a VIE') ? 'Enviada a Vinculación' : (prop.estadoBadge || prop.nombreEstado || 'BORRADOR')}
+                      <span className={claseBadgeEstado(prop.estadoId, prop.nombreEstado || prop.estadoBadge)}>
+                        {etiquetaEstado(prop.estadoId, prop.nombreEstado || prop.estadoBadge)}
                       </span>
                       <span className="proposal-code">
                         {prop.codigoPropuesta}

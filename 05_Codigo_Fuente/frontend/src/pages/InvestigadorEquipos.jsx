@@ -21,6 +21,7 @@ const InvestigadorEquipos = () => {
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroEscuela, setFiltroEscuela] = useState('Todas');
   const [filtroRol, setFiltroRol] = useState('Todos');
+  const [filtroCodigoGrupo, setFiltroCodigoGrupo] = useState('Todos');
   const [investigadoresBD, setInvestigadoresBD] = useState([]);
 
   useEffect(() => {
@@ -239,6 +240,11 @@ const InvestigadorEquipos = () => {
     setNuevoGrupo({ nombre: '', proyecto: '', lider: '' });
   };
 
+  // Opciones de filtros derivadas de los datos reales cargados desde la base de datos
+  const escuelasDisponibles = Array.from(new Set((equipoSeleccionado?.miembros || []).map(m => m.escuela).filter(Boolean)));
+  const rolesDisponibles = Array.from(new Set((equipoSeleccionado?.miembros || []).map(m => m.rol).filter(Boolean)));
+  const codigosGrupoDisponibles = Array.from(new Set(equipos.map(eq => eq.codigo).filter(Boolean)));
+
   return (
     <div className="investigador-dashboard-container">
       <div className="dashboard-main-card">
@@ -301,25 +307,24 @@ const InvestigadorEquipos = () => {
                 value={filtroEscuela} 
                 onChange={(e) => setFiltroEscuela(e.target.value)}
                 className="filter-select"
+                disabled={cargando}
               >
                 <option value="Todas">Escuela: Todas ▾</option>
-                <option value="IE">IE (Electrónica)</option>
-                <option value="IC">IC (Computación)</option>
-                <option value="ITI">ITI</option>
-                <option value="AFV">AFV</option>
-                <option value="C">C (Química)</option>
+                {escuelasDisponibles.map(escuela => (
+                  <option key={escuela} value={escuela}>{escuela}</option>
+                ))}
               </select>
 
               <select 
                 value={filtroRol} 
                 onChange={(e) => setFiltroRol(e.target.value)}
                 className="filter-select"
+                disabled={cargando}
               >
                 <option value="Todos">Rol: Todos ▾</option>
-                <option value="Primer Investigador">Primer Investigador</option>
-                <option value="Co-Investigador">Co-Investigador</option>
-                <option value="Asistente TEC">Asistente TEC</option>
-                <option value="Colaborador">Colaborador</option>
+                {rolesDisponibles.map(rol => (
+                  <option key={rol} value={rol}>{rol}</option>
+                ))}
               </select>
 
               <button 
@@ -349,7 +354,7 @@ const InvestigadorEquipos = () => {
                       const txt = (m.nombre + ' ' + m.correo).toLowerCase();
                       const okTxt = txt.includes(filtroTexto.toLowerCase());
                       const okEsc = filtroEscuela === 'Todas' || m.escuela === filtroEscuela;
-                      const okRol = filtroRol === 'Todos' || m.rol.includes(filtroRol);
+                      const okRol = filtroRol === 'Todos' || m.rol === filtroRol;
                       return okTxt && okEsc && okRol;
                     })
                     .map((m) => (
@@ -440,11 +445,17 @@ const InvestigadorEquipos = () => {
                 />
               </div>
 
-              <select className="filter-select" aria-label="Filtrar por código de grupo">
-                <option value="All">Código Grupo: All ▾</option>
-                <option value="EQP-01">EQP-01</option>
-                <option value="EQP-02">EQP-02</option>
-                <option value="EQP-03">EQP-03</option>
+              <select
+                className="filter-select"
+                aria-label="Filtrar por código de grupo"
+                value={filtroCodigoGrupo}
+                onChange={(e) => setFiltroCodigoGrupo(e.target.value)}
+                disabled={cargando}
+              >
+                <option value="Todos">Código Grupo: Todos ▾</option>
+                {codigosGrupoDisponibles.map(codigo => (
+                  <option key={codigo} value={codigo}>{codigo}</option>
+                ))}
               </select>
 
               <select className="filter-select" aria-label="Ordenar por fecha">
@@ -455,7 +466,7 @@ const InvestigadorEquipos = () => {
               <button 
                 type="button" 
                 className="btn-limpiar-filtros"
-                onClick={() => setFiltroTexto('')}
+                onClick={() => { setFiltroTexto(''); setFiltroCodigoGrupo('Todos'); }}
                 aria-label="Limpiar filtro de búsqueda de equipos"
               >
                 Limpiar
@@ -477,7 +488,11 @@ const InvestigadorEquipos = () => {
                 </thead>
                 <tbody>
                   {equipos
-                    .filter(eq => (eq.nombre + ' ' + eq.proyecto + ' ' + eq.codigo).toLowerCase().includes(filtroTexto.toLowerCase()))
+                    .filter(eq => {
+                      const coincideTexto = (eq.nombre + ' ' + eq.proyecto + ' ' + eq.codigo).toLowerCase().includes(filtroTexto.toLowerCase());
+                      const coincideCodigo = filtroCodigoGrupo === 'Todos' || eq.codigo === filtroCodigoGrupo;
+                      return coincideTexto && coincideCodigo;
+                    })
                     .map((eq) => (
                       <tr key={eq.codigo}>
                         <td>

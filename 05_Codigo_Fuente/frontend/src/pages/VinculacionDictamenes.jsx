@@ -80,6 +80,8 @@ const VinculacionDictamenes = () => {
   };
 
   const departamentosDisponibles = Array.from(new Set(dictamenes.map(d => d.escuela).filter(e => e && e !== '—')));
+  // Estados disponibles derivados de los dictámenes reales de la BD
+  const estadosDisponibles = Array.from(new Set(dictamenes.map(d => d.estado).filter(Boolean)));
 
   const dictamenesFiltrados = dictamenes.filter(d => {
     const texto = `${d.id} ${d.codigoPropuesta} ${d.titulo} ${d.investigador} ${d.escuela}`.toLowerCase();
@@ -156,15 +158,19 @@ const VinculacionDictamenes = () => {
             value={filtroResultado} 
             onChange={(e) => setFiltroResultado(e.target.value)}
             className="filter-select"
+            disabled={cargando}
           >
             <option value="Todos">Estado: Todos ▾</option>
-            <option value="Emitido">Emitido</option>
+            {estadosDisponibles.map((estado) => (
+              <option key={estado} value={estado}>{estado}</option>
+            ))}
           </select>
 
           <select 
             value={filtroDpto} 
             onChange={(e) => setFiltroDpto(e.target.value)}
             className="filter-select"
+            disabled={cargando}
           >
             <option value="Todos">Dpto / Escuela: Todos ▾</option>
             {departamentosDisponibles.map(dpto => (

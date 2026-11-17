@@ -78,6 +78,8 @@ const VinculacionDashboard = () => {
   };
 
   const departamentosDisponibles = Array.from(new Set(propuestas.map(p => p.escuela).filter(e => e && e !== '—')));
+  // Estados disponibles derivados de las propuestas reales de la BD
+  const estadosDisponibles = Array.from(new Set(propuestas.map(p => p.estado).filter(Boolean)));
 
   const propuestasFiltradas = propuestas.filter(p => {
     const texto = `${p.id} ${p.titulo} ${p.investigador} ${p.escuela}`.toLowerCase();
@@ -154,16 +156,19 @@ const VinculacionDashboard = () => {
             value={filtroEstado} 
             onChange={(e) => setFiltroEstado(e.target.value)}
             className="filter-select"
+            disabled={cargando}
           >
             <option value="Todas">Estado: Todas ▾</option>
-            <option value="Pendiente">Pendiente</option>
-            <option value="Completada">Completada</option>
+            {estadosDisponibles.map((estado) => (
+              <option key={estado} value={estado}>{estado}</option>
+            ))}
           </select>
 
           <select 
             value={filtroDpto} 
             onChange={(e) => setFiltroDpto(e.target.value)}
             className="filter-select"
+            disabled={cargando}
           >
             <option value="Todos">Dpto / Escuela: Todos ▾</option>
             {departamentosDisponibles.map(dpto => (
