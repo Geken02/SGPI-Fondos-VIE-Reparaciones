@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { adminService } from '../../services/adminService'; // ✅ USANDO adminService
+import { catalogoService } from '../../services/catalogoService'; // ✅ SE MANTIENE catalogoService
 import Modal from '../../components/Modal';
 import CatalogoForm from '../../components/CatalogoForm';
 import '../../styles/catalogos.css';
@@ -18,7 +18,7 @@ const NOMBRES_CATALOGOS = {
   'configuraciones': 'Configuraciones',
 };
 
-// ✅ CORREGIDO: Estructura consistente para todos los catálogos
+// ✅ CORREGIDO: Estructura consistente para todos los catálogos (sin 'campos' anidados)
 const CAMPOS_TABLA = {
   'escuelas': { id: 'escuelaId', clave: 'codigoEscuela', nombre: 'nombreEscuela' },
   'lineas-investigacion': { id: 'lineaId', clave: 'lineaId', nombre: 'nombreLinea' },
@@ -79,7 +79,7 @@ export default function Catalogos() {
   const cargarDatos = async () => {
     setCargando(true);
     try {
-      const response = await adminService.listar(catalogoActivo, {
+      const response = await catalogoService.listar(catalogoActivo, {
         pagina,
         tamanoPagina,
         busqueda: busqueda || undefined,
@@ -108,7 +108,7 @@ export default function Catalogos() {
       Object.keys(datosLimpios).forEach(key => {
         if (datosLimpios[key] === '') datosLimpios[key] = null;
       });
-      await adminService.crear(catalogoActivo, datosLimpios);
+      await catalogoService.crear(catalogoActivo, datosLimpios);
       mostrarToast('Registro creado exitosamente');
       setModalCrearAbierto(false);
       cargarDatos();
@@ -136,7 +136,7 @@ export default function Catalogos() {
       Object.keys(datosLimpios).forEach(key => {
         if (datosLimpios[key] === '') datosLimpios[key] = null;
       });
-      await adminService.actualizar(catalogoActivo, id, datosLimpios);
+      await catalogoService.actualizar(catalogoActivo, id, datosLimpios);
       mostrarToast('Registro actualizado exitosamente');
       setModalEditarAbierto(false);
       setRegistroEditando(null);
@@ -163,7 +163,7 @@ export default function Catalogos() {
     try {
       const id = obtenerIdReal(registro, catalogoActivo);
       if (!id) throw new Error("No se pudo identificar el ID del registro");
-      await adminService.cambiarEstado(catalogoActivo, id, !registro.activo);
+      await catalogoService.cambiarEstado(catalogoActivo, id, !registro.activo);
       mostrarToast(`Registro ${registro.activo ? 'desactivado' : 'activado'} exitosamente`);
       cargarDatos();
     } catch (error) {

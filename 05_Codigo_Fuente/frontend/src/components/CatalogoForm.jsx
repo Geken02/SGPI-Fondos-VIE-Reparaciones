@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminService } from '../../services/adminService'; // ✅ ÚNICO SERVICIO
+import { catalogoService } from '../services/catalogoService'; // ✅ SE MANTIENE catalogoService
 
 const CONFIG_CAMPOS = {
   'escuelas': {
@@ -86,16 +86,17 @@ export default function CatalogoForm({ catalogo, datosExistentes, onSubmit, onCa
     const cargarOpciones = async () => {
       try {
         if (catalogo === 'escuelas') {
-          const res = await adminService.listar('campus', { tamanoPagina: 100, incluirInactivos: false });
+          const res = await catalogoService.listar('campus', { tamanoPagina: 100, incluirInactivos: false });
           setOpcionesCampus((res.data.items || []).map(c => ({ valor: c.campusId, texto: c.nombreCampus })));
         }
         
         if (catalogo === 'etapas') {
-          const resConv = await adminService.listar('convocatorias', { tamanoPagina: 100, incluirInactivos: false });
+          const resConv = await catalogoService.listar('convocatorias', { tamanoPagina: 100, incluirInactivos: false });
           setOpcionesConvocatorias((resConv.data.items || []).map(c => ({ valor: c.convocatoriaId, texto: c.nombreConvocatoria })));
           
-          const resRol = await adminService.listarRoles({ tamanoPagina: 100, incluirInactivos: false });
-          setOpcionesRoles((resRol.data || []).map(r => ({ valor: r.rolId, texto: r.nombreRol })));
+          // Si roles-equipo está en catalogoService, lo usamos. Si no, ajusta al servicio correcto.
+          const resRol = await catalogoService.listar('roles-equipo', { tamanoPagina: 100, incluirInactivos: false });
+          setOpcionesRoles((resRol.data.items || []).map(r => ({ valor: r.rolEquipoId, texto: r.nombreRol })));
         }
       } catch (err) {
         console.error("Error cargando opciones dinámicas:", err);
