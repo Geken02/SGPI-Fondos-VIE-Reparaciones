@@ -3,7 +3,8 @@
 
   · faltan documentos obligatorios, o
   · hay documentos marcados como Incompleto / Falta firma, o
-  · el cumplimiento normativo es menor al umbral (90 %).
+  · el cumplimiento normativo es menor al umbral (90 %), o
+  · algún requisito crítico (morosidad, ética o permisos) no cumple.
 
 Si ya hay una subsanación sin cerrar, no se puede pedir otra hasta resolverla.
 """
@@ -72,6 +73,17 @@ def evaluar_subsanacion(db: Session, p: Propuesta) -> dict:
         )
     if cumple * 100 < UMBRAL_CUMPLIMIENTO * evaluables:
         motivos.append(f"El cumplimiento normativo es de {porcentaje} %, menor al mínimo de {UMBRAL_CUMPLIMIENTO} %.")
+
+    ids_criticos = {"morosidad", "etica", "permisos"}
+    criticos_incumplidos = [
+        q for grupo in grupos for q in grupo["requisitos"]
+        if q["id"] in ids_criticos and q["estado"] == NO_CUMPLE
+    ]
+    if criticos_incumplidos:
+        motivos.append(
+            "Hay requisitos críticos obligatorios incumplidos: "
+            + ", ".join(q["nombre"] for q in criticos_incumplidos) + "."
+        )
 
     comentario = ""
     if motivos:

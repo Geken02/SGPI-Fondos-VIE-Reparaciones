@@ -191,6 +191,23 @@ def _plan_riesgos(db: Session, p: Propuesta) -> dict:
     return _req("riesgos", nombre, CUMPLE)
 
 
+def obtener_requisitos_matriz3(db: Session, p: Propuesta) -> list[dict]:
+    """Cinco controles de Matriz 3 reutilizados por la validación normativa unificada."""
+    requisitos = [
+        _morosidad(db, p),
+        _etica(p),
+        _permisos(db, p),
+        _participacion_estudiantil(p),
+        _plan_riesgos(db, p),
+    ]
+    # La validación unificada usa PENDIENTE; EN_REVISION es solo una etiqueta
+    # de presentación de la pantalla antigua de Revisión VIE.
+    for requisito in requisitos:
+        if requisito["estado"] == EN_REVISION:
+            requisito["estado"] = PENDIENTE
+    return requisitos
+
+
 # ---------------------------------------------------------------------------
 # Punto de entrada
 # ---------------------------------------------------------------------------
@@ -198,12 +215,6 @@ def obtener_revision(db: Session, codigo_propuesta: str) -> dict:
     p, estado, abierta = cargar_propuesta(db, codigo_propuesta)
     return {
         "expediente": construir_encabezado(db, p, estado, abierta),
-        "requisitos": [
-            _morosidad(db, p),
-            _etica(p),
-            _permisos(db, p),
-            _participacion_estudiantil(p),
-            _plan_riesgos(db, p),
-        ],
+        "requisitos": obtener_requisitos_matriz3(db, p),
         "documentos": documentos_expediente(p),
     }

@@ -9,6 +9,8 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from src.models.convocatorias import Convocatorias, EstadosPropuesta, EtapasConvocatoria
+from src.models.acuerdos import AcuerdosConsejo, TiposAcuerdo
+from src.models.catalogos import HistorialEstadosPropuesta
 from src.models.propuestas import Propuesta
 from src.models.revision_gestora import ValidacionRequisito
 from src.services.vie.errores import ConflictoNegocio, SolicitudInvalida
@@ -37,13 +39,18 @@ CAMPOS_FORMULARIO = [
     ("estadoArte", "estado del arte"),
 ]
 
-# Paso del proceso (1 Validación normativa, 2 Revisión de documentos, 3 Subsanaciones, 4 Envío al CIE)
+# Paso del proceso: la subsanación es una rama; al resolverse se reevalúa en el paso 1.
 PASO_POR_ESTADO = {
-    "EN_SUBSANACION": 3,
-    "LISTO_CIE": 4,
-    "APROBADA": 4,
-    "RECHAZADA": 4,
-    "CANCELADA": 4,
+    "EN_SUBSANACION": 1,
+    "EN_CONSEJO": 2,
+    "SUBSANACION": 1,
+    "EN_REVISION": 1,
+    "AVALADA": 2,
+    "LISTO_CIE": 3,
+    "EN_CIE": 3,
+    "APROBADA": 3,
+    "RECHAZADA": 3,
+    "CANCELADA": 3,
 }
 
 
@@ -286,6 +293,16 @@ def cargar_propuesta(db: Session, codigo_propuesta: str):
 def construir_encabezado(db: Session, p: Propuesta, estado, subsanacion_abierta: bool) -> dict:
     """Datos base del expediente que comparten Validación normativa y Revisión VIE."""
     estado_gestion = calcular_estado_gestion(estado.codigoEstadoPropuesta, subsanacion_abierta)
+    acuerdo_aprobacion = (
+        db.query(AcuerdosConsejo.acuerdoId)
+        .join(TiposAcuerdo, TiposAcuerdo.tipoAcuerdoId == AcuerdosConsejo.tipoAcuerdoId)
+        .filter(
+            AcuerdosConsejo.propuestaId == p.propuestaId,
+            TiposAcuerdo.nombreTipoAcuerdo == "Aprobación",
+            AcuerdosConsejo.rutaArchivo.isnot(None),
+        )
+        .first()
+    )
     inv = p.investigador
     etapa = db.get(EtapasConvocatoria, p.etapaId) if p.etapaId else None
     return {
@@ -295,21 +312,29 @@ def construir_encabezado(db: Session, p: Propuesta, estado, subsanacion_abierta:
         "investigador": " ".join(x for x in (inv.nombreUsuario, inv.apellido1Usuario, inv.apellido2Usuario) if x),
         "escuela": p.escuela.nombreEscuela,
         "estado": estado_gestion,
+        "estadoCodigo": estado.codigoEstadoPropuesta,
+        "consejoAprobado": acuerdo_aprobacion is not None,
+        "colaboradoresExternos": bool(p.colaboradoresExternos),
         "estadoDetalle": estado.nombreEstadoPropuesta,
         "convocatoria": _nombre_convocatoria(db, p),
         "tipo": p.modalidad.nombreModalidad if p.modalidad else None,
         "fechaIngreso": p.fechaEnvio.date() if p.fechaEnvio else None,
         "fechaLimite": etapa.fechaFin.date() if etapa and etapa.fechaFin else None,
-        "pasoActual": PASO_POR_ESTADO.get(estado_gestion, 1),
+        "pasoActual": PASO_POR_ESTADO.get(estado.codigoEstadoPropuesta, PASO_POR_ESTADO.get(estado_gestion, 1)),
     }
 
 
-def construir_grupos(p: Propuesta) -> list[dict]:
+def construir_grupos(p: Propuesta, db: Session | None = None) -> list[dict]:
     """Lista de verificación calculada por el sistema con los datos del expediente."""
     tipos_cargados = {
         d.tipoDocumento.nombreTipoDocumento for d in p.documentos if d.activo and d.tipoDocumento
     }
+    # Matriz 3: cinco verificaciones específicas de la Gestora VIE.
+    # Se incorporan aquí para evitar mantener dos pantallas normativas duplicadas.
+    from src.services.vie import revision_service
     return [
+        {"id": "matriz3", "titulo": "0. Verificaciones normativas (Matriz 3)",
+         "requisitos": revision_service.obtener_requisitos_matriz3(db, p) if db is not None else []},
         {"id": "generales", "titulo": "1. Aspectos generales",
          "requisitos": [_formulario_completo(p), _aval_unidad(tipos_cargados), _linea_investigacion(p)]},
         {"id": "eticos", "titulo": "2. Requisitos éticos",
@@ -323,7 +348,7 @@ def construir_grupos(p: Propuesta) -> list[dict]:
 
 def construir_grupos_revisados(db: Session, p: Propuesta) -> list[dict]:
     """Lista de verificación con las decisiones guardadas por la gestora encima de lo calculado."""
-    grupos = construir_grupos(p)
+    grupos = construir_grupos(p, db)
     revisiones = {
         r.requisitoId: r
         for r in db.query(ValidacionRequisito).filter(ValidacionRequisito.propuestaId == p.propuestaId)
@@ -366,7 +391,7 @@ def obtener_validacion(db: Session, codigo_propuesta: str) -> dict:
 def guardar_requisitos(db: Session, codigo_propuesta: str, gestora_id: int, cambios) -> dict:
     """Guarda (o quita) las decisiones de la gestora sobre requisitos y devuelve la validación actualizada."""
     p, _, _ = cargar_propuesta(db, codigo_propuesta)
-    ids_validos = {q["id"] for g in construir_grupos(p) for q in g["requisitos"]}
+    ids_validos = {q["id"] for g in construir_grupos(p, db) for q in g["requisitos"]}
     desconocidos = sorted({c.id for c in cambios} - ids_validos)
     if desconocidos:
         raise SolicitudInvalida(f"Requisito desconocido: {', '.join(desconocidos)}.")
@@ -408,11 +433,37 @@ def enviar_al_cie(db: Session, codigo_propuesta: str, gestora_id: int) -> dict:
 
     if codigo_estado_actual == "EN_CIE":
         raise ConflictoNegocio("Este expediente ya fue enviado al CIE.")
+    if codigo_estado_actual != "EN_CONSEJO":
+        raise ConflictoNegocio("No se puede enviar al CIE: la propuesta debe encontrarse en la etapa de Consejo de Escuela.")
+    acuerdo_aprobacion = (
+        db.query(AcuerdosConsejo.acuerdoId)
+        .join(TiposAcuerdo, TiposAcuerdo.tipoAcuerdoId == AcuerdosConsejo.tipoAcuerdoId)
+        .filter(
+            AcuerdosConsejo.propuestaId == p.propuestaId,
+            TiposAcuerdo.nombreTipoAcuerdo == "Aprobación",
+            AcuerdosConsejo.rutaArchivo.isnot(None),
+        )
+        .first()
+    )
+    if acuerdo_aprobacion is None:
+        raise ConflictoNegocio(
+            "No se puede enviar al CIE: falta el acuerdo de aprobación del Consejo de Escuela."
+        )
     if codigo_estado_actual in {"APROBADA", "RECHAZADA", "CANCELADA"}:
         raise ConflictoNegocio("No se puede enviar al CIE un expediente que ya tiene un estado final.")
 
     grupos = construir_grupos_revisados(db, p)
     porcentaje = porcentaje_cumplimiento(grupos)
+    bloqueantes = {"morosidad", "etica", "permisos"}
+    incumplidos = [
+        q["nombre"] for g in grupos for q in g["requisitos"]
+        if q["id"] in bloqueantes and q["estado"] == NO_CUMPLE
+    ]
+    if incumplidos:
+        raise ConflictoNegocio(
+            "No se puede enviar al CIE: hay requisitos críticos obligatorios incumplidos: "
+            + ", ".join(incumplidos) + "."
+        )
     if porcentaje < 90:
         raise ConflictoNegocio(
             f"No se puede enviar al CIE: el cumplimiento normativo es de {porcentaje} %. Se requiere al menos un 90 %."
@@ -457,9 +508,17 @@ def enviar_al_cie(db: Session, codigo_propuesta: str, gestora_id: int) -> dict:
         raise ConflictoNegocio("No existe el estado EN_CIE en el catálogo de estados de propuesta.")
 
     ahora = datetime.now()
+    estado_anterior_id = p.estadoId
     p.estadoId = estado_cie.estadoPropuestaId
     p.usuarioAuditoriaId = gestora_id
     p.ultimaAuditoria = ahora
+    db.add(HistorialEstadosPropuesta(
+        propuestaId=p.propuestaId,
+        estadoAnteriorId=estado_anterior_id,
+        estadoNuevoId=estado_cie.estadoPropuestaId,
+        usuarioResponsableId=gestora_id,
+        observaciones="Expediente remitido al CIE tras aprobación del Consejo de Escuela.",
+    ))
     db.commit()
 
     return {

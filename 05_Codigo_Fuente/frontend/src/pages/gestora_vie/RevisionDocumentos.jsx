@@ -45,6 +45,7 @@ const DetalleDocumentos = ({ codigo }) => {
   const [guardando, setGuardando] = useState(false);
   const [aviso, setAviso] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [enviandoCIE, setEnviandoCIE] = useState(false);
 
   useEffect(() => {
     let cancelado = false;
@@ -87,6 +88,11 @@ const DetalleDocumentos = ({ codigo }) => {
   const pasoActual = Math.max(2, expediente.pasoActual);
   const hayCambios = Object.keys(cambios).length > 0;
   const puedeSolicitar = subsanacion.puede && !hayCambios && !guardando;
+  const codigosObligatorios = ['Form-04', 'Form-05', 'Form-06', 'Acuerdo_Consejo'];
+  if (expediente.colaboradoresExternos) codigosObligatorios.push('Carta_Compromiso');
+  const documentosObligatorios = documentos.filter((doc) => codigosObligatorios.includes(doc.codigoTipo));
+  const documentosListos = documentosObligatorios.length > 0 && documentosObligatorios.every((doc) => doc.estado !== 'FALTANTE' && (cambios[doc.documentoId]?.estado ?? doc.estado) === 'CORRECTO');
+  const puedeEnviarCIE = expediente.estadoCodigo === 'EN_CONSEJO' && expediente.consejoAprobado && documentosListos && !hayCambios && !guardando && !enviandoCIE && !subsanacion.bloqueo;
 
   const cambiar = (doc, campos) => {
     setCambios((prev) => {
@@ -117,6 +123,20 @@ const DetalleDocumentos = ({ codigo }) => {
     }
   };
 
+  const enviarAlCIE = async () => {
+    setEnviandoCIE(true);
+    setAviso(null);
+    try {
+      const resultado = await expedienteService.enviarAlCIE(expediente.id);
+      setAviso({ tipo: 'ok', texto: resultado.mensaje || 'El expediente se envió al CIE correctamente.' });
+      setDatos(await expedienteService.obtenerDocumentos(expediente.id));
+    } catch (err) {
+      setAviso({ tipo: 'error', texto: detalleDeError(err, 'No se pudo enviar el expediente al CIE. Verifica las condiciones e inténtalo de nuevo.') });
+    } finally {
+      setEnviandoCIE(false);
+    }
+  };
+
   const alCrearSubsanacion = async () => {
     setModalAbierto(false);
     setAviso({
@@ -132,7 +152,7 @@ const DetalleDocumentos = ({ codigo }) => {
   };
 
   let nota;
-  if (hayCambios) nota = 'Guarda la revisión antes de solicitar la subsanación.';
+  if (hayCambios) nota = 'Guarda la revisión antes de solicitar la subsanación o enviar al CIE.';
   else if (subsanacion.bloqueo) nota = subsanacion.bloqueo;
   else if (!subsanacion.puede) {
     nota = `No hace falta solicitar subsanación: están todos los documentos y el cumplimiento normativo es de ${subsanacion.porcentajeCumplimiento} % (mínimo ${subsanacion.umbral} %).`;
@@ -271,8 +291,20 @@ const DetalleDocumentos = ({ codigo }) => {
           <button type="button" className="gv-btn-primario" disabled={!puedeSolicitar} onClick={() => setModalAbierto(true)}>
             <Icono nombre="send" tamano={16} /> Solicitar subsanación
           </button>
+          <button type="button" className="gv-btn-primario gv-btn-enviar-cie" disabled={!puedeEnviarCIE} onClick={enviarAlCIE}>
+            <Icono nombre="send" tamano={16} /> {enviandoCIE ? 'Enviando al CIE...' : 'Enviar expediente al CIE'}
+          </button>
         </div>
         <p className="gv-nota-accion gv-nota-derecha">{nota}</p>
+        <p className="gv-nota-accion gv-nota-derecha">
+          {expediente.estadoCodigo !== 'EN_CONSEJO'
+            ? 'La propuesta debe encontrarse en la etapa de Consejo de Escuela.'
+            : !expediente.consejoAprobado
+              ? 'El envío se habilita cuando exista un acuerdo de aprobación del Consejo de Escuela.'
+              : !documentosListos
+              ? 'Revisa todos los documentos obligatorios y marca Correcto antes de enviar.'
+              : subsanacion.bloqueo || 'El backend verificará el 90 % de cumplimiento y los requisitos críticos antes de remitir al CIE.'}
+        </p>
       </section>
 
       {modalAbierto && (

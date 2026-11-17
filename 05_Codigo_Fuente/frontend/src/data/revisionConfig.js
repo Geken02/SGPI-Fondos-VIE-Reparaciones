@@ -14,7 +14,7 @@ export const ESTADOS_DOCUMENTO = {
   FALTANTE: { etiqueta: 'Falta', clase: 'pendiente' },
 };
 
-export const PASOS = ['Revisión normativa', 'Revisión documentos', 'Subsanaciones', 'Envío al CIE'];
+export const PASOS = ['Validación normativa', 'Revisión de documentos', 'Envío al CIE'];
 
 // Estado de revisión de cada documento (ventana Revisión de documentos)
 export const ESTADOS_REVISION_DOCUMENTO = {

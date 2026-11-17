@@ -6,7 +6,7 @@ from src.models.escuelas import Escuela
 from src.models.propuestas import Propuesta
 from src.models.subsanaciones import EstadosSubsanacion, Subsanaciones, obtener_o_crear_estado_subsanacion
 from src.models.usuarios import Usuario
-from src.models.catalogos import AsignacionesGestora
+from src.models.catalogos import AsignacionesGestora, HistorialEstadosPropuesta
 from src.services.vie.expediente_service import es_superadministrador, verificar_acceso_expediente
 from src.services.vie import evaluacion_service
 from src.services.vie.errores import ConflictoNegocio, NoEncontrado, SolicitudInvalida
@@ -115,10 +115,13 @@ def crear_subsanacion(db: Session, codigo_propuesta: str, gestora_id: int, comen
             "de los requisitos."
         )
 
-    # Cambiar estado de la propuesta a EN_SUBSANACION (10)
+    # Guardar el estado institucional previo en la tabla de historial existente.
+    # No requiere columnas ni migraciones en la base de datos.
+    estado_anterior_id = p.estadoId
     estado_prop_sub = obtener_o_crear_estado_subsanacion(db)
-    if estado_prop_sub:
-        p.estadoId = estado_prop_sub.estadoPropuestaId
+    if not estado_prop_sub:
+        raise ConflictoNegocio("No se encontró ni se pudo crear el estado de subsanación.")
+    p.estadoId = estado_prop_sub.estadoPropuestaId
 
     sub = Subsanaciones(
         propuestaId=p.propuestaId,
@@ -128,6 +131,14 @@ def crear_subsanacion(db: Session, codigo_propuesta: str, gestora_id: int, comen
         estadoSubsanacionId=_estado_catalogo(db, ESTADO_INICIAL).estadoSubsanacionId,
     )
     db.add(sub)
+    db.flush()
+    db.add(HistorialEstadosPropuesta(
+        propuestaId=p.propuestaId,
+        estadoAnteriorId=estado_anterior_id,
+        estadoNuevoId=estado_prop_sub.estadoPropuestaId,
+        usuarioResponsableId=gestora_id,
+        observaciones=f"Subsanación solicitada: {comentario}",
+    ))
     db.commit()
     return _fila_por_id(db, sub.subsanacionId)
 
@@ -152,20 +163,54 @@ def resolver_subsanacion(db: Session, subsanacion_id: int, gestora_id: int, acci
     sub.comentarioResolucion = comentario or None
     sub.fechaResolucion = datetime.now()
 
-    # Actualizar estado de la propuesta segun la accion
+    # Actualizar estado institucional sin asumir que todas las propuestas vienen
+    # de Comité Técnico. El historial existente conserva el estado anterior.
     if propuesta is not None:
         if accion == "ACEPTAR":
-            # Volver al estado EN_COMITE (4) o EN_VINCULACION (3) segun el flujo
-            from src.models.convocatorias import EstadosPropuesta
-            estado_comite = db.query(EstadosPropuesta).filter(
-                EstadosPropuesta.codigoEstadoPropuesta == "EN_COMITE"
-            ).first()
-            if estado_comite:
-                propuesta.estadoId = estado_comite.estadoPropuestaId
-            else:
-                propuesta.estadoId = 4  # fallback
-        else:  # RECHAZAR
-            # Mantener en EN_SUBSANACION (10) para que el investigador corrija de nuevo
+            estado_subsanacion_id = propuesta.estadoId
+            historial = (
+                db.query(HistorialEstadosPropuesta)
+                .filter(
+                    HistorialEstadosPropuesta.propuestaId == propuesta.propuestaId,
+                    HistorialEstadosPropuesta.estadoNuevoId == estado_subsanacion_id,
+                )
+                .order_by(
+                    HistorialEstadosPropuesta.fechaCambio.desc(),
+                    HistorialEstadosPropuesta.historialEstadoId.desc(),
+                )
+                .first()
+            )
+            # Compatibilidad con subsanaciones antiguas que no registraron el
+            # ingreso a subsanación: toma el último estado institucional conocido.
+            if historial is None or historial.estadoAnteriorId is None:
+                historial = (
+                    db.query(HistorialEstadosPropuesta)
+                    .filter(
+                        HistorialEstadosPropuesta.propuestaId == propuesta.propuestaId,
+                        HistorialEstadosPropuesta.estadoNuevoId != propuesta.estadoId,
+                    )
+                    .order_by(
+                        HistorialEstadosPropuesta.fechaCambio.desc(),
+                        HistorialEstadosPropuesta.historialEstadoId.desc(),
+                    )
+                    .first()
+                )
+            if historial is None or historial.estadoAnteriorId is None:
+                db.rollback()
+                raise ConflictoNegocio(
+                    "No se puede cerrar la subsanación porque no existe un estado institucional previo "
+                    "en el historial. Se mantiene abierta para evitar asignar una etapa incorrecta."
+                )
+            estado_anterior_id = historial.estadoAnteriorId
+            propuesta.estadoId = estado_anterior_id
+            db.add(HistorialEstadosPropuesta(
+                propuestaId=propuesta.propuestaId,
+                estadoAnteriorId=estado_subsanacion_id,
+                estadoNuevoId=estado_anterior_id,
+                usuarioResponsableId=gestora_id,
+                observaciones=f"Subsanación aceptada: {comentario or 'respuesta validada'}",
+            ))
+        else:  # RECHAZAR: mantener en subsanación para que el investigador corrija de nuevo
             estado_prop_sub = obtener_o_crear_estado_subsanacion(db)
             if estado_prop_sub:
                 propuesta.estadoId = estado_prop_sub.estadoPropuestaId

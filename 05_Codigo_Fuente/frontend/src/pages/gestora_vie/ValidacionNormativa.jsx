@@ -255,7 +255,6 @@ const DetalleValidacion = ({ codigo, lista }) => {
   const [guardando, setGuardando] = useState(false);
   const [aviso, setAviso] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
-  const [enviandoCIE, setEnviandoCIE] = useState(false);
 
   useEffect(() => {
     let cancelado = false;
@@ -310,10 +309,7 @@ const DetalleValidacion = ({ codigo, lista }) => {
   const estadoExpediente = ESTADOS[expediente.estado] ?? { etiqueta: expediente.estadoDetalle, clase: 'revision' };
   const nSubsanar = resumen.conteo.NO_CUMPLE;
   const hayCambios = Object.keys(cambios).length > 0;
-  const puedeSolicitar = subsanacion.puede && !hayCambios && !guardando && !enviandoCIE;
-  const estadoFinal = ['APROBADA', 'RECHAZADA', 'CANCELADA'].includes(expediente.estado);
-  const yaEnviadoCIE = expediente.estado === 'LISTO_CIE';
-  const puedeEnviarCIE = resumen.porcentaje >= 90 && !subsanacion.bloqueo && expediente.estado !== 'EN_SUBSANACION' && !hayCambios && !guardando && !enviandoCIE && !estadoFinal && !yaEnviadoCIE;
+  const puedeSolicitar = subsanacion.puede && !hayCambios && !guardando;
 
   const alternarGrupo = (id) => setCerrados((prev) => ({ ...prev, [id]: !prev[id] }));
 
@@ -357,37 +353,6 @@ const DetalleValidacion = ({ codigo, lista }) => {
     }
   };
 
-  const enviarAlCIE = async () => {
-    setEnviandoCIE(true);
-    setAviso(null);
-    try {
-      const resultado = await expedienteService.enviarAlCIE(expediente.id);
-      setDatos((prev) => prev ? {
-        ...prev,
-        expediente: {
-          ...prev.expediente,
-          estado: 'LISTO_CIE',
-          estadoDetalle: resultado.estadoDetalle || 'En CIE',
-          pasoActual: 4,
-        },
-      } : prev);
-      setAviso({ tipo: 'ok', texto: resultado.mensaje || 'El expediente se envió al CIE correctamente.' });
-      try {
-        const [actualizado, bandeja] = await Promise.all([
-          expedienteService.obtenerValidacion(expediente.id),
-          expedienteService.obtenerBandeja(),
-        ]);
-        setDatos(actualizado);
-        setLista(bandeja.expedientes);
-      } catch {
-        // La remisión ya se confirmó; no ocultar el éxito si falla una actualización posterior.
-      }
-    } catch (err) {
-      setAviso({ tipo: 'error', texto: detalleDeError(err, 'No se pudo enviar el expediente al CIE. Verifica las condiciones e inténtalo de nuevo.') });
-    } finally {
-      setEnviandoCIE(false);
-    }
-  };
 
   const alCrearSubsanacion = async () => {
     setModalAbierto(false);
@@ -411,13 +376,7 @@ const DetalleValidacion = ({ codigo, lista }) => {
     nota = `No hace falta solicitar subsanación: el expediente tiene sus documentos y cumple el ${datos.porcentajeCumplimiento} % (mínimo ${subsanacion.umbral} %).`;
   } else nota = `Corresponde solicitarla. ${subsanacion.motivos.join(' ')}`;
 
-  let notaEnvioCIE;
-  if (hayCambios) notaEnvioCIE = 'Guarda los cambios de validación antes de enviar el expediente.';
-  else if (yaEnviadoCIE) notaEnvioCIE = 'Este expediente ya fue remitido al CIE.';
-  else if (estadoFinal) notaEnvioCIE = 'El expediente tiene un estado final y no puede remitirse de nuevo.';
-  else if (subsanacion.bloqueo || expediente.estado === 'EN_SUBSANACION') notaEnvioCIE = 'Resuelve y cierra la subsanación antes de enviar al CIE.';
-  else if (resumen.porcentaje < 90) notaEnvioCIE = `Se requiere al menos 90 % de cumplimiento. Actualmente: ${resumen.porcentaje} %.`;
-  else notaEnvioCIE = 'Cumple las condiciones para remitir el expediente al CIE.';
+
 
   return (
     <>
@@ -636,14 +595,13 @@ const DetalleValidacion = ({ codigo, lista }) => {
             <button type="button" className="gv-btn-primario gv-btn-bloque" disabled={!puedeSolicitar} onClick={() => setModalAbierto(true)}>
               <Icono nombre="send" tamano={16} /> Solicitar subsanación
             </button>
-            <button type="button" className="gv-btn-secundario gv-btn-bloque" disabled={!hayCambios || guardando || enviandoCIE} onClick={guardarCambios}>
+            <button type="button" className="gv-btn-secundario gv-btn-bloque" disabled={!hayCambios || guardando} onClick={guardarCambios}>
               <Icono nombre="save" tamano={16} /> {guardando ? 'Guardando...' : 'Guardar cambios'}
             </button>
-            <button type="button" className="gv-btn-primario gv-btn-bloque gv-btn-enviar-cie" disabled={!puedeEnviarCIE} onClick={enviarAlCIE}>
-              <Icono nombre="send" tamano={16} /> {enviandoCIE ? 'Enviando al CIE...' : yaEnviadoCIE ? 'Enviado al CIE' : 'Enviar expediente al CIE'}
-            </button>
             <p className="gv-nota-accion">{nota}</p>
-            <p className="gv-nota-accion">{notaEnvioCIE}</p>
+            <Link to={`${RUTA_BANDEJA}/${encodeURIComponent(expediente.id)}/documentos`} className="gv-btn-primario gv-btn-bloque">
+              <Icono nombre="fileText" tamano={16} /> Continuar a revisión de documentos
+            </Link>
           </section>
         </div>
       </div>
