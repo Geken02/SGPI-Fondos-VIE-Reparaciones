@@ -908,6 +908,13 @@ body, input, button, select, textarea {
 .badge-status.warning { background-color: #e0f2fe; color: var(--tec-boton-primario); }
 .badge-status.success { background-color: #e6fffa; color: #047857; }
 .badge-status.info { background-color: #f1f5f9; color: #475569; }
+/* Estados de propuesta (ver src/data/estadosPropuesta.js) */
+.badge-status.borrador { background-color: #e2e8f0; color: #334155; }
+.badge-status.comite { background-color: #eef2ff; color: #4338ca; }
+.badge-status.consejo { background-color: #f5f3ff; color: #6d28d9; }
+.badge-status.cie { background-color: #fdf4ff; color: #a21caf; }
+.badge-status.rechazada { background-color: #fef2f2; color: #b91c1c; }
+.badge-status.cancelada { background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; font-weight: 700; }
 
 .proposal-code {
   font-size: 12px;

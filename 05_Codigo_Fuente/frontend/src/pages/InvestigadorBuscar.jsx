@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from '../components/LimitedInput';
 import IconoCie from '../components/cie/IconoCie';
+import { claseBadgeEstado } from '../data/estadosPropuesta';
 
 const InvestigadorBuscar = () => {
   const navigate = useNavigate();
@@ -16,21 +17,29 @@ const InvestigadorBuscar = () => {
   const [filtroSede, setFiltroSede] = useState('Todas');
   const [propuestasBD, setPropuestasBD] = useState([]);
   const [convocatoriasBD, setConvocatoriasBD] = useState([]);
+  // Catálogos de filtros obtenidos desde la base de datos
+  const [catalogos, setCatalogos] = useState({ escuelas: [], estadosPropuesta: [], campus: [] });
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
     const cargarDatos = async () => {
       try {
         setCargando(true);
-        const [props, catalogos] = await Promise.all([
+        const [props, dataCatalogos] = await Promise.all([
           propuestaService.explorarInstitucional(),
           propuestaService.obtenerCatalogosFormulario()
         ]);
         setPropuestasBD(props || []);
-        setConvocatoriasBD(catalogos?.convocatorias || []);
+        setConvocatoriasBD(dataCatalogos?.convocatorias || []);
+        setCatalogos({
+          escuelas: dataCatalogos?.escuelas || [],
+          estadosPropuesta: dataCatalogos?.estadosPropuesta || [],
+          campus: dataCatalogos?.campus || []
+        });
       } catch (_err) {
         setPropuestasBD([]);
         setConvocatoriasBD([]);
+        setCatalogos({ escuelas: [], estadosPropuesta: [], campus: [] });
       } finally {
         setCargando(false);
       }
@@ -52,17 +61,23 @@ const InvestigadorBuscar = () => {
     setFiltroSede('Todas');
   };
 
+  // Mapeo de la escuela de cada propuesta hacia su campus (catálogo de la BD)
+  const mapaEscuelaCampus = new Map(
+    catalogos.escuelas.map(e => [e.nombreEscuela, e.nombreCampus])
+  );
+
   // Mapear propuestas desde la base de datos
   const itemsPropuestas = propuestasBD.map(p => {
-    const esAprob = (p.nombreEstado || '').toLowerCase().includes('aprob');
-    const esEval = (p.nombreEstado || '').toLowerCase().includes('eval');
+    const nombreEscuela = p.nombreEscuela || usuario?.escuela || 'Escuela de Ingeniería';
     return {
       id: p.propuestaId,
       tipoItem: 'Propuesta',
+      estadoId: p.estadoId,
       codigo: p.codigoPropuesta,
-      escuela: p.nombreEscuela || usuario?.escuela || 'Escuela de Ingeniería',
+      escuela: nombreEscuela,
+      campus: mapaEscuelaCampus.get(nombreEscuela) || null,
       estado: p.nombreEstado || 'Borrador',
-      estadoTipo: esAprob ? 'success' : esEval ? 'warning' : 'info',
+      estadoClase: claseBadgeEstado(p.estadoId, p.nombreEstado),
       titulo: p.titulo,
       investigador: usuario?.nombre ? `${usuario.nombre} ${usuario.apellido1 || ''}`.trim() : 'Investigador TEC',
       convocatoria: p.nombreConvocatoria || 'Convocatoria Ordinaria VIE 2027',
@@ -77,10 +92,12 @@ const InvestigadorBuscar = () => {
   const itemsConvocatorias = convocatoriasBD.map(c => ({
     id: c.convocatoriaId,
     tipoItem: 'Convocatoria',
+    estadoId: null,
     codigo: `CONV-2027-${String(c.convocatoriaId).padStart(3, '0')}`,
     escuela: 'Vicerrectoría de Investigación y Extensión',
+    campus: mapaEscuelaCampus.get('Vicerrectoría de Investigación y Extensión') || null,
     estado: 'Convocatoria Abierta',
-    estadoTipo: 'success',
+    estadoClase: 'badge-status success',
     titulo: c.nombreConvocatoria,
     investigador: 'VIE — Fondos Institucionales',
     convocatoria: c.nombreConvocatoria,
@@ -93,6 +110,23 @@ const InvestigadorBuscar = () => {
   // Combinar todos los registros reales de la base de datos
   const todosLosRegistros = [...itemsPropuestas, ...itemsConvocatorias];
 
+  // Opciones de filtro construidas desde la base de datos
+  const opcionesTipo = Array.from(new Set(todosLosRegistros.map(i => i.tipoItem)));
+  const opcionesEstado = catalogos.estadosPropuesta.map(e => ({
+    value: String(e.estadoPropuestaId),
+    label: e.nombreEstadoPropuesta
+  }));
+  const opcionesConvocatoria = convocatoriasBD.map(c => c.nombreConvocatoria);
+  const opcionesSede = catalogos.campus.map(c => c.nombreCampus);
+
+  // Filtros rápidos construidos con valores reales de la BD
+  const estadoBorrador = opcionesEstado.find(o => o.label.toLowerCase().includes('borrador'));
+  const filtrosFrecuentes = [
+    ...(opcionesTipo.includes('Propuesta') ? [{ label: 'Solo Mis Propuestas', tipo: 'Propuesta' }] : []),
+    ...(opcionesTipo.includes('Convocatoria') ? [{ label: 'Solo Convocatorias Abiertas', tipo: 'Convocatoria' }] : []),
+    ...(estadoBorrador ? [{ label: 'Propuestas en Borrador', estado: estadoBorrador.value }] : [])
+  ];
+
   const resultadosFiltrados = todosLosRegistros.filter(item => {
     // Filtro por texto
     if (queryActivo.trim()) {
@@ -100,19 +134,22 @@ const InvestigadorBuscar = () => {
       if (!txt.includes(queryActivo.toLowerCase())) return false;
     }
 
-    // Filtro por tipo
-    if (filtroTipo === 'Propuestas' && item.tipoItem !== 'Propuesta') return false;
-    if (filtroTipo === 'Convocatorias' && item.tipoItem !== 'Convocatoria') return false;
+    // Filtro por tipo (valores reales de los registros: Propuesta / Convocatoria)
+    if (filtroTipo !== 'Todos' && item.tipoItem !== filtroTipo) return false;
 
-    // Filtro por estado
+    // Filtro por estado (IDs reales de la tabla estadospropuesta)
     if (filtroEstado !== 'Todos') {
-      if (!item.estado.toLowerCase().includes(filtroEstado.toLowerCase())) return false;
+      const label = opcionesEstado.find(o => o.value === filtroEstado)?.label || '';
+      const coincide = String(item.estadoId) === filtroEstado
+        || (label && item.estado.toLowerCase().includes(label.toLowerCase()));
+      if (!coincide) return false;
     }
 
-    // Filtro por convocatoria
-    if (filtroConvocatoria !== 'Todas') {
-      if (!item.convocatoria.toLowerCase().includes(filtroConvocatoria.toLowerCase())) return false;
-    }
+    // Filtro por convocatoria (nombres reales de la tabla convocatorias)
+    if (filtroConvocatoria !== 'Todas' && item.convocatoria !== filtroConvocatoria) return false;
+
+    // Filtro por sede/campus (catálogo campus de la BD)
+    if (filtroSede !== 'Todas' && item.campus !== filtroSede) return false;
 
     return true;
   });
@@ -170,45 +207,48 @@ const InvestigadorBuscar = () => {
             value={filtroTipo} 
             onChange={(e) => setFiltroTipo(e.target.value)}
             className="filter-select"
+            disabled={cargando}
           >
             <option value="Todos">Filtro tipo: Todos ▾</option>
-            <option value="Propuestas">Propuestas</option>
-            <option value="Convocatorias">Convocatorias</option>
+            {opcionesTipo.map((tipo) => (
+              <option key={tipo} value={tipo}>{`${tipo}s`}</option>
+            ))}
           </select>
 
           <select 
             value={filtroEstado} 
             onChange={(e) => setFiltroEstado(e.target.value)}
             className="filter-select"
+            disabled={cargando}
           >
             <option value="Todos">Filtro estado: Todos ▾</option>
-            <option value="Borrador">Borrador / En formulación</option>
-            <option value="Evaluación">En Evaluación</option>
-            <option value="Aprobado">Aprobado / Finalizado</option>
-            <option value="Abierta">Convocatorias Abiertas</option>
+            {opcionesEstado.map((op) => (
+              <option key={op.value} value={op.value}>{op.label}</option>
+            ))}
           </select>
 
           <select 
             value={filtroConvocatoria} 
             onChange={(e) => setFiltroConvocatoria(e.target.value)}
             className="filter-select"
+            disabled={cargando}
           >
             <option value="Todas">Convocatoria: Todas ▾</option>
-            <option value="Ordinaria">Convocatoria Ordinaria VIE</option>
-            <option value="MICITT">Fondo Incentivos MICITT</option>
-            <option value="FEES">Proyectos Fondos FEES</option>
-            <option value="Biotecnología">Fondo Semilla Biotecnología</option>
+            {opcionesConvocatoria.map((nombre) => (
+              <option key={nombre} value={nombre}>{nombre}</option>
+            ))}
           </select>
 
           <select 
             value={filtroSede} 
             onChange={(e) => setFiltroSede(e.target.value)}
             className="filter-select"
+            disabled={cargando}
           >
             <option value="Todas">Ubicación / Sede: Todas ▾</option>
-            <option value="Cartago">Sede Central Cartago</option>
-            <option value="San José">Sede San José</option>
-            <option value="San Carlos">Sede San Carlos</option>
+            {opcionesSede.map((sede) => (
+              <option key={sede} value={sede}>{sede}</option>
+            ))}
           </select>
 
           {(queryActivo || filtroTipo !== 'Todos' || filtroEstado !== 'Todos' || filtroConvocatoria !== 'Todas') && (
@@ -255,7 +295,7 @@ const InvestigadorBuscar = () => {
                       <span className="meta-separator">|</span>
                       <span style={{ fontSize: '12px', color: '#0369A1', fontWeight: 600 }}>{item.tipoItem}</span>
                     </div>
-                    <span className={`badge-status ${item.estadoTipo === 'success' ? 'badge-success' : item.estadoTipo === 'warning' ? 'badge-warning' : 'badge-info'}`}>
+                    <span className={item.estadoClase}>
                       {item.estado}
                     </span>
                   </div>
@@ -335,11 +375,7 @@ const InvestigadorBuscar = () => {
               <div className="quick-card-badge">Filtros</div>
               <h3 className="quick-card-title">Filtros Frecuentes</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '10px' }}>
-                {[
-                  { label: 'Solo Mis Propuestas', tipo: 'Propuestas' },
-                  { label: 'Solo Convocatorias Abiertas', tipo: 'Convocatorias' },
-                  { label: 'Propuestas en Borrador', estado: 'Borrador' }
-                ].map((fil, i) => (
+                {filtrosFrecuentes.map((fil, i) => (
                   <button 
                     key={i}
                     type="button"
