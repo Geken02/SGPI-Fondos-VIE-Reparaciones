@@ -1,6 +1,6 @@
-// src/components/RoleSwitcher.jsx
 import { useState, useRef, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import api from '../../services/api'; // ✅ IMPORTAR EL CLIENTE AXIOS CONFIGURADO
 import '../styles/role-switcher.css';
 
 const ROLES_DISPONIBLES = [
@@ -71,7 +71,7 @@ const ROLES_DISPONIBLES = [
   { 
     id: 'MiembroConsejoEscuela', 
     nombre: 'Consejo de Profesores', 
-    icono: '', 
+    icono: '👥', 
     color: '#f59e0b',
     colorBg: '#fef3c7',
     descripcion: 'Cuerpo colegiado que analiza la propuesta, aprueba o rechaza mediante votación y genera el aval.'
@@ -79,7 +79,7 @@ const ROLES_DISPONIBLES = [
   { 
     id: 'DireccionEscuela', 
     nombre: 'Dirección Escuela', 
-    icono: '️', 
+    icono: '🖋️', 
     color: '#d97706',
     colorBg: '#fed7aa',
     descripcion: 'Firma digitalmente el Acuerdo de Consejo (Form-07/08) y comunica el aval oficial a la VIE.'
@@ -95,7 +95,7 @@ const ROLES_DISPONIBLES = [
   { 
     id: 'MiembroCIE', 
     nombre: 'Miembro CIE', 
-    icono: '️', 
+    icono: '⚖️', 
     color: '#dc2626',
     colorBg: '#fee2e2',
     descripcion: 'Miembro del Consejo de Investigación y Extensión. Evalúa con rúbrica VIE y determina aprobación o rechazo.'
@@ -146,26 +146,16 @@ export default function RoleSwitcher({ usuarioActual, isOpen, onClose }) {
   const handleSeleccionarRol = async (rol) => {
     setCargando(true);
     try {
-      // Guardar el token original antes de cambiar
+      // Guardar el token original antes de cambiar (por si necesitamos restaurarlo manualmente)
       const tokenOriginal = localStorage.getItem('token');
       localStorage.setItem('token_original', tokenOriginal);
 
-      // Llamar al endpoint de impersonación del backend
-      const response = await fetch('/api/admin/impersonate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tokenOriginal}`
-        },
-        body: JSON.stringify({ rol_nombre: rol.id })
+      // ✅ USAR EL CLIENTE 'api' QUE YA TIENE LA baseURL DE RENDER Y EL INTERCEPTOR DEL TOKEN
+      const response = await api.post('/api/admin/impersonate', { 
+        rol_nombre: rol.id 
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Error al cambiar de rol');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       
       // Guardar el nuevo token de simulación
       localStorage.setItem('token', data.access_token);
@@ -179,7 +169,9 @@ export default function RoleSwitcher({ usuarioActual, isOpen, onClose }) {
       
     } catch (error) {
       console.error('Error en impersonation:', error);
-      toast.error(error.message);
+      // ✅ Manejo seguro del mensaje de error (evita el fallo de JSON en 405/500)
+      const mensajeError = error.response?.data?.detail || error.message || 'Error al cambiar de rol';
+      toast.error(mensajeError);
     } finally {
       setCargando(false);
     }
