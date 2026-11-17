@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useModal } from '../context/ModalContext';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from '../components/LimitedInput';
+import IconoCie from '../components/cie/IconoCie';
 
 // Metadatos institucionales limpios sin datos inventados ni hardcodeados
 const formatearFechaApertura = (fechaStr) => {
@@ -155,7 +156,7 @@ const InvestigadorConvocatorias = () => {
             <div className="stat-label">Cierran pronto (&lt; 15 días)</div>
           </div>
           <div className="conv-stat-card">
-            <div className="stat-star-icon">★</div>
+            <div className="stat-star-icon"><IconoCie nombre="star" tamano={16} /></div>
             <div className="stat-number">{favoritas.length}</div>
             <div className="stat-label">Convocatorias Favoritas</div>
           </div>
@@ -244,7 +245,7 @@ const InvestigadorConvocatorias = () => {
                       title={esFav ? 'Quitar de favoritas' : 'Marcar como favorita'}
                       aria-label={esFav ? `Quitar ${conv.nombre} de convocatorias favoritas` : `Marcar ${conv.nombre} como favorita`}
                     >
-                      <span aria-hidden="true">★</span>
+                      <span aria-hidden="true"><IconoCie nombre="star" tamano={18} /></span>
                       <span className="sr-only">{esFav ? 'Favorita' : 'No favorita'}</span>
                     </button>
                   </div>
@@ -270,7 +271,7 @@ const InvestigadorConvocatorias = () => {
                     <div className="convocatoria-propuesta-activa-box">
                       <div className="propuesta-activa-header">
                         <span className="propuesta-activa-code">
-                          <span>📋</span> En trámite: {propActiva.codigoPropuesta}
+                          <span><IconoCie nombre="clipboard" tamano={14} /></span> En trámite: {propActiva.codigoPropuesta}
                         </span>
                         <span className="badge-status badge-warning">
                           {propActiva.nombreEstado || 'Borrador'}
@@ -295,7 +296,7 @@ const InvestigadorConvocatorias = () => {
                         </button>
                         {!conv.puedeAplicar ? (
                           <span className="badge-convocatoria-cerrada-label">
-                            ⛔ Cerrada
+                            <IconoCie nombre="ban" tamano={14} /> Cerrada
                           </span>
                         ) : (
                           <button 
@@ -322,7 +323,7 @@ const InvestigadorConvocatorias = () => {
                         className="btn-conv-proximamente"
                         disabled
                       >
-                        ⛔ Convocatoria Cerrada
+                        <IconoCie nombre="ban" tamano={14} /> Convocatoria Cerrada
                       </button>
                     )}
 
@@ -352,7 +353,7 @@ const InvestigadorConvocatorias = () => {
           <div className="crear-propuesta-modal-card" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
             <div className="crear-propuesta-modal-header">
               <div className="modal-header-title">Documentos Oficiales de la Convocatoria</div>
-              <button type="button" className="btn-modal-close" onClick={() => setModalDocs(null)}>✕</button>
+              <button type="button" className="btn-modal-close" onClick={() => setModalDocs(null)}><IconoCie nombre="close" tamano={16} /></button>
             </div>
             <div style={{ padding: '24px' }}>
               <h3 style={{ fontSize: '18px', color: '#002855', marginBottom: '8px' }}>{modalDocs.nombre}</h3>
@@ -363,7 +364,7 @@ const InvestigadorConvocatorias = () => {
                 {modalDocs.documentos.map((doc, i) => (
                   <div key={i} className="convocatoria-modal-doc-item">
                     <div className="doc-item-left">
-                      <span>📄</span>
+                      <span><IconoCie nombre="fileText" tamano={16} /></span>
                       <span>{doc}</span>
                     </div>
                     <button 

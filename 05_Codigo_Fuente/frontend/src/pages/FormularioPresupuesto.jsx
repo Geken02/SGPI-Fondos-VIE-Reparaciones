@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedInput, LimitedTextarea } from '../components/LimitedInput';
 import { exportarPresupuestoExcel } from '../utils/exportUtils';
+import IconoCie from '../components/cie/IconoCie';
 
 const CATALOGO_OG = [
   { codigo: '6-02-03-03', detalle: 'Becas estudiante asistente especial', categoria: 'Becas', esAsistencia: true, rubroId: 9 },
@@ -275,7 +276,7 @@ const FormularioPresupuesto = () => {
         </div>
 
         <div className="presupuesto-years-tabs">
-          <button type="button" className={`tab-year-btn ${anoActivo === 2027 ? 'active' : ''}`} onClick={() => setAnoActivo(2027)}>★ Año 1 (2027)</button>
+          <button type="button" className={`tab-year-btn ${anoActivo === 2027 ? 'active' : ''}`} onClick={() => setAnoActivo(2027)}><IconoCie nombre="star" tamano={14} /> Año 1 (2027)</button>
           <button type="button" className={`tab-year-btn ${anoActivo === 2028 ? 'active' : ''}`} onClick={() => setAnoActivo(2028)}>Año 2 (2028)</button>
           <button type="button" className={`tab-year-btn ${anoActivo === 2029 ? 'active' : ''}`} onClick={() => setAnoActivo(2029)}>Año 3 (2029)</button>
           <button type="button" className="tab-year-btn" onClick={() => alert(`Resumen Trienal Consolidado:\nAño 1 (2027): ₡ ${((presupuestos[2027] || []).reduce((a, b) => a + b.monto, 0)).toLocaleString('es-CR')}\nAño 2 (2028): ₡ ${((presupuestos[2028] || []).reduce((a, b) => a + b.monto, 0)).toLocaleString('es-CR')}\nAño 3 (2029): ₡ ${((presupuestos[2029] || []).reduce((a, b) => a + b.monto, 0)).toLocaleString('es-CR')}\nTotal Trienal Solicitado: ₡ ${Object.values(presupuestos).flat().reduce((a, b) => a + b.monto, 0).toLocaleString('es-CR')}`)}>Resumen Trienal Total</button>
@@ -302,7 +303,7 @@ const FormularioPresupuesto = () => {
                     <td className="og-detalle-cell"><strong>{f.detalle}</strong></td>
                     <td className="og-monto-cell">₡ {Number(f.monto || 0).toLocaleString('es-CR')},00</td>
                     <td className="og-justificacion-cell">{f.justificacion}</td>
-                    <td style={{ textAlign: 'center' }}><button type="button" className="btn-icon-action btn-icon-delete" onClick={() => handleEliminarFila(f.id)} title="Eliminar partida">✕</button></td>
+                    <td style={{ textAlign: 'center' }}><button type="button" className="btn-icon-action btn-icon-delete" onClick={() => handleEliminarFila(f.id)} title="Eliminar partida"><IconoCie nombre="close" tamano={14} /></button></td>
                   </tr>
                 ))
               )}
@@ -346,8 +347,8 @@ const FormularioPresupuesto = () => {
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-                <button type="submit" className="btn-nueva-propuesta">✔ Insertar Fila</button>
-                <button type="button" className="btn-proposal-action btn-outline" onClick={() => { if (confirm('¿Está seguro de que desea cancelar? Se perderán los datos ingresados.')) setMostrarFormNuevaFila(false); }}>✖ Cancelar</button>
+                <button type="submit" className="btn-nueva-propuesta"><IconoCie nombre="check" tamano={14} /> Insertar Fila</button>
+                <button type="button" className="btn-proposal-action btn-outline" onClick={() => { if (confirm('¿Está seguro de que desea cancelar? Se perderán los datos ingresados.')) setMostrarFormNuevaFila(false); }}><IconoCie nombre="close" tamano={14} /> Cancelar</button>
               </div>
             </form>
           </div>
@@ -368,7 +369,7 @@ const FormularioPresupuesto = () => {
 
         <div className="form-footer-action-bar">
           <div className="footer-left">
-            <button type="button" className="btn-form-nav btn-outline" onClick={handleExportarExcel}>📊 Exportar Excel</button>
+            <button type="button" className="btn-form-nav btn-outline" onClick={handleExportarExcel}><IconoCie nombre="barChart" tamano={14} /> Exportar Excel</button>
           </div>
           <div className="footer-center">
             <button type="button" className="btn-form-nav btn-outline" onClick={handleGuardarBorrador} disabled={guardando}>Guardar Borrador</button>

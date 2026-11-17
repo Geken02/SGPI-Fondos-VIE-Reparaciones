@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { propuestaService } from '../services/propuestaService';
+import IconoCie from '../components/cie/IconoCie';
 
 const InvestigadorHistorial = () => {
   const [proyectosCerrados, setProyectosCerrados] = useState([]);
@@ -147,7 +148,7 @@ const InvestigadorHistorial = () => {
           </div>
         ) : (
           <div className="proposals-empty-state" style={{ padding: '48px 24px', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-            <div style={{ fontSize: '42px', marginBottom: '12px' }}>📁</div>
+            <div style={{ fontSize: '42px', marginBottom: '12px' }}><IconoCie nombre="folder" tamano={42} /></div>
             <h3 style={{ fontSize: '18px', color: '#002855', margin: '0 0 8px 0', fontWeight: 600 }}>
               No tienes proyectos cerrados o finiquitados
             </h3>

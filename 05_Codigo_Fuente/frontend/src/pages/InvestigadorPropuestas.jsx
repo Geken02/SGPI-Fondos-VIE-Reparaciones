@@ -6,6 +6,7 @@ import { propuestaService } from '../services/propuestaService';
 import { LimitedInput, LimitedTextarea } from '../components/LimitedInput';
 import { descargarPropuestaPDF, descargarPlanRiesgoExcel, descargarPresupuestoDirectoExcel } from '../utils/exportUtils';
 import UniversalViewer from '../components/UniversalViewer';
+import IconoCie from '../components/cie/IconoCie';
 
 const documentoMasReciente = (documentos, coincide) => {
   const encontrados = (documentos || []).filter(coincide);
@@ -117,7 +118,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
       }
 
       const data = await response.json();
-      alert(`✅ ¡Éxito!\n\n${data.mensaje}\nSe extrajeron ${data.datos_extraidos?.secciones_completadas || 0} secciones del documento.`);
+      alert(`¡Éxito!\n\n${data.mensaje}\nSe extrajeron ${data.datos_extraidos?.secciones_completadas || 0} secciones del documento.`);
       
       localStorage.setItem(`propuesta_${propuestaId}_form04_enviado`, 'true');
       cargarPropuestas();
@@ -134,7 +135,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
       cargarPropuestas();
     }
   } catch (err) {
-    console.error(`❌ Error al procesar ${codigoForm}:`, err);
+    console.error(`Error al procesar ${codigoForm}:`, err);
     const msg = err?.message || err?.response?.data?.detail || 'Error desconocido';
     alert(`No se pudo procesar el archivo: ${msg}`);
   } finally {
@@ -578,7 +579,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                       <span className={`badge-status ${badgeClass}`}>{estado}</span>
                       {esSubsanacion && (
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#b45309', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          ⚠️ Requiere Acción
+                          <IconoCie nombre="alertTriangle" tamano={14} /> Requiere Acción
                         </span>
                       )}
                     </div>
@@ -597,7 +598,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                             disabled={enviandoRevision[prop.propuestaId]}
                             title="Enviar propuesta completa a la Unidad de Vinculación para revisión"
                           >
-                            {enviandoRevision[prop.propuestaId] ? 'Enviando...' : '📤 Enviar a Vinculación'}
+                            {enviandoRevision[prop.propuestaId] ? 'Enviando...' : <><IconoCie nombre="upload" tamano={14} /> Enviar a Vinculación</>}
                           </button>
                         ) : (
                           <span 
@@ -605,7 +606,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                             style={{ fontSize: '11px', color: '#64748b', backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
                             title="Solo la persona coordinadora puede enviar la propuesta"
                           >
-                            🔒 Envío por Coordinador
+                            <IconoCie nombre="lock" tamano={12} /> Envío por Coordinador
                           </span>
                         )
                       )}
@@ -625,7 +626,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                             cursor: 'pointer', lineHeight: 1, padding: 0
                           }}
                         >
-                          <span aria-hidden="true">{cancelando[prop.propuestaId] ? '...' : '✕'}</span>
+                          <span aria-hidden="true">{cancelando[prop.propuestaId] ? '...' : <IconoCie nombre="close" tamano={12} />}</span>
                           <span className="sr-only">Cancelar propuesta</span>
                         </button>
                       )}
@@ -717,7 +718,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                           gap: '12px',
                           color: '#475569'
                         }}>
-                          <span style={{ fontSize: '22px' }}>🚫</span>
+                          <IconoCie nombre="ban" tamano={22} />
                           <div>
                             <div style={{ fontWeight: 700, fontSize: '14px', color: '#1e293b' }}>
                               PROPUESTA CANCELADA (ESTADO 9)
@@ -732,7 +733,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                       {/* Banner llamativo si la propuesta está devuelta en Subsanación */}
                       {esSubsanacion && (
                         <div className="subsanacion-banner-box">
-                          <div className="subsanacion-pulse-icon">⚠️</div>
+                          <div className="subsanacion-pulse-icon"><IconoCie nombre="alertTriangle" tamano={24} /></div>
                           <div>
                             <div className="subsanacion-banner-title">
                               PROPUESTA DEVUELTA EN ESTADO: SUBSANACIÓN REQUERIDA
@@ -760,7 +761,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                         }}>
                           <div>
                             <div style={{ fontWeight: 700, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span>🚀</span> Enviar Propuesta a la Unidad de Vinculación
+                              <IconoCie nombre="send" tamano={16} /> Enviar Propuesta a la Unidad de Vinculación
                             </div>
                             <div style={{ fontSize: '13px', marginTop: '3px' }}>
                               Al presionar este botón, la propuesta cambiará formalmente de <strong>Borrador</strong> a <strong>Enviada a Vinculación</strong> para que el Centro de Vinculación inicie el proceso de evaluación y dictamen.
@@ -774,7 +775,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                               onClick={() => handleEnviarPropuestaVinculacion(prop.propuestaId)}
                               disabled={enviandoRevision[prop.propuestaId]}
                             >
-                              {enviandoRevision[prop.propuestaId] ? 'Enviando a Vinculación...' : '📤 Enviar Propuesta a Vinculación'}
+                              {enviandoRevision[prop.propuestaId] ? 'Enviando a Vinculación...' : <><IconoCie nombre="upload" tamano={14} /> Enviar Propuesta a Vinculación</>}
                             </button>
                           ) : (
                             <div className="banner-solo-coordinador" style={{
@@ -785,7 +786,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                               color: '#1e40af',
                               fontSize: '12px'
                             }}>
-                              🔒 Solo la persona coordinadora del proyecto puede enviar la propuesta a la Unidad de Vinculación.
+                              <IconoCie nombre="lock" tamano={12} /> Solo la persona coordinadora del proyecto puede enviar la propuesta a la Unidad de Vinculación.
                             </div>
                           )}
                         </div>
@@ -799,7 +800,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                         <div className="documentos-grid-row">
                           {/* F-01 (Form 04) */}
                           <div className={`doc-item-pill ${f01Completado ? 'doc-completed' : 'doc-pending'}`}>
-                            <div className="doc-icon">📄</div>
+                            <div className="doc-icon"><IconoCie nombre="fileText" tamano={20} /></div>
                             <div className="doc-details">
                               <span className="doc-code">F-01</span>
                               <span className="doc-name">Formulario del proyecto</span>
@@ -840,7 +841,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                                   margin: 0
                                 }}
                               >
-                                {subiendoFormulario[`${prop.propuestaId}_1`] ? 'Subiendo...' : '📤 Subir Doc'}
+                                {subiendoFormulario[`${prop.propuestaId}_1`] ? 'Subiendo...' : <><IconoCie nombre="upload" tamano={14} /> Subir Doc</>}
                                 <input
                                   type="file"
                                   accept=".pdf,.doc,.docx"
@@ -861,7 +862,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
 
                           {/* F-02 (Form 05) */}
                           <div className={`doc-item-pill ${f02Completado ? 'doc-completed' : 'doc-pending'}`}>
-                            <div className="doc-icon">📊</div>
+                            <div className="doc-icon"><IconoCie nombre="barChart" tamano={20} /></div>
                             <div className="doc-details">
                               <span className="doc-code">F-02</span>
                               <span className="doc-name">Plan y Riesgos (F-05)</span>
@@ -902,7 +903,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                                   margin: 0
                                 }}
                               >
-                                {subiendoFormulario[`${prop.propuestaId}_2`] ? 'Subiendo...' : '📤 Subir Doc'}
+                                {subiendoFormulario[`${prop.propuestaId}_2`] ? 'Subiendo...' : <><IconoCie nombre="upload" tamano={14} /> Subir Doc</>}
                                 <input
                                   type="file"
                                   accept=".xlsx,.xls,.pdf,.doc,.docx"
@@ -923,7 +924,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
 
                           {/* F-03 (Form 06) */}
                           <div className={`doc-item-pill ${f03Completado ? 'doc-completed' : 'doc-pending'}`}>
-                            <div className="doc-icon">📁</div>
+                            <div className="doc-icon"><IconoCie nombre="folder" tamano={20} /></div>
                             <div className="doc-details">
                               <span className="doc-code">F-03</span>
                               <span className="doc-name">Presupuesto (F-06)</span>
@@ -958,7 +959,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                                   margin: 0
                                 }}
                               >
-                                {subiendoFormulario[`${prop.propuestaId}_3`] ? 'Subiendo...' : '📤 Subir Doc'}
+                                {subiendoFormulario[`${prop.propuestaId}_3`] ? 'Subiendo...' : <><IconoCie nombre="upload" tamano={14} /> Subir Doc</>}
                                 <input
                                   type="file"
                                   accept=".xlsx,.xls,.pdf,.doc,.docx"
@@ -1017,7 +1018,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                             {/* Aviso si la respuesta anterior fue rechazada */}
                             {subRechazada && subActiva?.comentarioResolucion && (
                               <div className="banner-subsanacion-rechazada" style={{ margin: '12px 0', padding: '10px 14px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '6px', color: '#991b1b', fontSize: '13px' }}>
-                                <strong>⚠️ Respuesta rechazada por la Gestoría VIE:</strong>
+                                <strong><IconoCie nombre="alertTriangle" tamano={14} /> Respuesta rechazada por la Gestoría VIE:</strong>
                                 <div style={{ marginTop: '6px' }}>"{subActiva.comentarioResolucion}"</div>
                                 <div style={{ marginTop: '6px', color: '#7f1d1d', fontSize: '12px' }}>Debe corregir nuevamente y reenviar la propuesta.</div>
                               </div>
@@ -1034,21 +1035,21 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                                   className="btn-sub-edit"
                                   onClick={() => { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/form4?propuestaId=${prop.propuestaId || ''}`); }}
                                 >
-                                  ✏️ Corregir Formulario F-01
+                                  <IconoCie nombre="edit" tamano={14} /> Corregir Formulario F-01
                                 </button>
                                 <button 
                                   type="button" 
                                   className="btn-sub-edit"
                                   onClick={() => { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/form5?propuestaId=${prop.propuestaId || ''}`); }}
                                 >
-                                  ✏️ Corregir Plan y Riesgos F-02
+                                  <IconoCie nombre="edit" tamano={14} /> Corregir Plan y Riesgos F-02
                                 </button>
                                 <button 
                                   type="button" 
                                   className="btn-sub-edit"
                                   onClick={() => { localStorage.setItem('propuesta_activa_id', String(prop.propuestaId)); navigate(`/dashboard/presupuesto?propuestaId=${prop.propuestaId || ''}`); }}
                                 >
-                                  ✏️ Corregir Presupuesto F-03
+                                  <IconoCie nombre="edit" tamano={14} /> Corregir Presupuesto F-03
                                 </button>
                               </div>
 
@@ -1063,18 +1064,18 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                                   onChange={(e) => handleAdjuntarDocumentoSubsanacion(prop.propuestaId, e.target.files[0])}
                                 />
                                 <label htmlFor={`file-sub-${prop.propuestaId}`} className="btn-sub-upload">
-                                  📎 + Adjuntar Documento de Subsanación (PDF, Excel, Cotización)
+                                  <IconoCie nombre="paperclip" tamano={14} /> + Adjuntar Documento de Subsanación (PDF, Excel, Cotización)
                                 </label>
                                 {archivosSubsanacion[prop.propuestaId] && archivosSubsanacion[prop.propuestaId].length > 0 && (
                                   <div className="subsanacion-files-list">
                                     {archivosSubsanacion[prop.propuestaId].map((arch, idx) => (
                                       <span key={idx} className="subsanacion-file-tag">
-                                        📄 {arch.name} 
+                                        <IconoCie nombre="fileText" tamano={12} /> {arch.name} 
                                         <button 
                                           type="button" 
                                           onClick={() => handleEliminarArchivoSubsanacion(prop.propuestaId, idx)}
                                         >
-                                          ✕
+                                          <IconoCie nombre="close" tamano={12} />
                                         </button>
                                       </span>
                                     ))}
@@ -1103,7 +1104,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                                     onClick={() => handleReenviarSubsanacion(prop.propuestaId, subActiva?.subsanacionId)}
                                     disabled={reenviando[prop.propuestaId]}
                                   >
-                                    {reenviando[prop.propuestaId] ? 'Reenviando...' : '📤 Reenviar Propuesta Subsanada (Nueva Revisión)'}
+                                    {reenviando[prop.propuestaId] ? 'Reenviando...' : <><IconoCie nombre="upload" tamano={14} /> Reenviar Propuesta Subsanada (Nueva Revisión)</>}
                                   </button>
                                 ) : (
                                   <div className="banner-solo-coordinador" style={{
@@ -1114,7 +1115,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                                     color: '#1e40af',
                                     fontSize: '12px'
                                   }}>
-                                    🔒 Solo la persona coordinadora del proyecto puede reenviar la propuesta subsanada a la Unidad de Vinculación.
+                                    <IconoCie nombre="lock" tamano={12} /> Solo la persona coordinadora del proyecto puede reenviar la propuesta subsanada a la Unidad de Vinculación.
                                   </div>
                                 )}
                               </div>
@@ -1122,7 +1123,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                           </div>
                         ) : subRespondida ? (
                           <div className="subsanacion-respondida-box">
-                            <div className="subsanacion-resp-badge">✔ Subsanación Respondida y Reenviada a Revisión</div>
+                            <div className="subsanacion-resp-badge"><IconoCie nombre="check" tamano={12} /> Subsanación Respondida y Reenviada a Revisión</div>
                             <div className="subsanacion-resp-date">
                               Fecha de reenvío: {subActiva?.fechaRespuestaInvestigador ? new Date(subActiva.fechaRespuestaInvestigador).toLocaleString('es-CR') : new Date().toLocaleString('es-CR')}
                             </div>
@@ -1246,7 +1247,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
             <div style={{ padding: '16px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0, fontSize: '16px', color: '#002855' }}>{documentoAbierto.titulo}</h3>
               <button type="button" onClick={() => setDocumentoAbierto(null)} aria-label="Cerrar visor" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>
-                ✕
+                <IconoCie nombre="close" tamano={18} />
               </button>
             </div>
             <div style={{ flex: 1, overflow: 'auto', background: '#f1f5f9' }}>

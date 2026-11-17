@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from '../components/LimitedInput';
+import IconoCie from '../components/cie/IconoCie';
 
 const obtenerIniciales = (nombre) => {
   if (!nombre) return 'TEC';
@@ -377,7 +378,7 @@ const InvestigadorEquipos = () => {
                             title="Editar miembro"
                             onClick={() => alert(`Editar rol o datos de ${m.nombre}`)}
                           >
-                            ✎
+                            <IconoCie nombre="edit" tamano={16} />
                           </button>
                           {!m.esLider && (
                             <button 
@@ -386,7 +387,7 @@ const InvestigadorEquipos = () => {
                               title="Remover del equipo"
                               onClick={() => handleEliminarMiembro(m.id)}
                             >
-                              🗑
+                              <IconoCie nombre="trash" tamano={16} />
                             </button>
                           )}
                         </td>
@@ -615,7 +616,7 @@ const InvestigadorEquipos = () => {
                   onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)'}
                   aria-label="Cerrar modal"
                 >
-                  ✕
+                  <IconoCie nombre="close" tamano={16} />
                 </button>
               </div>
 
@@ -636,7 +637,7 @@ const InvestigadorEquipos = () => {
                     color: '#0369a1',
                     lineHeight: '1.45'
                   }}>
-                    <span style={{ fontSize: '16px', flexShrink: 0 }}>ℹ️</span>
+                    <span style={{ fontSize: '16px', flexShrink: 0 }}><IconoCie nombre="info" tamano={16} /></span>
                     <div>
                       Seleccione a un investigador o funcionario docente activo del <strong>padrón institucional del TEC</strong> para incorporarlo formalmente a este equipo.
                     </div>
@@ -780,12 +781,12 @@ const InvestigadorEquipos = () => {
                             alignItems: 'center',
                             gap: '4px'
                           }}>
-                            ✓ Padrón Institucional TEC
+                            <IconoCie nombre="check" tamano={12} /> Padrón Institucional TEC
                           </span>
                         </div>
                         <div style={{ fontSize: '13px', color: '#475569', marginTop: '4px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                          <span>✉ {nuevoMiembro.correo}</span>
-                          <span>🏫 Instancia: {nuevoMiembro.escuela}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconoCie nombre="mail" tamano={14} /> {nuevoMiembro.correo}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><IconoCie nombre="building" tamano={14} /> Instancia: {nuevoMiembro.escuela}</span>
                         </div>
                       </div>
                     </div>
@@ -874,7 +875,7 @@ const InvestigadorEquipos = () => {
                       alignItems: 'center',
                       gap: '8px'
                     }}>
-                      <span>⚠️</span>
+                      <IconoCie nombre="alertTriangle" tamano={16} />
                       <span>{errorModalMiembro}</span>
                     </div>
                   )}
@@ -929,7 +930,7 @@ const InvestigadorEquipos = () => {
           <div className="crear-propuesta-modal-card" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
             <div className="crear-propuesta-modal-header">
               <div className="modal-header-title">+ Crear Nuevo Grupo de Investigación</div>
-              <button type="button" className="btn-modal-close" onClick={() => setModalNuevoGrupo(false)}>✕</button>
+              <button type="button" className="btn-modal-close" onClick={() => setModalNuevoGrupo(false)}><IconoCie nombre="close" tamano={16} /></button>
             </div>
             <form onSubmit={handleCrearGrupo} style={{ padding: '24px' }}>
               <div className="modal-form-group">

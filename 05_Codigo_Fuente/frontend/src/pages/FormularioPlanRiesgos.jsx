@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from '../components/LimitedInput';
 import { exportarForm05Excel } from '../utils/exportUtils';
+import IconoCie from '../components/cie/IconoCie';
 
 const obtenerIniciales = (nombre) => {
   if (!nombre) return 'TEC';
@@ -534,7 +535,7 @@ const FormularioPlanRiesgos = () => {
                     <td>{int.rol}</td>
                     <td style={{ textAlign: 'center' }}>
                       {i > 0 && (
-                        <button type="button" className="btn-icon-action btn-icon-delete" onClick={() => setIntegrantes(integrantes.filter(item => item.id !== int.id))} title="Remover participante">🗑</button>
+                        <button type="button" className="btn-icon-action btn-icon-delete" onClick={() => setIntegrantes(integrantes.filter(item => item.id !== int.id))} title="Remover participante"><IconoCie nombre="trash" tamano={14} /></button>
                       )}
                     </td>
                   </tr>
@@ -620,7 +621,7 @@ const FormularioPlanRiesgos = () => {
                       return (<td key={`${act.id}-a${a+1}-m${m+1}`} style={{ textAlign: 'center', padding: '1px' }}><input type="checkbox" checked={checked} aria-label={`Actividad ${i + 1}, Año ${a + 1}, Mes ${m + 1}`} onChange={() => handleTogglePeriodo(i, a + 1, m + 1)} style={{ cursor: 'pointer', width: '14px', height: '14px' }} /></td>);
                     }))}
                     <td style={{ textAlign: 'center' }}>
-                      <button type="button" className="btn-icon-action btn-icon-delete" onClick={() => handleEliminarActividad(act.id)} title="Eliminar fila" aria-label={`Eliminar fila de actividad ${i + 1}`}><span aria-hidden="true">✕</span><span className="sr-only">Eliminar fila</span></button>
+                      <button type="button" className="btn-icon-action btn-icon-delete" onClick={() => handleEliminarActividad(act.id)} title="Eliminar fila" aria-label={`Eliminar fila de actividad ${i + 1}`}><span aria-hidden="true"><IconoCie nombre="close" tamano={14} /></span><span className="sr-only">Eliminar fila</span></button>
                     </td>
                   </tr>
                 ))
@@ -632,13 +633,13 @@ const FormularioPlanRiesgos = () => {
         </div>
 
         <div className="vie-reminder-box">
-          <span className="reminder-icon">✔</span>
+          <span className="reminder-icon"><IconoCie nombre="check" tamano={14} /></span>
           <div className="reminder-text"><strong>Recordatorio VIE:</strong> Dentro de la programación de actividades se deben incluir obligatoriamente las giras de campo y los informes de avance. Además, deberá registrarse cualquier pasantía nacional o internacional que se requiera para el desarrollo del proyecto.</div>
         </div>
 
         <div className="form-footer-action-bar">
           <div className="footer-left">
-            <button type="button" className="btn-form-nav btn-outline" onClick={() => { const idProp = propuestaIdUrl || localStorage.getItem('propuesta_activa_id') || ''; exportarForm05Excel({ nombrePropuesta, tipoIniciativa, duracionMeses, integrantes, actividades }, idProp ? `Propuesta-${idProp}` : 'Form05'); }}>📥 Descargar Excel</button>
+            <button type="button" className="btn-form-nav btn-outline" onClick={() => { const idProp = propuestaIdUrl || localStorage.getItem('propuesta_activa_id') || ''; exportarForm05Excel({ nombrePropuesta, tipoIniciativa, duracionMeses, integrantes, actividades }, idProp ? `Propuesta-${idProp}` : 'Form05'); }}><IconoCie nombre="download" tamano={14} /> Descargar Excel</button>
           </div>
           <div className="footer-center">
             <button type="button" className="btn-form-nav btn-outline" onClick={handleGuardarBorrador} disabled={guardando}>Guardar Borrador</button>
@@ -666,12 +667,12 @@ const FormularioPlanRiesgos = () => {
                   </div>
                   <div><h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#ffffff' }}>+ Añadir Miembro al Equipo</h3><div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.85)', marginTop: '2px' }}>Se incorporará al equipo y estará disponible para asignar en actividades y riesgos</div></div>
                 </div>
-                <button type="button" onClick={() => { setMostrarModalNuevoIntegrante(false); setErrorModalIntegrante(''); }} style={{ background: 'rgba(255, 255, 255, 0.12)', border: 'none', color: '#ffffff', width: '30px', height: '30px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '15px', lineHeight: 1 }} aria-label="Cerrar modal">✕</button>
+                <button type="button" onClick={() => { setMostrarModalNuevoIntegrante(false); setErrorModalIntegrante(''); }} style={{ background: 'rgba(255, 255, 255, 0.12)', border: 'none', color: '#ffffff', width: '30px', height: '30px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '15px', lineHeight: 1 }} aria-label="Cerrar modal"><IconoCie nombre="close" tamano={14} /></button>
               </div>
 
               <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', padding: '0 24px' }}>
-                <button type="button" onClick={() => { setTipoMiembroModal('tec'); setErrorModalIntegrante(''); }} style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, border: 'none', borderBottom: tipoMiembroModal === 'tec' ? '2.5px solid #002855' : '2.5px solid transparent', color: tipoMiembroModal === 'tec' ? '#002855' : '#64748b', background: 'transparent', cursor: 'pointer' }}>🏫 Investigador TEC (Base de Datos)</button>
-                <button type="button" onClick={() => { setTipoMiembroModal('externo'); setErrorModalIntegrante(''); }} style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, border: 'none', borderBottom: tipoMiembroModal === 'externo' ? '2.5px solid #002855' : '2.5px solid transparent', color: tipoMiembroModal === 'externo' ? '#002855' : '#64748b', background: 'transparent', cursor: 'pointer' }}>🌐 Colaborador Externo</button>
+                <button type="button" onClick={() => { setTipoMiembroModal('tec'); setErrorModalIntegrante(''); }} style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, border: 'none', borderBottom: tipoMiembroModal === 'tec' ? '2.5px solid #002855' : '2.5px solid transparent', color: tipoMiembroModal === 'tec' ? '#002855' : '#64748b', background: 'transparent', cursor: 'pointer' }}><IconoCie nombre="escuela" tamano={14} /> Investigador TEC (Base de Datos)</button>
+                <button type="button" onClick={() => { setTipoMiembroModal('externo'); setErrorModalIntegrante(''); }} style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, border: 'none', borderBottom: tipoMiembroModal === 'externo' ? '2.5px solid #002855' : '2.5px solid transparent', color: tipoMiembroModal === 'externo' ? '#002855' : '#64748b', background: 'transparent', cursor: 'pointer' }}><IconoCie nombre="link" tamano={14} /> Colaborador Externo</button>
               </div>
 
               <form onSubmit={handleAgregarIntegrante} style={{ margin: 0 }}>
@@ -685,7 +686,7 @@ const FormularioPlanRiesgos = () => {
                         </div>
                         <div style={{ position: 'relative', marginBottom: '8px' }}>
                           <input type="text" placeholder="Filtrar por nombre, correo o escuela..." value={filtroBusquedaInvestigador} onChange={(e) => setFiltroBusquedaInvestigador(e.target.value)} style={{ width: '100%', padding: '8px 12px 8px 30px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none', background: '#f8fafc', boxSizing: 'border-box' }} />
-                          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '12px' }}>🔍</span>
+                          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '12px' }}><IconoCie nombre="search" tamano={12} /></span>
                         </div>
                         <select className="modal-form-select" value={nuevoIntegrante.usuarioId || ''} required style={{ width: '100%', padding: '10px 12px', fontSize: '13px', border: '1.5px solid ' + (nuevoIntegrante.usuarioId ? '#0369a1' : '#cbd5e1'), borderRadius: '8px', background: '#ffffff', color: '#0f172a', cursor: 'pointer', outline: 'none', boxSizing: 'border-box' }} onChange={(e) => {
                           setErrorModalIntegrante('');
@@ -701,7 +702,7 @@ const FormularioPlanRiesgos = () => {
                       {nuevoIntegrante.usuarioId && nuevoIntegrante.nombre && (
                         <div style={{ padding: '12px 14px', backgroundColor: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#002855', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '15px', flexShrink: 0 }}>{nuevoIntegrante.iniciales || 'TEC'}</div>
-                          <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>{nuevoIntegrante.nombre}</div><div style={{ fontSize: '12px', color: '#166534', marginTop: '2px' }}>✓ Funcionario Verificado TEC — Instancia: {nuevoIntegrante.escuela}</div></div>
+                          <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>{nuevoIntegrante.nombre}</div><div style={{ fontSize: '12px', color: '#166534', marginTop: '2px' }}><IconoCie nombre="check" tamano={12} /> Funcionario Verificado TEC — Instancia: {nuevoIntegrante.escuela}</div></div>
                         </div>
                       )}
                     </>
@@ -736,13 +737,13 @@ const FormularioPlanRiesgos = () => {
                   </div>
 
                   {errorModalIntegrante && (
-                    <div style={{ padding: '10px 14px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#b91c1c', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}><span>⚠️</span><span>{errorModalIntegrante}</span></div>
+                    <div style={{ padding: '10px 14px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#b91c1c', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}><IconoCie nombre="alertTriangle" tamano={14} /><span>{errorModalIntegrante}</span></div>
                   )}
                 </div>
 
                 <div style={{ padding: '16px 24px', backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                   <button type="button" className="btn-proposal-action btn-outline" onClick={() => { setMostrarModalNuevoIntegrante(false); setErrorModalIntegrante(''); }} style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '6px' }}>Cancelar</button>
-                  <button type="submit" className="btn-nueva-propuesta" style={{ padding: '8px 20px', fontSize: '13px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span>✓</span>Guardar Integrante</button>
+                  <button type="submit" className="btn-nueva-propuesta" style={{ padding: '8px 20px', fontSize: '13px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconoCie nombre="check" tamano={14} />Guardar Integrante</button>
                 </div>
               </form>
             </div>
