@@ -44,38 +44,86 @@ def listar_usuarios(
     escuela_id: int | None = None,
     rol_id: int | None = None,
     incluir_inactivos: bool = False,
-    activo: bool | None = None, 
+    activo: bool | None = None,
 ):
+    from sqlalchemy import func
+
+    # Cargamos las relaciones 'roles' y 'escuela' para evitar consultas N+1
     query = sesion.query(Usuario).options(
         selectinload(Usuario.roles).selectinload(UsuarioRol.rol),
         selectinload(Usuario.escuela)
     )
     
+    # Filtro de búsqueda por nombre o correo
     if busqueda:
         query = query.filter(
             (Usuario.nombreUsuario.ilike(f"%{busqueda}%")) |
+            (Usuario.apellido1Usuario.ilike(f"%{busqueda}%")) |
             (Usuario.correoInstitucional.ilike(f"%{busqueda}%"))
         )
+    
+    # Filtro por escuela
     if escuela_id is not None:
         query = query.filter(Usuario.escuelaId == escuela_id)
+    
+    # Filtro por rol (con JOIN EXPLÍCITO para evitar AmbiguousForeignKeysError)
     if rol_id is not None:
-        query = query.join(UsuarioRol).filter(UsuarioRol.rolId == rol_id, UsuarioRol.activo == True)
-        
+        query = query.join(
+            UsuarioRol, 
+            Usuario.usuarioId == UsuarioRol.usuarioId
+        ).filter(
+            UsuarioRol.rolId == rol_id, 
+            UsuarioRol.activo == True
+        )
+    
+    # Lógica de filtro de estado
     if activo is not None:
         query = query.filter(Usuario.activo == activo)
     elif not incluir_inactivos:
         query = query.filter(Usuario.activo == True)
+    
+    if rol_id is not None:
+        # Si hay join, contamos con una query separada sin eager loads
+        count_query = sesion.query(func.count(Usuario.usuarioId)).distinct()
         
-    total = query.count()
+        if busqueda:
+            count_query = count_query.filter(
+                (Usuario.nombreUsuario.ilike(f"%{busqueda}%")) |
+                (Usuario.apellido1Usuario.ilike(f"%{busqueda}%")) |
+                (Usuario.correoInstitucional.ilike(f"%{busqueda}%"))
+            )
+        if escuela_id is not None:
+            count_query = count_query.filter(Usuario.escuelaId == escuela_id)
+        if activo is not None:
+            count_query = count_query.filter(Usuario.activo == activo)
+        elif not incluir_inactivos:
+            count_query = count_query.filter(Usuario.activo == True)
+        
+        count_query = count_query.join(
+            UsuarioRol, 
+            Usuario.usuarioId == UsuarioRol.usuarioId
+        ).filter(
+            UsuarioRol.rolId == rol_id,
+            UsuarioRol.activo == True
+        )
+        
+        total = count_query.scalar() or 0
+    else:
+        # Sin join, el count normal funciona bien
+        total = query.count()
+    
+    # Aplicar paginación
     offset = (pagina - 1) * tamano_pagina
     items = query.offset(offset).limit(tamano_pagina).all()
     
-    return items, {
+    metadatos = {
         "total": total,
         "pagina": pagina,
         "tamanoPagina": tamano_pagina,
-        "totalPaginas": (total + tamano_pagina - 1) // tamano_pagina
+        "totalPaginas": (total + tamano_pagina - 1) // tamano_pagina if tamano_pagina > 0 else 0
     }
+    
+    return items, metadatos
 
 def obtener_usuario(sesion: Session, usuario_id: int) -> Usuario:
     return _usuario_o_404(sesion, usuario_id)
