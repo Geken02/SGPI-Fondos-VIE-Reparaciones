@@ -5,6 +5,68 @@ import { useModal } from '../context/ModalContext';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedInput, LimitedTextarea } from '../components/LimitedInput';
 import { descargarPropuestaPDF, descargarPlanRiesgoExcel, descargarPresupuestoDirectoExcel } from '../utils/exportUtils';
+import UniversalViewer from '../components/UniversalViewer';
+
+const documentoMasReciente = (documentos, coincide) => {
+  const encontrados = (documentos || []).filter(coincide);
+  if (encontrados.length === 0) return null;
+  return encontrados.reduce((actual, siguiente) => (
+    (siguiente.documentoId || 0) > (actual.documentoId || 0) ? siguiente : actual
+  ));
+};
+
+const textoDocumento = (doc) => `${doc?.nombreArchivo || ''} ${doc?.nombreTipo || ''}`
+  .toLowerCase()
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '');
+
+const esDictamenVinculacion = (doc) => (
+  Number(doc.tipoDocumentoId) === 5
+  || textoDocumento(doc).includes('dictamen_vinculacion')
+  || /dictamen[_\s-]*vincul/.test(textoDocumento(doc))
+);
+
+const esRubricaExplicita = (doc) => (
+  Number(doc.tipoDocumentoId) === 16 || /rubrica/.test(textoDocumento(doc))
+);
+
+const esDocumentoComite = (doc) => (
+  Number(doc.tipoDocumentoId) === 6
+  || textoDocumento(doc).includes('dictamen_comite')
+  || textoDocumento(doc).includes('oficio_comite')
+);
+
+const esAcuerdoConsejo = (doc) => (
+  Number(doc.tipoDocumentoId) === 8
+  || textoDocumento(doc).includes('acuerdo_consejo')
+  || /acuerdo[_\s-]*consejo/.test(textoDocumento(doc))
+);
+
+const clasificarDocumentosInstitucionales = (documentos) => {
+  const usados = new Set();
+  const tomar = (coincide) => {
+    const documento = documentoMasReciente(
+      documentos,
+      (doc) => !usados.has(doc.documentoId) && coincide(doc)
+    );
+    if (documento?.documentoId != null) usados.add(documento.documentoId);
+    return documento;
+  };
+
+  return {
+    dictamen: tomar(esDictamenVinculacion),
+    rubrica: tomar(esRubricaExplicita) || tomar(esDocumentoComite),
+    acuerdo: tomar(esAcuerdoConsejo)
+  };
+};
+
+const tipoArchivoDocumento = (doc) => {
+  const texto = `${doc?.nombreArchivo || ''} ${doc?.urlDescarga || ''}`.toLowerCase();
+  if (texto.includes('.pdf')) return 'pdf';
+  if (texto.includes('.docx') || texto.includes('.doc')) return 'docx';
+  if (texto.includes('.xlsx') || texto.includes('.xls') || texto.includes('.csv')) return 'excel';
+  return 'otro';
+};
 
 const InvestigadorPropuestas = () => {
   const navigate = useNavigate();
@@ -149,12 +211,20 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
   const [respuestasSubsanacion, setRespuestasSubsanacion] = useState({});
   const [archivosSubsanacion, setArchivosSubsanacion] = useState({});
   const [reenviando, setReenviando] = useState({});
+  const [documentosPorPropuesta, setDocumentosPorPropuesta] = useState({});
+  const [documentoAbierto, setDocumentoAbierto] = useState(null);
 
   const cargarPropuestas = async () => {
     try {
       setCargando(true);
       const data = await propuestaService.listarMisPropuestas();
       setPropuestas(data || []);
+      const documentos = {};
+      await Promise.all((data || []).map(async (propuesta) => {
+        if (!propuesta.propuestaId) return;
+        documentos[propuesta.propuestaId] = await propuestaService.listarDocumentosPropuesta(propuesta.propuestaId);
+      }));
+      setDocumentosPorPropuesta(documentos);
       // Abrir por defecto la propuesta seleccionada por URL o la primera si existe
       if (data && data.length > 0) {
         const idParaAbrir = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
@@ -171,6 +241,7 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
       }
     } catch (_err) {
       setPropuestas([]);
+      setDocumentosPorPropuesta({});
     } finally {
       setCargando(false);
     }
@@ -316,6 +387,39 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
   const nombreInvestigador = usuario?.nombre 
     ? `${usuario.nombre} ${usuario.apellido1 || ''}`.trim() 
     : 'Lic. William Fallas';
+
+  const abrirDocumentoInstitucional = (documento, titulo) => {
+    if (!documento?.urlDescarga) {
+      alert('Este documento no tiene un archivo asociado.');
+      return;
+    }
+    setDocumentoAbierto({
+      url: documento.urlDescarga,
+      titulo: titulo || documento.nombreArchivo || 'Documento',
+      tipo: tipoArchivoDocumento(documento)
+    });
+  };
+
+  const accionDocumentoInstitucional = (documento, titulo) => (
+    documento ? (
+      <button
+        type="button"
+        className="btn-ver-dictamen"
+        onClick={() => abrirDocumentoInstitucional(documento, titulo)}
+      >
+        Ver detalles
+      </button>
+    ) : (
+      <button
+        type="button"
+        className="btn-ver-dictamen"
+        disabled
+        style={{ opacity: 0.65, cursor: 'not-allowed' }}
+      >
+        Pendiente de Envío
+      </button>
+    )
+  );
 
   return (
     <div className="investigador-dashboard-container">
@@ -655,10 +759,10 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                           gap: '12px'
                         }}>
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: '15px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ fontWeight: 700, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <span>🚀</span> Enviar Propuesta a la Unidad de Vinculación
                             </div>
-                            <div style={{ fontSize: '13px', color: '#15803d', marginTop: '3px' }}>
+                            <div style={{ fontSize: '13px', marginTop: '3px' }}>
                               Al presionar este botón, la propuesta cambiará formalmente de <strong>Borrador</strong> a <strong>Enviada a Vinculación</strong> para que el Centro de Vinculación inicie el proceso de evaluación y dictamen.
                             </div>
                           </div>
@@ -1042,83 +1146,49 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                           3. RÚBRICAS, EVALUACIONES Y DICTÁMENES INSTITUCIONALES
                         </div>
                         <div className="evaluaciones-institucionales-list">
-                          {/* Unidad de Vinculación */}
-                          <div className="evaluacion-card">
-                            <div className="eval-card-header">
-                              <div className="eval-entity-info">
-                                <span className="entity-name">Unidad de Vinculación</span>
-                                <span className="entity-instrument">Instrumento: Dictamen TEC / PI</span>
+                          {(() => {
+                            const documentosPropuesta = documentosPorPropuesta[prop.propuestaId] || [];
+                            const institucionales = clasificarDocumentosInstitucionales(documentosPropuesta);
+                            const instrumentos = [
+                              {
+                                nombre: 'Unidad de Vinculación',
+                                instrumento: 'Instrumento: Dictamen TEC / PI',
+                                titulo: 'Dictamen de Vinculación',
+                                documento: institucionales.dictamen
+                              },
+                              {
+                                nombre: 'Comité Técnico Escuela',
+                                instrumento: 'Instrumento: Rúbrica V2',
+                                titulo: 'Rúbrica del Comité Técnico',
+                                documento: institucionales.rubrica
+                              },
+                              {
+                                nombre: 'Consejo de Escuela',
+                                instrumento: 'Instrumento: Acuerdo y Aval Acta',
+                                titulo: 'Acuerdo del Consejo de Escuela',
+                                documento: institucionales.acuerdo
+                              }
+                            ];
+                            return instrumentos.map((item) => (
+                              <div className="evaluacion-card" key={item.titulo}>
+                                <div className="eval-card-header">
+                                  <div className="eval-entity-info">
+                                    <span className="entity-name">{item.nombre}</span>
+                                    <span className="entity-instrument">{item.instrumento}</span>
+                                  </div>
+                                  <div className="eval-status-group">
+                                    <span className={`eval-badge ${item.documento ? 'badge-aprobado' : 'badge-proximo'}`}>
+                                      {item.documento ? 'Disponible' : 'Próximo'}
+                                    </span>
+                                    {accionDocumentoInstitucional(item.documento, item.titulo)}
+                                  </div>
+                                </div>
+                                <div className="eval-card-obs">
+                                  <strong>Observación:</strong> {item.documento?.nombreArchivo || '---'}
+                                </div>
                               </div>
-                              <div className="eval-status-group">
-                                <span className="eval-badge badge-proximo">
-                                  Próximo
-                                </span>
-                                <button 
-                                  type="button" 
-                                  className="btn-ver-dictamen"
-                                  disabled
-                                  style={{ opacity: 0.65, cursor: 'not-allowed' }}
-                                >
-                                  Pendiente de Envío
-                                </button>
-                              </div>
-                            </div>
-                            <div className="eval-card-obs">
-                              <strong>Observación:</strong> ---
-                            </div>
-                          </div>
-
-                          {/* Comité Técnico Escuela */}
-                          <div className="evaluacion-card">
-                            <div className="eval-card-header">
-                              <div className="eval-entity-info">
-                                <span className="entity-name">Comité Técnico Escuela</span>
-                                <span className="entity-instrument">Instrumento: Rúbrica V2</span>
-                              </div>
-                              <div className="eval-status-group">
-                                <span className="eval-badge badge-proximo">
-                                  Próximo
-                                </span>
-                                <button 
-                                  type="button" 
-                                  className="btn-ver-dictamen"
-                                  disabled
-                                  style={{ opacity: 0.65, cursor: 'not-allowed' }}
-                                >
-                                  Pendiente de Envío
-                                </button>
-                              </div>
-                            </div>
-                            <div className="eval-card-obs">
-                              <strong>Observación:</strong> ---
-                            </div>
-                          </div>
-
-                          {/* Consejo de Escuela */}
-                          <div className="evaluacion-card">
-                            <div className="eval-card-header">
-                              <div className="eval-entity-info">
-                                <span className="entity-name">Consejo de Escuela</span>
-                                <span className="entity-instrument">Instrumento: Acuerdo y Aval Acta</span>
-                              </div>
-                              <div className="eval-status-group">
-                                <span className="eval-badge badge-proximo">
-                                  Próximo
-                                </span>
-                                <button 
-                                  type="button" 
-                                  className="btn-ver-dictamen"
-                                  disabled
-                                  style={{ opacity: 0.65, cursor: 'not-allowed' }}
-                                >
-                                  Pendiente de Envío
-                                </button>
-                              </div>
-                            </div>
-                            <div className="eval-card-obs">
-                              <strong>Observación:</strong> ---
-                            </div>
-                          </div>
+                            ));
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -1159,6 +1229,32 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
       <footer className="tec-page-footer">
         Vicerrectoría de Investigación y Extensión — Tecnológico de Costa Rica (TEC)
       </footer>
+
+      {documentoAbierto && (
+        <div
+          className="modal-overlay"
+          onClick={() => setDocumentoAbierto(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Visor de documento: ${documentoAbierto.titulo}`}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: 'white', width: '95%', maxWidth: '1000px', height: '90vh', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+          >
+            <div style={{ padding: '16px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', color: '#002855' }}>{documentoAbierto.titulo}</h3>
+              <button type="button" onClick={() => setDocumentoAbierto(null)} aria-label="Cerrar visor" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>
+                ✕
+              </button>
+            </div>
+            <div style={{ flex: 1, overflow: 'auto', background: '#f1f5f9' }}>
+              <UniversalViewer url={documentoAbierto.url} tipoArchivo={documentoAbierto.tipo} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

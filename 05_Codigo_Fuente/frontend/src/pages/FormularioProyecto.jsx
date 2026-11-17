@@ -62,6 +62,10 @@ const FormularioProyecto = () => {
   const [investigadoresDisponibles, setInvestigadoresDisponibles] = useState([]);
   const [rolesEquipoDisponibles, setRolesEquipoDisponibles] = useState([]);
   const [colaboradoresExternos, setColaboradoresExternos] = useState([]);
+  // Cartas de compromiso por colaborador externo: { [colId]: { nombre, tamano, subiendo, subido, error } }
+  const [cartasCompromiso, setCartasCompromiso] = useState({});
+  const cartaInputRefs = useRef({});
+  const TIPO_DOCUMENTO_CARTA_COMPROMISO = 4;
 
   // Paso 8: Problema de Investigación
   const [problemaInvestigacion, setProblemaInvestigacion] = useState('');
@@ -307,6 +311,9 @@ const FormularioProyecto = () => {
           }
           if (l.colaboradoresExternos && Array.isArray(l.colaboradoresExternos)) {
             setColaboradoresExternos(l.colaboradoresExternos);
+          }
+          if (l.cartasCompromiso && typeof l.cartasCompromiso === 'object') {
+            setCartasCompromiso(l.cartasCompromiso);
           }
           let actsCargadas = null;
           if (l.actividadesCronograma && Array.isArray(l.actividadesCronograma) && l.actividadesCronograma.length > 0) {
@@ -686,6 +693,7 @@ const guardarBorradorActual = async () => {
     actividadesCronograma, riesgosMitigacion,
     rangoHorasCompromiso, firmaCoordinador,
     productos14a, productos14b,
+    cartasCompromiso,
     fechaGuardado: new Date().toISOString()
   };
 
@@ -1977,70 +1985,163 @@ const guardarBorradorActual = async () => {
                         <th>Nombre completo del colaborador externo</th>
                         <th>ID ORCID *</th>
                         <th>Institución o empresa que representa</th>
+                        <th style={{ width: '160px', textAlign: 'center'}}>Carta de Compromiso</th>
                         <th style={{ width: '48px', textAlign: 'center' }}>Acción</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {colaboradoresExternos.map((col, idx) => (
-                        <tr key={col.id || idx}>
-                          <td>
-                            <LimitedInput 
-                              type="text" 
-                              className="form-table-input"
-                              value={col.nombre}
-                              maxLength={100}
-                              showCounter={false}
-                              onChange={(e) => {
-                                const copia = [...colaboradoresExternos];
-                                copia[idx].nombre = e.target.value;
-                                setColaboradoresExternos(copia);
-                              }}
-                            />
-                          </td>
-                          <td>
-                            <LimitedInput 
-                              type="text" 
-                              className="form-table-input"
-                              value={col.orcid}
-                              maxLength={20}
-                              showCounter={false}
-                              placeholder="0000-0000-0000-0000"
-                              onChange={(e) => {
-                                const copia = [...colaboradoresExternos];
-                                copia[idx].orcid = e.target.value;
-                                setColaboradoresExternos(copia);
-                              }}
-                            />
-                          </td>
-                          <td>
-                            <LimitedInput 
-                              type="text" 
-                              className="form-table-input"
-                              value={col.institucion}
-                              maxLength={100}
-                              showCounter={false}
-                              onChange={(e) => {
-                                const copia = [...colaboradoresExternos];
-                                copia[idx].institucion = e.target.value;
-                                setColaboradoresExternos(copia);
-                              }}
-                            />
-                          </td>
-                          <td style={{ textAlign: 'center' }}>
-                            <button 
-                              type="button" 
-                              className="btn-remove-table-row"
-                              title="Eliminar colaborador externo"
-                              onClick={() => {
-                                if (!confirm('¿Está seguro de que desea eliminar a este colaborador externo?')) return;
-                                setColaboradoresExternos(colaboradoresExternos.filter((_, i) => i !== idx));
-                              }}
-                            >
-                              ✕
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {colaboradoresExternos.map((col, idx) => {
+                        const colKey = col.id || idx;
+                        const cartaInfo = cartasCompromiso[colKey];
+                        return (
+                          <tr key={colKey}>
+                            <td>
+                              <LimitedInput 
+                                type="text" 
+                                className="form-table-input"
+                                value={col.nombre}
+                                maxLength={100}
+                                showCounter={false}
+                                onChange={(e) => {
+                                  const copia = [...colaboradoresExternos];
+                                  copia[idx].nombre = e.target.value;
+                                  setColaboradoresExternos(copia);
+                                }}
+                              />
+                            </td>
+                            <td>
+                              <LimitedInput 
+                                type="text" 
+                                className="form-table-input"
+                                value={col.orcid}
+                                maxLength={20}
+                                showCounter={false}
+                                placeholder="0000-0000-0000-0000"
+                                onChange={(e) => {
+                                  const copia = [...colaboradoresExternos];
+                                  copia[idx].orcid = e.target.value;
+                                  setColaboradoresExternos(copia);
+                                }}
+                              />
+                            </td>
+                            <td>
+                              <LimitedInput 
+                                type="text" 
+                                className="form-table-input"
+                                value={col.institucion}
+                                maxLength={100}
+                                showCounter={false}
+                                onChange={(e) => {
+                                  const copia = [...colaboradoresExternos];
+                                  copia[idx].institucion = e.target.value;
+                                  setColaboradoresExternos(copia);
+                                }}
+                              />
+                            </td>
+                            <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                              {/* Input de archivo oculto por colaborador */}
+                              <input
+                                type="file"
+                                accept=".pdf,.doc,.docx"
+                                style={{ display: 'none' }}
+                                ref={(el) => { cartaInputRefs.current[colKey] = el; }}
+                                onChange={async (e) => {
+                                  const archivo = e.target.files && e.target.files[0];
+                                  if (!archivo) return;
+                                  // Marcar como subiendo
+                                  setCartasCompromiso(prev => ({
+                                    ...prev,
+                                    [colKey]: { nombre: archivo.name, tamano: `${(archivo.size / 1024 / 1024).toFixed(1)} MB`, subiendo: true, subido: false, error: null }
+                                  }));
+                                  // Verificar que haya propuesta guardada
+                                  const idPropuesta = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
+                                  if (!idPropuesta || idPropuesta === 'undefined') {
+                                    setCartasCompromiso(prev => ({
+                                      ...prev,
+                                      [colKey]: { ...prev[colKey], subiendo: false, error: 'Guarda la propuesta antes de subir documentos.' }
+                                    }));
+                                    return;
+                                  }
+                                  try {
+                                    await propuestaService.subirDocumentoFormulario(
+                                      idPropuesta,
+                                      TIPO_DOCUMENTO_CARTA_COMPROMISO,
+                                      archivo
+                                    );
+                                    setCartasCompromiso(prev => ({
+                                      ...prev,
+                                      [colKey]: { nombre: archivo.name, tamano: `${(archivo.size / 1024 / 1024).toFixed(1)} MB`, subiendo: false, subido: true, error: null }
+                                    }));
+                                  } catch (err) {
+                                    setCartasCompromiso(prev => ({
+                                      ...prev,
+                                      [colKey]: { ...prev[colKey], subiendo: false, subido: false, error: err.message || 'Error al subir' }
+                                    }));
+                                  }
+                                  // Limpiar input para permitir re-subida del mismo archivo
+                                  if (cartaInputRefs.current[colKey]) cartaInputRefs.current[colKey].value = '';
+                                }}
+                              />
+                              {cartaInfo && cartaInfo.subido ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                                  <span style={{ fontSize: '18px' }}>✅</span>
+                                  <span style={{ fontSize: '11px', color: '#166534', fontWeight: 600, maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={cartaInfo.nombre}>
+                                    {cartaInfo.nombre}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    className="btn-carta-compromiso subido"
+                                    onClick={() => cartaInputRefs.current[colKey] && cartaInputRefs.current[colKey].click()}
+                                  >
+                                    Reemplazar
+                                  </button>
+                                </div>
+                              ) : cartaInfo && cartaInfo.subiendo ? (
+                                <span style={{ fontSize: '12px', color: '#1e4080' }}>Subiendo…</span>
+                              ) : cartaInfo && cartaInfo.error ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                                  <span style={{ fontSize: '11px', color: '#dc2626' }} title={cartaInfo.error}>⚠️ Error</span>
+                                  <button
+                                    type="button"
+                                    className="btn-carta-compromiso error"
+                                    onClick={() => cartaInputRefs.current[colKey] && cartaInputRefs.current[colKey].click()}
+                                  >
+                                    Reintentar
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="btn-carta-compromiso"
+                                  title="Subir carta de compromiso de este colaborador (PDF, DOC, DOCX)"
+                                  onClick={() => cartaInputRefs.current[colKey] && cartaInputRefs.current[colKey].click()}
+                                >
+                                  📎 Subir carta
+                                </button>
+                              )}
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <button 
+                                type="button" 
+                                className="btn-remove-table-row"
+                                title="Eliminar colaborador externo"
+                                onClick={() => {
+                                  if (!confirm('¿Está seguro de que desea eliminar a este colaborador externo?')) return;
+                                  setColaboradoresExternos(colaboradoresExternos.filter((_, i) => i !== idx));
+                                  // Limpiar carta asociada
+                                  setCartasCompromiso(prev => {
+                                    const copia = { ...prev };
+                                    delete copia[colKey];
+                                    return copia;
+                                  });
+                                }}
+                              >
+                                ✕
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -2051,6 +2152,11 @@ const guardarBorradorActual = async () => {
                 >
                   + Insertar fila en Colaboradores Externos
                 </button>
+                {colaboradoresExternos.length > 0 && (
+                  <p style={{ fontSize: '12px', color: '#475569', marginTop: '10px', marginBottom: '0' }}>
+                    <strong>📌 Nota:</strong> Cada colaborador externo debe adjuntar su Carta de Compromiso (PDF, DOC o DOCX). La carta se sube directamente a la propuesta al momento de seleccionar el archivo.
+                  </p>
+                )}
               </div>
             )}
 

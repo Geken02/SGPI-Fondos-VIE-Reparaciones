@@ -459,11 +459,13 @@ def obtener_documentos_propuesta(
     
     documentos_data = []
     for doc in documentos:
+        tipo_doc = db.query(TiposDocumento).filter(TiposDocumento.tipoDocumentoId == doc.tipoDocumentoId).first()
         documentos_data.append({
-            "documentoId": doc.documentoId, 
-            "tipoDocumentoId": doc.tipoDocumentoId, 
-            "nombreArchivo": doc.nombreArchivo or f"Documento_{doc.tipoDocumentoId}", 
-            "urlDescarga": obtener_url_documento(doc.rutaArchivo),
+            "documentoId": doc.documentoId,
+            "tipoDocumentoId": doc.tipoDocumentoId,
+            "nombreTipo": tipo_doc.nombreTipoDocumento if tipo_doc else "",
+            "nombreArchivo": doc.nombreArchivo or f"Documento_{doc.tipoDocumentoId}",
+            "urlDescarga": obtener_url_documento(doc.rutaArchivo) if doc.rutaArchivo else None,
             "urlVerEnLinea": f"{API_BASE_URL}/documentos/{doc.documentoId}/ver"
         })
     

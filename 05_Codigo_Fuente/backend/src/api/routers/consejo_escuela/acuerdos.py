@@ -23,6 +23,7 @@ from src.utils.s3_client import s3_client, S3_BUCKET_NAME, obtener_url_documento
 import hashlib
 from src.utils.dependencias import obtener_usuario_actual
 
+
 router = APIRouter(
     prefix="/consejo-escuela/acuerdos",
     tags=["Consejo de Escuela - Acuerdos"],
@@ -289,4 +290,7 @@ def actualizar_acuerdo(
             if str(error) == "El acuerdo indicado no existe."
             else status.HTTP_400_BAD_REQUEST
         )
-        raise HTTPException(status_code=codigo, detail=str(error)) from error
+        raise HTTPException(
+            status_code=codigo,
+            detail=str(error),
+        ) from error
