@@ -759,10 +759,10 @@ const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codi
                           gap: '12px'
                         }}>
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: '15px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ fontWeight: 700, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <span>🚀</span> Enviar Propuesta a la Unidad de Vinculación
                             </div>
-                            <div style={{ fontSize: '13px', color: '#15803d', marginTop: '3px' }}>
+                            <div style={{ fontSize: '13px', marginTop: '3px' }}>
                               Al presionar este botón, la propuesta cambiará formalmente de <strong>Borrador</strong> a <strong>Enviada a Vinculación</strong> para que el Centro de Vinculación inicie el proceso de evaluación y dictamen.
                             </div>
                           </div>

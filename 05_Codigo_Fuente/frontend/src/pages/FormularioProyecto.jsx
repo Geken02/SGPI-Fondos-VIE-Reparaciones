@@ -312,6 +312,9 @@ const FormularioProyecto = () => {
           if (l.colaboradoresExternos && Array.isArray(l.colaboradoresExternos)) {
             setColaboradoresExternos(l.colaboradoresExternos);
           }
+          if (l.cartasCompromiso && typeof l.cartasCompromiso === 'object') {
+            setCartasCompromiso(l.cartasCompromiso);
+          }
           let actsCargadas = null;
           if (l.actividadesCronograma && Array.isArray(l.actividadesCronograma) && l.actividadesCronograma.length > 0) {
             actsCargadas = l.actividadesCronograma;
@@ -690,6 +693,7 @@ const guardarBorradorActual = async () => {
     actividadesCronograma, riesgosMitigacion,
     rangoHorasCompromiso, firmaCoordinador,
     productos14a, productos14b,
+    cartasCompromiso,
     fechaGuardado: new Date().toISOString()
   };
 
@@ -1981,7 +1985,7 @@ const guardarBorradorActual = async () => {
                         <th>Nombre completo del colaborador externo</th>
                         <th>ID ORCID *</th>
                         <th>Institución o empresa que representa</th>
-                        <th style={{ width: '160px', textAlign: 'center', backgroundColor: '#1e4080', color: '#ffffff' }}>Carta de Compromiso</th>
+                        <th style={{ width: '160px', textAlign: 'center'}}>Carta de Compromiso</th>
                         <th style={{ width: '48px', textAlign: 'center' }}>Acción</th>
                       </tr>
                     </thead>
@@ -2034,7 +2038,7 @@ const guardarBorradorActual = async () => {
                                 }}
                               />
                             </td>
-                            <td style={{ textAlign: 'center', backgroundColor: '#eef2ff', verticalAlign: 'middle' }}>
+                            <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
                               {/* Input de archivo oculto por colaborador */}
                               <input
                                 type="file"
@@ -2086,8 +2090,7 @@ const guardarBorradorActual = async () => {
                                   </span>
                                   <button
                                     type="button"
-                                    className="btn-table-action"
-                                    style={{ fontSize: '11px', padding: '2px 8px' }}
+                                    className="btn-carta-compromiso subido"
                                     onClick={() => cartaInputRefs.current[colKey] && cartaInputRefs.current[colKey].click()}
                                   >
                                     Reemplazar
@@ -2100,8 +2103,7 @@ const guardarBorradorActual = async () => {
                                   <span style={{ fontSize: '11px', color: '#dc2626' }} title={cartaInfo.error}>⚠️ Error</span>
                                   <button
                                     type="button"
-                                    className="btn-table-action btn-table-action-primary"
-                                    style={{ fontSize: '11px', padding: '3px 10px' }}
+                                    className="btn-carta-compromiso error"
                                     onClick={() => cartaInputRefs.current[colKey] && cartaInputRefs.current[colKey].click()}
                                   >
                                     Reintentar
@@ -2110,8 +2112,7 @@ const guardarBorradorActual = async () => {
                               ) : (
                                 <button
                                   type="button"
-                                  className="btn-table-action btn-table-action-primary"
-                                  style={{ fontSize: '12px', padding: '5px 12px', whiteSpace: 'nowrap' }}
+                                  className="btn-carta-compromiso"
                                   title="Subir carta de compromiso de este colaborador (PDF, DOC, DOCX)"
                                   onClick={() => cartaInputRefs.current[colKey] && cartaInputRefs.current[colKey].click()}
                                 >
