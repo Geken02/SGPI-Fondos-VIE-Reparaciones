@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from src.api.schemas.vie.validacion import DocumentoExpediente, EncabezadoExpediente
 
-EstadoRequisitoRevision = Literal["CUMPLE", "NO_CUMPLE", "EN_REVISION", "NO_APLICA"]
+EstadoRequisitoRevision = Literal["CUMPLE", "NO_CUMPLE", "EN_REVISION", "PENDIENTE", "NO_APLICA"]
 
 
 class RequisitoRevision(BaseModel):

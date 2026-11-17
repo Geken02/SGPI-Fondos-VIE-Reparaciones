@@ -158,27 +158,35 @@ export default function UserForm({ usuario, roles, escuelas, onSubmit, onCancel,
     }
   };
 
-    const handleAsignarRol = async () => {
-    if (!nuevoRolId) {
-      setMensajeRol({ texto: 'Seleccione un rol para asignar', tipo: 'error' });
-      return;
-    }
+const handleAsignarRol = async () => {
+  if (!nuevoRolId) {
+    setMensajeRol({ texto: 'Seleccione un rol para asignar', tipo: 'error' });
+    return;
+  }
 
-    setGestionandoRol('asignar');
-    setMensajeRol({ texto: '', tipo: '' });
+  setGestionandoRol('asignar');
+  setMensajeRol({ texto: '', tipo: '' });
 
-    try {
-      const nuevoRol = await adminService.asignarRol(usuario.usuarioId, { rolId: parseInt(nuevoRolId) });
-      setRolesAsignados(prev => [...prev, nuevoRol]);
-      setNuevoRolId('');
-      setMensajeRol({ texto: 'Rol asignado exitosamente.', tipo: 'exito' });
-    } catch (err) {
-      const errorMsg = err.response?.data?.detail || 'Error al asignar el rol';
-      setMensajeRol({ texto: errorMsg, tipo: 'error' });
-    } finally {
-      setGestionandoRol(null);
-    }
-  };
+  try {
+    const nuevoRol = await adminService.asignarRol(usuario.usuarioId, { rolId: parseInt(nuevoRolId) });
+    
+
+    const rolInfo = roles.find(r => r.rolId === parseInt(nuevoRolId));
+    const nuevoRolCompleto = {
+      ...nuevoRol,
+      nombreRol: nuevoRol.nombreRol || rolInfo?.nombreRol || 'Rol asignado'
+    };
+    
+    setRolesAsignados(prev => [...prev, nuevoRolCompleto]);
+    setNuevoRolId('');
+    setMensajeRol({ texto: `Rol "${nuevoRolCompleto.nombreRol}" asignado exitosamente.`, tipo: 'exito' });
+  } catch (err) {
+    const errorMsg = err.response?.data?.detail || 'Error al asignar el rol';
+    setMensajeRol({ texto: errorMsg, tipo: 'error' });
+  } finally {
+    setGestionandoRol(null);
+  }
+};
 
   return (
     <form onSubmit={handleSubmit}>

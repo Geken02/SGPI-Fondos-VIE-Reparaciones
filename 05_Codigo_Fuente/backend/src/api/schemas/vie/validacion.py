@@ -37,12 +37,15 @@ class EncabezadoExpediente(BaseModel):
     investigador: str
     escuela: str
     estado: str  # estado de gestión (mismo criterio que la bandeja)
+    estadoCodigo: str  # estado real del flujo institucional
+    consejoAprobado: bool = False
+    colaboradoresExternos: bool = False
     estadoDetalle: str
     convocatoria: str
     tipo: str | None = None  # modalidad de la propuesta
     fechaIngreso: date | None = None  # fecha de envío a la VIE
     fechaLimite: date | None = None  # fin de la etapa actual de la convocatoria
-    pasoActual: int  # 1 a 4, paso del proceso en que se encuentra
+    pasoActual: int  # 1 a 3, paso del proceso en que se encuentra
 
 
 class EvaluacionSubsanacion(BaseModel):
