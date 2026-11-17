@@ -7168,6 +7168,69 @@ body.high-contrast-mode .btn-selector-pill.active {
   border: 2px solid #FFFFFF !important;
 }
 
+/* Botón de subida de Carta de Compromiso (Paso 7 - Colaboradores Externos) */
+.btn-carta-compromiso {
+  background-color: #0369A1;
+  color: #ffffff;
+  border: 1.5px solid transparent;
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-carta-compromiso:hover {
+  background-color: #0284c7;
+}
+.btn-carta-compromiso.subido {
+  background-color: #15803d;
+  color: #ffffff;
+}
+.btn-carta-compromiso.error {
+  background-color: #b91c1c;
+  color: #ffffff;
+}
+
+.high-contrast-mode .btn-carta-compromiso,
+body.high-contrast-mode .btn-carta-compromiso {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+.high-contrast-mode .btn-carta-compromiso:hover,
+body.high-contrast-mode .btn-carta-compromiso:hover {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+  border-color: #FFFF00 !important;
+}
+.high-contrast-mode .btn-carta-compromiso.subido,
+body.high-contrast-mode .btn-carta-compromiso.subido {
+  background: #FFFF00 !important;
+  background-color: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+.high-contrast-mode .btn-carta-compromiso.error,
+body.high-contrast-mode .btn-carta-compromiso.error {
+  background: #FF5555 !important;
+  background-color: #FF5555 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+/* Celda de Carta de Compromiso en tabla de colaboradores externos (Paso 7) */
+.high-contrast-mode .col-carta-compromiso,
+body.high-contrast-mode .col-carta-compromiso {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1px solid #FFFFFF !important;
+}
+
 /* Fila de Coordinador Read-Only (Paso 7) */
 .high-contrast-mode .form-table-input-readonly,
 body.high-contrast-mode .form-table-input-readonly {
