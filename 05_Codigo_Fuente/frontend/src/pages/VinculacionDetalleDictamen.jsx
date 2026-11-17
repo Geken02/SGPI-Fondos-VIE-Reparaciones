@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { vinculacionService } from '../services/vinculacionService';
 import { descargarPropuestaPDF } from '../utils/exportUtils';
 import { propuestaService } from '../services/propuestaService';
+import IconoCie from '../components/cie/IconoCie';
 
 const VinculacionDetalleDictamen = () => {
   const navigate = useNavigate();
@@ -145,7 +146,7 @@ const VinculacionDetalleDictamen = () => {
                 style={{ width: '100%', marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 onClick={() => descargarPropuestaPDF(propuestaId, propuestaService)}
               >
-                📥 Descargar Form-04 completo (PDF)
+                <IconoCie nombre="download" tamano={16} />Descargar Form-04 completo (PDF)
               </button>
             </div>
           </div>
@@ -157,7 +158,7 @@ const VinculacionDetalleDictamen = () => {
             <div className="dictamen-emitido-box">
               {/* Banner */}
               <div className="banner-dictamen-recomendado">
-                ✓ DICTAMEN DE VINCULACIÓN EMITIDO
+                <IconoCie nombre="checkCircle" tamano={16} />DICTAMEN DE VINCULACIÓN EMITIDO
               </div>
 
               {/* TRL Evaluado */}
@@ -186,16 +187,16 @@ const VinculacionDetalleDictamen = () => {
                 <h3 className="dictamen-item-title">Componentes y Declaraciones Técnicas</h3>
                 <div className="dictamen-checklist">
                   {expediente?.poseeInnovacion && (
-                    <div className="checklist-item">✓ Componente de innovación: {expediente.tipoInnovacion || 'Declarada'}</div>
+                    <div className="checklist-item"><IconoCie nombre="check" tamano={14} />Componente de innovación: {expediente.tipoInnovacion || 'Declarada'}</div>
                   )}
                   {expediente?.tienePotencialPI && (
-                    <div className="checklist-item">✓ Potencial de Propiedad Intelectual identificado</div>
+                    <div className="checklist-item"><IconoCie nombre="check" tamano={14} />Potencial de Propiedad Intelectual identificado</div>
                   )}
                   {expediente?.requiereInstrumentoJuridico && (
-                    <div className="checklist-item">✓ Requiere instrumento jurídico o convenio</div>
+                    <div className="checklist-item"><IconoCie nombre="check" tamano={14} />Requiere instrumento jurídico o convenio</div>
                   )}
                   {expediente?.tieneInformacionConfidencial && (
-                    <div className="checklist-item">✓ Contiene información confidencial</div>
+                    <div className="checklist-item"><IconoCie nombre="check" tamano={14} />Contiene información confidencial</div>
                   )}
                   {!tieneDeclaraciones && (
                     <div className="checklist-item checklist-item-empty">
@@ -215,18 +216,18 @@ const VinculacionDetalleDictamen = () => {
                     style={{ cursor: 'pointer' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '20px' }}>📄</span>
+                      <IconoCie nombre="fileText" tamano={20} />
                       <div>
                         <div className="doc-nombre">{nombreArchivoDoc}</div>
                         <div className="doc-peso">Documento oficial adjuntado al dictamen</div>
                       </div>
                     </div>
-                    <span className="doc-download-icon">📥</span>
+                    <span className="doc-download-icon"><IconoCie nombre="download" tamano={20} /></span>
                   </div>
                 ) : (
                   <div className="documento-adjunto-card doc-electronico-card" style={{ cursor: 'default' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '20px' }}>📝</span>
+                      <IconoCie nombre="edit" tamano={20} />
                       <div>
                         <div className="doc-nombre">Dictamen registrado electrónicamente</div>
                         <div className="doc-peso">Emitido mediante el formulario institucional en línea</div>

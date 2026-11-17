@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LimitedInput } from '../components/LimitedInput';
 import { propuestaService } from '../services/propuestaService';
 import { descargarPropuestaPDF, descargarPlanRiesgoExcel, descargarPresupuestoDirectoExcel } from '../utils/exportUtils';
+import IconoCie from '../components/cie/IconoCie';
 
 /* ──────────────────────────── utilidades ──────────────────────────── */
 const FORM_TYPES = [
@@ -207,7 +208,7 @@ const InvestigadorFormularios = () => {
             </div>
           ) : formulariosFiltrados.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#64748b' }}>
-              <span style={{ fontSize: '40px', display: 'block', marginBottom: '12px' }} aria-hidden="true">📋</span>
+              <span style={{ fontSize: '40px', display: 'block', marginBottom: '12px' }} aria-hidden="true"><IconoCie nombre="clipboard" tamano={40} /></span>
               {propuestas.length === 0 ? (
                 <>
                   <p style={{ fontSize: '15px', fontWeight: 600, color: '#334155' }}>No tienes propuestas aún</p>
@@ -296,11 +297,11 @@ const InvestigadorFormularios = () => {
           <div className="crear-propuesta-modal-card" style={{ maxWidth: '580px' }} onClick={(e) => e.stopPropagation()}>
             <div className="crear-propuesta-modal-header">
               <div className="modal-header-title">Vista Previa: {modalVistaDoc.codigo}</div>
-              <button type="button" className="btn-modal-close" onClick={() => setModalVistaDoc(null)}>✕</button>
+              <button type="button" className="btn-modal-close" onClick={() => setModalVistaDoc(null)}><IconoCie nombre="close" tamano={16} /></button>
             </div>
             <div style={{ padding: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '32px' }}>📄</span>
+                <span style={{ fontSize: '32px' }}><IconoCie nombre="fileText" tamano={32} /></span>
                 <div>
                   <h3 style={{ fontSize: '18px', color: '#002855', margin: 0 }}>{modalVistaDoc.nombre}</h3>
                   <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>{modalVistaDoc.descripcion}</p>
@@ -352,7 +353,7 @@ const InvestigadorFormularios = () => {
                 <span style={{ fontSize: '18px', marginRight: '6px' }}>+</span>
                 Formular Nuevo Documento Institucional
               </div>
-              <button type="button" className="btn-modal-close" onClick={() => setModalNuevo(false)}>✕</button>
+              <button type="button" className="btn-modal-close" onClick={() => setModalNuevo(false)}><IconoCie nombre="close" tamano={16} /></button>
             </div>
 
             <div style={{ padding: '24px' }}>
@@ -380,7 +381,7 @@ const InvestigadorFormularios = () => {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <span style={{ fontSize: '28px' }}>📄</span>
+                    <span style={{ fontSize: '28px' }}><IconoCie nombre="fileText" tamano={28} /></span>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span className="propuesta-codigo-pill">Form 04</span>
@@ -419,7 +420,7 @@ const InvestigadorFormularios = () => {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <span style={{ fontSize: '28px' }}>📊</span>
+                    <span style={{ fontSize: '28px' }}><IconoCie nombre="barChart" tamano={28} /></span>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span className="propuesta-codigo-pill">Form 05</span>
@@ -458,7 +459,7 @@ const InvestigadorFormularios = () => {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <span style={{ fontSize: '28px' }}>💰</span>
+                    <span style={{ fontSize: '28px' }}><IconoCie nombre="dollar" tamano={28} /></span>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span className="propuesta-codigo-pill">Form 06</span>
