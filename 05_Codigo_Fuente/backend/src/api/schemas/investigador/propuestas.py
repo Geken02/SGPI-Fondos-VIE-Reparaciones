@@ -189,6 +189,212 @@ class ActividadCreate(BaseModel):
     requiereInformeAvance: bool = False
 
 
+# --- Plan de Acción y Gestión de Riesgos (Form-05) ---
+# Guardado transaccional que llena ObjetivosEspecificos, Actividades, Riesgos,
+# MedidasMitigacion y ParticipantesActividad en un único commit.
+
+class ParticipanteActividadCreate(BaseModel):
+    usuarioId: int = Field(..., description="ID del usuario TEC participante (FK Usuarios)")
+    tipoResponsabilidadId: int = Field(..., description="ID del catálogo TiposResponsabilidad (Ejecuta/Supervisa/Participa/Asesora)")
+
+
+class MedidaMitigacionCreate(BaseModel):
+    descripcionMedida: str = Field("", max_length=2000)
+    usuarioResponsableId: Optional[int] = Field(None, description="ID del usuario TEC responsable de la medida (FK Usuarios)")
+    esPermisoEtico: bool = False
+
+
+class RiesgoCreate(BaseModel):
+    descripcionRiesgo: str = Field("", max_length=2000)
+    probabilidad: Optional[str] = Field(None, max_length=20)
+    impacto: Optional[str] = Field(None, max_length=20)
+    medidas: List[MedidaMitigacionCreate] = []
+
+
+class ObjetivoEspecificoItem(BaseModel):
+    """Objetivo específico dentro del payload de autoguardado del Plan de Acción (tolerante a edición parcial)."""
+    numeroObjetivo: Optional[int] = Field(None, ge=1)
+    descripcion: str = Field("", max_length=2000)
+
+
+class ActividadCompletaCreate(BaseModel):
+    """Actividad del cronograma con su objetivo asociado, participantes y riesgos.
+
+    Campos opcionales con valores por defecto para permitir el autoguardado
+    mientras el investigador todavía está escribiendo (sin provocar HTTP 422).
+    """
+    objetivoEspecificoIndice: Optional[int] = Field(
+        None, ge=0, description="Índice (base 0) del objetivo específico dentro de objetivosEspecificos"
+    )
+    descripcionActividad: str = Field("", max_length=4000)
+    resultadoEsperado: str = Field("", max_length=4000)
+    mesInicio: int = Field(1, ge=1, le=36)
+    duracionMeses: Decimal = Field(Decimal("1"), gt=0)
+    anioEjecucion: Optional[int] = Field(None, ge=2000, le=2100)
+    esGira: bool = False
+    esPasantia: bool = False
+    requiereInformeAvance: bool = False
+    participantes: List[ParticipanteActividadCreate] = []
+    riesgos: List[RiesgoCreate] = []
+
+
+class PlanAccionRiesgosUpdate(BaseModel):
+    """Payload completo del Form-05 / Paso 12 del Form-04 (autoguardado idempotente)."""
+    objetivosEspecificos: List[ObjetivoEspecificoItem] = []
+    actividades: List[ActividadCompletaCreate] = []
+
+
+class PlanAccionRiesgosResponse(BaseModel):
+    objetivosEspecificos: List["ObjetivoEspecificoResponse"] = []
+    actividades: List["ActividadResponse"] = []
+
+
+# --- Aspectos Éticos (Paso 15 del Form-04) ---
+
+class AspectosEticosUpdate(BaseModel):
+    involucraSeresHumanos: bool = False
+    involucraBiodiversidad: bool = False
+    involucraAnimales: bool = False
+    involucraTerritoriosIndigenas: bool = False
+    justificacionExencion: Optional[str] = None
+    enteRegulatorioId: Optional[int] = Field(None, description="FK EntesRegulatorios (CEC, CONAGEBIO, CICUA, CONARE)")
+    estadoAvalId: Optional[int] = Field(None, description="FK EstadosAval (Pendiente, Aprobado, Exento, Rechazado)")
+
+
+class AspectosEticosResponse(BaseModel):
+    involucraSeresHumanos: bool = False
+    involucraBiodiversidad: bool = False
+    involucraAnimales: bool = False
+    involucraTerritoriosIndigenas: bool = False
+    justificacionExencion: Optional[str] = None
+    enteRegulatorioId: Optional[int] = None
+    estadoAvalId: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
+# --- Financiamiento Externo / Fuentes Adicionales (Paso 13 del Form-04) ---
+
+class FinanciamientoExternoCreate(BaseModel):
+    tipoFinanciamientoId: int = Field(..., description="FK TiposFinanciamiento (Externo, Contrapartida_Institucional, Cofinanciamiento)")
+    anio: int = Field(..., ge=2000, le=2100)
+    monto: Decimal = Field(..., ge=0)
+    numeroOficio: Optional[str] = Field(None, max_length=50)
+    entidadEmisoraId: Optional[int] = Field(None, description="FK EntidadesEmisoras")
+
+
+class FinanciamientoExternoUpdate(BaseModel):
+    financiamientos: List[FinanciamientoExternoCreate] = []
+
+
+class FinanciamientoExternoResponse(BaseModel):
+    financiamientoId: int
+    tipoFinanciamientoId: int
+    anio: int
+    monto: Decimal
+    numeroOficio: Optional[str] = None
+    entidadEmisoraId: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
+# --- Referencias Bibliográficas (Paso 16 del Form-04) ---
+# Al guardar se crean FuentesBibliograficas y se vinculan vía PropuestaReferencia.
+
+class FuenteBibliograficaCreate(BaseModel):
+    titulo: str = Field(..., min_length=3, max_length=500)
+    anioPublicacion: int = Field(..., ge=1900, le=2100)
+    doi: Optional[str] = Field(None, max_length=100)
+    revistaFuente: Optional[str] = Field(None, max_length=200)
+    esIndexadaWoSScopus: bool = False
+
+
+class ReferenciasUpdate(BaseModel):
+    referencias: List[FuenteBibliograficaCreate] = []
+
+
+class FuenteBibliograficaResponse(BaseModel):
+    fuenteId: int
+    titulo: str
+    anioPublicacion: int
+    doi: Optional[str] = None
+    revistaFuente: Optional[str] = None
+    esIndexadaWoSScopus: bool = False
+
+    class Config:
+        from_attributes = True
+
+
+# --- Productos Académicos (reemplazo completo - Paso 14 del Form-04) ---
+
+class ProductosAcademicosUpdate(BaseModel):
+    productos: List[ProductoAcademicoCreate] = []
+
+
+# --- Respuestas del Plan de Acción y Riesgos (detalle) ---
+
+class ParticipanteActividadResponse(BaseModel):
+    participanteActividadId: int
+    actividadId: int
+    usuarioId: int
+    tipoResponsabilidadId: int
+
+    class Config:
+        from_attributes = True
+
+
+class MedidaMitigacionResponse(BaseModel):
+    medidaMitigacionId: int
+    riesgoId: int
+    descripcionMedida: str
+    usuarioResponsableId: int
+    esPermisoEtico: bool = False
+
+    class Config:
+        from_attributes = True
+
+
+class RiesgoResponse(BaseModel):
+    riesgoId: int
+    actividadId: int
+    descripcionRiesgo: str
+    probabilidad: Optional[str] = None
+    impacto: Optional[str] = None
+    medidas: List[MedidaMitigacionResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+class ActividadResponse(BaseModel):
+    actividadId: int
+    objetivoEspecificoId: int
+    descripcionActividad: str
+    resultadoEsperado: str
+    mesInicio: int
+    duracionMeses: Decimal
+    anioEjecucion: int
+    esGira: bool = False
+    esPasantia: bool = False
+    requiereInformeAvance: bool = False
+    participantes: List[ParticipanteActividadResponse] = []
+    riesgos: List[RiesgoResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+class ObjetivoEspecificoResponse(BaseModel):
+    objetivoEspecificoId: int
+    numeroObjetivo: int
+    descripcion: str
+
+    class Config:
+        from_attributes = True
+
+
 # --- Subsanaciones ---
 
 class SubsanacionResponse(BaseModel):
@@ -314,5 +520,15 @@ class PropuestaDetalleResponse(BaseModel):
     presupuesto: List[RubroPresupuestoResponse] = []
     subsanaciones: List[SubsanacionResponse] = []
 
+    # Núcleo de propuestas (sección 3) ampliado
+    planAccion: Optional[PlanAccionRiesgosResponse] = None
+    aspectosEticos: Optional[AspectosEticosResponse] = None
+    financiamientoExterno: List[FinanciamientoExternoResponse] = []
+    referencias: List[FuenteBibliograficaResponse] = []
+
     class Config:
         from_attributes = True
+
+
+# Resolver referencias forward de PlanAccionRiesgosResponse (definidas más abajo).
+PlanAccionRiesgosResponse.model_rebuild()

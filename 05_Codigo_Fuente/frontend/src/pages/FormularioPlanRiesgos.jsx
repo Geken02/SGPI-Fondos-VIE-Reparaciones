@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
@@ -87,8 +87,11 @@ const FormularioPlanRiesgos = () => {
 
   const [actividades, setActividades] = useState([]);
   const [objetivosEspecificos, setObjetivosEspecificos] = useState([]);
+  const [catalogosAux, setCatalogosAux] = useState({ tiposResponsabilidad: [], tiposHora: [], rolesEquipo: [] });
   const isInitialMountF5 = useRef(true);
   const lastSyncedActividadesF5 = useRef('');
+  const autosavePlanTimer = useRef(null);
+  const ultimoPlanGuardado = useRef('');
 
   const [guardadoMsg, setGuardadoMsg] = useState('Borrador listo para formulación');
   const [guardando, setGuardando] = useState(false);
@@ -126,6 +129,92 @@ const FormularioPlanRiesgos = () => {
     }
   };
 
+  // Resuelve IDs reales de catálogos (FKs) para el guardado en la BD.
+  const resolverTipoHoraId = useCallback(() => {
+    const horas = catalogosAux.tiposHora || [];
+    const vye = horas.find(h => (h.codigoTipo || '').toUpperCase() === 'VIE') || horas[0];
+    return vye ? vye.tipoHoraId : 1;
+  }, [catalogosAux.tiposHora]);
+
+  const resolverRolEquipoId = useCallback((rolTexto) => {
+    const roles = catalogosAux.rolesEquipo || [];
+    const norm = (rolTexto || '').toLowerCase();
+    const buscar = (kw) => roles.find(r => (r.nombreRol || '').toLowerCase().includes(kw));
+    let rol;
+    if (norm.includes('coordinad')) rol = buscar('coordin');
+    else if (norm.includes('asistente')) rol = buscar('asistente') || buscar('investig') || buscar('co-investig');
+    else rol = buscar('investig') || buscar('co-investig') || buscar('coordin');
+    if (!rol) rol = roles[1] || roles[0];
+    return rol ? rol.rolEquipoId : 1;
+  }, [catalogosAux.rolesEquipo]);
+
+  const resolverTipoResponsabilidadId = useCallback((texto) => {
+    const tipos = catalogosAux.tiposResponsabilidad || [];
+    const norm = (texto || '').trim().toLowerCase();
+    if (!norm) return null;
+    const exacto = tipos.find(t => (t.nombreTipoResponsabilidad || '').toLowerCase() === norm);
+    if (exacto) return exacto.tipoResponsabilidadId;
+    const alias = { colabora: 'participa', participar: 'participa', ejecuta: 'ejecuta', supervisa: 'supervisa', asesora: 'asesora' };
+    const destino = alias[norm] || norm;
+    const aprox = tipos.find(t => (t.nombreTipoResponsabilidad || '').toLowerCase().includes(destino));
+    return aprox ? aprox.tipoResponsabilidadId : null;
+  }, [catalogosAux.tiposResponsabilidad]);
+
+  // Construye el payload del Plan de Acción / Matriz de Riesgos para el backend.
+  const construirPayloadPlan = useCallback(() => {
+    const objetivos = (objetivosEspecificos || []).map((desc, idx) => ({
+      numeroObjetivo: idx + 1,
+      descripcion: (desc || '').trim()
+    }));
+
+    const buscarIntegrante = (iniciales) =>
+      (integrantes || []).find(m => (m.iniciales || '').toUpperCase().trim() === (iniciales || '').toUpperCase().trim());
+
+    const actividadesPayload = (actividades || []).map((act) => {
+      let indice = null;
+      const coincidencia = /OE\s*(\d+)/i.exec(act.objetivo || '');
+      if (coincidencia) indice = Math.max(0, parseInt(coincidencia[1], 10) - 1);
+
+      const participantes = [];
+      const integrante = buscarIntegrante(act.participante);
+      const tipoRespId = resolverTipoResponsabilidadId(act.responsabilidad);
+      if (integrante?.usuarioId && tipoRespId) {
+        participantes.push({ usuarioId: integrante.usuarioId, tipoResponsabilidadId: tipoRespId });
+      }
+
+      const responsable = buscarIntegrante(act.responsableGestion);
+      const riesgos = [];
+      if ((act.riesgo || '').trim()) {
+        riesgos.push({
+          descripcionRiesgo: act.riesgo.trim(),
+          probabilidad: null,
+          impacto: null,
+          medidas: (act.mitigacion || '').trim()
+            ? [{
+                descripcionMedida: act.mitigacion.trim(),
+                usuarioResponsableId: responsable?.usuarioId || null,
+                esPermisoEtico: false
+              }]
+            : []
+        });
+      }
+
+      return {
+        objetivoEspecificoIndice: indice,
+        descripcionActividad: (act.actividad || '').trim(),
+        resultadoEsperado: (act.resultado || '').trim(),
+        mesInicio: parseInt(act.mesInicio, 10) || 1,
+        duracionMeses: parseFloat(act.duracionMesesAct) || 1,
+        participantes,
+        riesgos
+      };
+    }).filter(a =>
+      a.descripcionActividad || a.resultadoEsperado || a.participantes.length > 0 || a.riesgos.length > 0
+    );
+
+    return { objetivosEspecificos: objetivos, actividades: actividadesPayload };
+  }, [objetivosEspecificos, actividades, integrantes, resolverTipoResponsabilidadId]);
+
   useEffect(() => {
     if (usuario?.nombre && integrantes.length === 0) {
       const nombreCompleto = `${usuario.nombre} ${usuario.apellido1 || ''}`.trim();
@@ -155,6 +244,7 @@ const FormularioPlanRiesgos = () => {
       localStorage.setItem('propuesta_activa_id', String(id));
 
       let form04Data = null;
+      let actsDesdeBD = null;
       try {
         const rawF4 = localStorage.getItem(`borrador_form04_${id}`);
         if (rawF4) form04Data = JSON.parse(rawF4);
@@ -166,7 +256,15 @@ const FormularioPlanRiesgos = () => {
           propuestaService.obtenerCatalogosFormulario().catch(() => null)
         ]);
 
-        if (catalogos?.investigadores) setInvestigadoresBD(catalogos.investigadores);
+        const tiposRespCatalogo = catalogos?.tiposResponsabilidad || [];
+        if (catalogos) {
+          setInvestigadoresBD(catalogos.investigadores || []);
+          setCatalogosAux({
+            tiposResponsabilidad: catalogos.tiposResponsabilidad || [],
+            tiposHora: catalogos.tiposHora || [],
+            rolesEquipo: catalogos.rolesEquipo || []
+          });
+        }
         if (prop) {
           if (prop.titulo) setNombrePropuesta(prop.titulo);
           if (prop.modalidad) setTipoIniciativa(prop.modalidad);
@@ -177,10 +275,46 @@ const FormularioPlanRiesgos = () => {
         } else if (prop?.contenido?.objetivosEspecificos) {
           const objs = prop.contenido.objetivosEspecificos.split(';\n').filter(Boolean);
           if (objs.length > 0) setObjetivosEspecificos(objs);
+        } else if (prop?.planAccion?.objetivosEspecificos?.length > 0) {
+          setObjetivosEspecificos(prop.planAccion.objetivosEspecificos.map(o => o.descripcion || ''));
         }
 
         const miembrosCompletos = construirIntegrantesDeEquipo(prop, form04Data, usuario);
         if (miembrosCompletos.length > 0) setIntegrantes(miembrosCompletos);
+
+        // Reconstruye el cronograma desde el Plan de Acción persistido en la BD.
+        if (prop?.planAccion?.actividades?.length > 0) {
+          const idxObjetivo = new Map(
+            (prop.planAccion.objetivosEspecificos || []).map((o, i) => [o.objetivoEspecificoId, i])
+          );
+          const tipoRespPorId = new Map(
+            tiposRespCatalogo.map(t => [t.tipoResponsabilidadId, t.nombreTipoResponsabilidad])
+          );
+          const inicialesPorUsuario = new Map();
+          miembrosCompletos.forEach(m => { if (m.usuarioId) inicialesPorUsuario.set(m.usuarioId, m.iniciales); });
+
+          actsDesdeBD = prop.planAccion.actividades.map((a, i) => {
+            const riesgo = (a.riesgos && a.riesgos[0]) || null;
+            const medida = (riesgo?.medidas && riesgo.medidas[0]) || null;
+            const participante = (a.participantes && a.participantes[0]) || null;
+            const act = {
+              id: a.actividadId || Date.now() + i,
+              objetivo: idxObjetivo.has(a.objetivoEspecificoId) ? `OE ${idxObjetivo.get(a.objetivoEspecificoId) + 1}` : '',
+              actividad: a.descripcionActividad || '',
+              resultado: a.resultadoEsperado || '',
+              participante: participante ? (inicialesPorUsuario.get(participante.usuarioId) || '') : '',
+              responsabilidad: participante ? (tipoRespPorId.get(participante.tipoResponsabilidadId) || '') : '',
+              riesgo: riesgo ? (riesgo.descripcionRiesgo || '') : '',
+              mitigacion: medida ? (medida.descripcionMedida || '') : '',
+              responsableGestion: medida ? (inicialesPorUsuario.get(medida.usuarioResponsableId) || '') : '',
+              mesInicio: a.mesInicio || '',
+              duracionMesesAct: a.duracionMeses || '',
+              periodoEjecucion: crearPeriodoVacio()
+            };
+            actualizarPeriodoDesdeMeses(act, a.mesInicio, a.duracionMeses);
+            return act;
+          });
+        }
       } catch (_e) {}
 
       try {
@@ -211,6 +345,11 @@ const FormularioPlanRiesgos = () => {
           const f4Time = form04Data.fechaGuardado ? new Date(form04Data.fechaGuardado).getTime() : 0;
           const f5Time = l?.fechaGuardado ? new Date(l.fechaGuardado).getTime() : 0;
           if (!actsCargadas || f4Time >= f5Time) actsCargadas = form04Data.actividadesCronograma;
+        }
+
+        // Fallback: usar el plan persistido en la BD si no hay snapshot local.
+        if ((!actsCargadas || actsCargadas.length === 0) && actsDesdeBD && actsDesdeBD.length > 0) {
+          actsCargadas = actsDesdeBD;
         }
 
         if (actsCargadas && actsCargadas.length > 0) {
@@ -254,6 +393,32 @@ const FormularioPlanRiesgos = () => {
       window.dispatchEvent(new CustomEvent('sgpi_matrices_sync', { detail: { propuestaId: String(id), actividades: actividades, fuente: 'form05' } }));
     } catch (_e) {}
   }, [actividades, nombrePropuesta, tipoIniciativa, duracionMeses, integrantes]);
+
+  // Autoguardado del Plan de Acción / Matriz de Riesgos en la base de datos.
+  // Idempotente (el backend reemplaza en transacción) y con debounce para no
+  // saturar el API mientras el usuario escribe.
+  useEffect(() => {
+    if (isInitialMountF5.current) return;
+    const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
+    if (!id || id === 'undefined') return;
+
+    const payload = construirPayloadPlan();
+    const serializado = JSON.stringify(payload);
+    if (serializado === ultimoPlanGuardado.current) return;
+
+    if (autosavePlanTimer.current) clearTimeout(autosavePlanTimer.current);
+    autosavePlanTimer.current = setTimeout(async () => {
+      try {
+        await propuestaService.guardarPlanAccion(id, payload);
+        ultimoPlanGuardado.current = serializado;
+        setGuardadoMsg('Autoguardado');
+      } catch (err) {
+        console.warn('Error en autoguardado del Plan de Acción:', err);
+      }
+    }, 1500);
+
+    return () => { if (autosavePlanTimer.current) clearTimeout(autosavePlanTimer.current); };
+  }, [actividades, objetivosEspecificos, integrantes, propuestaIdUrl, construirPayloadPlan]);
 
   useEffect(() => {
     const handleSync = (e) => {
@@ -317,7 +482,16 @@ const FormularioPlanRiesgos = () => {
       
       try {
         await propuestaService.actualizarCabecera(id, { titulo: nombrePropuesta || 'Iniciativa de Investigación' });
-        
+
+        // Persistir el Plan de Acción y Matriz de Riesgos (sección 3) en la BD.
+        try {
+          const payloadPlan = construirPayloadPlan();
+          await propuestaService.guardarPlanAccion(id, payloadPlan);
+          ultimoPlanGuardado.current = JSON.stringify(payloadPlan);
+        } catch (err) {
+          console.warn('⚠️ No se pudo guardar el Plan de Acción en la BD:', err);
+        }
+
         try {
           const { generarBlobForm05Excel, subirBlobASupabase } = await import('../utils/exportUtils');
           const blob = await generarBlobForm05Excel(dataToSave, id);
@@ -367,6 +541,15 @@ const FormularioPlanRiesgos = () => {
         }
       } catch (err) {
         console.warn('⚠️ No se pudo subir Form-05 a Supabase al enviar:', err);
+      }
+
+      // Persistir el Plan de Acción y Matriz de Riesgos (sección 3) antes de salir.
+      try {
+        const payloadPlan = construirPayloadPlan();
+        await propuestaService.guardarPlanAccion(id, payloadPlan);
+        ultimoPlanGuardado.current = JSON.stringify(payloadPlan);
+      } catch (err) {
+        console.warn('⚠️ No se pudo guardar el Plan de Acción al enviar:', err);
       }
     }
     window.dispatchEvent(new Event('propuestaCreada'));
@@ -421,20 +604,25 @@ const FormularioPlanRiesgos = () => {
     const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
     if (id) {
       try {
+        const tipoHoraId = resolverTipoHoraId();
         const payload = {
           integrantes: nuevaLista.filter(m => m.usuarioId).map(m => ({
             usuarioId: m.usuarioId,
-            tipoHoraId: 1,
+            tipoHoraId,
             horasSemanales: 10.0,
-            rolEquipoId: (m.rol || '').toLowerCase().includes('coordinad') ? 1 : (m.rol || '').toLowerCase().includes('asistente') ? 3 : 2,
+            rolEquipoId: resolverRolEquipoId(m.rol),
             orcid: null
           })),
-          colaboradoresExternos: nuevaLista.filter(m => !m.usuarioId && m.id !== 1).map(m => ({
-            nombreCompleto: m.nombre,
-            institucion: m.escuela || 'Institución Externa',
-            rolProyecto: m.rol,
-            correoElectronico: null
-          }))
+          colaboradoresExternos: nuevaLista.filter(m => !m.usuarioId && m.id !== 1).map(m => {
+            const partes = (m.nombre || '').trim().split(/\s+/).filter(Boolean);
+            return {
+              nombreColaborador: partes[0] || (m.nombre || '').trim(),
+              apellido1Colaborador: partes[1] || null,
+              apellido2Colaborador: partes.length > 2 ? partes.slice(2).join(' ') : null,
+              idOrcid: null,
+              institucionEmpresa: m.escuela || 'Institución Externa'
+            };
+          })
         };
         await propuestaService.guardarEquipoCompleto(id, payload);
       } catch (err) {
@@ -601,9 +789,12 @@ const FormularioPlanRiesgos = () => {
                     <td>
                       <select className="form-table-input" value={act.responsabilidad} onChange={(e) => { const copia = [...actividades]; copia[i].responsabilidad = e.target.value; setActividades(copia); }}>
                         <option value="">—</option>
-                        <option value="Ejecuta">Ejecuta</option>
-                        <option value="Supervisa">Supervisa</option>
-                        <option value="Colabora">Colabora</option>
+                        {(catalogosAux.tiposResponsabilidad.length > 0
+                          ? catalogosAux.tiposResponsabilidad.map(t => t.nombreTipoResponsabilidad)
+                          : ['Ejecuta', 'Supervisa', 'Participa', 'Asesora']
+                        ).map((opcion) => (
+                          <option key={opcion} value={opcion}>{opcion}</option>
+                        ))}
                       </select>
                     </td>
                     <td><LimitedInput value={act.riesgo} maxLength={500} showCounter={false} className="form-table-input" onChange={(e) => { const copia = [...actividades]; copia[i].riesgo = e.target.value; setActividades(copia); }} /></td>

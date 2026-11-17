@@ -34,7 +34,8 @@ export const propuestaService = {
     try {
       const response = await api.get('/investigador/propuestas/catalogos/formulario');
       return response.data;
-    } catch (_err) {
+    } catch (error) {
+      console.error('Error al obtener catálogos del formulario:', error?.response?.status, error?.message);
       return { convocatorias: [], escuelas: [], campus: [], estadosPropuesta: [], nivelesTrl: [] };
     }
   },
@@ -71,6 +72,40 @@ export const propuestaService = {
 
   guardarPresupuestoCompleto: async (id, rubros) => {
     const response = await api.put(`/investigador/propuestas/${id}/presupuesto`, rubros);
+    return response.data;
+  },
+
+  obtenerPlanAccion: async (id) => {
+    try {
+      const response = await api.get(`/investigador/propuestas/${id}/plan-accion`);
+      return response.data || { objetivosEspecificos: [], actividades: [] };
+    } catch (_e) {
+      return { objetivosEspecificos: [], actividades: [] };
+    }
+  },
+
+  guardarPlanAccion: async (id, datos) => {
+    const response = await api.put(`/investigador/propuestas/${id}/plan-accion`, datos);
+    return response.data;
+  },
+
+  guardarAspectosEticos: async (id, datos) => {
+    const response = await api.put(`/investigador/propuestas/${id}/aspectos-eticos`, datos);
+    return response.data;
+  },
+
+  guardarFinanciamientoExterno: async (id, financiamientos) => {
+    const response = await api.put(`/investigador/propuestas/${id}/financiamiento`, { financiamientos });
+    return response.data;
+  },
+
+  guardarReferencias: async (id, referencias) => {
+    const response = await api.put(`/investigador/propuestas/${id}/referencias`, { referencias });
+    return response.data;
+  },
+
+  guardarProductosAcademicos: async (id, productos) => {
+    const response = await api.put(`/investigador/propuestas/${id}/productos-academicos`, { productos });
     return response.data;
   },
 
