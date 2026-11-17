@@ -6,7 +6,7 @@ export const adminService = {
   obtenerUsuario: (id) => api.get(`/api/admin/usuarios/${id}`),
   crearUsuario: (data) => api.post('/api/admin/usuarios', data),
   actualizarUsuario: (id, data) => api.patch(`/api/admin/usuarios/${id}`, data),
-  cambiarEstadoUsuario: (id, activo) => api.put(`/api/admin/usuarios/${id}/estado`, { activo }),
+cambiarEstadoUsuario: (id, data) => api.put(`/api/admin/usuarios/${id}/estado`, data),
   resetearContrasena: (id, nuevaContrasena) => api.put(`/api/admin/usuarios/${id}/contrasena`, { nuevaContrasena }),
 
   // === ROLES DE USUARIO ===
