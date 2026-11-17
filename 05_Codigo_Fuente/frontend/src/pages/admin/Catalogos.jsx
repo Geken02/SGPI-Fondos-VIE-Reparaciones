@@ -1,441 +1,437 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { catalogoService } from '../../services/catalogoService';
-import Modal from '../../components/Modal';
-import CatalogoForm from '../../components/CatalogoForm';
-import '../../styles/catalogos.css';
+import { useState, useEffect } from 'react';
+import { catalogoService } from '../services/catalogoService';
 
-const NOMBRES_CATALOGOS = {
-  'escuelas': 'Escuelas',
-  'lineas-investigacion': 'Líneas de Investigación',
-  'roles-equipo': 'Roles de Equipo',
-  'niveles-trl': 'Niveles TRL',
-  'tipos-hora': 'Tipos de Hora',
-  'modalidades': 'Modalidades',
-  'campus': 'Campus',
-  'convocatorias': 'Convocatorias',
-  'etapas': 'Etapas',
-  'configuraciones': 'Configuraciones',
+// Configuración de campos por tipo de catálogo con límites exactos de la BD
+const CONFIG_CAMPOS = {
+  'escuelas': {
+    campos: [
+      { nombre: 'codigoEscuela', label: 'Código', tipo: 'text', requerido: true, placeholder: 'ESC-001', maxLength: 10 },
+      { nombre: 'nombreEscuela', label: 'Nombre de la Escuela', tipo: 'text', requerido: true, placeholder: 'Escuela de Ingeniería en Computación', maxLength: 150 },
+      { nombre: 'campusIds', label: 'Campus asociados', tipo: 'multi-checkbox', requerido: true },
+    ]
+  },
+  'lineas-investigacion': {
+    campos: [
+      { nombre: 'nombreLinea', label: 'Nombre de la Línea', tipo: 'text', requerido: true, placeholder: 'Inteligencia Artificial', maxLength: 200 },
+      { nombre: 'descripcion', label: 'Descripción', tipo: 'textarea', requerido: false, placeholder: 'Descripción detallada...', maxLength: 500 },
+    ]
+  },
+  'roles-equipo': {
+    campos: [
+      { nombre: 'nombreRol', label: 'Nombre del Rol', tipo: 'text', requerido: true, placeholder: 'Coordinador', maxLength: 30 },
+      { nombre: 'descripcion', label: 'Descripción', tipo: 'textarea', requerido: false, placeholder: 'Descripción del rol...', maxLength: 300 },
+    ]
+  },
+  'niveles-trl': {
+    campos: [
+      { nombre: 'nivelTrlId', label: 'Nivel TRL', tipo: 'number', requerido: true, placeholder: '1', min: 1, max: 9, hint: 'Debe ser un número entre 1 y 9' },
+      { nombre: 'descripcionNivel', label: 'Descripción', tipo: 'textarea', requerido: true, placeholder: 'Principios básicos observados...', maxLength: 500 },
+    ]
+  },
+  'tipos-hora': {
+    campos: [
+      { nombre: 'codigoTipo', label: 'Código', tipo: 'text', requerido: true, placeholder: 'VIE', maxLength: 20 },
+      { nombre: 'descripcion', label: 'Descripción', tipo: 'text', requerido: true, placeholder: 'Horas de Vinculación e Investigación', maxLength: 100 },
+    ]
+  },
+  'modalidades': {
+    campos: [
+      { nombre: 'nombreModalidad', label: 'Nombre', tipo: 'text', requerido: true, placeholder: 'Básica', maxLength: 30 },
+      { nombre: 'descripcion', label: 'Descripción', tipo: 'textarea', requerido: false, placeholder: 'Descripción de la modalidad...', maxLength: 300 },
+    ]
+  },
+  'campus': {
+    campos: [
+      { nombre: 'nombreCampus', label: 'Nombre del Campus', tipo: 'text', requerido: true, placeholder: 'Campus Central Cartago', maxLength: 50 },
+    ]
+  },
+  'convocatorias': {
+    campos: [
+      { nombre: 'nombreConvocatoria', label: 'Nombre', tipo: 'text', requerido: true, placeholder: 'Convocatoria 2027', maxLength: 100 },
+      { nombre: 'fechaApertura', label: 'Fecha de Apertura', tipo: 'date', requerido: true },
+      { nombre: 'fechaCierre', label: 'Fecha de Cierre', tipo: 'date', requerido: true, hint: 'Debe ser posterior a la fecha de apertura' },
+      { nombre: 'fechaBloqueoOrion', label: 'Fecha de Bloqueo en Orión', tipo: 'date', requerido: false, hint: 'Debe ser posterior o igual a la fecha de cierre' },
+    ]
+  },
+  'etapas': {
+    campos: [
+      { nombre: 'convocatoriaId', label: 'Convocatoria', tipo: 'select-dinamico', requerido: true },
+      { nombre: 'nombreEtapa', label: 'Nombre de la Etapa', tipo: 'text', requerido: true, placeholder: 'Formulación', maxLength: 100 },
+      { nombre: 'fechaInicio', label: 'Fecha y Hora de Inicio', tipo: 'datetime-local', requerido: true },
+      { nombre: 'fechaFin', label: 'Fecha y Hora de Fin', tipo: 'datetime-local', requerido: true, hint: 'Debe ser posterior a la fecha de inicio' },
+      { nombre: 'esBloqueante', label: '¿Es una etapa bloqueante?', tipo: 'checkbox', requerido: false },
+      { nombre: 'rolResponsableId', label: 'Rol Responsable (Opcional)', tipo: 'select-dinamico', requerido: false },
+    ]
+  },
+  'configuraciones': {
+    campos: [
+      { nombre: 'claveConfig', label: 'Clave', tipo: 'text', requerido: true, placeholder: 'MAX_PRESUPUESTO', maxLength: 100 },
+      { nombre: 'valorConfig', label: 'Valor', tipo: 'text', requerido: true, placeholder: '5000000', maxLength: 1000 },
+      { nombre: 'descripcion', label: 'Descripción', tipo: 'textarea', requerido: false, maxLength: 255 },
+    ]
+  },
 };
 
-const CAMPOS_TABLA = {
-  'escuelas': { id: 'escuelaId', clave: 'codigoEscuela', nombre: 'nombreEscuela' }, // ✅ 'campus' eliminado de aquí, se maneja especial
-  'lineas-investigacion': { id: 'lineaId', clave: 'lineaId', nombre: 'nombreLinea' },
-  'roles-equipo': { id: 'rolEquipoId', clave: 'rolEquipoId', nombre: 'nombreRol' },
-  'niveles-trl': { id: 'nivelTrlId', clave: 'nivelTrlId', nombre: 'descripcionNivel' },
-  'tipos-hora': { id: 'tipoHoraId', clave: 'codigoTipo', nombre: 'descripcion' },
-  'modalidades': { id: 'modalidadId', clave: 'modalidadId', nombre: 'nombreModalidad' },
-  'campus': { id: 'campusId', clave: 'campusId', nombre: 'nombreCampus' },
-  'convocatorias': { id: 'convocatoriaId', clave: 'convocatoriaId', nombre: 'nombreConvocatoria' },
-  'etapas': { id: 'etapaId', clave: 'etapaId', nombre: 'nombreEtapa' },
-  'configuraciones': { id: 'configuracionId', clave: 'claveConfiguracion', nombre: 'valorConfiguracion', descripcion: 'descripcion' },
-};
+export default function CatalogoForm({ catalogo, datosExistentes, onSubmit, onCancel, cargando }) {
+  const [formData, setFormData] = useState({});
+  const [errores, setErrores] = useState({});
+  
+  // Estados para opciones dinámicas
+  const [opcionesCampus, setOpcionesCampus] = useState([]);
+  const [opcionesConvocatorias, setOpcionesConvocatorias] = useState([]);
+  const [opcionesRoles, setOpcionesRoles] = useState([]);
 
-const obtenerValor = (registro, nombreCampo) => {
-  if (!registro || !nombreCampo) return '—';
-  if (registro[nombreCampo] !== undefined && registro[nombreCampo] !== null && registro[nombreCampo] !== '') {
-    return registro[nombreCampo];
-  }
-  for (const key in registro) {
-    if (typeof registro[key] === 'object' && registro[key] !== null && registro[key][nombreCampo] !== undefined) {
-      return registro[key][nombreCampo];
-    }
-  }
-  return '—';
-};
+  const config = CONFIG_CAMPOS[catalogo] || { campos: [] };
 
-const getRegistroKey = (registro, catalogo, index) => {
-  const config = CAMPOS_TABLA[catalogo] || {};
-  const idValor = registro[config.id] || `row-${index}`;
-  return `${idValor}-${index}`;
-};
+  // Cargar opciones dinámicas según el catálogo
+  useEffect(() => {
+    const cargarOpciones = async () => {
+      try {
+        if (catalogo === 'escuelas') {
+          const res = await catalogoService.listar('campus', { tamanoPagina: 100, incluirInactivos: false });
+          setOpcionesCampus((res.data.items || []).map(c => ({ valor: c.campusId, texto: c.nombreCampus })));
+        }
+        
+        if (catalogo === 'etapas') {
+          const resConv = await catalogoService.listar('convocatorias', { tamanoPagina: 100, incluirInactivos: false });
+          setOpcionesConvocatorias((resConv.data.items || []).map(c => ({ valor: c.convocatoriaId, texto: c.nombreConvocatoria })));
+          
+          const resRol = await catalogoService.listar('roles-equipo', { tamanoPagina: 100, incluirInactivos: false });
+          setOpcionesRoles((resRol.data.items || []).map(r => ({ valor: r.rolEquipoId, texto: r.nombreRol })));
+        }
+      } catch (err) {
+        console.error("Error cargando opciones dinámicas:", err);
+      }
+    };
 
-const obtenerIdReal = (registro, catalogo) => {
-  const config = CAMPOS_TABLA[catalogo] || {};
-  return registro[config.id];
-};
-
-export default function Catalogos() {
-  const [catalogoActivo, setCatalogoActivo] = useState('escuelas');
-  const [datos, setDatos] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [busqueda, setBusqueda] = useState('');
-  const [pagina, setPagina] = useState(1);
-  const [totalRegistros, setTotalRegistros] = useState(0);
-  const [tamanoPagina] = useState(10);
-
-  const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
-  const [modalEditarAbierto, setModalEditarAbierto] = useState(false);
-  const [registroEditando, setRegistroEditando] = useState(null);
-  const [cargandoForm, setCargandoForm] = useState(false);
-  const [toast, setToast] = useState(null);
+    cargarOpciones();
+  }, [catalogo]);
 
   useEffect(() => {
-    cargarDatos();
-  }, [catalogoActivo, pagina, busqueda]);
-
-  const cargarDatos = async () => {
-    setCargando(true);
-    try {
-      const response = await catalogoService.listar(catalogoActivo, {
-        pagina,
-        tamanoPagina,
-        busqueda: busqueda || undefined,
-      });
-      const items = response.data.items || [];
-      setDatos(items);
-      setTotalRegistros(response.data.total || 0);
-    } catch (error) {
-      console.error(`Error cargando ${catalogoActivo}:`, error);
-      setDatos([]);
-      setTotalRegistros(0);
-    } finally {
-      setCargando(false);
-    }
-  };
-
-  const mostrarToast = (mensaje, tipo = 'success') => {
-    setToast({ mensaje, tipo });
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  const handleCrear = async (formData) => {
-    setCargandoForm(true);
-    try {
-      const datosLimpios = { ...formData };
-      Object.keys(datosLimpios).forEach(key => {
-        if (datosLimpios[key] === '') datosLimpios[key] = null;
-      });
-      await catalogoService.crear(catalogoActivo, datosLimpios);
-      mostrarToast('Registro creado exitosamente');
-      setModalCrearAbierto(false);
-      cargarDatos();
-    } catch (error) {
-      console.error('Error creando registro:', error);
-      const detail = error.response?.data?.detail;
-      let mensajeError = 'Error al crear el registro';
-      if (Array.isArray(detail)) {
-        mensajeError = detail.map(err => `${err.loc.slice(1).join('.')}: ${err.msg}`).join(' | ');
-      } else if (typeof detail === 'string') {
-        mensajeError = detail;
+    if (datosExistentes) {
+      const datosAdaptados = { ...datosExistentes };
+      
+      // Adaptar escuelas (N a N)
+      if (catalogo === 'escuelas' && datosExistentes.campus && Array.isArray(datosExistentes.campus)) {
+        datosAdaptados.campusIds = datosExistentes.campus.map(c => c.campusId);
+        delete datosAdaptados.campus;
       }
-      mostrarToast(mensajeError, 'error');
-    } finally {
-      setCargandoForm(false);
-    }
-  };
 
-  const handleEditar = async (formData) => {
-    setCargandoForm(true);
-    try {
-      const id = obtenerIdReal(registroEditando, catalogoActivo);
-      if (!id) throw new Error("No se pudo identificar el ID del registro");
-      const datosLimpios = { ...formData };
-      Object.keys(datosLimpios).forEach(key => {
-        if (datosLimpios[key] === '') datosLimpios[key] = null;
-      });
-      await catalogoService.actualizar(catalogoActivo, id, datosLimpios);
-      mostrarToast('Registro actualizado exitosamente');
-      setModalEditarAbierto(false);
-      setRegistroEditando(null);
-      cargarDatos();
-    } catch (error) {
-      console.error('Error actualizando registro:', error);
-      const detail = error.response?.data?.detail;
-      let mensajeError = 'Error al actualizar el registro';
-      if (Array.isArray(detail)) {
-        mensajeError = detail.map(err => `${err.loc.slice(1).join('.')}: ${err.msg}`).join(' | ');
-      } else if (typeof detail === 'string') {
-        mensajeError = detail;
+      // Adaptar fechas para datetime-local (quitando la Z y asegurando formato YYYY-MM-DDThh:mm)
+      if (catalogo === 'etapas') {
+        if (datosAdaptados.fechaInicio) {
+          datosAdaptados.fechaInicio = datosAdaptados.fechaInicio.replace('Z', '').substring(0, 16);
+        }
+        if (datosAdaptados.fechaFin) {
+          datosAdaptados.fechaFin = datosAdaptados.fechaFin.replace('Z', '').substring(0, 16);
+        }
       }
-      mostrarToast(mensajeError, 'error');
-    } finally {
-      setCargandoForm(false);
+
+      setFormData(datosAdaptados);
+    } else {
+      const defaults = {};
+      config.campos.forEach(campo => {
+        if (campo.tipo === 'multi-checkbox' || campo.tipo === 'select-dinamico') {
+          defaults[campo.nombre] = campo.requerido ? (campo.tipo === 'multi-checkbox' ? [] : '') : '';
+        } else if (campo.tipo === 'checkbox') {
+          defaults[campo.nombre] = false;
+        } else {
+          defaults[campo.nombre] = campo.min !== undefined ? campo.min : '';
+        }
+      });
+      setFormData(defaults);
+    }
+    setErrores({});
+  }, [datosExistentes, catalogo, config.campos]);
+
+  const handleChange = (nombre, valor) => {
+    setFormData(prev => ({ ...prev, [nombre]: valor }));
+    if (errores[nombre]) {
+      setErrores(prev => {
+        const nuevos = { ...prev };
+        delete nuevos[nombre];
+        return nuevos;
+      });
     }
   };
 
-  const handleCambiarEstado = async (registro) => {
-    if (!window.confirm(`¿Está seguro de ${registro.activo ? 'desactivar' : 'activar'} este registro?`)) {
-      return;
-    }
-    try {
-      const id = obtenerIdReal(registro, catalogoActivo);
-      if (!id) throw new Error("No se pudo identificar el ID del registro");
-      await catalogoService.cambiarEstado(catalogoActivo, id, !registro.activo);
-      mostrarToast(`Registro ${registro.activo ? 'desactivado' : 'activado'} exitosamente`);
-      cargarDatos();
-    } catch (error) {
-      console.error('Error cambiando estado:', error);
-      mostrarToast(error.message || 'Error al cambiar el estado', 'error');
+  const handleMultiCheckboxChange = (nombre, valor, isChecked) => {
+    setFormData(prev => {
+      const currentArray = prev[nombre] || [];
+      if (isChecked) {
+        return { ...prev, [nombre]: [...currentArray, valor] };
+      } else {
+        return { ...prev, [nombre]: currentArray.filter(v => v !== valor) };
+      }
+    });
+    if (errores[nombre]) {
+      setErrores(prev => {
+        const nuevos = { ...prev };
+        delete nuevos[nombre];
+        return nuevos;
+      });
     }
   };
 
-  const totalPaginas = Math.ceil(totalRegistros / tamanoPagina);
-  const config = CAMPOS_TABLA[catalogoActivo] || {};
+  const validar = () => {
+    const nuevosErrores = {};
+    
+    config.campos.forEach(campo => {
+      const valor = formData[campo.nombre];
+      
+      if (campo.tipo === 'multi-checkbox') {
+        if (campo.requerido && (!valor || valor.length === 0)) {
+          nuevosErrores[campo.nombre] = 'Debe seleccionar al menos una opción';
+        }
+        return;
+      }
 
-  return (
-    <div className="catalogos-container">
-      {toast && (
-        <div className={`toast ${toast.tipo}`} role="status" aria-live="polite">
-          <span className="toast-icon" aria-hidden="true">{toast.tipo === 'success' ? '✓' : '✕'}</span>
-          <span className="toast-message">{toast.mensaje}</span>
-        </div>
-      )}
+      const valorStr = valor !== null && valor !== undefined ? valor.toString().trim() : '';
 
-      <nav className="breadcrumbs" aria-label="Ruta de navegación">
-        <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <li><Link to="/dashboard">Inicio</Link></li>
-          <li className="breadcrumb-separator" aria-hidden="true">›</li>
-          <li aria-current="page">Gestión de Catálogos</li>
-        </ol>
-      </nav>
+      if (campo.requerido && !valorStr) {
+        nuevosErrores[campo.nombre] = 'Este campo es obligatorio';
+        return;
+      }
 
-      <header className="catalogos-header">
-        <h1 id="titulo-catalogos">Gestión de Catálogos</h1>
-        <p>Administrar los catálogos base del sistema.</p>
-      </header>
+      if (valorStr) {
+        if (campo.nombre === 'nivelTrlId') {
+          const num = parseInt(valorStr, 10);
+          if (isNaN(num) || num < 1 || num > 9) {
+            nuevosErrores[campo.nombre] = 'El nivel TRL debe ser un número entre 1 y 9';
+          }
+        }
 
-      <div className="catalogos-tabs" role="tablist" aria-label="Categorías de catálogos">
-        {Object.keys(NOMBRES_CATALOGOS).map((clave) => (
-          <button
-            key={clave}
-            role="tab"
-            id={`tab-${clave}`}
-            aria-selected={catalogoActivo === clave}
-            aria-controls="panel-catalogos"
-            tabIndex={catalogoActivo === clave ? 0 : -1}
-            className={`tab-btn ${catalogoActivo === clave ? 'active' : ''}`}
-            onClick={() => {
-              setCatalogoActivo(clave);
-              setPagina(1);
-              setBusqueda('');
-            }}
-          >
-            {NOMBRES_CATALOGOS[clave]}
-          </button>
-        ))}
-      </div>
+        if (catalogo === 'convocatorias') {
+          if (campo.nombre === 'fechaCierre' && formData.fechaApertura) {
+            if (new Date(valor) < new Date(formData.fechaApertura)) {
+              nuevosErrores[campo.nombre] = 'La fecha de cierre no puede ser anterior a la fecha de apertura';
+            }
+          }
+          if (campo.nombre === 'fechaBloqueoOrion' && formData.fechaCierre) {
+            if (new Date(valor) < new Date(formData.fechaCierre)) {
+              nuevosErrores[campo.nombre] = 'La fecha de bloqueo no puede ser anterior a la fecha de cierre';
+            }
+          }
+        }
 
-      <div
-        id="panel-catalogos"
-        role="tabpanel"
-        aria-labelledby={`tab-${catalogoActivo}`}
-      >
-        <div className="catalogos-toolbar">
-          <div className="cat-search-box">
-            <svg className="cat-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-              <circle cx="11" cy="11" r="8"/>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input
-              type="text"
-              id="busqueda-catalogo"
-              className="cat-search-input"
-              aria-label={`Buscar en ${NOMBRES_CATALOGOS[catalogoActivo]}`}
-              placeholder={`Buscar ${NOMBRES_CATALOGOS[catalogoActivo].toLowerCase()}...`}
-              value={busqueda}
-              onChange={(e) => {
-                setBusqueda(e.target.value);
-                setPagina(1);
-              }}
-            />
-            {busqueda && (
-              <button
-                type="button"
-                className="cat-search-clear"
-                onClick={() => { setBusqueda(''); setPagina(1); }}
-                aria-label="Limpiar búsqueda"
-                title="Limpiar búsqueda"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-                  <line x1="18" y1="6" x2="6" y2="18"/>
-                  <line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            )}
-          </div>
-          <button className="btn-agregar" onClick={() => setModalCrearAbierto(true)} aria-haspopup="dialog">
-            + Agregar nuevo
-          </button>
-        </div>
+        if (catalogo === 'etapas') {
+          if (campo.nombre === 'fechaFin' && formData.fechaInicio) {
+            if (new Date(valor) <= new Date(formData.fechaInicio)) {
+              nuevosErrores[campo.nombre] = 'La fecha de fin debe ser posterior a la fecha de inicio';
+            }
+          }
+        }
 
-        <div className="tabla-container">
-          {cargando ? (
-            <div className="tabla-loading" role="status" aria-live="polite">
-              <div className="spinner"></div>
-              <p>Cargando datos...</p>
-            </div>
-          ) : datos.length === 0 ? (
-            <div className="tabla-vacia" role="status">
-              <p>No se encontraron registros</p>
-            </div>
+        if (campo.maxLength && valorStr.length > campo.maxLength) {
+          nuevosErrores[campo.nombre] = `Máximo ${campo.maxLength} caracteres permitidos`;
+        }
+      }
+    });
+
+    setErrores(nuevosErrores);
+    return Object.keys(nuevosErrores).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (validar()) {
+      const datosFinales = { ...formData };
+      config.campos.forEach(campo => {
+        if (campo.tipo === 'number' && datosFinales[campo.nombre]) {
+          datosFinales[campo.nombre] = Number(datosFinales[campo.nombre]);
+        }
+        // Convertir string vacío a null para campos opcionales
+        if (campo.tipo === 'select-dinamico' && datosFinales[campo.nombre] === '') {
+          datosFinales[campo.nombre] = null;
+        }
+      });
+      onSubmit(datosFinales);
+    }
+  };
+
+  const renderizarCampo = (campo) => {
+    const valor = formData[campo.nombre] !== undefined ? formData[campo.nombre] : '';
+    const error = errores[campo.nombre];
+    const valorStr = Array.isArray(valor) ? '' : (valor ? valor.toString() : '');
+    const porcentaje = campo.maxLength > 0 ? (valorStr.length / campo.maxLength) * 100 : 0;
+    
+    const colorContador = porcentaje >= 100 ? 'text-red-600 font-bold' : porcentaje >= 80 ? 'text-amber-600 font-semibold' : 'text-gray-500';
+    const claseBorde = error ? 'error' : porcentaje >= 100 ? 'border-red-500' : porcentaje >= 80 ? 'border-amber-500' : '';
+
+    if (campo.tipo === 'multi-checkbox') {
+      const opciones = catalogo === 'escuelas' ? opcionesCampus : [];
+      return (
+        <div className="multi-checkbox-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+          {opciones.length === 0 ? (
+            <span style={{ fontSize: '13px', color: '#666' }}>Cargando opciones...</span>
           ) : (
-            <table className="tabla-datos" aria-label={`Registros de ${NOMBRES_CATALOGOS[catalogoActivo]}`}>
-              <thead>
-                <tr>
-                  <th scope="col">CLAVE</th>
-                  <th scope="col">NOMBRE</th>
-                  <th scope="col">ESTATUS</th>
-                  {/* ✅ Renderizado condicional de la columna Campus solo si no es el catálogo de escuelas (que lo maneja especial) o si se quiere mantener para otros */}
-                  {config.campus && catalogoActivo !== 'escuelas' && <th scope="col">CAMPUS</th>}
-                  {catalogoActivo === 'escuelas' && <th scope="col">CAMPUS ASOCIADOS</th>}
-                  <th scope="col">ACCIONES</th>
-                </tr>
-              </thead>
-              <tbody>
-                {datos.map((registro, index) => {
-                  const nombreRegistro = obtenerValor(registro, config.nombre);
-                  return (
-                    <tr key={getRegistroKey(registro, catalogoActivo, index)}>
-                      <td>
-                        <span className="clave-badge">
-                          {obtenerValor(registro, config.clave)}
-                        </span>
-                      </td>
-                      <td className="nombre-celda">
-                        {nombreRegistro}
-                      </td>
-                      <td>
-                        <span className={`estatus-badge ${registro.activo ? 'activo' : 'inactivo'}`} aria-label={`Estado: ${registro.activo ? 'Activo' : 'Inactivo'}`}>
-                          {registro.activo ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </td>
-                      
-                      {/* ✅ LÓGICA ESPECIAL PARA MOSTRAR MÚLTIPLES CAMPUS EN ESCUELAS */}
-                      {catalogoActivo === 'escuelas' ? (
-                        <td>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                            {registro.campus && registro.campus.length > 0 ? (
-                              registro.campus.map((c) => (
-                                <span key={c.campusId} className="clave-badge" style={{ fontSize: '12px', padding: '2px 8px' }}>
-                                  {c.nombreCampus}
-                                </span>
-                              ))
-                            ) : (
-                              <span style={{ color: '#999', fontSize: '13px' }}>Sin asignar</span>
-                            )}
-                          </div>
-                        </td>
-                      ) : config.campus ? (
-                        <td>{obtenerValor(registro, config.campus)}</td>
-                      ) : null}
-
-                      <td>
-                        <div className="acciones-celda">
-                          <button
-                            className="btn-accion"
-                            aria-label={`Editar ${nombreRegistro}`}
-                            onClick={() => {
-                              setRegistroEditando(registro);
-                              setModalEditarAbierto(true);
-                            }}
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                            </svg>
-                          </button>
-                          <button
-                            className="btn-accion"
-                            aria-label={`${registro.activo ? 'Desactivar' : 'Activar'} ${nombreRegistro}`}
-                            onClick={() => handleCambiarEstado(registro)}
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
-                              {registro.activo ? (
-                                <>
-                                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                  <line x1="9" y1="9" x2="15" y2="15"/>
-                                  <line x1="15" y1="9" x2="9" y2="15"/>
-                                </>
-                              ) : (
-                                <>
-                                  <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
-                                  <line x1="12" y1="2" x2="12" y2="12"/>
-                                </>
-                              )}
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            opciones.map(op => {
+              const isChecked = Array.isArray(valor) && valor.includes(op.valor);
+              return (
+                <label key={op.valor} className="form-checkbox" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 'normal' }}>
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={(e) => handleMultiCheckboxChange(campo.nombre, op.valor, e.target.checked)}
+                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                  <span>{op.texto}</span>
+                </label>
+              );
+            })
           )}
         </div>
+      );
+    }
 
-        <div className="paginacion" role="navigation" aria-label="Paginación de registros">
-          <div className="paginacion-info">
-            Mostrando {datos.length > 0 ? ((pagina - 1) * tamanoPagina + 1) : 0}-
-            {Math.min(pagina * tamanoPagina, totalRegistros)} de {totalRegistros} registros
+    if (campo.tipo === 'select-dinamico') {
+      const opciones = campo.nombre === 'convocatoriaId' ? opcionesConvocatorias : opcionesRoles;
+      return (
+        <select
+          className={`form-select ${claseBorde}`}
+          value={valor}
+          onChange={(e) => handleChange(campo.nombre, e.target.value === '' ? null : Number(e.target.value))}
+        >
+          <option value="">{campo.requerido ? 'Seleccione...' : 'Ninguno (Opcional)'}</option>
+          {opciones.map(op => (
+            <option key={op.valor} value={op.valor}>{op.texto}</option>
+          ))}
+        </select>
+      );
+    }
+
+    switch (campo.tipo) {
+      case 'textarea':
+        return (
+          <div className="relative">
+            <textarea
+              className={`form-textarea ${claseBorde}`}
+              value={valor}
+              onChange={(e) => handleChange(campo.nombre, e.target.value)}
+              placeholder={campo.placeholder}
+              maxLength={campo.maxLength}
+              rows={4}
+            />
+            {campo.maxLength && (
+              <div className="absolute right-2 bottom-2 text-xs pointer-events-none select-none bg-white px-1 rounded">
+                <span className={colorContador}>{valorStr.length}/{campo.maxLength}</span>
+              </div>
+            )}
           </div>
-          <div className="paginacion-botones">
-            <button
-              className="btn-paginacion"
-              disabled={pagina === 1}
-              onClick={() => setPagina(pagina - 1)}
-              aria-label="Ir a la página anterior"
-            >
-              ← Anterior
-            </button>
-            {Array.from({ length: Math.min(totalPaginas, 5) }, (_, i) => i + 1).map((num) => (
-              <button
-                key={num}
-                className={`btn-paginacion ${pagina === num ? 'active' : ''}`}
-                onClick={() => setPagina(num)}
-                aria-label={`Ir a la página ${num}`}
-                aria-current={pagina === num ? 'page' : undefined}
-              >
-                {num}
-              </button>
+        );
+      
+      case 'select':
+        return (
+          <select
+            className={`form-select ${claseBorde}`}
+            value={valor}
+            onChange={(e) => handleChange(campo.nombre, e.target.value)}
+          >
+            <option value="">Seleccione...</option>
+            {campo.opciones.map(op => (
+              <option key={op.valor} value={op.valor}>{op.texto}</option>
             ))}
-            <button
-              className="btn-paginacion"
-              disabled={pagina >= totalPaginas}
-              onClick={() => setPagina(pagina + 1)}
-              aria-label="Ir a la página siguiente"
-            >
-              Siguiente →
-            </button>
+          </select>
+        );
+      
+      case 'number':
+        return (
+          <input
+            type="number"
+            className={`form-input ${claseBorde}`}
+            value={valor}
+            onChange={(e) => {
+              let val = e.target.value;
+              if (campo.nombre === 'nivelTrlId') {
+                if (val === '') {
+                  handleChange(campo.nombre, '');
+                } else {
+                  const num = parseInt(val, 10);
+                  if (num >= 1 && num <= 9) {
+                    handleChange(campo.nombre, num);
+                  }
+                }
+              } else {
+                handleChange(campo.nombre, val);
+              }
+            }}
+            placeholder={campo.placeholder}
+            min={campo.min}
+            max={campo.max}
+          />
+        );
+      
+      case 'checkbox':
+        return (
+          <label className="form-checkbox" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={!!valor}
+              onChange={(e) => handleChange(campo.nombre, e.target.checked)}
+              style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+            />
+            <span>{campo.label}</span>
+          </label>
+        );
+      
+      default:
+        return (
+          <div className="relative">
+            <input
+              type={campo.tipo}
+              className={`form-input ${claseBorde}`}
+              value={valor}
+              onChange={(e) => handleChange(campo.nombre, e.target.value)}
+              placeholder={campo.placeholder}
+              maxLength={campo.maxLength}
+              min={campo.min}
+              max={campo.max}
+            />
+            {campo.maxLength && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs pointer-events-none select-none bg-white px-1 rounded">
+                <span className={colorContador}>{valorStr.length}/{campo.maxLength}</span>
+              </div>
+            )}
           </div>
+        );
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {config.campos.map(campo => (
+        <div key={campo.nombre} className="form-group">
+          {campo.tipo !== 'checkbox' && campo.tipo !== 'multi-checkbox' && (
+            <label className="form-label">
+              {campo.label}
+              {campo.requerido && <span style={{ color: '#dc2626' }}> *</span>}
+            </label>
+          )}
+          {campo.tipo === 'multi-checkbox' && (
+            <label className="form-label">
+              {campo.label}
+              {campo.requerido && <span style={{ color: '#dc2626' }}> *</span>}
+            </label>
+          )}
+          {renderizarCampo(campo)}
+          {errores[campo.nombre] && (
+            <div className="form-error">{errores[campo.nombre]}</div>
+          )}
+          {campo.hint && !errores[campo.nombre] && (
+            <div className="form-hint">{campo.hint}</div>
+          )}
         </div>
+      ))}
+
+      <div className="form-actions">
+        <button type="button" className="btn-cancel" onClick={onCancel} disabled={cargando}>
+          Cancelar
+        </button>
+        <button type="submit" className="btn-submit" disabled={cargando}>
+          {cargando && <div className="spinner-small"></div>}
+          {datosExistentes ? 'Actualizar' : 'Crear'}
+        </button>
       </div>
-
-      <Modal
-        isOpen={modalCrearAbierto}
-        onClose={() => setModalCrearAbierto(false)}
-        title={`Crear ${NOMBRES_CATALOGOS[catalogoActivo]}`}
-        size="medium"
-      >
-        <CatalogoForm
-          catalogo={catalogoActivo}
-          onSubmit={handleCrear}
-          onCancel={() => setModalCrearAbierto(false)}
-          cargando={cargandoForm}
-        />
-      </Modal>
-
-      <Modal
-        isOpen={modalEditarAbierto}
-        onClose={() => {
-          setModalEditarAbierto(false);
-          setRegistroEditando(null);
-        }}
-        title={`Editar ${NOMBRES_CATALOGOS[catalogoActivo]}`}
-        size="medium"
-      >
-        <CatalogoForm
-          catalogo={catalogoActivo}
-          datosExistentes={registroEditando}
-          onSubmit={handleEditar}
-          onCancel={() => {
-            setModalEditarAbierto(false);
-            setRegistroEditando(null);
-          }}
-          cargando={cargandoForm}
-        />
-      </Modal>
-    </div>
+    </form>
   );
 }
