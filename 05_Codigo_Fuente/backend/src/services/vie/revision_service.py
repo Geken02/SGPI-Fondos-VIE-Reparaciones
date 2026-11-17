@@ -191,8 +191,11 @@ def _plan_riesgos(db: Session, p: Propuesta) -> dict:
     return _req("riesgos", nombre, CUMPLE)
 
 
+# ---------------------------------------------------------------------------
+# Punto de entrada
+# ---------------------------------------------------------------------------
 def obtener_requisitos_matriz3(db: Session, p: Propuesta) -> list[dict]:
-    """Cinco controles de Matriz 3 reutilizados por la validación normativa unificada."""
+    """Devuelve los cinco controles de Revisión VIE en el formato de Validación normativa."""
     requisitos = [
         _morosidad(db, p),
         _etica(p),
@@ -200,21 +203,14 @@ def obtener_requisitos_matriz3(db: Session, p: Propuesta) -> list[dict]:
         _participacion_estudiantil(p),
         _plan_riesgos(db, p),
     ]
-    # La validación unificada usa PENDIENTE; EN_REVISION es solo una etiqueta
-    # de presentación de la pantalla antigua de Revisión VIE.
+    # La pantalla unificada utiliza PENDIENTE; EN_REVISION pertenecía a la vista anterior.
     for requisito in requisitos:
         if requisito["estado"] == EN_REVISION:
             requisito["estado"] = PENDIENTE
     return requisitos
 
 
-# ---------------------------------------------------------------------------
-# Punto de entrada
-# ---------------------------------------------------------------------------
 def obtener_revision(db: Session, codigo_propuesta: str) -> dict:
-    p, estado, abierta = cargar_propuesta(db, codigo_propuesta)
-    return {
-        "expediente": construir_encabezado(db, p, estado, abierta),
-        "requisitos": obtener_requisitos_matriz3(db, p),
-        "documentos": documentos_expediente(p),
-    }
+    """Compatibilidad: la ruta antigua de Revisión devuelve ahora la validación unificada."""
+    from src.services.vie.validacion_service import obtener_validacion
+    return obtener_validacion(db, codigo_propuesta)

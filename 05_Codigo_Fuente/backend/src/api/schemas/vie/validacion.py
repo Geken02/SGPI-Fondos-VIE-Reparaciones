@@ -37,7 +37,7 @@ class EncabezadoExpediente(BaseModel):
     investigador: str
     escuela: str
     estado: str  # estado de gestión (mismo criterio que la bandeja)
-    estadoCodigo: str  # estado real del flujo institucional
+    estadoCodigo: str  # código real del estado institucional
     consejoAprobado: bool = False
     colaboradoresExternos: bool = False
     estadoDetalle: str

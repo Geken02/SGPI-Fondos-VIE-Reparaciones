@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from src.database import get_db
 from src.api.schemas.vie.expedientes import BandejaExpedientes
 from src.api.schemas.vie.gestion import DocumentosRespuesta, GuardarRequisitos, GuardarRevisionDocumentos
-from src.api.schemas.vie.revision import RevisionVIERespuesta
 from src.api.schemas.vie.subsanaciones import NuevaSubsanacion, SubsanacionFila
 from src.api.schemas.vie.validacion import ValidacionNormativaRespuesta
 from src.services.vie import (
@@ -87,13 +86,13 @@ def enviar_expediente_al_cie(
         raise HTTPException(status.HTTP_409_CONFLICT, str(error)) from error
 
 
-@router.get("/{codigo}/revision", response_model=RevisionVIERespuesta)
+@router.get("/{codigo}/revision", response_model=ValidacionNormativaRespuesta)
 def obtener_revision_vie(
     codigo: str,
     db: Session = Depends(get_db),
     usuario=Depends(requerir_rol(ROLES_GESTORA)),
 ):
-    """Revisión VIE de un expediente: encabezado, requisitos normativos y documentación adjunta."""
+    """Alias compatible: devuelve la validación unificada con los criterios de Matriz 3."""
     expediente_service.verificar_acceso_expediente(db, codigo, usuario.usuarioId)
     try:
         return revision_service.obtener_revision(db, codigo)
