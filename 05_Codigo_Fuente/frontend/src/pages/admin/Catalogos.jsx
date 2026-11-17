@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { catalogoService } from '../services/catalogoService';
+import { catalogoService } from '../services/adminService';
 
 // Configuración de campos por tipo de catálogo con límites exactos de la BD
 const CONFIG_CAMPOS = {
