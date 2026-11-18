@@ -411,11 +411,12 @@ def _persistir_datos_form04(
     if datos.get("objetivos_especificos"):
         # Guardar los objetivos como texto separado por '; ' en esta tabla 1:1
         # (además se crean filas individuales en ObjetivosEspecificos abajo)
-        objs = datos["objetivos_especificos"]
-        texto_objetivos = ";\n".join(
-            f"{o['numero']}. {o['descripcion']}" for o in objs
-        )
-        contenido_db.objetivosEspecificos = texto_objetivos
+        objetivos_str = ";\n".join(
+    f"{o['numero']}. {o['descripcion']}"
+    for o in datos["objetivos_especificos"]
+    )
+    contenido_db.objetivosEspecificos = objetivos_str
+
     if datos.get("estado_arte"):
         contenido_db.estadoArte = datos["estado_arte"]
     if datos.get("metodologia"):
