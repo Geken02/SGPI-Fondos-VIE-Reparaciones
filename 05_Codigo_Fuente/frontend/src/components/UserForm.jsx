@@ -1,6 +1,6 @@
 // src/components/UserForm.jsx
 import { useState, useEffect } from 'react';
-import { adminService } from '../services/adminService'; // Ajusta la ruta si es necesario
+import { adminService } from '../services/adminService';
 
 // Componente externo para evitar pérdida de foco
 const InputConLimite = ({ nombre, label, tipo, placeholder, maxLength, requerido, valor, error, onChange }) => {
@@ -158,38 +158,38 @@ export default function UserForm({ usuario, roles, escuelas, onSubmit, onCancel,
     }
   };
 
-const handleAsignarRol = async () => {
-  if (!nuevoRolId) {
-    setMensajeRol({ texto: 'Seleccione un rol para asignar', tipo: 'error' });
-    return;
-  }
+  const handleAsignarRol = async () => {
+    if (!nuevoRolId) {
+      setMensajeRol({ texto: 'Seleccione un rol para asignar', tipo: 'error' });
+      return;
+    }
 
-  setGestionandoRol('asignar');
-  setMensajeRol({ texto: '', tipo: '' });
+    setGestionandoRol('asignar');
+    setMensajeRol({ texto: '', tipo: '' });
 
-  try {
-    const nuevoRol = await adminService.asignarRol(usuario.usuarioId, { rolId: parseInt(nuevoRolId) });
-    
-
-    const rolInfo = roles.find(r => r.rolId === parseInt(nuevoRolId));
-    const nuevoRolCompleto = {
-      ...nuevoRol,
-      nombreRol: nuevoRol.nombreRol || rolInfo?.nombreRol || 'Rol asignado'
-    };
-    
-    setRolesAsignados(prev => [...prev, nuevoRolCompleto]);
-    setNuevoRolId('');
-    setMensajeRol({ texto: `Rol "${nuevoRolCompleto.nombreRol}" asignado exitosamente.`, tipo: 'exito' });
-  } catch (err) {
-    const errorMsg = err.response?.data?.detail || 'Error al asignar el rol';
-    setMensajeRol({ texto: errorMsg, tipo: 'error' });
-  } finally {
-    setGestionandoRol(null);
-  }
-};
+    try {
+      const nuevoRol = await adminService.asignarRol(usuario.usuarioId, { rolId: parseInt(nuevoRolId) });
+      
+      const rolInfo = roles.find(r => r.rolId === parseInt(nuevoRolId));
+      const nuevoRolCompleto = {
+        ...nuevoRol,
+        nombreRol: nuevoRol.nombreRol || rolInfo?.nombreRol || 'Rol asignado'
+      };
+      
+      setRolesAsignados(prev => [...prev, nuevoRolCompleto]);
+      setNuevoRolId('');
+      setMensajeRol({ texto: `Rol "${nuevoRolCompleto.nombreRol}" asignado exitosamente.`, tipo: 'exito' });
+    } catch (err) {
+      const errorMsg = err.response?.data?.detail || 'Error al asignar el rol';
+      setMensajeRol({ texto: errorMsg, tipo: 'error' });
+    } finally {
+      setGestionandoRol(null);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit}>
+      {/* Fila 1: Correo y Teléfono */}
       <div className="form-row">
         <InputConLimite 
           nombre="correoInstitucional" 
@@ -216,6 +216,7 @@ const handleAsignarRol = async () => {
         />
       </div>
 
+      {/* ✅ Fila 2: Nombre y Primer Apellido (ORDEN CORREGIDO) */}
       <div className="form-row">
         <InputConLimite 
           nombre="nombreUsuario" 
@@ -230,20 +231,6 @@ const handleAsignarRol = async () => {
         />
 
         <InputConLimite 
-          nombre="apellido2Usuario" 
-          label="Segundo Apellido" 
-          tipo="text" 
-          placeholder="Carlos" 
-          maxLength={50} 
-          requerido={false}
-          valor={formData.apellido2Usuario}
-          error={errores.apellido2Usuario}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="form-row">
-        <InputConLimite 
           nombre="apellido1Usuario" 
           label="Primer Apellido" 
           tipo="text" 
@@ -252,6 +239,21 @@ const handleAsignarRol = async () => {
           requerido={true}
           valor={formData.apellido1Usuario}
           error={errores.apellido1Usuario}
+          onChange={handleChange}
+        />
+      </div>
+
+      {/* ✅ Fila 3: Segundo Apellido y Escuela (ORDEN CORREGIDO) */}
+      <div className="form-row">
+        <InputConLimite 
+          nombre="apellido2Usuario" 
+          label="Segundo Apellido" 
+          tipo="text" 
+          placeholder="Gómez" 
+          maxLength={50} 
+          requerido={false}
+          valor={formData.apellido2Usuario}
+          error={errores.apellido2Usuario}
           onChange={handleChange}
         />
 
@@ -272,7 +274,7 @@ const handleAsignarRol = async () => {
         </div>
       </div>
 
-      {/* Gestión de Roles */}
+      {/* Gestión de Roles (Solo para edición) */}
       {usuario && (
         <div className="form-group" style={{ marginTop: '16px' }}>
           <label className="form-label">Roles Asignados</label>
