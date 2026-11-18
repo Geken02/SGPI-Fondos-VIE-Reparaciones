@@ -14,7 +14,7 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
   const [escuelas, setEscuelas] = useState([]);
   const [convocatoriaId, setConvocatoriaId] = useState(1);
   const [titulo, setTitulo] = useState('');
-  const [escuelaId, setEscuelaId] = useState(1);
+  const [escuelaId, setEscuelaId] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [cargandoCatalogos, setCargandoCatalogos] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -51,17 +51,17 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
             setEscuelaId(data.escuelas[0].escuelaId);
           }
         } else {
-          // Fallback institucional
-          setEscuelas([
-            { escuelaId: 2, nombreEscuela: 'Escuela de Ingeniería Electrónica (EL)', codigoEscuela: 'EL' },
-            { escuelaId: 1, nombreEscuela: 'Escuela de Ingeniería en Computación (IC)', codigoEscuela: 'IC' },
-            { escuelaId: 3, nombreEscuela: 'Escuela de Química (QU)', codigoEscuela: 'QU' },
-            { escuelaId: 6, nombreEscuela: 'Escuela de Biotecnología (BI)', codigoEscuela: 'BI' }
-          ]);
-          setEscuelaId(2);
+          // Sin escuelas en la base de datos: no se inventan ids (evita guardar
+          // una escuela inexistente). Se bloquea la creación hasta que exista el catálogo.
+          setEscuelas([]);
+          setEscuelaId('');
+          setErrorMsg('No hay escuelas registradas en la base de datos. Registre una escuela en el catálogo antes de crear una propuesta.');
         }
       } catch (err) {
-        console.warn('No se pudieron obtener catálogos de base de datos, usando predeterminados:', err);
+        console.warn('No se pudieron obtener los catálogos desde la base de datos:', err);
+        setEscuelas([]);
+        setEscuelaId('');
+        setErrorMsg('No se pudieron cargar las escuelas desde la base de datos. Intente de nuevo.');
       } finally {
         setCargandoCatalogos(false);
       }
@@ -88,6 +88,10 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
       setErrorMsg('El título preliminar debe tener al menos 5 caracteres.');
       return;
     }
+    if (!escuelaId) {
+      setErrorMsg('Seleccione una escuela válida. No hay escuelas disponibles en el catálogo.');
+      return;
+    }
 
     try {
       setGuardando(true);
@@ -96,7 +100,7 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
       const payload = {
         titulo: titulo.trim(),
         convocatoriaId: Number(convocatoriaId) || 1,
-        escuelaId: Number(escuelaId) || 1,
+        escuelaId: Number(escuelaId),
         montoTotal: '0',
         nivelTrlActual: 3,
         nivelTrlEsperado: 6
@@ -325,7 +329,7 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
               <button 
                 type="submit" 
                 className="btn-modal-crear"
-                disabled={guardando}
+                disabled={guardando || escuelas.length === 0}
               >
                 {guardando ? 'Guardando en BD...' : 'Crear Propuesta'}
               </button>
