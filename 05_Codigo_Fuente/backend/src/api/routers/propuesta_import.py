@@ -1,20 +1,296 @@
+"""
+propuesta_import.py
+===================
+Endpoint robusto para importar el Form-04. 
+Sigue la misma lógica completa que archivos.py: 
+1. Sube a S3
+2. Registra en PropuestaDocumentos
+3. Persiste en TODAS las tablas del esquema SGPI de forma idempotente.
+"""
+import hashlib
+import re
+import traceback
+from datetime import datetime, timezone, date
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
-from sqlalchemy import inspect
-from datetime import datetime, timezone
-import json
-import traceback
 
 from src.database import get_db
 from src.utils.dependencias import obtener_usuario_activo
 from src.models.usuarios import Usuario
-from src.models.catalogos import Modalidades
 from src.models.propuestas import Propuesta
-from src.models.propuesta_contenido import PropuestaContenido
-from src.models.propuesta_contenido import PropuestaDeclaraciones  
+from src.models.propuesta_contenido import PropuestaContenido, PropuestaDeclaraciones
+from src.models.propuesta_plan import ObjetivosEspecificos
+from src.models.propuesta_equipo import IntegrantesEquipoPropuesta, RolesEquipo, ColaboradoresExternos
+from src.models.presupuesto import PresupuestoPropuesta, FinanciamientoExterno, TiposFinanciamiento, RubrosPropuesta
+from src.models.aspectos_eticos import AspectosEticos, EntesRegulatorios, EstadosAval
+from src.models.productos_academicos import ProductosAcademicos, TiposProductosAcademicos
+from src.models.dictamenes import Dictamenes
+from src.models.bibliografia import FuentesBibliograficas, Autores, AutorFuente, PropuestaReferencia
+from src.models.catalogos import Modalidades, TiposHora, TiposInnovacion
+from src.models.propuesta_documentos import PropuestaDocumentos, TiposDocumento
 from src.services.form04_parser import parsear_form04_docx
+from src.utils.s3_client import s3_client, S3_BUCKET_NAME, obtener_url_documento
 
 router = APIRouter(prefix="/api/propuestas", tags=["Importación de Formularios"])
+
+
+# ============================================================================
+# HELPERS DE LOOKUP (Idénticos a archivos.py para consistencia)
+# ============================================================================
+
+def _lookup_modalidad(sesion: Session, nombre: str):
+    if not nombre: return None
+    return sesion.query(Modalidades).filter(Modalidades.nombreModalidad.ilike(f"%{nombre}%"), Modalidades.activo == True).first()
+
+def _lookup_tipo_hora(sesion: Session, codigo: str):
+    if not codigo: return None
+    return sesion.query(TiposHora).filter((TiposHora.codigoTipo.ilike(codigo.strip())) | (TiposHora.codigoTipo.ilike(f"%{codigo.strip()}%")), TiposHora.activo == True).first()
+
+def _lookup_rol_equipo(sesion: Session, nombre: str):
+    if not nombre: return None
+    return sesion.query(RolesEquipo).filter(RolesEquipo.nombreRol.ilike(f"%{nombre}%"), RolesEquipo.activo == True).first()
+
+def _lookup_tipo_innovacion(sesion: Session, nombre: str):
+    if not nombre: return None
+    return sesion.query(TiposInnovacion).filter(TiposInnovacion.nombreTipoInnovacion.ilike(f"%{nombre}%"), TiposInnovacion.activo == True).first()
+
+def _lookup_tipo_financiamiento(sesion: Session, nombre: str):
+    if not nombre: return None
+    return sesion.query(TiposFinanciamiento).filter(TiposFinanciamiento.nombreTipoFinanciamiento.ilike(f"%{nombre}%"), TiposFinanciamiento.activo == True).first()
+
+def _lookup_ente_regulatorio(sesion: Session, codigo: str):
+    if not codigo: return None
+    mapping = {"CEC": "Comité Ético Científico", "CONAGEBIO": "CONAGEBIO", "CICUA/COBAB": "CICUA", "Otro": "Otro"}
+    return sesion.query(EntesRegulatorios).filter(EntesRegulatorios.nombreEnteRegulatorio.ilike(f"%{mapping.get(codigo, codigo)}%"), EntesRegulatorios.activo == True).first()
+
+def _lookup_estado_aval(sesion: Session, nombre: str = "Pendiente"):
+    return sesion.query(EstadosAval).filter(EstadosAval.nombreEstadoAval.ilike(f"%{nombre}%"), EstadosAval.activo == True).first()
+
+def _lookup_tipo_producto(sesion: Session, texto: str):
+    if not texto: return None
+    t = texto.lower()
+    if "patente" in t or "modelo de utilidad" in t:
+        return sesion.query(TiposProductosAcademicos).filter(TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Patente%"), TiposProductosAcademicos.activo == True).first()
+    if "software" in t:
+        return sesion.query(TiposProductosAcademicos).filter(TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Software%"), TiposProductosAcademicos.activo == True).first()
+    if "artículo" in t or "articulo" in t:
+        filtro = "%Artículo%WoS%" if ("web of science" in t or "scopus" in t) else "%Artículo%SciELO%"
+        return sesion.query(TiposProductosAcademicos).filter(TiposProductosAcademicos.nombreTipoProductoAcademico.ilike(filtro), TiposProductosAcademicos.activo == True).first()
+    if "libro" in t or "capítulo" in t or "capitulo" in t:
+        return sesion.query(TiposProductosAcademicos).filter(TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Libro%"), TiposProductosAcademicos.activo == True).first()
+    return None
+
+def _lookup_rubro(sesion: Session, nombre: str):
+    if not nombre: return None
+    return sesion.query(RubrosPropuesta).filter(RubrosPropuesta.nombreRubro.ilike(f"%{nombre}%"), RubrosPropuesta.activo == True).first()
+
+def _obtener_o_crear_usuario_por_orcid(sesion: Session, nombre_completo: str, orcid: str, instancia: str = "") -> Optional[Usuario]:
+    if not nombre_completo: return None
+    if orcid:
+        integrante = sesion.query(IntegrantesEquipoPropuesta).filter(IntegrantesEquipoPropuesta.orcid == orcid).first()
+        if integrante:
+            return sesion.query(Usuario).filter(Usuario.usuarioId == integrante.usuarioId).first()
+    
+    partes = nombre_completo.split(maxsplit=1)
+    nombre_pila = partes[0] if partes else nombre_completo
+    apellidos = partes[1] if len(partes) > 1 else ""
+    ap_tokens = apellidos.split()
+    apellido1 = ap_tokens[0] if ap_tokens else ""
+    apellido2 = " ".join(ap_tokens[1:]) if len(ap_tokens) > 1 else None
+
+    usuario = sesion.query(Usuario).filter(Usuario.nombreUsuario.ilike(nombre_pila), Usuario.apellido1Usuario.ilike(apellido1) if apellido1 else True, Usuario.activo == True).first()
+    if usuario: return usuario
+
+    if not orcid: return None
+    nuevo = Usuario(correoInstitucional=f"{orcid.replace('-', '')}@orcid-pendiente.tec.ac.cr", nombreUsuario=nombre_pila, apellido1Usuario=apellido1, apellido2Usuario=apellido2, activo=True, fechaCreacion=datetime.now(timezone.utc))
+    sesion.add(nuevo)
+    sesion.flush()
+    return nuevo
+
+
+# ============================================================================
+# PERSISTENCIA COMPLETA DEL FORM-04 (Idéntica a archivos.py)
+# ============================================================================
+
+def _persistir_datos_form04(sesion: Session, propuesta_id: int, datos: dict, usuario_actual: Usuario) -> None:
+    ahora = datetime.now(timezone.utc)
+
+    # 0. LIMPIEZA (Idempotencia)
+    sesion.query(ObjetivosEspecificos).filter(ObjetivosEspecificos.propuestaId == propuesta_id).delete(synchronize_session=False)
+    sesion.query(IntegrantesEquipoPropuesta).filter(IntegrantesEquipoPropuesta.propuestaId == propuesta_id).delete(synchronize_session=False)
+    sesion.query(ColaboradoresExternos).filter(ColaboradoresExternos.propuestaId == propuesta_id).delete(synchronize_session=False)
+    sesion.query(PresupuestoPropuesta).filter(PresupuestoPropuesta.propuestaId == propuesta_id).delete(synchronize_session=False)
+    sesion.query(FinanciamientoExterno).filter(FinanciamientoExterno.propuestaId == propuesta_id).delete(synchronize_session=False)
+    sesion.query(AspectosEticos).filter(AspectosEticos.propuestaId == propuesta_id).delete(synchronize_session=False)
+    sesion.query(ProductosAcademicos).filter(ProductosAcademicos.propuestaId == propuesta_id).delete(synchronize_session=False)
+    sesion.query(PropuestaReferencia).filter(PropuestaReferencia.propuestaId == propuesta_id).delete(synchronize_session=False)
+    sesion.query(Dictamenes).filter(Dictamenes.propuestaId == propuesta_id).delete(synchronize_session=False)
+
+    # 1. PROPUESTA
+    propuesta = sesion.query(Propuesta).filter(Propuesta.propuestaId == propuesta_id).first()
+    if not propuesta:
+        raise HTTPException(status_code=404, detail=f"No existe la propuesta {propuesta_id}")
+    
+    if datos.get("titulo"): propuesta.titulo = datos["titulo"]
+    if datos.get("fecha_inicio"):
+        try: propuesta.fechaInicio = date(int(datos["fecha_inicio"]), 1, 1)
+        except (ValueError, TypeError): pass
+    if datos.get("fecha_fin"):
+        try: propuesta.fechaFinalizacion = date(int(datos["fecha_fin"]), 12, 31)
+        except (ValueError, TypeError): pass
+    
+    mod_obj = _lookup_modalidad(sesion, datos.get("modalidad", ""))
+    if mod_obj: propuesta.modalidadId = mod_obj.modalidadId
+    
+    trl = datos.get("seccion1", {}).get("trl")
+    if trl: propuesta.nivelTrlEsperado = int(trl)
+    if datos.get("monto_total_proyecto"): propuesta.montoTotal = datos["monto_total_proyecto"]
+    
+    propuesta.ultimaAuditoria = ahora
+    propuesta.usuarioAuditoriaId = usuario_actual.usuarioId
+
+    # 2. PROPUESTA_CONTENIDO
+    contenido_db = sesion.query(PropuestaContenido).filter(PropuestaContenido.propuestaId == propuesta_id).first()
+    if not contenido_db:
+        contenido_db = PropuestaContenido(propuestaId=propuesta_id)
+        sesion.add(contenido_db)
+    
+    for campo_parser, campo_modelo in [("resumen", "resumen"), ("palabras_clave", "palabrasClave"), ("abstract", "abstract"), ("problema_investigacion", "problemaInvestigacion"), ("objetivo_general", "objetivoGeneral"), ("estado_arte", "estadoArte"), ("metodologia", "metodologia"), ("hoja_ruta", "hojaRuta")]:
+        if datos.get(campo_parser) and hasattr(contenido_db, campo_modelo):
+            setattr(contenido_db, campo_modelo, datos[campo_parser])
+    
+    if datos.get("objetivos_especificos"):
+        contenido_db.objetivosEspecificos = ";\n".join(f"{o['numero']}. {o['descripcion']}" for o in datos["objetivos_especificos"])
+    
+    div = datos.get("divulgacion", {})
+    partes_div = [f"{k}: {v}" for k, v in div.items() if v]
+    if partes_div and hasattr(contenido_db, "estrategiaDivulgacion"):
+        contenido_db.estrategiaDivulgacion = "\n\n".join(partes_div)
+        
+    contenido_db.ultimaAuditoria = ahora
+    contenido_db.usuarioAuditoriaId = usuario_actual.usuarioId
+
+    # 3. PROPUESTA_DECLARACIONES
+    decl_db = sesion.query(PropuestaDeclaraciones).filter(PropuestaDeclaraciones.propuestaId == propuesta_id).first()
+    if not decl_db:
+        decl_db = PropuestaDeclaraciones(propuestaId=propuesta_id)
+        sesion.add(decl_db)
+    
+    s1 = datos.get("seccion1", {})
+    decl_db.tieneFinanciamientoPrevio = bool(s1.get("otras_fuentes", {}).get("aplica"))
+    decl_db.tieneContinuidadProyecto = bool(s1.get("vinculacion_tecnica", {}).get("aplica"))
+    decl_db.requiereInstrumentoJuridico = bool(s1.get("instrumento_juridico", {}).get("aplica"))
+    decl_db.tieneBasePosgrado = s1.get("base_posgrado", {}).get("aplica", "No") != "No"
+    decl_db.tieneInformacionConfidencial = bool(s1.get("info_confidencial", {}).get("aplica"))
+    decl_db.tienePotencialPI = bool(s1.get("potencial_pi", {}).get("aplica"))
+    decl_db.poseeInnovacion = bool(s1.get("posee_innovacion", {}).get("aplica"))
+    
+    if s1.get("posee_innovacion", {}).get("tipo"):
+        ti_obj = _lookup_tipo_innovacion(sesion, s1["posee_innovacion"]["tipo"])
+        if ti_obj: decl_db.tipoInnovacionId = ti_obj.tipoInnovacionId
+        
+    decl_db.aceptaResguardoRepositorio = bool(datos.get("resguardo", {}).get("resguardo_compromiso"))
+    decl_db.aceptaDeclaracionJurada = bool(datos.get("firma", {}).get("firmado_digital"))
+    decl_db.ultimaAuditoria = ahora
+    decl_db.usuarioAuditoriaId = usuario_actual.usuarioId
+
+    # 4. OBJETIVOS_ESPECIFICOS
+    for oe in datos.get("objetivos_especificos", []):
+        sesion.add(ObjetivosEspecificos(propuestaId=propuesta_id, numeroObjetivo=oe["numero"], descripcion=oe["descripcion"], creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
+    sesion.flush()
+
+    # 5. INTEGRANTES_EQUIPO_PROPUESTA
+    for inv in datos.get("investigadores_tec", []):
+        usuario = _obtener_o_crear_usuario_por_orcid(sesion, inv["nombre"], inv.get("orcid", ""), inv.get("instancia", ""))
+        if not usuario: continue
+        rol_equipo = _lookup_rol_equipo(sesion, inv.get("rol", ""))
+        for th in inv.get("horas", []):
+            tipo_hora = _lookup_tipo_hora(sesion, th["tipo_hora"])
+            if not tipo_hora: continue
+            sesion.add(IntegrantesEquipoPropuesta(propuestaId=propuesta_id, usuarioId=usuario.usuarioId, tipoHoraId=tipo_hora.tipoHoraId, horasSemanales=th["horas"], rolEquipoId=rol_equipo.rolEquipoId if rol_equipo else None, orcid=inv.get("orcid", ""), creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
+
+    # 6. COLABORADORES_EXTERNOS
+    for col in datos.get("colaboradores_externos", []):
+        sesion.add(ColaboradoresExternos(propuestaId=propuesta_id, nombreColaborador=col.get("nombre", ""), apellido1Colaborador=col.get("apellido1"), apellido2Colaborador=col.get("apellido2"), idOrcid=col.get("orcid"), institucionEmpresa=col.get("institucion", ""), creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
+
+    # 7. PRESUPUESTO_PROPUESTA
+    rubro_operativo = _lookup_rubro(sesion, "operativo") or _lookup_rubro(sesion, "Presupuesto operativo")
+    rubro_duradero = _lookup_rubro(sesion, "bienes duraderos") or _lookup_rubro(sesion, "duradero")
+    for p in datos.get("presupuesto_anual", []):
+        anio = p["ano"]
+        if p.get("operativo", 0) > 0 and rubro_operativo:
+            sesion.add(PresupuestoPropuesta(propuestaId=propuesta_id, rubroId=rubro_operativo.rubroId, montoSolicitado=p["operativo"], anioEjecucion=anio, esDuradero=False, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
+        if p.get("duradero", 0) > 0 and rubro_duradero:
+            sesion.add(PresupuestoPropuesta(propuestaId=propuesta_id, rubroId=rubro_duradero.rubroId, montoSolicitado=p["duradero"], anioEjecucion=anio, esDuradero=True, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
+
+    # 8. FINANCIAMIENTO_EXTERNO
+    fa = datos.get("financiamiento_adicional", {})
+    for cat_nombre, entry in [("externo", fa.get("externo", {})), ("contrapartida", fa.get("contrapartida", {})), ("cofinanciamiento", fa.get("cofinanciamiento", {}))]:
+        if not entry: continue
+        tipo_fin = _lookup_tipo_financiamiento(sesion, cat_nombre)
+        if not tipo_fin: continue
+        for idx, anio_label in enumerate(["ano1", "ano2", "ano3"], start=1):
+            monto = entry.get(anio_label, 0.0)
+            if monto <= 0: continue
+            anio_ejec = (propuesta.fechaInicio.year + idx - 1) if propuesta.fechaInicio else (2027 + idx - 1)
+            sesion.add(FinanciamientoExterno(propuestaId=propuesta_id, tipoFinanciamientoId=tipo_fin.tipoFinanciamientoId, anio=anio_ejec, monto=monto, numeroOficio=entry.get("oficio"), creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
+
+    # 9. ASPECTOS_ETICOS
+    ae = datos.get("aspectos_eticos", {})
+    sesion.add(AspectosEticos(propuestaId=propuesta_id, involucraSeresHumanos=bool(ae.get("seres_humanos")), involucraBiodiversidad=bool(ae.get("biodiversidad")), involucraAnimales=bool(ae.get("animales")), involucraTerritoriosIndigenas=bool(ae.get("comunidades_indigenas")), justificacionExencion=ae.get("justificacion_exencion"), enteRegulatorioId=_lookup_ente_regulatorio(sesion, ae.get("ente_regulatorio", "")).enteRegulatorioId if _lookup_ente_regulatorio(sesion, ae.get("ente_regulatorio", "")) else None, estadoAvalId=_lookup_estado_aval(sesion, "Pendiente").estadoAvalId, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
+
+    # 10. PRODUCTOS_ACADEMICOS
+    objs_db = sesion.query(ObjetivosEspecificos).filter(ObjetivosEspecificos.propuestaId == propuesta_id).all()
+    def _resolver_objetivo_id(texto_oe: str) -> Optional[int]:
+        if not texto_oe: return None
+        nums = [int(m.group(1)) for m in re.finditer(r"OE\s*(\d+)", texto_oe, re.IGNORECASE)]
+        if not nums: return None
+        for oe_db in objs_db:
+            if oe_db.numeroObjetivo == nums[0]: return oe_db.objetivoEspecificoId
+        return None
+
+    comp = datos.get("compromisos", {})
+    for prod in comp.get("productos_basica", []) + comp.get("productos_desarrollo", []):
+        tipo_prod = _lookup_tipo_producto(sesion, prod["opcion"])
+        if tipo_prod:
+            sesion.add(ProductosAcademicos(propuestaId=propuesta_id, tipoProductoAcademicoId=tipo_prod.tipoProductoAcademicoId, objetivoEspecificoId=_resolver_objetivo_id(prod.get("objetivo", "")), descripcion=prod["opcion"][:300], cantidadComprometida=prod.get("cantidad", 1), esPropiedadIndustrial=False, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
+    
+    for activo in comp.get("activos_propiedad_industrial", []):
+        tipo_prod = _lookup_tipo_producto(sesion, activo["tipo_activo"])
+        if tipo_prod:
+            sesion.add(ProductosAcademicos(propuestaId=propuesta_id, tipoProductoAcademicoId=tipo_prod.tipoProductoAcademicoId, objetivoEspecificoId=_resolver_objetivo_id(activo.get("consecutivo", "")), descripcion=activo["tipo_activo"][:300], cantidadComprometida=1, esPropiedadIndustrial=True, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
+
+    # 11. DICTAMENES
+    oficio_dict = s1.get("potencial_pi", {}).get("oficio_dictamen", "")
+    if oficio_dict:
+        sesion.add(Dictamenes(propuestaId=propuesta_id, numeroOficio=oficio_dict, fechaEmision=ahora, contenido=f"Dictamen del Centro de Vinculación: {oficio_dict}. Generado automáticamente desde el Form-04.", usuarioRemitenteId=usuario_actual.usuarioId, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
+
+    # 12. REFERENCIAS BIBLIOGRÁFICAS
+    for ref in datos.get("referencias", []):
+        fuente = sesion.query(FuentesBibliograficas).filter(FuentesBibliograficas.doi == ref.get("doi")).first() if ref.get("doi") else None
+        if not fuente:
+            fuente = FuentesBibliograficas(doi=ref.get("doi"), titulo=ref["titulo"][:500], anioPublicacion=ref.get("anio") or 0, revistaFuente=(ref.get("revista_fuente") or "")[:200] or None, esIndexadaWoSScopus=bool(ref.get("es_indexada_wos_scopus")), creadoEn=ahora)
+            sesion.add(fuente)
+            sesion.flush()
+        
+        for orden, nombre_autor in enumerate(ref.get("autores", []), start=1):
+            autor = sesion.query(Autores).filter(Autores.nombreCompleto.ilike(nombre_autor)).first()
+            if not autor:
+                autor = Autores(nombreCompleto=nombre_autor[:150], creadoEn=ahora)
+                sesion.add(autor)
+                sesion.flush()
+            if not sesion.query(AutorFuente).filter(AutorFuente.autorId == autor.autorId, AutorFuente.fuenteId == fuente.fuenteId).first():
+                sesion.add(AutorFuente(autorId=autor.autorId, fuenteId=fuente.fuenteId, ordenAutoria=orden, creadoEn=ahora))
+        
+        if not sesion.query(PropuestaReferencia).filter(PropuestaReferencia.propuestaId == propuesta_id, PropuestaReferencia.fuenteId == fuente.fuenteId).first():
+            sesion.add(PropuestaReferencia(propuestaId=propuesta_id, fuenteId=fuente.fuenteId, ordenReferencia=ref.get("numero", 0), creadoEn=ahora))
+
+
+# ============================================================================
+# ENDPOINT PRINCIPAL
+# ============================================================================
 
 @router.post("/{propuesta_id}/importar-form04")
 async def importar_form04(
@@ -23,275 +299,83 @@ async def importar_form04(
     usuario_actual: Usuario = Depends(obtener_usuario_activo),
     sesion: Session = Depends(get_db)
 ):
-    print("\n" + "="*80)
-    print(f"🔍 DEBUG ENDPOINT: Iniciando importación Form-04 para propuesta_id={propuesta_id}")
-    print(f"🔍 DEBUG ENDPOINT: Usuario actual = {usuario_actual.usuarioId} ({usuario_actual.nombreUsuario})")
-    print(f"🔍 DEBUG ENDPOINT: Archivo recibido = {archivo.filename}, tamaño = {archivo.size} bytes")
-    print("="*80 + "\n")
+    print(f"\n🔍 DEBUG: Iniciando importación Form-04 robusta para propuesta_id={propuesta_id}")
     
-    if not archivo.filename.endswith('.docx'):
+    if not archivo.filename.lower().endswith('.docx'):
         raise HTTPException(status_code=400, detail="Solo se permiten archivos .docx del Form-04 oficial")
     
     try:
-        # =====================================================================
-        # PASO 1: LEER Y PARSEAR EL ARCHIVO
-        # =====================================================================
-        print("📖 PASO 1: Leyendo y parseando el archivo...")
         contenido = await archivo.read()
-        print(f"   ✓ Archivo leído: {len(contenido)} bytes")
-        
-        datos = parsear_form04_docx(contenido)
-        print(f"   ✓ Parser ejecutado. Claves extraídas: {list(datos.keys())}")
-        print(f"   ✓ Título extraído: {datos.get('titulo', 'VACÍO')[:80]}")
-        print(f"   ✓ Modalidad extraída: {datos.get('modalidad', 'VACÍO')}")
-        print(f"   ✓ TRL extraído: {datos.get('seccion1', {}).get('trl', 'VACÍO')}")
-        print(f"   ✓ Resumen extraído: {len(datos.get('resumen', ''))} chars")
-        
-        # =====================================================================
-        # PASO 2: DEBUG DE MODELOS (Verificar nombres de campos)
-        # =====================================================================
-        print("\n🔎 PASO 2: Inspeccionando modelos SQLAlchemy...")
-        
-        # Inspeccionar Propuesta
-        insp_propuesta = inspect(Propuesta)
-        columnas_propuesta = [c.key for c in insp_propuesta.columns]
-        print(f"   📋 Columnas en modelo Propuesta: {columnas_propuesta}")
-        
-        # Inspeccionar PropuestaContenido
-        insp_contenido = inspect(PropuestaContenido)
-        columnas_contenido = [c.key for c in insp_contenido.columns]
-        print(f"   📋 Columnas en modelo PropuestaContenido: {columnas_contenido}")
-        
-        # Inspeccionar PropuestaDeclaraciones
-        insp_decl = inspect(PropuestaDeclaraciones)
-        columnas_decl = [c.key for c in insp_decl.columns]
-        print(f"   📋 Columnas en modelo PropuestaDeclaraciones: {columnas_decl}")
-        
-        # Inspeccionar Modalidades
-        insp_mod = inspect(Modalidades)
-        columnas_mod = [c.key for c in insp_mod.columns]
-        print(f"   📋 Columnas en modelo Modalidades: {columnas_mod}")
-        
-        # =====================================================================
-        # PASO 3: ACTUALIZAR PROPUESTA (Cabecera)
-        # =====================================================================
-        print("\n📝 PASO 3: Actualizando tabla Propuestas...")
-        propuesta = sesion.query(Propuesta).filter(Propuesta.propuestaId == propuesta_id).first()
-        
-        if not propuesta:
-            print(f"   ❌ ERROR: Propuesta {propuesta_id} NO encontrada en la BD")
-            raise HTTPException(status_code=404, detail="Propuesta no encontrada")
-        
-        print(f"   ✓ Propuesta encontrada: ID={propuesta.propuestaId}, título actual='{propuesta.titulo[:50]}...'")
-        
-        # Actualizar título
-        if datos.get("titulo"):
-            print(f"   → Actualizando título: '{datos['titulo'][:50]}...'")
-            propuesta.titulo = datos["titulo"]
-        
-        # Actualizar fechas
-        if datos.get("fecha_inicio"):
-            try:
-                fecha_obj = datetime.strptime(datos["fecha_inicio"], "%d/%m/%Y").date()
-                print(f"   → Actualizando fechaInicio: {fecha_obj}")
-                propuesta.fechaInicio = fecha_obj
-            except ValueError as e:
-                print(f"   ⚠️ Error parseando fecha_inicio '{datos['fecha_inicio']}': {e}")
-                
-        if datos.get("fecha_fin"):
-            try:
-                fecha_obj = datetime.strptime(datos["fecha_fin"], "%d/%m/%Y").date()
-                print(f"   → Actualizando fechaFinalizacion: {fecha_obj}")
-                propuesta.fechaFinalizacion = fecha_obj
-            except ValueError as e:
-                print(f"   ⚠️ Error parseando fecha_fin '{datos['fecha_fin']}': {e}")
+        tamanio_bytes = len(contenido)
+        checksum = hashlib.sha256(contenido).hexdigest()
+        ruta_s3 = f"propuestas/{propuesta_id}/{archivo.filename}"
 
-        # Mapear Modalidad
-        modalidad_str = datos.get("modalidad", "")
-        print(f"   → Buscando modalidad: '{modalidad_str}'")
-        if modalidad_str:
-            modalidad_obj = sesion.query(Modalidades).filter(
-                Modalidades.nombreModalidad.ilike(f"%{modalidad_str}%")
-            ).first()
-            
-            if modalidad_obj:
-                print(f"   ✓ Modalidad encontrada: ID={modalidad_obj.modalidadId}, nombre='{modalidad_obj.nombreModalidad}'")
-                propuesta.modalidadId = modalidad_obj.modalidadId
-            else:
-                print(f"   ⚠️ ADVERTENCIA: Modalidad '{modalidad_str}' NO encontrada en la BD. Listando todas las modalidades:")
-                todas_modalidades = sesion.query(Modalidades).all()
-                for m in todas_modalidades:
-                    print(f"      - ID={m.modalidadId}: '{m.nombreModalidad}'")
-            
-        # Mapear TRL
-        trl = datos.get("seccion1", {}).get("trl")
-        if trl:
-            print(f"   → Actualizando nivelTrlActual: {trl}")
-            propuesta.nivelTrlActual = int(trl)
-            
-        propuesta.ultimaAuditoria = datetime.now(timezone.utc)
-        print(f"   ✓ Propuesta actualizada en memoria")
+        # 1. Subir a S3
+        print(f"📤 Subiendo archivo a S3: {ruta_s3}")
+        s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=ruta_s3, Body=contenido, ContentType=archivo.content_type or "application/octet-stream")
 
-        # =====================================================================
-        # PASO 4: ACTUALIZAR PROPUESTA CONTENIDO (Textos largos)
-        # =====================================================================
-        print("\n📝 PASO 4: Actualizando tabla PropuestaContenido...")
-        contenido_db = sesion.query(PropuestaContenido).filter(
-            PropuestaContenido.propuestaId == propuesta_id
-        ).first()
-        
-        if not contenido_db:
-            print(f"   → Creando nuevo registro PropuestaContenido para propuesta_id={propuesta_id}")
-            contenido_db = PropuestaContenido(propuestaId=propuesta_id)
-            sesion.add(contenido_db)
+        # 2. Registrar en PropuestaDocumentos
+        documento_existente = sesion.query(PropuestaDocumentos).filter(PropuestaDocumentos.propuestaId == propuesta_id, PropuestaDocumentos.tipoDocumentoId == 1, PropuestaDocumentos.activo == True).first()
+        if documento_existente:
+            documento_existente.rutaArchivo = ruta_s3
+            documento_existente.nombreArchivo = archivo.filename
+            documento_existente.tamanioBytes = tamanio_bytes
+            documento_existente.checksum = checksum
+            documento_existente.usuarioCargaId = usuario_actual.usuarioId
+            documento_existente.fechaCarga = datetime.now(timezone.utc)
+            documento_existente.usuarioAuditoriaId = usuario_actual.usuarioId
+            documento_existente.ultimaAuditoria = datetime.now(timezone.utc)
+            documento_a_retornar = documento_existente
         else:
-            print(f"   ✓ Registro PropuestaContenido existente encontrado")
-        
-        # Mapeo de campos con verificación
-        campos_texto = [
-            ("resumen", "resumen"),
-            ("palabras_clave", "palabrasClave"),
-            ("abstract", "abstract"),
-            ("problema_investigacion", "problemaInvestigacion"),
-            ("objetivo_general", "objetivoGeneral"),
-            ("estado_arte", "estadoArte"),
-            ("metodologia", "metodologia"),
-            ("hoja_ruta", "hojaRuta"),
-        ]
-        
-        for campo_parser, campo_modelo in campos_texto:
-            valor = datos.get(campo_parser)
-            if valor:
-                if hasattr(contenido_db, campo_modelo):
-                    print(f"   → Seteando {campo_modelo}: {len(valor)} chars")
-                    setattr(contenido_db, campo_modelo, valor)
-                else:
-                    print(f"   ❌ ERROR: El modelo PropuestaContenido NO tiene el campo '{campo_modelo}'")
-        
-        # Objetivos específicos (lista → string)
-        if datos.get("objetivos_especificos"):
-            objetivos_str = ";\n".join(datos["objetivos_especificos"])
-            if hasattr(contenido_db, "objetivosEspecificos"):
-                print(f"   → Seteando objetivosEspecificos: {len(objetivos_str)} chars")
-                contenido_db.objetivosEspecificos = objetivos_str
-            else:
-                print(f"   ❌ ERROR: El modelo NO tiene el campo 'objetivosEspecificos'")
-        
-        # Divulgación (dict → JSON string)
-        if datos.get("divulgacion"):
-            div_json = json.dumps(datos["divulgacion"], ensure_ascii=False)
-            if hasattr(contenido_db, "estrategiaDivulgacion"):
-                print(f"   → Seteando estrategiaDivulgacion (JSON): {len(div_json)} chars")
-                contenido_db.estrategiaDivulgacion = div_json
-            else:
-                print(f"   ❌ ERROR: El modelo NO tiene el campo 'estrategiaDivulgacion'")
-            
-        contenido_db.ultimaAuditoria = datetime.now(timezone.utc)
-        print(f"   ✓ PropuestaContenido actualizada en memoria")
+            documento_a_retornar = PropuestaDocumentos(propuestaId=propuesta_id, tipoDocumentoId=1, rutaArchivo=ruta_s3, nombreArchivo=archivo.filename, tamanioBytes=tamanio_bytes, checksum=checksum, usuarioCargaId=usuario_actual.usuarioId, activo=True, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=datetime.now(timezone.utc))
+            sesion.add(documento_a_retornar)
 
-        # =====================================================================
-        # PASO 5: ACTUALIZAR PROPUESTA DECLARACIONES (Checkboxes)
-        # =====================================================================
-        print("\n📝 PASO 5: Actualizando tabla PropuestaDeclaraciones...")
-        decl_db = sesion.query(PropuestaDeclaraciones).filter(
-            PropuestaDeclaraciones.propuestaId == propuesta_id
-        ).first()
-        
-        if not decl_db:
-            print(f"   → Creando nuevo registro PropuestaDeclaraciones para propuesta_id={propuesta_id}")
-            decl_db = PropuestaDeclaraciones(propuestaId=propuesta_id)
-            sesion.add(decl_db)
-        else:
-            print(f"   ✓ Registro PropuestaDeclaraciones existente encontrado")
-            
-        s1 = datos.get("seccion1", {})
-        
-        # Mapeo de checkboxes
-        checkboxes = [
-            ("otras_fuentes", "tieneFinanciamientoPrevio"),
-            ("vinculacion_tecnica", "tieneContinuidadProyecto"),
-            ("instrumento_juridico", "requiereInstrumentoJuridico"),
-            ("info_confidencial", "tieneInformacionConfidencial"),
-            ("potencial_pi", "tienePotencialPI"),
-            ("posee_innovacion", "poseeInnovacion"),
-        ]
-        
-        for campo_parser, campo_modelo in checkboxes:
-            valor = bool(s1.get(campo_parser, {}).get("aplica", False))
-            if hasattr(decl_db, campo_modelo):
-                print(f"   → Seteando {campo_modelo}: {valor}")
-                setattr(decl_db, campo_modelo, valor)
-            else:
-                print(f"   ❌ ERROR: El modelo NO tiene el campo '{campo_modelo}'")
-        
-        # Base posgrado (caso especial)
-        base_posgrado_valor = s1.get("base_posgrado", {}).get("aplica", "No")
-        if hasattr(decl_db, "tieneBasePosgrado"):
-            decl_db.tieneBasePosgrado = bool(base_posgrado_valor != "No")
-            print(f"   → Seteando tieneBasePosgrado: {base_posgrado_valor != 'No'} (valor original: '{base_posgrado_valor}')")
-        else:
-            print(f"   ❌ ERROR: El modelo NO tiene el campo 'tieneBasePosgrado'")
-        
-        # Resguardo
-        resguardo_compromiso = bool(datos.get("resguardo", {}).get("resguardo_compromiso", False))
-        if hasattr(decl_db, "aceptaResguardoRepositorio"):
-            decl_db.aceptaResguardoRepositorio = resguardo_compromiso
-            print(f"   → Seteando aceptaResguardoRepositorio: {resguardo_compromiso}")
-        else:
-            print(f"   ❌ ERROR: El modelo NO tiene el campo 'aceptaResguardoRepositorio'")
-        
-        if hasattr(decl_db, "aceptaDeclaracionJurada"):
-            decl_db.aceptaDeclaracionJurada = True
-            print(f"   → Seteando aceptaDeclaracionJurada: True")
-        
-        decl_db.ultimaAuditoria = datetime.now(timezone.utc)
-        print(f"   ✓ PropuestaDeclaraciones actualizada en memoria")
-
-        # =====================================================================
-        # PASO 6: COMMIT A LA BASE DE DATOS
-        # =====================================================================
-        print("\n💾 PASO 6: Ejecutando COMMIT a la base de datos...")
+        # 3. Parsear y Persistir en TODAS las tablas
+        parseo_ok = False
+        parseo_errores = []
         try:
+            print("🔍 Parseando Form-04...")
+            datos = parsear_form04_docx(contenido)
+            _persistir_datos_form04(sesion, propuesta_id, datos, usuario_actual)
             sesion.commit()
-            print(f"   ✓ COMMIT exitoso. Todos los cambios persistidos.")
-        except Exception as commit_err:
-            print(f"   ❌ ERROR en COMMIT: {type(commit_err).__name__}: {commit_err}")
+            parseo_ok = True
+            print("✅ Form-04 parseado y persistido en todas las tablas.")
+        except HTTPException:
             sesion.rollback()
             raise
-        
-        # =====================================================================
-        # RESPUESTA EXITOSA
-        # =====================================================================
-        respuesta = {
-            "mensaje": "Form-04 importado y guardado exitosamente en la base de datos",
-            "titulo": datos.get("titulo", "Sin título"),
-            "modalidad": modalidad_str,
-            "fechas": f"{datos.get('fecha_inicio')} a {datos.get('fecha_fin')}",
-            "debug": {
-                "propuesta_id": propuesta_id,
-                "campos_actualizados_propuesta": ["titulo", "fechaInicio", "fechaFinalizacion", "modalidadId", "nivelTrlActual"],
-                "campos_actualizados_contenido": [c[1] for c in campos_texto if datos.get(c[0])],
-                "checkboxes_actualizados": [c[1] for c in checkboxes if s1.get(c[0], {}).get("aplica")]
-            }
+        except Exception as e:
+            sesion.rollback()
+            parseo_errores.append(str(e))
+            print(f"❌ Error al persistir Form-04: {e}")
+            # Hacemos commit del documento en S3/PropuestaDocumentos aunque el parseo falle
+            sesion.commit()
+
+        sesion.refresh(documento_a_retornar)
+
+        mensaje_base = "Form-04 importado y guardado exitosamente en la base de datos y S3"
+        if parseo_ok:
+            mensaje_base += " (Datos extraídos y persistidos en TODAS las tablas del esquema SGPI)."
+        if parseo_errores:
+            mensaje_base += f" Errores de parseo: {parseo_errores}"
+
+        return {
+            "mensaje": mensaje_base,
+            "documentoId": documento_a_retornar.documentoId,
+            "nombre": documento_a_retornar.nombreArchivo,
+            "ruta": documento_a_retornar.rutaArchivo,
+            "urlDescarga": obtener_url_documento(documento_a_retornar.rutaArchivo),
+            "tamanioBytes": documento_a_retornar.tamanioBytes,
+            "checksum": documento_a_retornar.checksum,
+            "form04_parseado": parseo_ok,
+            "form04_errores": parseo_errores,
+            "datos_extraidos": {"secciones_completadas": len([k for k, v in datos.items() if v]) if parseo_ok else 0}
         }
-        
-        print("\n✅ ENDPOINT COMPLETADO EXITOSAMENTE")
-        print(f"   Respuesta: {json.dumps(respuesta, ensure_ascii=False, indent=2)}")
-        print("="*80 + "\n")
-        
-        return respuesta
-        
+
     except HTTPException:
-        print(f"\n❌ HTTPException lanzada: {traceback.format_exc()}")
+        print(f"❌ HTTPException: {traceback.format_exc()}")
         raise
     except Exception as e:
-        print(f"\n❌ ERROR CRÍTICO en el endpoint:")
-        print(f"   Tipo: {type(e).__name__}")
-        print(f"   Mensaje: {str(e)}")
-        print(f"   Traceback completo:")
+        print(f"❌ ERROR CRÍTICO: {type(e).__name__}: {str(e)}")
         traceback.print_exc()
         sesion.rollback()
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Error al procesar el documento: {type(e).__name__}: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error al procesar el documento: {type(e).__name__}: {str(e)}")
