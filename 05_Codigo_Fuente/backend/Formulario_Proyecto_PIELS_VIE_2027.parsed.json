@@ -1,0 +1,495 @@
+{
+  "titulo": "Plataforma Internacional de Edición de Señas (PIELS)",
+  "fecha_inicio": "2027",
+  "fecha_fin": "2029",
+  "modalidad": "Desarrollo Tecnológico",
+  "convocatoria": "Convocatoria interna para investigación (Recursos VIE)",
+  "seccion1": {
+    "modalidad": "Desarrollo Tecnológico",
+    "otras_fuentes": {
+      "aplica": false,
+      "detalle": ""
+    },
+    "vinculacion_tecnica": {
+      "aplica": true,
+      "detalle": "Nombre: Ecosistema Educacional Inclusivo para el fomento del bilingüismo en personas sordas | Tipo: nueva etapa, línea de investigación, proyecto parte de hoja de ruta, proyecto derivado): línea de investigación en lingüística computacional y proyecto derivado."
+    },
+    "problemas_nacionales": {
+      "aplica": true,
+      "detalle": "atiende problemas prioritarios documentados en los siguientes marcos normativos, políticas nacionales y agendas de desarrollo:\n1. Alineación con la Legislación Nacional (Asamblea Legislativa de Costa Rica)\nEl proyecto PIELS atiende directamente el mandato establecido en la Ley N.° 9822, \"Reconocimiento y Promoción de la Lengua de Señas Costarricense (LESCO)\" (Asamblea Legislativa, 2020). Esta legislación establece la obligación de promover el acceso a la información y fomentar la investigación lingüística sobre la LESCO. La plataforma PIELS, mediante su desarrollo de modelos fonológicos y herramientas de traducción computacional, provee el soporte tecnológico necesario para operativizar los artículos 4 y 7 de dicha ley, los cuales exigen la disponibilidad de recursos educativos y de comunicación accesibles.\nAsimismo, el proyecto da continuidad al cumplimiento de la Ley N.° 7600 (Ley de Igualdad de Oportunidades para las Personas con Discapacidad), específicamente en su Capítulo IV sobre el Acceso a la Información y la Comunicación, al generar herramientas tecnológicas que facilitan la interacción en entornos educativos y de servicios.\n2. Respuesta a Políticas Públicas y Sectoriales (CONAPDIS)\nLa iniciativa responde a los ejes estratégicos de la Política Nacional en Discapacidad (PONADIS 2011-2030). En particular, PIELS se inserta en el Eje de Acción 5 (\"Accesibilidad\"), el cual demanda el diseño y provisión de sistemas de información y comunicación inclusivos. La investigación en tecnologías de avatares 3D y traducción automática de señas aborda el rezago tecnológico en cuanto a la disponibilidad de plataformas digitales nativas en lengua de señas en el país.\n3. Atención a Brechas Socioeducativas (Programa Estado de la Nación)\nEl Informe del Estado de la Educación (PEN, 2021; 2023) señala de manera reiterada la persistencia de brechas de exclusión en el sistema educativo para poblaciones con necesidades específicas de apoyo. El reporte documenta que la falta de herramientas pedagógicas adaptadas y la brecha digital limitan la retención y el éxito académico de estudiantes con discapacidad.\n4. Cumplimiento de los Objetivos de Desarrollo Sostenible (Agenda 2030, ONU)\nEn el plano internacional, el proyecto PIELS se articula con los Objetivos de Desarrollo Sostenible (ODS), adoptados por Costa Rica y priorizados en el Plan Nacional de Desarrollo:\nODS 4 (Educación de Calidad): Atiende la Meta 4.5, orientada a eliminar las disparidades de género y asegurar el acceso igualitario a todos los niveles de enseñanza para las personas vulnerables, incluidas las personas con discapacidad.\nODS 10 (Reducción de las Desigualdades): Contribuye a la Meta 10.2, enfocada en potenciar y promover la inclusión social, económica y política de todas las personas, independientemente de su condición. La autonomía comunicativa facilitada por plataformas como PIELS es un requisito habilitante para la inclusión laboral y social."
+    },
+    "instrumento_juridico": {
+      "aplica": true,
+      "convenio_nacional": true,
+      "convenio_internacional": true,
+      "detalle": "Una vez que el desarrollo tecnológico esté en TRL 8 o 9 será recomendado tener un convenio de uso con las instituciones del estado (Convenio Nacional) y se puede llevar incluso a nivel internacional."
+    },
+    "convenio_marco": {
+      "aplica": false,
+      "nombre": ""
+    },
+    "base_posgrado": {
+      "aplica": "No",
+      "candidato": "",
+      "programa": "",
+      "universidad": ""
+    },
+    "info_confidencial": {
+      "aplica": false,
+      "detalle": ""
+    },
+    "potencial_pi": {
+      "aplica": true,
+      "oficio_dictamen": "VINC-127-2026"
+    },
+    "posee_innovacion": {
+      "aplica": true,
+      "tipo": "de Producto"
+    },
+    "trl": 7
+  },
+  "resumen": "[Máximo 500 palabras].\nPIELS es una herramienta desarrollada dentro del ITCR desde el año 2017, empleando un enfoque metodológico de investigación aplicada, tiene como objetivo realizar la representación de texto en español a su equivalente a la LESCO (Lengua de Señas Costarricense), empleando componentes gramaticales de las lenguas de señas (LS). Dicha representación se realiza por medio de un avatar, que reproduce señas a partir de las configuraciones de la mano, torso, cabeza y gestos faciales. Estas señas son creadas mediante un editor que permite a las personas con dominio de gramática de LS incluir nuevas señas o regionalizaciones. El conjunto de señas en la base de datos luego permite que se emplean para la generación de discursos (ie. oraciones o \"textos\"), ejercicios de aprendizaje, traducciones a partir de textos escritos, entre otros.\nLos recursos generados en PIELS cuentan con validación previa a su publicación realizada por parte de Comunidad Sorda, donde se reúne un grupo de personas sordas de las diferentes regiones del país y los recursos creados con el avatar son validados por la población. Esto ha sido realizado mediante encuentros en Costa Rica (Señatón 2016 y 2018) así como Librasthon-2026 en Brasil.\nEn la actualidad se cuenta con 4373 señas (LESCO: 2383, LIBRAS: 1418, ASL:135, las más significativas), esto porque las LS varían entre los países. Además en aplicaciones se cuenta con editor de Señas, editor de Discursos, ejercicios de aprendizaje de LS, creación de Diccionarios de LS, Equivalencias de señas de distintas LS, y una herramienta de traducción de textos escritos a LS basados en herramientas de Inteligencia Artificial (IA), así como un widget que permite dar accesibilidad a los textos web en lenguaje escrito con el avatar traduciendo a LS.\nLa plataforma actualmente se encuentra en estado de fase de Producción Piloto y Demostración (según Technology Readiness Level -TRL -6 y 7) con una versión de acceso público en Internet. Sin embargo, para llevar esta plataforma a TRL 8 o 9 se requiere contar con la mayor cantidad de señas (al menos 15 mil señas por cada LS). Luego validar e incluir el manejo de sinónimos y campos semánticos para configurar los agentes de IA en el uso correcto de las señas según contextos. Durante este proceso de adaptación, mejoras y validaciones se obtendrán recursos tecnológicos (avatar en formato de widget) que serán implementados en los sitios web del TEC y con potencial de todos los sitios web públicos y privados del país que deban brindar accesibilidad digital a población usuaria de LS. Además, se contará con una base de datos que permitirá realizar investigaciones de similitud semántica entre LS latinoamericanas y otras regiones, recursos educativos inclusivos, usos de IAs en ambientes inclusivos; todo esto permitirá generar publicaciones de alto impacto nacional, regional y mundial.\nLa ejecución del proyecto PIELS representa un avance en investigación en lingüística computacional e ingeniería de software, además constituye una respuesta técnica e institucional a exigencias legales (Ley 9822) y deficiencias sistémicas identificadas en informes de política pública (PONADIS y Estado de la Educación).",
+  "palabras_clave": "Lengua de Señas Costarricense (LESCO); Accesibilidad Digital; Tecnologías Inclusivas; Avatar Virtual; Comunidad Sorda; Procesamiento de Lenguas de Señas",
+  "abstract": "PIELS is a tool developed within ITCR since 2017, employing an applied research methodology. Its objective is to represent Spanish text in its equivalent in LESCO (Costa Rican Sign Language), using grammatical components of sign languages (SL). This representation is achieved through an avatar that reproduces signs based on hand, torso, head, and facial expressions. These signs are created using an editor that allows users with sign language grammar proficiency to add new signs or regionalizations. The set of signs in the database then allows them to be used for generating speech (i.e., sentences or \"texts\"), learning exercises, translations from written texts, and more.\nThe resources generated in PIELS undergo validation prior to publication by the Deaf Community, a group of deaf people from different regions of the country. The resources created with the avatar are validated by this community. This has been achieved through meetings in Costa Rica (Señatón 2016 and 2018) as well as Librasthon-2026 in Brazil.\nCurrently, there are 4,373 signs (2,383 from LESCO, 1,418 from LIBRAS, and 135 from ASL, the most significant), as SL varies between countries. The applications also include a sign editor, a speech editor, SL learning exercises, SL dictionary creation tools, sign language equivalencies from different sign languages, and a tool for translating written text into SL based on Artificial Intelligence (AI). Additionally, there is a widget that provides access to written web texts with an avatar translating them into SL.\nThe platform is currently in the Pilot Production and Demonstration phase (according to Technology Readiness Levels - TRL - 6 and 7) with a publicly accessible version on the internet. However, to bring this platform to TRL 8 or 9, a large number of signs is required (at least 15,000 signs per SL). Then, validation and the inclusion of synonym management and semantic fields are needed to configure AI agents for the correct use of signs according to context. During this process of adaptation, improvements, and validations, technological resources will be obtained that will be implemented on TEC websites and potentially on all public and private websites in the country that need to provide digital accessibility to SL users. In addition, a database will be created that will allow for research on semantic similarity between Latin American SL and those of other regions, inclusive educational resources, and the use of AI in inclusive environments; all of this will allow for the generation of high-impact publications at the national, regional, and global levels.\nThe execution of the PIELS project represents an advance in research in computational linguistics and software engineering, and also constitutes a technical and institutional response to legal requirements (Law 9822) and systemic deficiencies identified in public policy reports (PONADIS and Estado de la Educación.",
+  "keywords": "Costa Rican Sign Language (LESCO); Digital Accessibility; Inclusive Technologies; Virtual Avatar; Deaf Community; Sign Language Processing.",
+  "investigadores_tec": [
+    {
+      "nombre": "Mario Chacón Rivas",
+      "orcid": "0000-0002-8857-162X",
+      "instancia": "Ingeniería en Computación",
+      "rol": "Coordinador",
+      "horas": [
+        {
+          "horas": 4.0,
+          "tipo_hora": "VIE-Centro"
+        },
+        {
+          "horas": 4.0,
+          "tipo_hora": "REC"
+        }
+      ],
+      "nombramiento": ""
+    },
+    {
+      "nombre": "Yuen Law",
+      "orcid": "0000-0002-2849-4327",
+      "instancia": "Ingeniería en Computación",
+      "rol": "Investigador",
+      "horas": [
+        {
+          "horas": 4.0,
+          "tipo_hora": "VIE"
+        }
+      ],
+      "nombramiento": ""
+    }
+  ],
+  "colaboradores_externos": [
+    {
+      "nombre_completo": "Nelson Pérez Rojas",
+      "nombre": "Nelson",
+      "apellido1": "Pérez",
+      "apellido2": "Rojas",
+      "orcid": "0000-0001-8929-3249",
+      "institucion": "UCR"
+    }
+  ],
+  "problema_investigacion": "y su importancia [Máximo una página]\nLa disposición de documentos, leyes, reglamentos y muchos otros recursos en la sociedad del conocimiento y de la información, se encuentran en formatos escritos y digitales basados en lenguas orales o escritas. Estos materiales son de difícil comprensión para las poblaciones cuyas lenguas primarias no son las mismas en que fueron creados dichos recursos. Este es el caso de las poblaciones sordas y cuya lengua primaria es la lengua de señas (LS). Otras poblaciones que enfrentan estas barreras son las poblaciones migrantes, poblaciones indígenas y quienes usan otra lengua o idioma. Por lo tanto, el problema que se plantea es que muchas fuentes de información de carácter vital podrían imponer barreras de acceso a algunas poblaciones específicas. Como ejemplo de lo anterior se puede citar los siguientes casos: (1) Información de prospectos e información de medicamentos, que establezcan contraindicaciones por alergias o componentes de dichos medicamentos. (2) Información en zonas de riesgo o en casos de emergencia, la cual se dispone en formatos escritos. (3) Información de índole legal y financiera, que al estar en formatos escritos se conoce que han generado casos de violencia patrimonial. Por tanto la disposición de estos materiales (textos) en formatos de LS aporta en los cumplimientos de la ley y los derechos de las personas con discapacidad auditiva usuarias de LS. Tradicionalmente la disposición de información digital en formatos de LS se ha realizado empleando videos de intérpretes, lo cual es altamente costoso y cada vez que hay algún ajuste o modificación de la información original, se requiere generar de nuevo los videos en LS, lo cual es muy oneroso para cualquier organización.\nContar con una plataforma tecnológica que permita llevar información de textos estáticos que se encuentra en páginas web o documentos publicados a LS genera grandes beneficios para las organizaciones al cumplir con sus obligaciones legales. Además, lo más importante, para las personas usuarias de LS les apoya en el acceso y comprensión de información que puede ser de carácter formativo, educacional, legal, financiero o incluso vital. Desde una visión teórica y de impacto en la investigación, se generará un corpus de señas ampliado que se deberán analizar a partir de contextos o campos semánticos, y que al ser comparados con otras LS de otros países, permitirá generar estudios de equivalencias gramaticales (léxicas, semánticas, morfológicas, discursivas).\nLa propuesta es pertinente dado el alineamiento estructural con los ejes de acción del ITCR y marcos de desarrollo global: (1) Líneas de Investigación de la Unidad Académica: El proyecto se inscribe directamente en las áreas de Ingeniería de Software, Interacción Humano-Computador y Tecnologías Inclusivas de la Escuela de Ingeniería en Computación. En el campo de las Ciencias del Lenguaje, permite profundizar en estructuras gestovisulares de comunicación, usos del español como segunda lengua y necesidades de comunicación de personas con discapacidad.. Además, (2)Objetivos Estratégicos del ITCR: Se alinea con la política institucional de equidad y el objetivo estratégico de desarrollar investigación aplicada y extensión que genere transferencia tecnológica con impacto social directo, consolidando al ITCR como un actor clave en la resolución de problemas nacionales mediante la ciencia y la tecnología. Finalmente, cumple con los Objetivos de Desarrollo Sostenible (ODS): ODS 4 (Educación de Calidad): Garantiza el acceso equitativo a la educación superior mediante la provisión de entornos de aprendizaje inclusivos y eficaces. ODS 8 (Trabajo Decente y Crecimiento Económico): Al mejorar la formación académica, se incrementan las competencias técnicas de la población sorda para el empleo pleno y productivo. ODS 10 (Reducción de las Desigualdades): Promueve la inclusión social, económica y política, independientemente de la condición de discapacidad, mediante el uso de tecnologías de información.",
+  "objetivo_general": "Fortalecer la plataforma PIELS para facilitar la representación y traducción de contenidos textuales a lenguas de señas mediante avatares digitales, promoviendo la inclusión, accesibilidad y participación de la comunidad sorda.",
+  "objetivos_especificos": [
+    {
+      "numero": 1,
+      "descripcion": "Diseñar e implementar mejoras tecnológicas en la plataforma PIELS que permitan la creación, edición, almacenamiento y gestión eficiente de señas, campos semánticos y estructuras gramaticales en múltiples lenguas de señas."
+    },
+    {
+      "numero": 2,
+      "descripcion": "Identificar al menos 3 contextos o campos semánticos relevantes y primordiales, así como el conjunto de palabras más utilizadas en dichos campos semánticos."
+    },
+    {
+      "numero": 3,
+      "descripcion": "Incluir en la plataforma 5000 señas identificadas a partir de los campos semánticos."
+    },
+    {
+      "numero": 4,
+      "descripcion": "Crear un evento de validación colaborativa con la comunidad sorda, garantizando la calidad lingüística y cultural de los recursos generados dentro de la plataforma."
+    },
+    {
+      "numero": 5,
+      "descripcion": "Oficializar las señas incluidas en los repositorios digitales de señas y diccionarios especializados."
+    },
+    {
+      "numero": 6,
+      "descripcion": "Desarrollar la validación semántica y de usabilidad de los procesos de traducción automática del avatar al menos a un sitio web de cada contexto."
+    },
+    {
+      "numero": 7,
+      "descripcion": "Evaluar el impacto de la plataforma en la accesibilidad y la inclusión digital, a partir del análisis de comprensión de textos simplificados y traducidos por agentes de inteligencia artificial."
+    },
+    {
+      "numero": 8,
+      "descripcion": "Publicar los resultados de las experiencias de validación desde la usabilidad y desde la comprensión de textos."
+    }
+  ],
+  "estado_arte": "[Máximo dos páginas]\nLa investigación sobre tecnologías de apoyo orientadas a lengua de señas se sitúa en la intersección de la lingüística, la accesibilidad, la educación, la interacción humano-computador y la traducción automática. En el caso de la plataforma PIELS, se ha logrado concretar un trabajo multidisciplinario para llevar la tecnología a un estadío de TRL 5 o 6, sin embargo el proceso de publicar la aplicación conlleva el reto de contar con mayor cantidad de señas que permitan crear más recursos como ejercicios de aprendizaje, diccionarios temáticos, discursos, procesos de traducción más fluidos sin deletreo. A partir de esto, la experiencia ha llevado a analizar las experiencias de otros investigadores y proyectos.\n7.1 Lenguas de Señas y Acceso Educativo\nLas LS no son codificaciones visuales de lenguas escritas que reproduzcan la gramática de estas últimas. LS son lenguas naturales con su propia organización lingüística, producidas a través de una modalidad visoespacial en lugar de una oral-auditiva [9, 10]. Por consiguiente, una oración en español no puede traducirse de forma fiable sustituyendo cada palabra por un signo manual. Las LS organizan el significado mediante estructuras gramaticales, referencias espaciales, organización del discurso, expresiones faciales, movimientos corporales y otros recursos visuales que no siguen directamente la gramática del lenguaje hablado. Esta distinción tiene consecuencias directas para la tecnología educativa. Si una plataforma de aprendizaje trata la LS como español simplificado con gestos, el resultado puede parecer accesible, pero aun así no lograr una comunicación natural. El español escrito, incluso simplificado, no elimina todas las barreras para las personas sordas usuarias de LS. El acceso a la educación depende de las condiciones de comunicación, el contexto de aprendizaje y las necesidades lingüísticas de los estudiantes, no solo de la disponibilidad de material escrito [11].\n7.2 Traducción de LS y representaciones basadas en glosas\nLa traducción computacional de LS se ha descrito como un problema interdisciplinario que involucra traducción automática, lingüística, visión por computadora, gráficos, interacción persona-computadora y cultura sorda [2]. Gran parte de la investigación en este campo se ha centrado en el reconocimiento de señas, la traducción de vídeo a texto o los enfoques basados en procesamiento neuronal. La generación de texto a señas introduce una dificultad diferente: el proceso no termina con una oración o glosa plausible. El resultado aún debe transformarse en la producción de señas visibles.\nLas glosas se utilizan a menudo como una capa intermedia en el procesamiento del lenguaje de señas. Facilitan la inspección del proceso de traducción, ya que exponen las decisiones léxicas y gramaticales antes de la animación o la síntesis de vídeo. En una plataforma educativa, esta visibilidad resulta útil para la revisión. Un profesor, desarrollador o especialista en lenguaje de señas puede inspeccionar la secuencia generada antes de que el avatar la renderice, en lugar de tratar el resultado del modelo como una caja negra.\nUno de los retos lingüísticos que se deben modelar en lingüística computacional es la administración de los sinónimos según contextos o campos semánticos, además de las regionalizaciones de las palabras, para el proceso de una traducción segura y fiable.\nLas glosas siguen siendo representaciones incompletas. Una secuencia de glosas no codifica automáticamente la expresión facial, la concordancia espacial, el ritmo, la prosodia u otra información no manual que pueda afectar al significado [5]. Puede mostrar qué señas se seleccionaron y en qué orden, pero no garantiza que la expresión final en LS sea completa o natural. Por esta razón, el flujo de trabajo trata la salida de glosa como una representación intermedia inspeccionable y ejecutable, no como el equivalente lingüístico completo de un mensaje en LS.\n2.3 Restricciones de renderizado basadas en avatares\nLos sistemas de LS basados en avatares añaden una restricción que la generación de texto convencional no tiene: la salida debe ser ejecutable. Una secuencia generada puede conservar el significado general de una oración y aun así fallar durante la reproducción si falta un signo necesario, si la animación no es clara o si el avatar no puede representar características no manuales relevantes. Trabajos previos sobre avatares de LS han demostrado que la comprensibilidad depende no solo de los señas manuales (glosas) seleccionadas, sino también de la calidad de la animación, la expresión facial, el movimiento de la boca, la mirada, el movimiento de la parte superior del cuerpo y la sincronización [12, 13].\nLa comprensibilidad no puede asumirse simplemente por la existencia de una animación. Una secuencia que sea válida como glosa puede seguir siendo difícil de entender si el avatar la renderiza de forma rígida, omite patrones faciales o de la boca, o no coordina los componentes manuales y no manuales. Estas limitaciones son especialmente importantes en entornos educativos y de accesibilidad, donde se espera que la salida facilite la comprensión en lugar de sólo demostrar la reproducción técnica.\n2.4 Diseño centrado en el ser humano en tecnologías de LS\nLa IA de LS ha sido criticada cuando se diseña principalmente desde una perspectiva centrada en la audición, se evalúa solo con métricas técnicas o se presenta como un reemplazo de la experiencia humana [14]. En contextos de accesibilidad, el rendimiento técnico no es suficiente. Un sistema puede ser impresionante desde una perspectiva de ingeniería y aún así ser inutilizable, culturalmente inapropiado o pedagógicamente deficiente.\nEl diseño centrado en el ser humano es fundamental aquí porque la calidad del resultado orientado a la LS depende de las personas que lo leerán, usarán, corregirán o enseñarán con él. Los usuarios sordos, los especialistas en LESCO, los educadores y los profesionales de la accesibilidad deben formar parte del proceso de evaluación. Su función no se limita a aprobar el resultado final, sino que también implica identificar los tipos de errores que los sistemas automáticos suelen pasar por alto: ordenamiento antinatural, falta de énfasis, asignación de roles poco clara, mal uso del espacio o una salida que, si bien se reproduce técnicamente en el avatar, no comunica eficazmente.\nKipp et al. [13] destacan que los avatares de LS no pueden diseñarse de forma aislada por investigadores oyentes, ya que el rendimiento técnico a menudo ignora las expectativas socioculturales de los usuarios finales. Su trabajo subraya la importancia de la participación temprana de la comunidad sorda para identificar fallos estructurales en la animación de los avatares —como expresiones faciales débiles y posturas corporales antinaturales— que dificultan directamente la aceptación y la confianza a largo plazo.\nEn contextos educativos y de aprendizaje, la precisión de la traducción técnica resulta insuficiente si el avatar carece de la fluidez estructural necesaria para adaptarse a diversos perfiles de aprendizaje. Chemnad [15] resalta que los avatares que carecen de transiciones fluidas y señales faciales expresivas perjudican gravemente el procesamiento sintáctico y la comprensión, especialmente para los aprendices tardíos de LS, quienes dependen en gran medida de marcadores contextuales y no manuales precisos.\nEvaluar los sistemas únicamente mediante métricas de traducción automática (como BLEU o la tasa de error de palabras) no logra capturar la comprensión humana real ni la experiencia del usuario. Wasserroth et al. [16] demuestran que, incluso cuando un sistema de avatares es técnicamente sólido, las deficiencias subyacentes en la calidad de la animación, la falta de expresiones faciales o las interfaces poco intuitivas generan una gran frustración en el usuario y una baja comunicabilidad en contextos prácticos de accesibilidad.",
+  "metodologia": "Fase 1: Desarrollo Tecnológico y Estructuración Léxica (Objetivos 1 y 2)\nLos desarrollos o adaptaciones de la plataforma PIELS requieren una arquitectura orientada a servicios que soporte la escalabilidad y la gestión de bases de datos multidimensionales, orientados a soportar multilenguas y regionalizaciones.\n1 Procedimiento: Se implementarán iteraciones de desarrollo bajo un modelo ágil. Para la delimitación lingüística, se realizará minería de textos sobre corpus preexistentes correspondientes a tres dominios críticos (ej. trámites gubernamentales, salud, educación).\n2 Técnicas de Recolección y Análisis: Procesamiento de Lenguaje Natural (PLN) para la tokenización, lematización y análisis de frecuencia léxica, permitiendo extraer un conjunto representativo de términos de los sitios web definidos por los dominios críticos empleando técnicas de web scraping.\n3 Instrumentos:\na. Scripts de extracción de corpus en Python (librerías NLTK o spaCy).\nb. Esquema de base de datos y de grafos diseñado para almacenar y gestionar eficientemente las 5000 señas, vinculando el significante visual con sus atributos gramaticales y semánticos.\nFase 2: Validación Colaborativa y Oficialización (Objetivos 3 y 4)\nLos recursos generados exigen la participación activa de la comunidad sorda para anular sesgos normativos y asegurar la calidad lingüística.\n1. Procedimiento: Ejecución de talleres de evaluación participativa focalizada. Una vez documentado el consenso sobre cada seña, se ejecutará el protocolo de oficialización en la plataforma.\n2. Técnicas de Recolección: Método Delphi modificado para lograr consenso sistemático entre intérpretes profesionales, lingüistas y usuarios nativos de la lengua de señas. Se basará en la experiencia de los eventos Señatón realizados en Costa Rica y Brasil (Librasthon).\n3. Instrumentos:\na. Rúbricas paramétricas para la evaluación de componentes formacionales (configuración manual, orientación, ubicación, movimiento y expresión no manual).\nb. Plataforma de eventos automatizada en la que los participantes podrán comentar y aprobar o rechazar una seña según su contexto.\nFase 3: Evaluación de Traducción Automática y Usabilidad (Objetivo 5)\nLa integración del avatar traductor debe validarse tanto en su arquitectura técnica como en la experiencia de usuario dentro de entornos web funcionales.\n4. Procedimiento: Diseño de pruebas controladas de interacción. Se instalará el servicio del avatar en al menos un sitio web operativo por cada campo semántico definido en la Fase 1.\n5. Técnicas de Recolección: Medición de rendimiento en tareas específicas (Task Success Rate) y evaluación heurística de la fidelidad de la traducción.\n6. Instrumentos:\na. Escala de Usabilidad del Sistema (SUS, Brooke, 1996), un instrumento estandarizado que cuenta con alta fiabilidad (Alfa de Cronbach > 0.90) para cuantificar la percepción de usabilidad. Se analizará también si se usaría el instrumento de Evaluación Heurística.\nb. Matrices de correspondencia semántica para medir la desviación entre el texto origen y la expresión visogestual del avatar.\nFase 4: Medición de Impacto en Comprensión e Inclusión (Objetivo 6)\nSe debe cuantificar estadísticamente el efecto de las simplificaciones textuales y traducciones en la accesibilidad cognitiva de los usuarios.\n9. Procedimiento: Diseño cuasiexperimental de medidas repetidas intra-sujeto. Se evaluará el desempeño de los participantes al enfrentarse a tres condiciones de información: texto original, texto simplificado (vía agentes IA) y texto traducido por el avatar.\n10. Técnicas de Análisis: Pruebas de comprensión inferencial y literal. Los datos se analizarán mediante un Análisis de Varianza de Medidas Repetidas (ANOVA) para determinar la significancia estadística de las diferencias entre las modalidades.\n11. Instrumentos:\na. Baterías de pruebas de comprensión lectora (tipo Cloze o selección múltiple) sometidas previamente a validación de constructo.\nb. Software de análisis estadístico (SPSS o R) para el procesamiento de los resultados cuantitativos, o bien procesamientos con agentes de IA.\nFase 5: Diseminación Científica (Objetivo 7)\n9. Procedimiento: Sistematización metodológica y metaanálisis de los resultados de usabilidad, validación semántica y comprensión lectora.\n10. Técnicas de Análisis: Revisión bibliométrica y contraste de resultados empíricos contra el estado del arte actual en tecnologías de apoyo.\n11. Instrumentos: Guías de reporte estandarizadas (ej. lineamientos de ACM o IEEE para estudios de Interacción Humano-Computador) enfocadas en la redacción de manuscritos para revistas indexadas de alto impacto.",
+  "presupuesto_anual": [
+    {
+      "ano": 2027,
+      "operativo": 5000000.0,
+      "duradero": 0.0,
+      "total": 5000000.0
+    },
+    {
+      "ano": 2028,
+      "operativo": 5000000.0,
+      "duradero": 0.0,
+      "total": 5000000.0
+    },
+    {
+      "ano": 2029,
+      "operativo": 5000000.0,
+      "duradero": 0.0,
+      "total": 5000000.0
+    }
+  ],
+  "monto_total_proyecto": 15000000.0,
+  "financiamiento_adicional": {
+    "externo": {
+      "ano1": 0.0,
+      "ano2": 0.0,
+      "ano3": 0.0,
+      "oficio": ""
+    },
+    "contrapartida": {
+      "ano1": 0.0,
+      "ano2": 0.0,
+      "ano3": 0.0,
+      "oficio": ""
+    },
+    "cofinanciamiento": {
+      "ano1": 0.0,
+      "ano2": 0.0,
+      "ano3": 0.0,
+      "oficio": ""
+    }
+  },
+  "compromisos": {
+    "horas_semanales_basica": 0,
+    "horas_semanales_desarrollo": 20,
+    "rango_basica": "",
+    "rango_desarrollo": "11 a 20 horas",
+    "productos_basica": [
+      {
+        "opcion": "Opción 2: Dos (2) artículos científicos sometido en revistas indexadas en SciELO, Redalyc, ESCI, DOAJ o memorias con Consejo Editorial",
+        "cantidad": 2,
+        "objetivo": "OE4, OE5 y OE7"
+      }
+    ],
+    "productos_desarrollo": [
+      {
+        "opcion": "Opción 2: Dos (2) artículos científicos sometido en revistas indexadas en SciELO, Redalyc, ESCI o DOAJ, o memorias de conferencia con Consejo Editorial permanente. Al menos uno (1) de ellos debe estar",
+        "cantidad": 2,
+        "objetivo": "OE4 y OE7"
+      },
+      {
+        "opcion": "Opción 3: Un (1) libro o capítulo de libro técnico especializado, con Comité Editorial permanente, cuyo contenido esté directamente vinculado a la temática de la investigación.",
+        "cantidad": 1,
+        "objetivo": "OE8"
+      }
+    ],
+    "activos_propiedad_industrial": [
+      {
+        "tipo_activo": "Desarrollo de Software",
+        "consecutivo": "OE1, OE2"
+      }
+    ],
+    "productos_adicionales": [
+      "[Descripción: ej. Software, prototipo, base de datos]",
+      "[Descripción: ej. Guía técnica, manual, transferencia tecnológica]"
+    ]
+  },
+  "resguardo": {
+    "resguardo_compromiso": true,
+    "resguardo_software": true
+  },
+  "divulgacion": {
+    "cientifica": "(Ej: Presentación en congresos, charlas técnicas, charla a profesores y/o estudiantes).\nSe desarrollarán artículos para presentar en revistas o conferencias indexadas relacionadas al tema de Tecnologías Inclusivas, HCI-Interacción Humano Computadora.\nEn la línea de Ciencias del Lenguaje, se planifica la presentación de publicaciones en áreas de Tecnologías y Aprendizaje de Segundas Lenguas.",
+    "canales_institucionales": "(Ej: Notas en Investiga.TEC, página web del centro/escuela, redes sociales TEC, Portal Público de Orión).\nSe divulgarán las actividades de validación como Señatones mediante página web del TEC y del proyecto, Investiga.TEC y el portal Orión.",
+    "socializacion": "(Ej: Charlas a comunidades, talleres con beneficiarios, presentaciones a entes externos).\nUna vez que la plataforma esté validada con los cambios realizados, será presentada a la comunidad del TEC mediante el uso del avatar en los sitios web del TEC y con proyección a nivel nacional.",
+    "medios_masivos": "(Ej: Entrevistas en radio, televisión o prensa nacional).\nEscriba aquí los medios masivos que se pretenden gestionar. [Sea lo más detallado posible]"
+  },
+  "aspectos_eticos": {
+    "seres_humanos": false,
+    "biodiversidad": false,
+    "animales": false,
+    "comunidades_indigenas": false,
+    "justificacion_exencion": "La interacción con personas ajenas al grupo de investigación serán solo para opinión sobre las señas creadas. Por lo tanto es una investigación de opinión observacional, en lo que respecta a la validación de señas.\nLa propuesta tiene carácter observacional y no requiere aval de un comité ético científico: no se realiza ninguna intervención sobre las personas ni se manipula ninguna variable que las afecte. Su participación se limita a emitir opinión sobre las señas creadas en la plataforma, de modo que el objeto de análisis es la seña y no la persona. Se satisfacen así los criterios esenciales que el CONIS estableció en la Guía para la solicitud de exención de un consentimiento o asentimiento informado, en investigaciones observacionales del quehacer institucional (CONIS-GUIA-13, versión 1, sesión 40 del 02-09-2020), y que aquí se toman como referencia institucional de lo que constituye riesgo mínimo: el estudio no involucra más que un riesgo mínimo y la participación no afecta negativamente los derechos ni el bienestar de las personas, cuyo contacto con el equipo se limita a la jornada de validación, en la que se protege la confidencialidad. Cabe señalar que no se solicita exención del consentimiento informado: este se obtendrá en formato accesible, con versión en LESCO.",
+    "ente_regulatorio": ""
+  },
+  "hoja_ruta": "Presente la visión estratégica en la que se inserta esta propuesta, demostrando su vinculación con las Líneas de Investigación aprobadas por el Consejo de su dependencia académica. El propósito de este esquema es contextualizar el proyecto actual como parte de un proceso sistemático de generación de conocimiento o desarrollo tecnológico a largo plazo. Posibles componentes del esquema:\na. Nombre de la línea de investigación:\nIngeniería de Software, Interacción Humano-Computador y Tecnologías Inclusivas de la Escuela de Ingeniería en Computación, con articulación transversal en Lingüística Computacional y Ciencias del Lenguaje.\nb. Objetivo estratégico (largo plazo):\nDesarrollar, consolidar y transferir un ecosistema tecnológico basado en avatares 3D y procesamiento de lenguaje natural (PLN) que permita la traducción automática y la representación visoespacial de la información textual. El propósito final es mitigar las barreras de acceso a la información para la comunidad sorda, asegurando el cumplimiento de los mandatos de accesibilidad digital establecidos en la Ley 9822, la Ley 7600, los objetivos sectoriales de PONADIS y las metas de inclusión de los ODS (4 y 10) a nivel nacional y regional.\nc. Duración total del proceso:\nEl ciclo de vida completo de esta línea de investigación abarca un periodo de 15 años (2015–2030). Este lapso contempla desde la definición arquitectónica y el diseño léxico inicial de la plataforma PIELS, hasta la consecución de un nivel de madurez tecnológica de operación real (TRL 9) y su despliegue a nivel país. Aunque esta propuesta pretende llevar la tecnología a un TRL 7-8 en 2 años.\nd. Desglose por fases o proyectos:\nEl proyecto ha llevado un desarrollo evolutivo que se resumen las tecnologías empleadas en la siguiente imagen:\nDesde un punto de vista de equipo humano se presenta ls siguiente imagen:\nA partir de lo anterior, las fases anteriores se resumen Fase 1 y 2. Luego, para el futuro se enumeran las fases 3 y 4.\nFase 1: Fundamentación Tecnológica y Modelado Acústico-Visual (Pasado, 2015–2020)\na. Descripción: Etapa inicial de investigación aplicada enfocada en la conceptualización de la plataforma PIELS y el mapeo de los componentes gramaticales básicos de la lengua de señas. Se establecieron los mecanismos de participación comunitaria directa para asegurar la pertinencia cultural de la tecnología.\nb. Productos intermedios:\n1. Arquitectura base del editor de señas.\n2. Modelos de validación lingüística inicial mediante la ejecución de los eventos de participación Señatón 2016 y Señatón 2018.\nFase 2: Escalabilidad Multilingüe y Producción Piloto (Pasado reciente, 2021–2026)\na. Descripción: Transición del modelo original hacia una infraestructura capaz de soportar múltiples lenguas de señas (multilingüismo). Se integraron algoritmos preliminares de IA para la traducción de textos escritos.\nb. Productos intermedios:\nBase de datos multidimensional con 4373 señas, abarcando LESCO (2383), LIBRAS (1418) y ASL (135).\nEjecución de validación internacional mediante el evento Librasthon-2026 en Brasil.\nPlataforma en estado de madurez precomercial o de demostración (TRL 6 y 7).\nWidget web funcional para accesibilidad de textos que incluyen conexión con agentes de Inteligencia Artificial (IA), lo cual permite traducir textos en línea desde cualquier idioma a español, para luego llevarlo a la gramática de LS.\nFase 3: Expansión Semántica, Oficialización y Usabilidad (Presente Propuesta, 2027–2028)\na. Descripción: Etapa de desarrollo tecnológico intensivo centrada en el refinamiento del procesamiento sintáctico y el modelado semántico dependiente del contexto. El esfuerzo técnico radica en el manejo computacional de sinónimos, regionalizaciones y la evaluación cuantitativa de usabilidad.\nb. Productos intermedios:\ni. Expansión del corpus léxico a 15,000 señas categorizadas por campos semánticos.\nii. Sistema calificado y preparado para su despliegue (TRL 8).\niii. Dos (2) artículos científicos publicados en revistas indexadas (SciELO, Redalyc, ESCI o DOAJ).\niv. Activos de propiedad industrial conformados por el software (código fuente y manuales técnicos), depositados para su resguardo institucional.\nFase 4: Adopción Institucional y Transferencia Tecnológica (Futuro, 2029–2030)\na. Descripción: Fase de implementación masiva de la arquitectura de traducción en sistemas productivos reales.\nb. Productos intermedios:\nTecnología en nivel de madurez operativa comprobada (TRL 9).\nConvenios de uso formalizados (nacionales e internacionales) con instituciones del Estado para la integración del avatar en la infraestructura web pública.\nc. Bases de datos léxicas oficiales indexadas en diccionarios especializados interregionales.",
+  "referencias": [
+    {
+      "numero": 1,
+      "autores": [
+        "Lillo-Martin",
+        "Henner"
+      ],
+      "titulo": "Acquisition of sign languages",
+      "anio": 2021,
+      "doi": "https://doi.org/10.1146/annurev-linguistics-043020-092357",
+      "revista_fuente": "Annual Review of Linguistics",
+      "es_acta_conferencia": false,
+      "es_indexada_wos_scopus": true,
+      "texto_completo": "[1] Lillo-Martin, D., Henner, J.: Acquisition of sign languages. Annual Review of Linguistics 7, 395–419 (2021). https://doi.org/10.1146/annurev-linguistics-043020-092357"
+    },
+    {
+      "numero": 2,
+      "autores": [
+        "Bragg",
+        "Koller",
+        "Bellard",
+        "Berke",
+        "Boudreault",
+        "Braffort",
+        "Caselli",
+        "Huenerfauth",
+        "Kacorri",
+        "Verhoef",
+        "Vogler",
+        "Morris",
+        "M.R"
+      ],
+      "titulo": "Sign language recognition, generation, and translation: An interdisciplinary perspective",
+      "anio": 2019,
+      "doi": "https://doi.org/10.1145/3308561.3353774",
+      "revista_fuente": "In: Proceedings of the",
+      "es_acta_conferencia": true,
+      "es_indexada_wos_scopus": true,
+      "texto_completo": "[2] Bragg, D., Koller, O., Bellard, M., Berke, L., Boudreault, P., Braffort, A., Caselli, N., Huenerfauth, M., Kacorri, H., Verhoef, T., Vogler, C., Morris, M.R.: Sign language recognition, generation, and translation: An interdisciplinary perspective. In: Proceedings of the 21st International ACM SIGACCESS Conference on Computers and Accessibility, pp. 16–31. Association for Computing Machinery, New York (2019). https://doi.org/10.1145/3308561.3353774"
+    },
+    {
+      "numero": 3,
+      "autores": [
+        "Núñez-Marcos",
+        "Perez-de-Viñaspre",
+        "Labaka"
+      ],
+      "titulo": "A survey on sign language machine translation",
+      "anio": 2023,
+      "doi": "https://doi.org/10.1016/j.eswa.2022.118993",
+      "revista_fuente": "Expert Systems with Applications",
+      "es_acta_conferencia": false,
+      "es_indexada_wos_scopus": true,
+      "texto_completo": "[3] Núñez-Marcos, A., Perez-de-Viñaspre, O., Labaka, G.: A survey on sign language machine translation. Expert Systems with Applications 213, 118993 (2023). https://doi.org/10.1016/j.eswa.2022.118993"
+    },
+    {
+      "numero": 4,
+      "autores": [
+        "Chacón-Rivas",
+        "Schlunzen Junior"
+      ],
+      "titulo": "Rumo a uma plataforma de apoio ao multilinguismo de sinais: LESCO e LIBRAS",
+      "anio": 2024,
+      "doi": "https://doi.org/10.22483/2177-5796.2024v26id5477",
+      "revista_fuente": "Quaestio – Revista de Estudos em Educação",
+      "es_acta_conferencia": false,
+      "es_indexada_wos_scopus": false,
+      "texto_completo": "[4] Chacón-Rivas, M., Schlunzen Junior, K.: Rumo a uma plataforma de apoio ao multilinguismo de sinais: LESCO e LIBRAS. Quaestio – Revista de Estudos em Educação 26, e024052 (2024). https://doi.org/10.22483/2177-5796.2024v26id5477"
+    },
+    {
+      "numero": 5,
+      "autores": [
+        "Sandler",
+        "Lillo-Martin"
+      ],
+      "titulo": "Sign Language and Linguistic Universals",
+      "anio": 2006,
+      "doi": "https://doi.org/10.1017/CBO9781139163910",
+      "revista_fuente": "",
+      "es_acta_conferencia": false,
+      "es_indexada_wos_scopus": true,
+      "texto_completo": "[5] Sandler, W., Lillo-Martin, D.: Sign Language and Linguistic Universals. Cambridge University Press, Cambridge (2006). https://doi.org/10.1017/CBO9781139163910"
+    },
+    {
+      "numero": 6,
+      "autores": [
+        "Yin",
+        "Moryossef",
+        "Hochgesang",
+        "J.A",
+        "Goldberg",
+        "Alikhani"
+      ],
+      "titulo": "Including signed languages in natural language processing",
+      "anio": 2021,
+      "doi": "https://doi.org/10.18653/v1/2021.acl-long.570",
+      "revista_fuente": "",
+      "es_acta_conferencia": true,
+      "es_indexada_wos_scopus": true,
+      "texto_completo": "[6] Yin, K., Moryossef, A., Hochgesang, J.A., Goldberg, Y., Alikhani, M.: Including signed languages in natural language processing. In: Zong, C., Xia, F., Li, W., Navigli, R. (eds.) Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing, vol. 1: Long Papers, pp. 7347–7360. Association for Computational Linguistics, Online (2021). https://doi.org/10.18653/v1/2021.acl-long.570"
+    },
+    {
+      "numero": 7,
+      "autores": [
+        "Marschark",
+        "Spencer",
+        "P.E. (eds.)"
+      ],
+      "titulo": "The Oxford Handbook of Deaf Studies, Language, and Education, vol",
+      "anio": 2011,
+      "doi": "https://doi.org/10.1093/oxfordhb/9780199750986.001.0001",
+      "revista_fuente": "",
+      "es_acta_conferencia": false,
+      "es_indexada_wos_scopus": true,
+      "texto_completo": "[7] Marschark, M., Spencer, P.E. (eds.): The Oxford Handbook of Deaf Studies, Language, and Education, vol. 1. 2nd edn. Oxford University Press, New York (2011). https://doi.org/10.1093/oxfordhb/9780199750986.001.0001"
+    },
+    {
+      "numero": 8,
+      "autores": [
+        "Zhu",
+        "Czehmann",
+        "Avramidis"
+      ],
+      "titulo": "Neural machine translation methods for translating text to sign language glosses",
+      "anio": 2023,
+      "doi": "https://doi.org/10.18653/v1/2023.acl-long.700",
+      "revista_fuente": "",
+      "es_acta_conferencia": true,
+      "es_indexada_wos_scopus": true,
+      "texto_completo": "[8] Zhu, D., Czehmann, V., Avramidis, E.: Neural machine translation methods for translating text to sign language glosses. In: Rogers, A., Boyd-Graber, J., Okazaki, N. (eds.) Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics, vol. 1: Long Papers, pp. 12523–12541. Association for Computational Linguistics, Toronto (2023). https://doi.org/10.18653/v1/2023.acl-long.700"
+    },
+    {
+      "numero": 9,
+      "autores": [
+        "Wilbur",
+        "R.B"
+      ],
+      "titulo": "Effects of varying rate of signing on ASL manual signs and nonmanual markers",
+      "anio": 2009,
+      "doi": "https://doi.org/10.1177/0023830909103174",
+      "revista_fuente": "Language and Speech",
+      "es_acta_conferencia": false,
+      "es_indexada_wos_scopus": false,
+      "texto_completo": "[9] Wilbur, R.B.: Effects of varying rate of signing on ASL manual signs and nonmanual markers. Language and Speech 52(2–3), 245–285 (2009). https://doi.org/10.1177/0023830909103174"
+    },
+    {
+      "numero": 10,
+      "autores": [
+        "Kipp",
+        "Heloir",
+        "Nguyen"
+      ],
+      "titulo": "Sign language avatars: Animation and comprehensibility",
+      "anio": 2011,
+      "doi": "https://doi.org/10.1007/978-3-642-23974-8_13",
+      "revista_fuente": "",
+      "es_acta_conferencia": true,
+      "es_indexada_wos_scopus": true,
+      "texto_completo": "[10] Kipp, M., Heloir, A., Nguyen, Q.: Sign language avatars: Animation and comprehensibility. In: Vilhjálmsson, H.H., Kopp, S., Marsella, S., Thórisson, K.R. (eds.) Intelligent Virtual Agents. IVA 2011, LNCS, vol. 6895, pp. 113–126. Springer, Berlin, Heidelberg (2011). https://doi.org/10.1007/978-3-642-23974-8_13"
+    },
+    {
+      "numero": 11,
+      "autores": [
+        "Kipp",
+        "Nguyen",
+        "Heloir",
+        "Matthes"
+      ],
+      "titulo": "Assessing the Deaf user perspective on sign language avatars",
+      "anio": 2011,
+      "doi": "https://doi.org/10.1145/2049536.2049557",
+      "revista_fuente": "",
+      "es_acta_conferencia": true,
+      "es_indexada_wos_scopus": true,
+      "texto_completo": "[11] Kipp, M., Nguyen, Q., Heloir, A., Matthes, S.: Assessing the Deaf user perspective on sign language avatars. In: McCoy, K.F. (ed.) Proceedings of the 13th International ACM SIGACCESS Conference on Computers and Accessibility, pp. 107–114. Association for Computing Machinery, New York (2011). https://doi.org/10.1145/2049536.2049557"
+    },
+    {
+      "numero": 12,
+      "autores": [
+        "Desai",
+        "De Meulder",
+        "Hochgesang",
+        "J.A",
+        "Kocab",
+        "Lu",
+        "A.X"
+      ],
+      "titulo": "Systemic biases in sign language AI research: A Deaf-led call to reevaluate research agendas",
+      "anio": 2024,
+      "doi": "https://doi.org/10.48550/arXiv.2403.02563",
+      "revista_fuente": "",
+      "es_acta_conferencia": false,
+      "es_indexada_wos_scopus": true,
+      "texto_completo": "[12] Desai, A., De Meulder, M., Hochgesang, J.A., Kocab, A., Lu, A.X.: Systemic biases in sign language AI research: A Deaf-led call to reevaluate research agendas. arXiv preprint arXiv:2403.02563 (2024). https://doi.org/10.48550/arXiv.2403.02563"
+    },
+    {
+      "numero": 13,
+      "autores": [
+        "Chemnad",
+        "Othman"
+      ],
+      "titulo": "Perception and monitoring of sign language acquisition for avatar technologies: A rapid focused review (2020–2025)",
+      "anio": 2025,
+      "doi": "https://doi.org/10.3390/mti9080082",
+      "revista_fuente": "Multimodal Technologies and Interaction",
+      "es_acta_conferencia": false,
+      "es_indexada_wos_scopus": true,
+      "texto_completo": "[13] Chemnad, K., Othman, A.: Perception and monitoring of sign language acquisition for avatar technologies: A rapid focused review (2020–2025). Multimodal Technologies and Interaction 9(8), 82 (2025). https://doi.org/10.3390/mti9080082"
+    },
+    {
+      "numero": 14,
+      "autores": [
+        "Papineni",
+        "Roukos",
+        "Ward",
+        "Zhu",
+        "W.-J"
+      ],
+      "titulo": "BLEU: A method for automatic evaluation of machine translation",
+      "anio": 2002,
+      "doi": "https://doi.org/10.3115/1073083.1073135",
+      "revista_fuente": "In: Proceedings of the",
+      "es_acta_conferencia": true,
+      "es_indexada_wos_scopus": true,
+      "texto_completo": "[14] Papineni, K., Roukos, S., Ward, T., Zhu, W.-J.: BLEU: A method for automatic evaluation of machine translation. In: Proceedings of the 40th Annual Meeting of the Association for Computational Linguistics, pp. 311–318. Association for Computational Linguistics, Philadelphia (2002). https://doi.org/10.3115/1073083.1073135"
+    },
+    {
+      "numero": 15,
+      "autores": [
+        "Banerjee",
+        "Lavie"
+      ],
+      "titulo": "METEOR: An automatic metric for MT evaluation with improved correlation with human judgments",
+      "anio": 2005,
+      "doi": "",
+      "revista_fuente": "",
+      "es_acta_conferencia": true,
+      "es_indexada_wos_scopus": true,
+      "texto_completo": "[15] Banerjee, S., Lavie, A.: METEOR: An automatic metric for MT evaluation with improved correlation with human judgments. In: Goldstein, J., Lavie, A., Lin, C.-Y., Voss, C. (eds.) Proceedings of the ACL Workshop on Intrinsic and Extrinsic Evaluation Measures for Machine Translation and/or Summarization, pp. 65–72. Association for Computational Linguistics, Ann Arbor (2005). https://aclanthology.org/W05-0909/, last accessed 2026/08/26."
+    },
+    {
+      "numero": 16,
+      "autores": [
+        "Wasserroth",
+        "Avramidis",
+        "Czehmann",
+        "Kojic",
+        "Nunnari",
+        "Möller"
+      ],
+      "titulo": "Evaluation of a sign language avatar on comprehensibility, user experience & acceptability",
+      "anio": 2025,
+      "doi": "https://doi.org/10.1145/3742886.3756719",
+      "revista_fuente": "In: Adjunct Proceedings of the",
+      "es_acta_conferencia": true,
+      "es_indexada_wos_scopus": true,
+      "texto_completo": "[16] Wasserroth, F., Avramidis, E., Czehmann, V., Kojic, T., Nunnari, F., Möller, S.: Evaluation of a sign language avatar on comprehensibility, user experience & acceptability. In: Adjunct Proceedings of the 25th ACM International Conference on Intelligent Virtual Agents, art. 26, pp. 1–10. Association for Computing Machinery, New York (2025). https://doi.org/10.1145/3742886.3756719"
+    }
+  ],
+  "firma": {
+    "nombre": "Mario Chacón Rivas",
+    "cedula": "1-0741-0535",
+    "firmado_digital": true,
+    "fecha_firma": "21/09/2026 09:47:22"
+  }
+}

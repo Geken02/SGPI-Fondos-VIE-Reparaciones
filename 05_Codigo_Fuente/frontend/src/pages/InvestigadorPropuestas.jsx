@@ -81,69 +81,55 @@ const InvestigadorPropuestas = () => {
   const [subiendoFormulario, setSubiendoFormulario] = useState({});
   const [cancelando, setCancelando] = useState({});
 
-const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codigoForm, e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+  const handleSubirDocumentoFormulario = async (propuestaId, tipoDocumentoId, codigoForm, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  if (file.size > 25 * 1024 * 1024) {
-    alert('El archivo no puede superar los 25 MB.');
-    return;
-  }
+    if (file.size > 25 * 1024 * 1024) {
+      alert('El archivo no puede superar los 25 MB.');
+      e.target.value = '';
+      return;
+    }
 
-  const key = `${propuestaId}_${tipoDocumentoId}`;
-  setSubiendoFormulario(prev => ({ ...prev, [key]: true }));
+    const key = `${propuestaId}_${tipoDocumentoId}`;
+    setSubiendoFormulario(prev => ({ ...prev, [key]: true }));
 
-  try {
-    const baseURL = import.meta.env.VITE_API_URL || 'https://sgpi-fondos-vie-reparaciones.onrender.com';
-    const token = localStorage.getItem('token');
-
-    // CASO ESPECIAL: Si es el Form-01 (Form-04) y es un .docx, usar el parser
-    if (tipoDocumentoId === 1 && file.name.endsWith('.docx')) {
-      const formData = new FormData();
-      formData.append('archivo', file);
-
-      const response = await fetch(
-        `${baseURL}/api/propuestas/${propuestaId}/importar-form04`, // <-- RUTA CORREGIDA
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': token ? `Bearer ${token}` : ''
-          },
-          body: formData
+    try {
+      // ✅ LLAMADA UNIFICADA: El backend decide si solo sube o si también parsea
+      const response = await propuestaService.subirDocumentoFormulario(propuestaId, tipoDocumentoId, file);
+      
+      // ✅ MANEJO INTELIGENTE DE LA RESPUESTA PARA EL FORM-04 (.docx)
+      if (tipoDocumentoId === 1 && file.name.toLowerCase().endsWith('.docx')) {
+        if (response.form04_parseado) {
+          alert(`✅ ¡Éxito!\n\n${response.mensaje}`);
+          localStorage.setItem(`propuesta_${propuestaId}_form04_enviado`, 'true');
+          localStorage.setItem(`propuesta_${propuestaId}_form04_completado`, 'true');
+        } else if (response.form04_errores && response.form04_errores.length > 0) {
+          alert(`⚠️ El archivo se guardó en la nube, pero hubo errores al extraer algunos datos:\n\n${response.form04_errores.join('\n')}\n\nPor favor, revise y complete manualmente los campos faltantes en el formulario.`);
+          localStorage.setItem(`propuesta_${propuestaId}_form04_enviado`, 'true');
+        } else {
+          alert(`ℹ️ ${response.mensaje}`);
         }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Error al parsear el Form-04');
+      } 
+      // ✅ COMPORTAMIENTO NORMAL PARA OTROS DOCUMENTOS (Form-05, Form-06, PDFs, etc.)
+      else {
+        alert(`✅ ¡Archivo "${file.name}" guardado exitosamente para ${codigoForm}!`);
+        if (tipoDocumentoId === 2) localStorage.setItem(`propuesta_${propuestaId}_form05_enviado`, 'true');
+        if (tipoDocumentoId === 3) localStorage.setItem(`propuesta_${propuestaId}_form06_enviado`, 'true');
       }
 
-      const data = await response.json();
-      alert(`¡Éxito!\n\n${data.mensaje}\nSe extrajeron ${data.datos_extraidos?.secciones_completadas || 0} secciones del documento.`);
-      
-      localStorage.setItem(`propuesta_${propuestaId}_form04_enviado`, 'true');
-      cargarPropuestas();
-    } 
-    // CASO NORMAL: Subir a S3 (Form-05, Form-06 o PDFs del Form-04)
-    else {
-      await propuestaService.subirDocumentoFormulario(propuestaId, tipoDocumentoId, file);
-      
-      if (tipoDocumentoId === 1) localStorage.setItem(`propuesta_${propuestaId}_form04_enviado`, 'true');
-      else if (tipoDocumentoId === 2) localStorage.setItem(`propuesta_${propuestaId}_form05_enviado`, 'true');
-      else if (tipoDocumentoId === 3) localStorage.setItem(`propuesta_${propuestaId}_form06_enviado`, 'true');
-      
-      alert(`¡Archivo "${file.name}" guardado exitosamente en la nube para ${codigoForm}!`);
-      cargarPropuestas();
+      // Recargar propuestas para reflejar los nuevos documentos o los datos parseados en la UI
+      await cargarPropuestas();
+
+    } catch (err) {
+      console.error(`Error al procesar ${codigoForm}:`, err);
+      const msg = err?.response?.data?.detail || err?.message || 'Error desconocido al subir el archivo';
+      alert(`❌ No se pudo procesar el archivo:\n\n${msg}`);
+    } finally {
+      setSubiendoFormulario(prev => ({ ...prev, [key]: false }));
+      e.target.value = ''; // Limpiar el input file para permitir subir el mismo archivo de nuevo si es necesario
     }
-  } catch (err) {
-    console.error(`Error al procesar ${codigoForm}:`, err);
-    const msg = err?.message || err?.response?.data?.detail || 'Error desconocido';
-    alert(`No se pudo procesar el archivo: ${msg}`);
-  } finally {
-    setSubiendoFormulario(prev => ({ ...prev, [key]: false }));
-    e.target.value = '';
-  }
-};
+  };
 
   const handleCancelarPropuesta = async (propuestaId) => {
     const prop = propuestas.find(p => p.propuestaId === propuestaId);
