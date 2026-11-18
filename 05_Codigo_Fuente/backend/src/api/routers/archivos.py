@@ -404,27 +404,94 @@ def _persistir_datos_form04(sesion: Session, propuesta_id: int, datos: dict, usu
                 usuarioRemitenteId=usuario_actual.usuarioId, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora
             ))
 
-    # 12. REFERENCIAS BIBLIOGRÁFICAS (UPSERT por DOI/Nombre)
+    # 12. REFERENCIAS BIBLIOGRÁFICAS (UPSERT robusto por DOI o Título+Año)
     for ref in datos.get("referencias", []):
-        fuente = sesion.query(FuentesBibliograficas).filter(FuentesBibliograficas.doi == ref.get("doi")).first() if ref.get("doi") else None
-        if not fuente:
-            fuente = FuentesBibliograficas(doi=ref.get("doi"), titulo=ref["titulo"][:500], anioPublicacion=ref.get("anio") or 0, revistaFuente=(ref.get("revista_fuente") or "")[:200] or None, esIndexadaWoSScopus=bool(ref.get("es_indexada_wos_scopus")), creadoEn=ahora)
-            sesion.add(fuente)
-            sesion.flush()
+        # 12a. Normalizar DOI: si es cadena vacía o solo espacios, tratar como None
+        doi = ref.get("doi")
+        doi = doi.strip() if isinstance(doi, str) else doi
+        if not doi:
+            doi = None
+            
+        titulo = (ref.get("titulo") or "")[:500]
+        anio = ref.get("anio") or 0
         
+        # Buscar fuente existente por DOI (si existe)
+        fuente = None
+        if doi:
+            fuente = sesion.query(FuentesBibliograficas).filter(FuentesBibliograficas.doi == doi).first()
+        
+        # Fallback: si no hay DOI o no se encontró, buscar por Título y Año para evitar duplicados
+        if not fuente and titulo:
+            fuente = sesion.query(FuentesBibliograficas).filter(
+                FuentesBibliograficas.titulo.ilike(f"%{titulo[:100]}%"),
+                FuentesBibliograficas.anioPublicacion == anio
+            ).first()
+
+        if fuente:
+            # UPDATE: Actualizar campos faltantes si es necesario
+            if doi and not fuente.doi:
+                fuente.doi = doi
+            if titulo and not fuente.titulo:
+                fuente.titulo = titulo
+            if anio and not fuente.anioPublicacion:
+                fuente.anioPublicacion = anio
+            
+            revista = (ref.get("revista_fuente") or "")[:200] or None
+            if revista and not fuente.revistaFuente:
+                fuente.revistaFuente = revista
+                
+            fuente.esIndexadaWoSScopus = bool(ref.get("es_indexada_wos_scopus")) or fuente.esIndexadaWoSScopus
+        else:
+            # INSERT: Crear nueva fuente solo si no existe
+            fuente = FuentesBibliograficas(
+                doi=doi,
+                titulo=titulo,
+                anioPublicacion=anio,
+                revistaFuente=(ref.get("revista_fuente") or "")[:200] or None,
+                esIndexadaWoSScopus=bool(ref.get("es_indexada_wos_scopus")),
+                creadoEn=ahora
+            )
+            sesion.add(fuente)
+            sesion.flush() # Necesario para obtener fuente.fuenteId
+        
+        # 12b. Autores — deduplicar por nombre
         for orden, nombre_autor in enumerate(ref.get("autores", []), start=1):
+            if not nombre_autor:
+                continue
+                
             autor = sesion.query(Autores).filter(Autores.nombreCompleto.ilike(nombre_autor)).first()
             if not autor:
                 autor = Autores(nombreCompleto=nombre_autor[:150], creadoEn=ahora)
                 sesion.add(autor)
                 sesion.flush()
-            if not sesion.query(AutorFuente).filter(AutorFuente.autorId == autor.autorId, AutorFuente.fuenteId == fuente.fuenteId).first():
-                sesion.add(AutorFuente(autorId=autor.autorId, fuenteId=fuente.fuenteId, ordenAutoria=orden, creadoEn=ahora))
+            
+            # 12c. AutorFuente (UPSERT)
+            existe_af = sesion.query(AutorFuente).filter(
+                AutorFuente.autorId == autor.autorId,
+                AutorFuente.fuenteId == fuente.fuenteId
+            ).first()
+            
+            if not existe_af:
+                sesion.add(AutorFuente(
+                    autorId=autor.autorId,
+                    fuenteId=fuente.fuenteId,
+                    ordenAutoria=orden,
+                    creadoEn=ahora
+                ))
+
+        # 12d. PropuestaReferencia (UPSERT)
+        existe_pr = sesion.query(PropuestaReferencia).filter(
+            PropuestaReferencia.propuestaId == propuesta_id,
+            PropuestaReferencia.fuenteId == fuente.fuenteId
+        ).first()
         
-        if not sesion.query(PropuestaReferencia).filter(PropuestaReferencia.propuestaId == propuesta_id, PropuestaReferencia.fuenteId == fuente.fuenteId).first():
-            sesion.add(PropuestaReferencia(propuestaId=propuesta_id, fuenteId=fuente.fuenteId, ordenReferencia=ref.get("numero", 0), creadoEn=ahora))
-
-
+        if not existe_pr:
+            sesion.add(PropuestaReferencia(
+                propuestaId=propuesta_id,
+                fuenteId=fuente.fuenteId,
+                ordenReferencia=ref.get("numero", 0),
+                creadoEn=ahora
+            ))
 # ============================================================================
 # PERSISTENCIA FORM-05: Plan de Acción y Riesgos (UPSERT)
 # ============================================================================
