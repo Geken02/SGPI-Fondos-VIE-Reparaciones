@@ -247,7 +247,14 @@ const FormularioProyecto = () => {
       try {
         const cat = await propuestaService.obtenerCatalogosFormulario();
         if (cat?.investigadores) {
-          setInvestigadoresDisponibles(cat.investigadores);
+          // Refuerzo del filtro del backend: solo roles de investigación pueden
+          // integrar el equipo (InvestigadorCoordinador / InvestigadorColaborador).
+          const ROLES_EQUIPO_INVESTIGADOR = ['InvestigadorCoordinador', 'InvestigadorColaborador'];
+          setInvestigadoresDisponibles(
+            cat.investigadores.filter(u =>
+              (u.roles || []).some(r => ROLES_EQUIPO_INVESTIGADOR.includes(r))
+            )
+          );
         }
         if (cat?.rolesEquipo) {
           setRolesEquipoDisponibles(cat.rolesEquipo);
@@ -1192,10 +1199,8 @@ const guardarBorradorActual = async () => {
         const tieneDiv = (div.cientifica && div.cientifica.trim()) || (div.canalesInstitucionales && div.canalesInstitucionales.trim()) || (div.socializacion && div.socializacion.trim()) || (div.mediosMasivos && div.mediosMasivos.trim());
         if (!tieneDiv) faltantes.push('Estrategia de divulgación');
         if (!hojaRuta || !hojaRuta.trim()) faltantes.push('Hoja de ruta y escalamiento');
-        const asp = aspectosEticos || {};
-        if ((asp.seresHumanos || asp.biodiversidad || asp.animales || asp.comunidadesIndigenas) && (!asp.acuerdoComision || !asp.acuerdoComision.trim())) {
-          faltantes.push('Acuerdo o resolución de la comisión de ética');
-        }
+        // Aspectos éticos: cada pregunta (Sí/No) se responde por sí sola. Marcar "Sí"
+        // ya deja la sección completa; no se exige acuerdo, texto ni documento adicional.
         break;
       case 16:
         if (!referenciasBibliograficas || !referenciasBibliograficas.trim()) faltantes.push('Referencias bibliográficas');
@@ -1224,7 +1229,7 @@ const guardarBorradorActual = async () => {
     actividadesCronograma, riesgosMitigacion,
     presupuestoAnual,
     esDesarrolloTecnologico, productos14a, productos14b,
-    divulgacion, hojaRuta, aspectosEticos,
+    divulgacion, hojaRuta,
     referenciasBibliograficas, resguardoCompromiso, firmaCoordinador
   ]);
 

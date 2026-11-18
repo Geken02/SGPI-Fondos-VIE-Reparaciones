@@ -151,6 +151,14 @@ def crear_dictamen_vinculacion(
             detail="No puede evaluar una propuesta de la cual usted es el investigador coordinador"
         )
 
+    # Validar que se adjunte el documento de dictámenes antes de emitir la evaluación.
+    # Sin este adjunto no se registra el envío ni se cambia el estado de la propuesta.
+    if not datos.rutaArchivo or not str(datos.rutaArchivo).strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Debe adjuntar el documento de dictámenes antes de enviar la evaluación."
+        )
+
     # Tipo 1 de TiposDictamen: Vinculacion
     dictamen = Dictamenes()
     dictamen.setPropuestaId(datos.propuestaId)

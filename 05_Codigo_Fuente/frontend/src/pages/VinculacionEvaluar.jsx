@@ -27,14 +27,21 @@ const VinculacionEvaluar = () => {
     patente: false
   });
 
-  // Archivos — sin predeterminado
-  const [archivoAdjunto, setArchivoAdjunto] = useState(null);
-  const [archivoSubida, setArchivoSubida] = useState(null);
+  // Dictamen adjunto — fuente única de verdad compartida por las pestañas
+  // "Formulario en línea" y "Subir documento firmado". Subir el archivo en
+  // cualquiera de las dos lo refleja de inmediato en la otra.
+  const [archivoDictamen, setArchivoDictamen] = useState(null);
   const fileInputRef = useRef(null);
   const fileInputSubidaRef = useRef(null);
 
   // Validación de auto-evaluación
   const [esAutoEvaluacion, setEsAutoEvaluacion] = useState(false);
+
+  // Ruta del documento de dictamen ya registrado previamente en la propuesta.
+  // undefined = aún sin verificar, null = verificado y no existe, string = ruta guardada.
+  const [rutaDocumentoPrevio, setRutaDocumentoPrevio] = useState(undefined);
+  // Resaltado visual del campo de archivo cuando falta el dictamen al enviar
+  const [resaltarArchivo, setResaltarArchivo] = useState(false);
 
   // Catálogo de Niveles TRL obtenido desde la base de datos
   const [nivelesTrl, setNivelesTrl] = useState([]);
@@ -76,6 +83,20 @@ const VinculacionEvaluar = () => {
     cargarExpediente();
   }, [propuestaId, usuario]);
 
+  // Verifica si ya existe un dictamen con documento registrado previamente
+  useEffect(() => {
+    const cargarDocumentoPrevio = async () => {
+      if (!propuestaId) return;
+      try {
+        const dictamen = await vinculacionService.obtenerDictamen(propuestaId);
+        setRutaDocumentoPrevio(dictamen?.rutaArchivo || null);
+      } catch (_err) {
+        setRutaDocumentoPrevio(null);
+      }
+    };
+    cargarDocumentoPrevio();
+  }, [propuestaId]);
+
   if (!propuestaId && !expediente) {
     return (
       <div className="vinculacion-evaluar-container">
@@ -96,6 +117,15 @@ const VinculacionEvaluar = () => {
     );
   }
 
+  // Documento adjunto: única fuente de verdad compartida por ambas pestañas,
+  // más el documento ya registrado previamente en la propuesta.
+  const documentoActual = archivoDictamen;
+  const tieneDocumentoPrevio = Boolean(rutaDocumentoPrevio);
+  const verificandoDocumento = rutaDocumentoPrevio === undefined;
+  // El envío queda bloqueado si no hay archivo nuevo ni documento guardado antes
+  const faltaDocumentoDictamen = !documentoActual && !tieneDocumentoPrevio && !verificandoDocumento;
+  const mostrarAvisoDictamen = resaltarArchivo || faltaDocumentoDictamen;
+
   const handleEnviarDictamen = async (e) => {
     e.preventDefault();
 
@@ -104,16 +134,25 @@ const VinculacionEvaluar = () => {
       return;
     }
 
+    // Validación: debe existir un documento de dictamen adjunto o ya registrado
+    // previamente en la propuesta antes de permitir el envío definitivo.
+    if (!documentoActual && !tieneDocumentoPrevio) {
+      setResaltarArchivo(true);
+      alert('Debe adjuntar el documento de dictámenes antes de enviar la evaluación.');
+      return;
+    }
+    setResaltarArchivo(false);
+
     let textoContenido = analisisPI ? analisisPI.trim() : '';
-    const archivoParaGuardar = tabActiva === 'subida' ? archivoSubida : archivoAdjunto;
+    const archivoParaGuardar = archivoDictamen;
 
     if (tabActiva === 'subida') {
-      if (!archivoSubida && (!textoContenido || textoContenido.length < 10)) {
+      if (!archivoDictamen && (!textoContenido || textoContenido.length < 10)) {
         alert('Debe adjuntar el archivo firmado del dictamen o ingresar el análisis (mínimo 10 caracteres).');
         return;
       }
       if (!textoContenido || textoContenido.length < 10) {
-        textoContenido = `Dictamen de Vinculación emitido mediante documento adjunto: ${archivoSubida?.name || 'Documento oficial'}`;
+        textoContenido = `Dictamen de Vinculación emitido mediante documento adjunto: ${archivoDictamen?.name || 'Documento oficial'}`;
       }
     } else {
       if (!textoContenido || textoContenido.length < 10) {
@@ -144,7 +183,7 @@ const VinculacionEvaluar = () => {
         tipoDictamenId: 1,
         numeroOficio: `VINC-${anioActual}-${codigoSufijo}`,
         contenido: textoContenido,
-        rutaArchivo: rutaSeaweed || archivoParaGuardar?.name || null
+        rutaArchivo: rutaSeaweed || archivoParaGuardar?.name || rutaDocumentoPrevio || null
       };
 
       await vinculacionService.crearDictamen(payload);
@@ -174,6 +213,7 @@ const VinculacionEvaluar = () => {
       return;
     }
     setter(file);
+    setResaltarArchivo(false);
   };
 
   const formatFileSize = (bytes) => {
@@ -372,42 +412,49 @@ const VinculacionEvaluar = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>4. Dictamen de Vinculación firmado (opcional)</label>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      style={{ display: 'none' }}
-                      onChange={(e) => handleFileChange(e, setArchivoAdjunto)}
-                    />
-                    {archivoAdjunto ? (
-                      <div className="archivo-firmado-box">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <IconoCie nombre="fileText" tamano={18} />
-                          <span className="archivo-firmado-nombre" style={{ fontSize: '13px', fontWeight: 500 }}>{archivoAdjunto.name}</span>
-                          <span style={{ fontSize: '12px', color: '#627d98' }}>({formatFileSize(archivoAdjunto.size)})</span>
+                    <label>4. Dictamen de Vinculación firmado *</label>
+                    <div className={mostrarAvisoDictamen ? 'campo-archivo-error' : undefined}>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        style={{ display: 'none' }}
+                        onChange={(e) => handleFileChange(e, setArchivoDictamen)}
+                      />
+                      {archivoDictamen ? (
+                        <div className="archivo-firmado-box">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <IconoCie nombre="fileText" tamano={18} />
+                            <span className="archivo-firmado-nombre" style={{ fontSize: '13px', fontWeight: 500 }}>{archivoDictamen.name}</span>
+                            <span style={{ fontSize: '12px', color: '#627d98' }}>({formatFileSize(archivoDictamen.size)})</span>
+                          </div>
+                          <button 
+                            type="button" 
+                            className="btn-eliminar-adjunto"
+                            onClick={() => {
+                              if (!confirm('¿Está seguro de que desea eliminar el archivo adjunto?')) return;
+                              setArchivoDictamen(null);
+                              if (fileInputRef.current) fileInputRef.current.value = '';
+                            }}
+                            title="Eliminar archivo"
+                          >
+                            <IconoCie nombre="close" tamano={16} />
+                          </button>
                         </div>
+                      ) : (
                         <button 
                           type="button" 
-                          className="btn-eliminar-adjunto"
-                          onClick={() => {
-                            if (!confirm('¿Está seguro de que desea eliminar el archivo adjunto?')) return;
-                            setArchivoAdjunto(null);
-                            if (fileInputRef.current) fileInputRef.current.value = '';
-                          }}
-                          title="Eliminar archivo"
+                          className="btn-proposal-action btn-outline"
+                          onClick={() => fileInputRef.current?.click()}
                         >
-                          <IconoCie nombre="close" tamano={16} />
+                          + Adjuntar PDF firmado
                         </button>
+                      )}
+                    </div>
+                    {mostrarAvisoDictamen && (
+                      <div className="advertencia-dictamen">
+                        <IconoCie nombre="alertTriangle" tamano={14} />Debe adjuntar el documento de dictámenes antes de enviar la evaluación.
                       </div>
-                    ) : (
-                      <button 
-                        type="button" 
-                        className="btn-proposal-action btn-outline"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        + Adjuntar PDF firmado
-                      </button>
                     )}
                   </div>
                 </fieldset>
@@ -434,21 +481,22 @@ const VinculacionEvaluar = () => {
                   Adjunte el archivo firmado oficial del Dictamen de Vinculación para vincularlo al expediente en SeaweedFS.
                 </p>
 
-                <input
-                  ref={fileInputSubidaRef}
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  style={{ display: 'none' }}
-                  onChange={(e) => handleFileChange(e, setArchivoSubida)}
-                />
+                <div className={mostrarAvisoDictamen ? 'campo-archivo-error' : undefined}>
+                  <input
+                    ref={fileInputSubidaRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    style={{ display: 'none' }}
+                    onChange={(e) => handleFileChange(e, setArchivoDictamen)}
+                  />
 
-                {archivoSubida ? (
+                {archivoDictamen ? (
                   <div className="archivo-firmado-box" style={{ padding: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <IconoCie nombre="fileText" tamano={24} />
                       <div>
-                        <div className="archivo-firmado-nombre" style={{ fontWeight: 600 }}>{archivoSubida.name}</div>
-                        <div style={{ fontSize: '13px', color: '#627d98' }}>{formatFileSize(archivoSubida.size)}</div>
+                        <div className="archivo-firmado-nombre" style={{ fontWeight: 600 }}>{archivoDictamen.name}</div>
+                        <div style={{ fontSize: '13px', color: '#627d98' }}>{formatFileSize(archivoDictamen.size)}</div>
                       </div>
                     </div>
                     <button
@@ -456,7 +504,7 @@ const VinculacionEvaluar = () => {
                       className="btn-eliminar-adjunto"
                       onClick={() => {
                         if (!confirm('¿Está seguro de que desea eliminar el archivo adjunto?')) return;
-                        setArchivoSubida(null);
+                        setArchivoDictamen(null);
                         if (fileInputSubidaRef.current) fileInputSubidaRef.current.value = '';
                       }}
                       title="Eliminar archivo"
@@ -478,7 +526,7 @@ const VinculacionEvaluar = () => {
                           alert('El archivo no puede superar los 10 MB.');
                           return;
                         }
-                        setArchivoSubida(file);
+                        setArchivoDictamen(file);
                       }
                     }}
                   >
@@ -489,6 +537,13 @@ const VinculacionEvaluar = () => {
                     <div className="dropzone-sub">
                       o haga clic para buscar (PDF, máx 10MB)
                     </div>
+                  </div>
+                )}
+                </div>
+
+                {mostrarAvisoDictamen && (
+                  <div className="advertencia-dictamen">
+                    <IconoCie nombre="alertTriangle" tamano={14} />Debe adjuntar el documento de dictámenes antes de enviar la evaluación.
                   </div>
                 )}
 

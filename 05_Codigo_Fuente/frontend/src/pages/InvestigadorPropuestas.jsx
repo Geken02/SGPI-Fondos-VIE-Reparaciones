@@ -328,7 +328,7 @@ const InvestigadorPropuestas = () => {
   const handleReenviarSubsanacion = async (propuestaId, subsanacionId) => {
     const prop = propuestas.find(p => p.propuestaId === propuestaId);
     if (prop && prop.esPropietario === false) {
-      alert('Solo la persona coordinadora (propietaria de la propuesta) puede reenviar la propuesta subsanada a la Unidad de Vinculación.');
+      alert('Solo la persona coordinadora (propietaria de la propuesta) puede reenviar la propuesta subsanada al Comité Técnico.');
       return;
     }
 
@@ -353,7 +353,7 @@ const InvestigadorPropuestas = () => {
       localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respuesta_fecha`, new Date().toISOString());
       localStorage.removeItem(`propuesta_${propuestaId}_subsanacion_activa`);
 
-      alert('¡Propuesta subsanada y reenviada exitosamente a la Unidad de Vinculación!\n\nLa propuesta ha retornado al flujo de revisión por parte de la instancia evaluadora.');
+      alert('¡Propuesta subsanada y reenviada exitosamente al Comité Técnico!\n\nLa propuesta ha pasado directamente al flujo de evaluación por pares del Comité.');
       setRespuestasSubsanacion(prev => ({ ...prev, [propuestaId]: '' }));
       cargarPropuestas();
     } catch (err) {
@@ -366,7 +366,7 @@ const InvestigadorPropuestas = () => {
         localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respuesta_texto`, resp);
         localStorage.setItem(`propuesta_${propuestaId}_subsanacion_respuesta_fecha`, new Date().toISOString());
         localStorage.removeItem(`propuesta_${propuestaId}_subsanacion_activa`);
-        alert('¡Propuesta subsanada y reenviada con éxito a la Unidad de Vinculación!');
+        alert('¡Propuesta subsanada y reenviada con éxito al Comité Técnico!');
         cargarPropuestas();
       }
     } finally {
@@ -765,9 +765,10 @@ const InvestigadorPropuestas = () => {
                         <div className="banner-envio-vinculacion" style={{
                           margin: '14px 0 20px 0',
                           padding: '16px 20px',
-                          backgroundColor: '#f0fdf4',
-                          border: '1.5px solid #86efac',
+                          backgroundColor: '#f8fafc',
+                          border: '1.5px solid #cbd5e1',
                           borderRadius: '8px',
+                          color: '#475569',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -775,10 +776,10 @@ const InvestigadorPropuestas = () => {
                           gap: '12px'
                         }}>
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ fontWeight: 700, fontSize: '15px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <IconoCie nombre="send" tamano={16} /> Enviar Propuesta a la Unidad de Vinculación
                             </div>
-                            <div style={{ fontSize: '13px', marginTop: '3px' }}>
+                            <div style={{ fontSize: '13px', marginTop: '3px', color: '#64748b' }}>
                               Al presionar este botón, la propuesta cambiará formalmente de <strong>Borrador</strong> a <strong>Enviada a Vinculación</strong> para que el Centro de Vinculación inicie el proceso de evaluación y dictamen.
                             </div>
                           </div>
@@ -1130,7 +1131,7 @@ const InvestigadorPropuestas = () => {
                                     color: '#1e40af',
                                     fontSize: '12px'
                                   }}>
-                                    <IconoCie nombre="lock" tamano={12} /> Solo la persona coordinadora del proyecto puede reenviar la propuesta subsanada a la Unidad de Vinculación.
+                                    <IconoCie nombre="lock" tamano={12} /> Solo la persona coordinadora del proyecto puede reenviar la propuesta subsanada al Comité Técnico.
                                   </div>
                                 )}
                               </div>
