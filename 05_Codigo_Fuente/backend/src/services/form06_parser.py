@@ -1,147 +1,289 @@
 """
 form06_parser.py
 ================
-Parser del Form-06 (Presupuesto Operativo) en formato .xlsx.
-Extrae: partidas por año con código OG, categoría, detalle, monto y justificación.
+Parser para el Form-06: "Plantilla Presupuesto Convocatoria Fondos VIE" (.xlsx).
+
+Lee el archivo Excel (con hojas por año: 2027, 2028, 2029) y devuelve un dict
+estructurado con todas las partidas presupuestarias que tienen monto > 0.
+
+Estructura esperada por el router archivos.py (_persistir_datos_form06):
+
+    datos = {
+        "partidas": [
+            {
+                "og": "1-04-99-01",                       # código de Objeto de Gasto
+                "categoria": "Otros servicios de gestión y apoyo",   # Detalle
+                "detalle": "1-04-99-01 | Otros servicios de gestión y apoyo",
+                "monto": 2000000.00,
+                "anio": 2027,
+                "justificacion": "contratación de personas sordas e intérpretes...",
+                "es_duradero": False,                     # True si cae en sección de Equipo
+            },
+            ...
+        ],
+        "gran_total": 5000000.00,            # suma de los "Monto Total" por año
+        "totales_por_anio": {2027: 5000000, 2028: 5000000, 2029: 5000000},
+        "notas": [                           # texto de la hoja "Aspectos importantes"
+            "Nota 1: Se debe formular...",
+            ...
+        ],
+    }
 """
-import openpyxl
 import re
 from io import BytesIO
-from typing import Optional
+from typing import Dict, Any, List, Optional
+
+import openpyxl
 
 
-def _normalizar_texto(valor) -> str:
-    if valor is None:
+# ============================================================================
+# Constantes
+# ============================================================================
+# Columnas del Form-06 (1-indexed para openpyxl)
+COL_OG = 1          # A — código de Objeto de Gasto (ej. "1-04-99-01")
+COL_DETALLE = 2     # B — nombre del rubro (ej. "Otros servicios de gestión y apoyo")
+COL_TOTAL = 3       # C — monto total
+COL_JUSTIFICACION = 4  # D — justificación del gasto
+
+# Filas donde empieza cada sección dentro de cada hoja anual
+FILA_HEADER_OG = 7        # Fila con "OG | Detalle | Total | Justificación"
+FILA_INICIO_DATOS = 8     # Primera fila con datos de partidas
+FILA_FIN_DATOS = 77       # Última fila con códigos OG (la fila 78 es "Monto Total")
+FILA_MONTO_TOTAL = 78     # Fila con el gran total anual
+
+# Secciones dentro de cada hoja (para clasificar el rubro)
+SECCIONES_DURADERAS = {
+    # Códigos que comienzan con "5-" son Equipo (bienes duraderos)
+    "5-": "Equipo",
+}
+SECCIONES_SERVICIOS = {"1-": "Servicios"}
+SECCIONES_MATERIALES = {"2-": "Materiales y suministros"}
+SECCIONES_BECAS = {"6-": "Becas"}
+
+
+def _safe_str(val) -> str:
+    """Convierte un valor de celda a string limpio."""
+    if val is None:
         return ""
-    return str(valor).strip()
+    s = str(val).strip()
+    if s.lower() in ("none", "nan", "null"):
+        return ""
+    return s
 
 
-def _parsear_monto(valor) -> float:
-    if valor is None or valor == "":
+def _limpiar_monto(val) -> float:
+    """
+    Convierte un valor de celda a float.
+    - Si es numérico: lo devuelve directo.
+    - Si es string: limpia símbolos ₡, comas, espacios y puntos (formato CR).
+
+    Ejemplos:
+        2000000.0       -> 2000000.0
+        "₡2,000,000.00" -> 2000000.0
+        "₡ 2.000.000,00" -> 2000000.0  (formato europeo)
+        "*"             -> 0.0
+        ""              -> 0.0
+    """
+    if val is None:
         return 0.0
+    if isinstance(val, (int, float)):
+        return float(val)
+    s = str(val).strip()
+    if not s or s == "*":
+        return 0.0
+    # Quitar símbolos de colón y espacios
+    s = re.sub(r"[₡\s]", "", s)
+    if not s:
+        return 0.0
+    # Si tiene , como decimal y . como miles (formato CR/LatAm):
+    # "2.000.000,00" -> "2000000.00"
+    if "," in s and "." in s:
+        # Asumir que la última coma es decimal
+        s = s.replace(".", "").replace(",", ".")
+    elif "," in s:
+        # Solo coma: si tiene 2 dígitos después de la última coma, es decimal
+        partes = s.split(",")
+        if len(partes[-1]) == 2:
+            s = "".join(partes[:-1]) + "." + partes[-1]
+        else:
+            s = s.replace(",", "")
+    elif "." in s:
+        # Solo puntos: como en form04_parser, distinguir miles de decimal
+        partes = s.split(".")
+        if len(partes) >= 2 and len(partes[-1]) == 2:
+            s = "".join(partes[:-1]) + "." + partes[-1]
+        elif len(partes[-1]) == 3 and all(len(p) == 3 for p in partes):
+            s = "".join(partes)
+        elif len(partes[-1]) == 3:
+            s = "".join(partes)
+        # else: dejarlo tal cual
     try:
-        return float(str(valor).replace(",", "").replace(" ", ""))
-    except (ValueError, TypeError):
+        return float(s) if s else 0.0
+    except ValueError:
         return 0.0
 
 
-def _detectar_anio(nombre_hoja: str) -> Optional[int]:
-    """Extrae el año de 'Año 1 (2027)' -> 2027"""
-    m = re.search(r"\((\d{4})\)", nombre_hoja)
-    if m:
-        return int(m.group(1))
-    m = re.search(r"(\d{4})", nombre_hoja)
-    if m:
-        return int(m.group(1))
-    return None
+def _es_fila_total(texto: str) -> bool:
+    """Detecta si una fila es de totales (no debe tratarse como partida)."""
+    if not texto:
+        return False
+    t = texto.lower().strip()
+    return (
+        t.startswith("total ")
+        or t.startswith("total de ")
+        or t.startswith("total materiales")
+        or t.startswith("total servicios")
+        or t.startswith("total equipo")
+        or t.startswith("total becas")
+        or t == "monto total"
+    )
 
 
-def parsear_form06_xlsx(contenido: bytes) -> dict:
+def _determinar_seccion(og_code: str) -> str:
+    """Determina la sección/categoría macro a partir del código OG."""
+    if not og_code:
+        return ""
+    if og_code.startswith("5-"):
+        return "Equipo"
+    if og_code.startswith("6-"):
+        return "Becas"
+    if og_code.startswith("2-"):
+        return "Materiales y suministros"
+    if og_code.startswith("1-"):
+        return "Servicios"
+    return ""
+
+
+def _es_duradero(og_code: str, seccion: str) -> bool:
+    """Determina si una partida es un bien duradero (Equipo)."""
+    return og_code.startswith("5-") or seccion == "Equipo"
+
+
+# ============================================================================
+# Parser principal
+# ============================================================================
+
+def parsear_form06_xlsx(archivo_bytes: bytes) -> Dict[str, Any]:
     """
-    Devuelve:
-      - codigo_propuesta
-      - investigador
-      - partidas: lista de {anio, codigo_og, categoria, detalle, monto, justificacion}
-      - resumen: lista de {anio, servicios, materiales, becas, equipo, total}
-      - gran_total
-    """
-    wb = openpyxl.load_workbook(BytesIO(contenido), data_only=True)
+    Parser para el Form-06 (Plantilla Presupuesto).
 
-    resultado = {
-        "codigo_propuesta": None,
-        "investigador": None,
+    Recorre las hojas anuales (2027, 2028, 2029, ...) y extrae todas las
+    partidas con monto > 0.  Devuelve un dict listo para que el router lo
+    persista en PresupuestoPropuesta.
+    """
+    try:
+        wb = openpyxl.load_workbook(BytesIO(archivo_bytes), data_only=True)
+    except Exception as e:
+        raise Exception(f"Error al abrir el archivo Excel: {str(e)}")
+
+    datos: Dict[str, Any] = {
         "partidas": [],
-        "resumen": [],
         "gran_total": 0.0,
+        "totales_por_anio": {},
+        "notas": [],
     }
 
     # ------------------------------------------------------------------
-    # Hojas de año: "Año 1 (2027)", "Año 2 (2028)", "Año 3 (2029)"
+    # 1. HOJA "ASPECTOS IMPORTANTES" — extraer notas informativas
     # ------------------------------------------------------------------
-    for nombre_hoja in wb.sheetnames:
-        if not nombre_hoja.lower().startswith("año"):
+    for sheet_name in wb.sheetnames:
+        if "aspecto" in sheet_name.lower() or "nota" in sheet_name.lower():
+            ws = wb[sheet_name]
+            for r in range(1, ws.max_row + 1):
+                val_a = _safe_str(ws.cell(row=r, column=1).value)
+                val_b = _safe_str(ws.cell(row=r, column=2).value)
+                if val_a and val_b and "nota" in val_a.lower():
+                    datos["notas"].append(f"{val_a} {val_b}")
+            break
+
+    # ------------------------------------------------------------------
+    # 2. HOJAS ANUALES — extraer partidas con monto > 0
+    # ------------------------------------------------------------------
+    hojas_anuales = []
+    for sheet_name in wb.sheetnames:
+        # Aceptar "2027", "2028", "2029", "Año 2027", etc.
+        if re.search(r"\b(20\d{2})\b", sheet_name):
+            hojas_anuales.append(sheet_name)
+
+    # Si no hay hojas anuales explícitas, intentar todas excepto "Aspectos importantes"
+    if not hojas_anuales:
+        hojas_anuales = [s for s in wb.sheetnames
+                         if "aspecto" not in s.lower() and "nota" not in s.lower()]
+
+    for sheet_name in hojas_anuales:
+        # Extraer el año del nombre de la hoja (primer número 20XX encontrado)
+        m_anio = re.search(r"\b(20\d{2})\b", sheet_name)
+        if not m_anio:
             continue
-        anio = _detectar_anio(nombre_hoja)
-        if not anio:
-            continue
+        anio = int(m_anio.group(1))
 
-        ws = wb[nombre_hoja]
-        filas = list(ws.iter_rows(values_only=True))
+        ws = wb[sheet_name]
+        total_anio = 0.0
 
-        # Capturar código e investigador desde las primeras filas
-        for r in filas[:6]:
-            if not r:
-                continue
-            texto = " ".join(_normalizar_texto(c) for c in r if c)
-            if "DEMO" in texto or "CIE" in texto or "FVIE" in texto:
-                # Ej: "DEMO-CIE-PATOS-003 — DI-Ayuda a los patos 3"
-                m = re.match(r"([A-Z0-9\-]+)", texto)
-                if m and not resultado["codigo_propuesta"]:
-                    resultado["codigo_propuesta"] = m.group(1)
-            if "Investigador" in texto:
-                m = re.search(r"Investigador\(a\):\s*([^|]+)", texto)
-                if m and not resultado["investigador"]:
-                    resultado["investigador"] = m.group(1).strip()
-
-        # Localizar fila de encabezados: Código OG | Categoría | Detalle | Monto | Justificación
-        idx_header = None
-        for i, r in enumerate(filas):
-            if r and len(r) >= 4 and "Código" in _normalizar_texto(r[0]) and "OG" in _normalizar_texto(r[0]):
-                idx_header = i
+        # Localizar la fila con "OG | Detalle | Total | Justificación"
+        fila_header = None
+        for r in range(1, min(ws.max_row + 1, 20)):
+            val_a = _safe_str(ws.cell(row=r, column=COL_OG).value)
+            val_b = _safe_str(ws.cell(row=r, column=COL_DETALLE).value)
+            if val_a.lower() == "og" and "detalle" in val_b.lower():
+                fila_header = r
                 break
 
-        if idx_header is None:
-            continue
+        if fila_header is None:
+            # Fallback: usar el estándar del Form-06
+            fila_header = FILA_HEADER_OG
 
-        # Leer partidas hasta encontrar "Subtotal"
-        for r in filas[idx_header + 1:]:
-            if not r:
+        inicio = fila_header + 1
+        fin = min(ws.max_row + 1, FILA_MONTO_TOTAL + 5)  # algo de margen
+
+        for r in range(inicio, fin):
+            val_og = _safe_str(ws.cell(row=r, column=COL_OG).value)
+            val_detalle = _safe_str(ws.cell(row=r, column=COL_DETALLE).value)
+            val_total_celda = ws.cell(row=r, column=COL_TOTAL).value
+            val_just = _safe_str(ws.cell(row=r, column=COL_JUSTIFICACION).value)
+
+            # Saltar filas vacías
+            if not val_og and not val_detalle:
                 continue
-            detalle = _normalizar_texto(r[2]) if len(r) > 2 else ""
-            if "Subtotal" in detalle or "Total" in detalle:
-                break
-            codigo_og = _normalizar_texto(r[0]) if len(r) > 0 else ""
-            categoria = _normalizar_texto(r[1]) if len(r) > 1 else ""
-            monto = _parsear_monto(r[3]) if len(r) > 3 else 0.0
-            justificacion = _normalizar_texto(r[4]) if len(r) > 4 else ""
 
-            if monto <= 0 and not detalle:
+            # Saltar filas de totales ("Total de servicios", "Monto Total", etc.)
+            if _es_fila_total(val_og) or _es_fila_total(val_detalle):
+                # "Monto Total" suele estar en col A con el monto en col C
+                if val_og.lower().strip() == "monto total":
+                    monto_total_anio = _limpiar_monto(val_total_celda)
+                    datos["totales_por_anio"][anio] = monto_total_anio
+                    total_anio = monto_total_anio
                 continue
 
-            resultado["partidas"].append({
-                "anio": anio,
-                "codigo_og": codigo_og,
-                "categoria": categoria,
-                "detalle": detalle,
+            # Solo procesar filas con código OG válido (formato "X-XX-XX-XX")
+            if not re.match(r"^\d+-\d{2}-\d{2}-\d{2}$", val_og):
+                continue
+
+            monto = _limpiar_monto(val_total_celda)
+            if monto <= 0:
+                continue
+
+            seccion = _determinar_seccion(val_og)
+            datos["partidas"].append({
+                "og": val_og,
+                "categoria": val_detalle,
+                "detalle": f"{val_og} | {val_detalle}",
                 "monto": monto,
-                "justificacion": justificacion,
+                "anio": anio,
+                "justificacion": val_just,
+                "seccion": seccion,
+                "es_duradero": _es_duradero(val_og, seccion),
             })
 
-    # ------------------------------------------------------------------
-    # Hoja "Resumen Trienal"
-    # ------------------------------------------------------------------
-    if "Resumen Trienal" in wb.sheetnames:
-        ws = wb["Resumen Trienal"]
-        filas = list(ws.iter_rows(values_only=True))
-        for r in filas:
-            if not r:
-                continue
-            texto = _normalizar_texto(r[0])
-            if re.match(r"^\d{4}$", texto):
-                anio = int(texto)
-                resultado["resumen"].append({
-                    "anio": anio,
-                    "servicios": _parsear_monto(r[1]) if len(r) > 1 else 0.0,
-                    "materiales": _parsear_monto(r[2]) if len(r) > 2 else 0.0,
-                    "becas": _parsear_monto(r[3]) if len(r) > 3 else 0.0,
-                    "equipo": _parsear_monto(r[4]) if len(r) > 4 else 0.0,
-                    "total": _parsear_monto(r[5]) if len(r) > 5 else 0.0,
-                })
-            elif "GRAN TOTAL" in texto.upper():
-                # El gran total suele estar en la última columna numérica
-                for c in reversed(r):
-                    if c is not None and _parsear_monto(c) > 0:
-                        resultado["gran_total"] = _parsear_monto(c)
-                        break
+        # Si no se encontró la fila "Monto Total", sumar las partidas del año
+        if anio not in datos["totales_por_anio"]:
+            suma = sum(p["monto"] for p in datos["partidas"] if p["anio"] == anio)
+            datos["totales_por_anio"][anio] = suma
+            total_anio = suma
 
-    return resultado
+    # ------------------------------------------------------------------
+    # 3. GRAN TOTAL — sumar los totales de cada año
+    # ------------------------------------------------------------------
+    datos["gran_total"] = sum(datos["totales_por_anio"].values())
+
+    return datos
