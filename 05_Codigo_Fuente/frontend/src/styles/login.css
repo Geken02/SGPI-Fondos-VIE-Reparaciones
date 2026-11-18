@@ -1,6 +1,5 @@
 /* src/styles/login.css */
 
-/* Contenedor principal */
 .login-container {
   width: 100%;
   min-height: 100vh;
@@ -11,7 +10,6 @@
   background-color: #f5f7fa;
 }
 
-/* Tarjeta blanca central */
 .login-card {
   background: #ffffff;
   border-radius: 10px;
@@ -22,46 +20,16 @@
   text-align: center;
 }
 
-/* Logo del TEC */
-.logo-container {
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: center;
-}
-
-.logo-img {
-  max-width: 200px;
-  height: auto;
-  display: block;
-}
-
-/* Título "Fondos VIE" */
-.login-title {
-  color: #002855;
-  font-family: 'Roboto', sans-serif;
-  font-size: 34px;
-  font-weight: 900;
-  margin: 0 0 8px 0;
-  letter-spacing: -0.5px;
-  line-height: 1.1;
-}
-
-/* Subtítulo */
-.login-subtitle {
-  color: #4a5568;
-  font-family: 'Roboto', sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-  margin: 0 0 32px 0;
-}
-
-/* Grupos de formulario */
-.form-group {
+.login-form-estricto {
+  width: 100%;
   text-align: left;
+}
+
+.form-group-estricto {
   margin-bottom: 20px;
 }
 
-.form-label {
+.form-label-estricto {
   display: block;
   font-family: 'Roboto', sans-serif;
   font-size: 14px;
@@ -70,477 +38,263 @@
   margin-bottom: 8px;
 }
 
-.input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
+/* ✅ BLINDAJE DEL INPUT E ICONO */
+.input-wrapper-estricto {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
 }
 
-/* ✅ FIX 1: Iconos centrados verticalmente y siempre visibles */
-.input-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #a0aec0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  z-index: 2; /* ✅ Mayor que el input para no ser tapado */
-  width: 18px;
-  height: 18px;
+.input-icon-estricto {
+  position: absolute !important;
+  left: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: #a0aec0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: none !important;
+  z-index: 10 !important; /* ✅ Siempre por encima del input */
+  width: 18px !important;
+  height: 18px !important;
 }
 
-.input-icon svg {
-  width: 18px;
-  height: 18px;
-  stroke-width: 1.5;
+.form-input-estricto {
+  width: 100% !important;
+  height: 46px !important;
+  padding: 12px 14px 12px 44px !important; /* ✅ Espacio para el icono */
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  font-family: 'Roboto', sans-serif !important;
+  font-size: 14px !important;
+  color: #1a202c !important;
+  background: #ffffff !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 
-.form-input {
-  width: 100%;
-  padding: 12px 14px 12px 44px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-family: 'Roboto', sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-  color: #1a202c;
-  transition: all 0.2s;
-  outline: none;
-  background: #ffffff;
-  height: 46px;
-  box-sizing: border-box;
-  position: relative;
-  z-index: 1;
+.form-input-estricto:focus {
+  border-color: #002855 !important;
+  box-shadow: 0 0 0 2px rgba(0, 40, 85, 0.1) !important;
 }
 
-.form-input:focus {
-  border-color: #002855;
-  box-shadow: 0 0 0 2px rgba(0, 40, 85, 0.1);
+.form-input-estricto::placeholder {
+  color: #a0aec0 !important;
 }
 
-.form-input::placeholder {
-  color: #a0aec0;
-  font-style: italic;
-  font-weight: 400;
+.input-error-estricto {
+  border-color: #dc2626 !important;
+  background-color: #fef2f2 !important;
 }
 
-/* ✅ FIX 2 y 3: Botón con layout estable que no mueve el texto */
-.btn-primary {
-  width: 100%;
-  padding: 14px 24px;
-  background-color: #0369A1;
-  color: #ffffff;
-  border: none;
-  border-radius: 6px;
-  font-family: 'Roboto', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin-top: 8px;
-  height: 48px;
-  display: inline-flex; /* ✅ Flex para alinear spinner + texto */
-  align-items: center;
-  justify-content: center;
-  gap: 8px; /* ✅ Espacio fijo entre spinner y texto */
-  position: relative;
-  overflow: hidden;
+.input-error-message-estricto {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-top: 6px !important;
+  font-family: 'Roboto', sans-serif !important;
+  font-size: 12px !important;
+  color: #dc2626 !important;
 }
 
-.btn-primary:hover {
-  background-color: #025380;
+/* ✅ BLINDAJE DEL BOTÓN Y SPINNER */
+.btn-primary-estricto {
+  width: 100% !important;
+  height: 48px !important;
+  padding: 0 24px !important;
+  background-color: #0369A1 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-family: 'Roboto', sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  margin-top: 8px !important;
+  
+  /* ✅ FLEXBOX ESTRICTO PARA EVITAR MOVIMIENTOS */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition: background-color 0.2s !important;
 }
 
-.btn-primary:active {
-  background-color: #023f63;
-  transform: translateY(1px); /* ✅ Efecto de presión sutil sin mover el texto */
+.btn-primary-estricto:hover {
+  background-color: #025380 !important;
 }
 
-.btn-primary:disabled {
-  background-color: #a0aec0;
-  cursor: not-allowed;
-  transform: none;
+.btn-primary-estricto:active {
+  background-color: #023f63 !important;
+  transform: translateY(1px) !important;
 }
 
-/* ✅ FIX 3: Spinner con contenedor de tamaño fijo para no empujar el texto */
-.spinner {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  min-width: 16px; /* ✅ Ancho mínimo fijo */
-  min-height: 16px; /* ✅ Alto mínimo fijo */
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  vertical-align: middle;
-  flex-shrink: 0; /* ✅ No se encoge en flex */
+.btn-primary-estricto:disabled {
+  background-color: #a0aec0 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
 }
 
-@keyframes spin {
+.spinner-estricto {
+  display: inline-block !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important; /* ✅ EVITA QUE EL TEXTO SE MUEVA */
+  min-height: 18px !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  border-top-color: white !important;
+  border-radius: 50% !important;
+  animation: spin-estricto 0.8s linear infinite !important;
+  flex-shrink: 0 !important; /* ✅ NUNCA SE ENCOGE */
+}
+
+@keyframes spin-estricto {
   to { transform: rotate(360deg); }
 }
 
-/* Link de recuperación */
-.forgot-link {
-  display: block;
+.btn-text-estricto {
+  white-space: nowrap !important;
+}
+
+/* Links y textos */
+.links-estricto {
   margin-top: 16px;
+  text-align: center;
+}
+
+.forgot-link-estricto {
   color: #002855;
   font-family: 'Roboto', sans-serif;
   font-size: 14px;
   font-weight: 500;
   text-decoration: underline;
   cursor: pointer;
-  text-align: center;
 }
 
-.forgot-link:hover {
+.forgot-link-estricto:hover {
   color: #001d3d;
 }
 
-/* Texto de soporte */
-.support-text {
+.support-text-estricto {
   margin-top: 12px;
   font-family: 'Roboto', sans-serif;
   font-size: 12px;
-  font-weight: 400;
   color: #a0aec0;
   text-align: center;
 }
 
-/* Mensajes de error/éxito */
-.alert {
+.alert-error {
   padding: 12px 14px;
   border-radius: 6px;
   margin-bottom: 16px;
   font-family: 'Roboto', sans-serif;
   font-size: 13px;
-  font-weight: 400;
-  text-align: left;
-}
-
-.alert-error {
   background-color: #fef2f2;
   color: #EF3340;
   border: 1px solid #fecaca;
-}
-
-.alert-success {
-  background-color: #f0fdf4;
-  color: #16a34a;
-  border: 1px solid #bbf7d0;
-}
-
-.alert-info {
-  background-color: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #bfdbfe;
-}
-
-/* Link de volver */
-.back-link {
-  display: inline-block;
-  margin-top: 16px;
-  color: #002855;
-  font-family: 'Roboto', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.back-link:hover {
-  text-decoration: underline;
-}
-
-/* Requisitos de contraseña */
-.password-requirements {
   text-align: left;
-  margin-top: 12px;
-  padding: 12px 14px;
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  font-family: 'Roboto', sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  color: #4a5568;
-}
-
-.password-requirements strong {
-  font-weight: 500;
-  color: #1a202c;
-}
-
-.password-requirements ul {
-  margin-top: 6px;
-  padding-left: 20px;
-}
-
-.password-requirements li {
-  margin-bottom: 4px;
-}
-
-/* Input con error */
-.form-input.input-error {
-  border-color: #dc2626;
-  background-color: #fef2f2;
-}
-
-.form-input.input-error:focus {
-  border-color: #dc2626;
-  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
-}
-
-/* Mensaje de error inline */
-.input-error-message {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 6px;
-  font-family: 'Roboto', sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  color: #dc2626;
-  animation: slideDown 0.2s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Indicador de fortaleza de contraseña */
-.indicador-fortaleza {
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  animation: slideDown 0.2s ease-out;
-}
-
-.indicador-barras {
-  display: flex;
-  gap: 4px;
-  flex: 1;
-}
-
-.indicador-barra {
-  height: 4px;
-  flex: 1;
-  border-radius: 2px;
-  transition: background-color 0.3s ease;
-}
-
-.indicador-texto {
-  font-family: 'Roboto', sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  min-width: 60px;
-  text-align: right;
-}
-
-/* Requisitos de contraseña */
-.requisitos-contrasena {
-  margin-top: 12px;
-  padding: 12px;
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  font-family: 'Roboto', sans-serif;
-  font-size: 12px;
-}
-
-.requisito-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-  color: #6b7280;
-  transition: color 0.2s;
-}
-
-.requisito-item:last-child {
-  margin-bottom: 0;
-}
-
-.requisito-item.cumplido {
-  color: #10b981;
-}
-
-.requisito-icono {
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* ==========================================================================
-   ✅ FIX 4: MODO ALTO CONTRASTE - LOGIN
+   ✅ MODO ALTO CONTRASTE (Forzado con !important)
    ========================================================================== */
 
-.high-contrast-mode .login-container {
+.high-contrast-mode .login-container,
+body.high-contrast-mode .login-container {
   background-color: #000000 !important;
 }
 
-.high-contrast-mode .login-card {
+.high-contrast-mode .login-card,
+body.high-contrast-mode .login-card {
   background: #000000 !important;
   border: 2px solid #FFFFFF !important;
   box-shadow: none !important;
 }
 
-.high-contrast-mode .login-title {
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .login-subtitle {
-  color: #CCCCCC !important;
-}
-
-.high-contrast-mode .form-label {
+.high-contrast-mode .form-label-estricto,
+body.high-contrast-mode .form-label-estricto {
   color: #FFFFFF !important;
   font-weight: 600 !important;
 }
 
-.high-contrast-mode .input-wrapper {
-  border: 2px solid #FFFFFF !important;
-  border-radius: 6px;
-}
-
-.high-contrast-mode .input-icon {
+.high-contrast-mode .input-icon-estricto,
+body.high-contrast-mode .input-icon-estricto {
   color: #FFFF00 !important;
 }
 
-.high-contrast-mode .form-input {
+.high-contrast-mode .form-input-estricto,
+body.high-contrast-mode .form-input-estricto {
   background: #000000 !important;
   color: #FFFFFF !important;
-  border: none !important;
+  border: 2px solid #FFFFFF !important;
   font-weight: 500 !important;
 }
 
-.high-contrast-mode .form-input:focus {
+.high-contrast-mode .form-input-estricto:focus,
+body.high-contrast-mode .form-input-estricto:focus {
   border-color: #FFFF00 !important;
   box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.35) !important;
 }
 
-.high-contrast-mode .form-input::placeholder {
+.high-contrast-mode .form-input-estricto::placeholder,
+body.high-contrast-mode .form-input-estricto::placeholder {
   color: #B0B0B0 !important;
-  font-style: normal !important;
 }
 
-.high-contrast-mode .form-input.input-error {
-  background: #000000 !important;
+.high-contrast-mode .input-error-estricto,
+body.high-contrast-mode .input-error-estricto {
   border: 2px solid #FF3333 !important;
 }
 
-.high-contrast-mode .form-input.input-error:focus {
-  box-shadow: 0 0 0 3px rgba(255, 51, 51, 0.35) !important;
-}
-
-.high-contrast-mode .input-error-message {
+.high-contrast-mode .input-error-message-estricto,
+body.high-contrast-mode .input-error-message-estricto {
   color: #FF3333 !important;
   font-weight: 600 !important;
 }
 
-.high-contrast-mode .btn-primary {
+.high-contrast-mode .btn-primary-estricto,
+body.high-contrast-mode .btn-primary-estricto {
   background-color: #FFFF00 !important;
   color: #000000 !important;
   border: 2px solid #FFFFFF !important;
   font-weight: 700 !important;
 }
 
-.high-contrast-mode .btn-primary:hover {
+.high-contrast-mode .btn-primary-estricto:hover,
+body.high-contrast-mode .btn-primary-estricto:hover {
   background-color: #CCCC00 !important;
 }
 
-.high-contrast-mode .btn-primary:active {
-  background-color: #AAAA00 !important;
-}
-
-.high-contrast-mode .btn-primary:disabled {
+.high-contrast-mode .btn-primary-estricto:disabled,
+body.high-contrast-mode .btn-primary-estricto:disabled {
   background-color: #555555 !important;
   color: #CCCCCC !important;
   border-color: #888888 !important;
 }
 
-.high-contrast-mode .spinner {
+.high-contrast-mode .spinner-estricto,
+body.high-contrast-mode .spinner-estricto {
   border-color: #555555 !important;
   border-top-color: #000000 !important;
 }
 
-.high-contrast-mode .forgot-link,
-.high-contrast-mode .back-link {
+.high-contrast-mode .forgot-link-estricto,
+.high-contrast-mode .support-text-estricto,
+body.high-contrast-mode .forgot-link-estricto,
+body.high-contrast-mode .support-text-estricto {
   color: #FFFF00 !important;
   font-weight: 600 !important;
 }
 
-.high-contrast-mode .forgot-link:hover,
-.high-contrast-mode .back-link:hover {
-  color: #FFFFFF !important;
-  text-decoration: underline !important;
-}
-
-.high-contrast-mode .support-text {
-  color: #B0B0B0 !important;
-}
-
-.high-contrast-mode .alert-error {
+.high-contrast-mode .alert-error,
+body.high-contrast-mode .alert-error {
   background: #000000 !important;
   color: #FF3333 !important;
   border: 2px solid #FF3333 !important;
-  font-weight: 600 !important;
-}
-
-.high-contrast-mode .alert-success {
-  background: #000000 !important;
-  color: #00FF00 !important;
-  border: 2px solid #00FF00 !important;
-  font-weight: 600 !important;
-}
-
-.high-contrast-mode .alert-info {
-  background: #000000 !important;
-  color: #FFFF00 !important;
-  border: 2px solid #FFFF00 !important;
-  font-weight: 600 !important;
-}
-
-.high-contrast-mode .password-requirements,
-.high-contrast-mode .requisitos-contrasena {
-  background: #000000 !important;
-  border: 2px solid #FFFFFF !important;
-  color: #FFFFFF !important;
-}
-
-.high-contrast-mode .password-requirements strong {
-  color: #FFFF00 !important;
-}
-
-.high-contrast-mode .requisito-item {
-  color: #CCCCCC !important;
-}
-
-.high-contrast-mode .requisito-item.cumplido {
-  color: #00FF00 !important;
-  font-weight: 600 !important;
-}
-
-.high-contrast-mode .indicador-barra {
-  background-color: #555555 !important;
-  border: 1px solid #FFFFFF !important;
-}
-
-.high-contrast-mode .indicador-texto {
-  color: #FFFFFF !important;
-  font-weight: 600 !important;
 }

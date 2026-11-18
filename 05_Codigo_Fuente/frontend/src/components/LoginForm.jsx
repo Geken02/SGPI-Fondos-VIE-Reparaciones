@@ -15,7 +15,6 @@ const LoginForm = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // Iconos SVG integrados para garantizar compatibilidad
   const IconoCorreo = (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2" y="4" width="20" height="16" rx="2"/>
@@ -40,7 +39,6 @@ const LoginForm = () => {
 
   const validarFormulario = () => {
     const nuevosErrores = {};
-    
     const errorCorreo = validarCorreoTEC(correo);
     if (errorCorreo) nuevosErrores.correo = errorCorreo;
     
@@ -54,15 +52,12 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorGeneral('');
-    
     if (!validarFormulario()) return;
     
     setCargando(true);
-
     try {
       const perfil = await login(correo, contrasena);
       const roles = perfil?.roles ?? [];
-
       if (roles.includes('MiembroCIE')) {
         navigate('/miembro-cie', { replace: true });
       } else {
@@ -76,24 +71,20 @@ const LoginForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="login-form">
+    <form onSubmit={handleSubmit} noValidate className="login-form-estricto">
       {errorGeneral && (
-        <div className="alert alert-error" role="alert">
-          {errorGeneral}
-        </div>
+        <div className="alert alert-error" role="alert">{errorGeneral}</div>
       )}
 
-      {/* Campo de Correo */}
-      <div className="form-group">
-        <label htmlFor="correo" className="form-label">Correo institucional</label>
-        <div className="input-wrapper">
-          <span className="input-icon" aria-hidden="true">
-            {IconoCorreo}
-          </span>
+      {/* CAMPO CORREO */}
+      <div className="form-group-estricto">
+        <label htmlFor="correo" className="form-label-estricto">Correo institucional</label>
+        <div className="input-wrapper-estricto">
+          <span className="input-icon-estricto">{IconoCorreo}</span>
           <input
             id="correo"
             type="email"
-            className={`form-input ${errores.correo ? 'input-error' : ''}`}
+            className={`form-input-estricto ${errores.correo ? 'input-error-estricto' : ''}`}
             value={correo}
             onChange={(e) => {
               setCorreo(e.target.value);
@@ -101,29 +92,24 @@ const LoginForm = () => {
             }}
             placeholder="usuario@tec.ac.cr"
             autoComplete="email"
-            aria-invalid={!!errores.correo}
-            aria-describedby={errores.correo ? "error-correo" : undefined}
           />
         </div>
         {errores.correo && (
-          <div id="error-correo" className="input-error-message" role="alert">
-            {IconoError}
-            <span>{errores.correo}</span>
+          <div className="input-error-message-estricto">
+            {IconoError} <span>{errores.correo}</span>
           </div>
         )}
       </div>
 
-      {/* Campo de Contraseña */}
-      <div className="form-group">
-        <label htmlFor="contrasena" className="form-label">Contraseña</label>
-        <div className="input-wrapper">
-          <span className="input-icon" aria-hidden="true">
-            {IconoCandado}
-          </span>
+      {/* CAMPO CONTRASEÑA */}
+      <div className="form-group-estricto">
+        <label htmlFor="contrasena" className="form-label-estricto">Contraseña</label>
+        <div className="input-wrapper-estricto">
+          <span className="input-icon-estricto">{IconoCandado}</span>
           <input
             id="contrasena"
             type="password"
-            className={`form-input ${errores.contrasena ? 'input-error' : ''}`}
+            className={`form-input-estricto ${errores.contrasena ? 'input-error-estricto' : ''}`}
             value={contrasena}
             onChange={(e) => {
               setContrasena(e.target.value);
@@ -131,32 +117,28 @@ const LoginForm = () => {
             }}
             placeholder="••••••••"
             autoComplete="current-password"
-            aria-invalid={!!errores.contrasena}
-            aria-describedby={errores.contrasena ? "error-contrasena" : undefined}
           />
         </div>
         {errores.contrasena && (
-          <div id="error-contrasena" className="input-error-message" role="alert">
-            {IconoError}
-            <span>{errores.contrasena}</span>
+          <div className="input-error-message-estricto">
+            {IconoError} <span>{errores.contrasena}</span>
           </div>
         )}
       </div>
 
-      {/* Botón de Envío */}
-      <button type="submit" className="btn-primary" disabled={cargando}>
-        {cargando && <span className="spinner" aria-hidden="true"></span>}
-        <span>{cargando ? 'Ingresando...' : 'Ingresar'}</span>
+      {/* BOTÓN BLINDADO */}
+      <button type="submit" className="btn-primary-estricto" disabled={cargando}>
+        {cargando && <span className="spinner-estricto"></span>}
+        <span className="btn-text-estricto">{cargando ? 'Ingresando...' : 'Ingresar'}</span>
       </button>
 
-      {/* Enlaces de ayuda */}
-      <div style={{ marginTop: '16px', textAlign: 'center' }}>
-        <Link to="/olvide-mi-contrasena" className="forgot-link">
+      <div className="links-estricto">
+        <Link to="/olvide-mi-contrasena" className="forgot-link-estricto">
           ¿Olvidaste tu contraseña?
         </Link>
       </div>
 
-      <p className="support-text">
+      <p className="support-text-estricto">
         Si tienes problemas de acceso, contacta a soporte VIE
       </p>
     </form>
