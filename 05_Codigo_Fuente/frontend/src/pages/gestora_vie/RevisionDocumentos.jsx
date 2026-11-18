@@ -83,16 +83,14 @@ const DetalleDocumentos = ({ codigo }) => {
     return <MensajeEstado titulo="Revisión de documentos" texto="Cargando expediente..." />;
   }
 
-  const { expediente, documentos, subsanacion } = datos;
+  const { expediente, documentos, subsanacion, envioCie } = datos;
   const estado = ESTADOS[expediente.estado] ?? { etiqueta: expediente.estadoDetalle, clase: 'revision' };
   const pasoActual = Math.max(2, expediente.pasoActual);
   const hayCambios = Object.keys(cambios).length > 0;
   const puedeSolicitar = subsanacion.puede && !hayCambios && !guardando;
-  const codigosObligatorios = ['Form-04', 'Form-05', 'Form-06', 'Acuerdo_Consejo'];
-  if (expediente.colaboradoresExternos) codigosObligatorios.push('Carta_Compromiso');
-  const documentosObligatorios = documentos.filter((doc) => codigosObligatorios.includes(doc.codigoTipo));
-  const documentosListos = documentosObligatorios.length > 0 && documentosObligatorios.every((doc) => doc.estado !== 'FALTANTE' && (cambios[doc.documentoId]?.estado ?? doc.estado) === 'CORRECTO');
-  const puedeEnviarCIE = expediente.estadoCodigo === 'EN_CONSEJO' && expediente.consejoAprobado && documentosListos && !hayCambios && !guardando && !enviandoCIE && !subsanacion.bloqueo;
+  // La elegibilidad viene del backend y usa exactamente las mismas reglas que el POST.
+  // Solo se bloquea localmente mientras existan cambios sin guardar.
+  const puedeEnviarCIE = envioCie?.puede === true && !hayCambios && !guardando && !enviandoCIE;
 
   const cambiar = (doc, campos) => {
     setCambios((prev) => {
@@ -297,13 +295,11 @@ const DetalleDocumentos = ({ codigo }) => {
         </div>
         <p className="gv-nota-accion gv-nota-derecha">{nota}</p>
         <p className="gv-nota-accion gv-nota-derecha">
-          {expediente.estadoCodigo !== 'EN_CONSEJO'
-            ? 'La propuesta debe encontrarse en la etapa de Consejo de Escuela.'
-            : !expediente.consejoAprobado
-              ? 'El envío se habilita cuando exista un acuerdo de aprobación del Consejo de Escuela.'
-              : !documentosListos
-              ? 'Revisa todos los documentos obligatorios y marca Correcto antes de enviar.'
-              : subsanacion.bloqueo || 'El backend verificará el 90 % de cumplimiento y los requisitos críticos antes de remitir al CIE.'}
+          {hayCambios
+            ? 'Guarda los cambios de revisión para actualizar la validación de envío.'
+            : envioCie?.puede
+              ? `El expediente cumple las condiciones del backend para enviarse al CIE (${envioCie.porcentajeCumplimiento} % de cumplimiento).`
+              : (envioCie?.motivos ?? ['No fue posible obtener la validación de envío.']).join(' ')}
         </p>
       </section>
 

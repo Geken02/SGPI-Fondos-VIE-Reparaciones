@@ -43,10 +43,12 @@ def obtener_documentos(db: Session, codigo_propuesta: str) -> dict:
     from src.services.vie import evaluacion_service  # import tardío: evaluacion_service usa este módulo
 
     p, estado, abierta = cargar_propuesta(db, codigo_propuesta)
+    from src.services.vie import validacion_service
     return {
         "expediente": construir_encabezado(db, p, estado, abierta),
         "documentos": documentos_con_revision(db, p),
         "subsanacion": evaluacion_service.evaluar_subsanacion(db, p),
+        "envioCie": validacion_service.evaluar_envio_cie(db, p, estado),
     }
 
 

@@ -416,36 +416,40 @@ def _nombre_convocatoria(db: Session, p: Propuesta) -> str:
     conv = db.get(Convocatorias, p.convocatoriaId)
     return conv.nombreConvocatoria if conv else "—"
 
-def enviar_al_cie(db: Session, codigo_propuesta: str, gestora_id: int) -> dict:
-    """Remite al CIE una propuesta con al menos 90 % de cumplimiento y sin subsanaciones abiertas."""
-    from src.services.vie import evaluacion_service
+def evaluar_envio_cie(db: Session, p: Propuesta, estado_actual) -> dict:
+    """Devuelve la decisión y los motivos usando exactamente las reglas del endpoint de envío.
 
-    p, estado_actual, _ = cargar_propuesta(db, codigo_propuesta)
+    Esta evaluación es de solo lectura y se comparte entre la pantalla VIE y el POST
+    para que el botón no aplique reglas distintas a las del backend.
+    """
+    from src.services.vie import evaluacion_service
+    from src.services.vie.documentos_service import documentos_con_revision
+
     codigo_estado_actual = estado_actual.codigoEstadoPropuesta
+    motivos = []
 
     if codigo_estado_actual == "EN_CIE":
-        raise ConflictoNegocio("Este expediente ya fue enviado al CIE.")
+        motivos.append("Este expediente ya fue enviado al CIE.")
+        return {"puede": False, "motivos": motivos, "porcentajeCumplimiento": porcentaje_cumplimiento(construir_grupos_revisados(db, p))}
+
     if codigo_estado_actual in {"APROBADA", "RECHAZADA", "CANCELADA"}:
-        raise ConflictoNegocio("No se puede enviar al CIE un expediente que ya tiene un estado final.")
+        motivos.append("No se puede enviar al CIE un expediente que ya tiene un estado final.")
+        return {"puede": False, "motivos": motivos, "porcentajeCumplimiento": porcentaje_cumplimiento(construir_grupos_revisados(db, p))}
 
     grupos = construir_grupos_revisados(db, p)
     porcentaje = porcentaje_cumplimiento(grupos)
     if porcentaje < 90:
-        raise ConflictoNegocio(
+        motivos.append(
             f"No se puede enviar al CIE: el cumplimiento normativo es de {porcentaje} %. Se requiere al menos un 90 %."
         )
 
     evaluacion = evaluacion_service.evaluar_subsanacion(db, p)
     if evaluacion["bloqueo"]:
-        raise ConflictoNegocio(
+        motivos.append(
             "No se puede enviar al CIE mientras exista una subsanación sin cerrar. " + evaluacion["bloqueo"]
         )
 
-    # El porcentaje normativo no sustituye la comprobación documental individual.
-    # Se bloquean documentos obligatorios faltantes, observados o aún sin revisar.
-    # SIN_REVISAR se mantiene bloqueante como criterio conservador hasta que la
-    # institución confirme formalmente si puede remitirse documentación no revisada.
-    from src.services.vie.documentos_service import documentos_con_revision
+    # Mantiene los mismos documentos y estados bloqueantes que ya comprobaba el POST.
     documentos = documentos_con_revision(db, p)
     codigos_obligatorios = set(DOCUMENTOS_OBLIGATORIOS)
     if p.colaboradoresExternos:
@@ -460,7 +464,7 @@ def enviar_al_cie(db: Session, codigo_propuesta: str, gestora_id: int) -> dict:
             f"{d['nombre']} ({d['estado'].replace('_', ' ').lower()})"
             for d in problemas_documentales
         )
-        raise ConflictoNegocio(
+        motivos.append(
             "No se puede enviar al CIE: hay documentos obligatorios faltantes, observados o sin revisar: "
             + detalle + "."
         )
@@ -471,8 +475,28 @@ def enviar_al_cie(db: Session, codigo_propuesta: str, gestora_id: int) -> dict:
         .first()
     )
     if estado_cie is None:
-        raise ConflictoNegocio("No existe el estado EN_CIE en el catálogo de estados de propuesta.")
+        motivos.append("No existe el estado EN_CIE en el catálogo de estados de propuesta.")
 
+    return {
+        "puede": not motivos,
+        "motivos": motivos,
+        "porcentajeCumplimiento": porcentaje,
+    }
+
+
+def enviar_al_cie(db: Session, codigo_propuesta: str, gestora_id: int) -> dict:
+    """Remite al CIE si cumple las mismas condiciones expuestas por la evaluación VIE."""
+    p, estado_actual, _ = cargar_propuesta(db, codigo_propuesta)
+    evaluacion = evaluar_envio_cie(db, p, estado_actual)
+    if not evaluacion["puede"]:
+        raise ConflictoNegocio(evaluacion["motivos"][0])
+
+    estado_cie = (
+        db.query(EstadosPropuesta)
+        .filter(EstadosPropuesta.codigoEstadoPropuesta == "EN_CIE")
+        .first()
+    )
+    # La evaluación compartida ya confirmó que el estado existe.
     ahora = datetime.now()
     p.estadoId = estado_cie.estadoPropuestaId
     p.usuarioAuditoriaId = gestora_id
@@ -483,7 +507,7 @@ def enviar_al_cie(db: Session, codigo_propuesta: str, gestora_id: int) -> dict:
         "codigo": p.codigoPropuesta,
         "estado": "LISTO_CIE",
         "estadoDetalle": estado_cie.nombreEstadoPropuesta,
-        "porcentajeCumplimiento": porcentaje,
+        "porcentajeCumplimiento": evaluacion["porcentajeCumplimiento"],
         "mensaje": "El expediente se envió al CIE correctamente.",
     }
 

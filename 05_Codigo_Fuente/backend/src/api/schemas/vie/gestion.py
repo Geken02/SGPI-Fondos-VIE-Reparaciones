@@ -42,7 +42,15 @@ class GuardarRevisionDocumentos(BaseModel):
     revisiones: list[CambioDocumento] = Field(min_length=1, max_length=100)
 
 
+class EvaluacionEnvioCIE(BaseModel):
+    """Resultado de las mismas reglas de negocio que ejecuta el POST de envío al CIE."""
+    puede: bool
+    motivos: list[str]
+    porcentajeCumplimiento: int
+
+
 class DocumentosRespuesta(BaseModel):
     expediente: EncabezadoExpediente
     documentos: list[DocumentoRevision]
     subsanacion: EvaluacionSubsanacion
+    envioCie: EvaluacionEnvioCIE
