@@ -145,9 +145,7 @@ const LoginForm = () => {
 
       {/* Botón de Envío */}
       <button type="submit" className="btn-primary" disabled={cargando}>
-        <span className="spinner-container">
-          {cargando && <span className="spinner"></span>}
-        </span>
+        {cargando && <span className="spinner"></span>}
         <span className="btn-text">{cargando ? 'Ingresando...' : 'Ingresar'}</span>
       </button>
 
