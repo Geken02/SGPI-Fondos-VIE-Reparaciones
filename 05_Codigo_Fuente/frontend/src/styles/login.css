@@ -624,41 +624,66 @@
   z-index: 100 !important;
 }
 
-/* ==========================================================================
-   FIX DEFINITIVO: Spinner que NO mueve el texto
-   ========================================================================== */
-
+/* Botón con spinner flotante (no desplaza el texto) */
 .btn-primary {
-  display: inline-flex !important;
+  width: 100%;
+  height: 44px;
+  padding: 0 24px;
+  background-color: #002855;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 8px;
+  
+  /* ✅ Centrado perfecto del texto */
+  display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 8px !important;
+  position: relative !important; /* ← Necesario para el spinner absoluto */
+  overflow: hidden;
 }
 
-/* ✅ Reserva el espacio del spinner SIEMPRE (visible o no) */
-.spinner-slot {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 18px !important;
-  height: 18px !important;
-  min-width: 18px !important; /* ← CLAVE: reserva el ancho */
-  min-height: 18px !important;
-  flex-shrink: 0 !important;  /* ← NUNCA se encoge */
+.btn-primary:hover {
+  background-color: #001d3d;
 }
 
-.btn-label {
-  white-space: nowrap !important;
+.btn-primary:active {
+  background-color: #001529;
+  transform: translateY(1px);
 }
 
+.btn-primary:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ✅ Spinner flotante: NO ocupa espacio en el layout */
 .spinner {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
   width: 18px !important;
   height: 18px !important;
-  min-width: 18px !important;
-  min-height: 18px !important;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-  flex-shrink: 0 !important;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ✅ El texto se desplaza un poco a la derecha cuando hay spinner para no taparse */
+.btn-primary:has(.spinner) span {
+  margin-left: 24px;
+}
+
+@keyframes spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
 }
