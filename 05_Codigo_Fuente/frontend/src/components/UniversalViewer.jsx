@@ -4,7 +4,9 @@ import ExcelViewer from './ExcelViewer';
 
 export default function UniversalViewer({ url, tipoArchivo }) {
   const extension = tipoArchivo || (url ? url.split('.').pop().toLowerCase().split('?')[0] : '');
-
+    if (extension === 'excel') {
+    extension = 'xlsx';
+  }
   const renderizarVisor = () => {
     if (extension === 'pdf') return <PDFViewer url={url} />;
     if (['doc', 'docx'].includes(extension)) return <DocxViewer url={url} />;
