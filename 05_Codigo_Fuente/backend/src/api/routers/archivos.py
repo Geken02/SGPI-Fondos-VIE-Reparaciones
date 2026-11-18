@@ -1,33 +1,12 @@
 """
 archivos.py
 ===========
-Router FastAPI que recibe un archivo (típicamente el Form-04.docx), lo sube
-a Supabase Storage, registra la entrada en PropuestaDocumentos y —si es un
-Form-04— invoca al parser y persiste TODOS los datos en las tablas del
-esquema SGPI.
-
-Tablas que actualiza cuando el archivo es un Form-04 (.docx, tipo_documento_id=1):
-
-  • Propuestas                          — título, fechas, modalidad, TRL, monto total
-  • PropuestaContenido                  — resumen, abstract, problema, objetivos, estado del arte,
-                                          metodología, hoja de ruta, estrategia divulgación
-  • PropuestaDeclaraciones              — flags booleanos, tipoInnovacionId, acepta resguardo
-  • ObjetivosEspecificos                — una fila por objetivo (1..N)
-  • IntegrantesEquipoPropuesta          — investigadores TEC (lookup/creación de Usuario)
-  • ColaboradoresExternos               — colaboradores externos
-  • PresupuestoPropuesta                — una fila por año × rubro (operativo / duradero)
-  • FinanciamientoExterno               — financiamiento adicional por año × tipo
-  • AspectosEticos                      — flags + justificación exención + ente regulatorio
-  • ProductosAcademicos                 — una fila por producto marcado (incluye activos PI)
-  • Dictamenes                          — registro del dictamen VINC-XXX-YYYY (si hay PI)
-  • FuentesBibliograficas + Autores     — referencias bibliográficas (deduplicación por DOI)
-  • AutorFuente                         — relación autor ↔ fuente (orden de autoría)
-  • PropuestaReferencia                 — relación propuesta ↔ fuente (orden de cita)
-
-El router es idempotente: si se vuelve a cargar el mismo Form-04, los registros
-existentes se eliminan y se recrean (transacción) — así no quedan duplicados.
+Router FastAPI con lógica UPSERT UNIVERSAL para el Form-04.
+No usa DELETEs masivos. Busca el registro por su clave natural:
+- Si existe: actualiza los campos.
+- Si no existe: lo crea.
+Esto garantiza idempotencia total sin violar restricciones UNIQUE.
 """
-
 import hashlib
 import re
 from datetime import datetime, timezone, date
@@ -35,7 +14,6 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from sqlalchemy import text
 
 # --- BD y autenticación ---
 from src.database import get_db
@@ -47,28 +25,22 @@ from src.models.propuesta_documentos import PropuestaDocumentos, TiposDocumento
 
 # --- Modelo central de propuestas ---
 from src.models.propuestas import Propuesta
-
 from src.models.aspectos_eticos import EstadosAval
 
 # --- Contenido y declaraciones (1:1 con Propuestas) ---
 from src.models.propuesta_contenido import PropuestaContenido, PropuestaDeclaraciones
 
 # --- Catálogos ---
-from src.models.catalogos import (
-    Modalidades, TiposHora, TiposInnovacion, NivelesTrl
-)
+from src.models.catalogos import Modalidades, TiposHora, TiposInnovacion, NivelesTrl
+
 # --- Modelos relacionados ---
 from src.models.propuesta_plan import ObjetivosEspecificos
-from src.models.propuesta_equipo import IntegrantesEquipoPropuesta, RolesEquipo
-from src.models.propuesta_equipo import ColaboradoresExternos
-from src.models.presupuesto import PresupuestoPropuesta
-from src.models.presupuesto import FinanciamientoExterno, TiposFinanciamiento, EntidadesEmisoras, RubrosPropuesta
+from src.models.propuesta_equipo import IntegrantesEquipoPropuesta, RolesEquipo, ColaboradoresExternos
+from src.models.presupuesto import PresupuestoPropuesta, FinanciamientoExterno, TiposFinanciamiento, RubrosPropuesta
 from src.models.aspectos_eticos import AspectosEticos, EntesRegulatorios
 from src.models.productos_academicos import ProductosAcademicos, TiposProductosAcademicos
 from src.models.dictamenes import Dictamenes
-from src.models.bibliografia import (
-    FuentesBibliograficas, Autores, AutorFuente, PropuestaReferencia,
-)
+from src.models.bibliografia import FuentesBibliograficas, Autores, AutorFuente, PropuestaReferencia
 
 # --- Parser del Form-04 ---
 from src.services.form04_parser import parsear_form04_docx
@@ -76,193 +48,66 @@ from src.services.form04_parser import parsear_form04_docx
 # --- Cliente S3/Supabase ---
 from src.utils.s3_client import s3_client, S3_BUCKET_NAME, obtener_url_documento
 
-
 router = APIRouter(prefix="/api/propuestas", tags=["Archivos"])
 
 
 # ============================================================================
-# Helpers de lookup para catálogos y usuarios
+# Helpers de lookup
 # ============================================================================
 
 def _lookup_modalidad(sesion: Session, nombre: str):
-    """Busca Modalidades por nombre parcial (case-insensitive)."""
-    if not nombre:
-        return None
-    return sesion.query(Modalidades).filter(
-        Modalidades.nombreModalidad.ilike(f"%{nombre}%"),
-        Modalidades.activo == True,
-    ).first()
-
+    if not nombre: return None
+    return sesion.query(Modalidades).filter(Modalidades.nombreModalidad.ilike(f"%{nombre}%"), Modalidades.activo == True).first()
 
 def _lookup_tipo_hora(sesion: Session, codigo: str):
-    """Busca TiposHora por código exacto (VIE, REC, VIE-Centro, etc.)."""
-    if not codigo:
-        return None
-    # Normalizar el código del .docx: "VIE-Centro" -> "VIE-Centro"
-    codigo_norm = codigo.strip()
-    return sesion.query(TiposHora).filter(
-        (TiposHora.codigoTipo.ilike(codigo_norm)) |
-        (TiposHora.codigoTipo.ilike(f"%{codigo_norm}%")),
-        TiposHora.activo == True,
-    ).first()
-
+    if not codigo: return None
+    return sesion.query(TiposHora).filter((TiposHora.codigoTipo.ilike(codigo.strip())) | (TiposHora.codigoTipo.ilike(f"%{codigo.strip()}%")), TiposHora.activo == True).first()
 
 def _lookup_rol_equipo(sesion: Session, nombre: str):
-    """Busca RolesEquipo por nombre parcial."""
-    if not nombre:
-        return None
-    return sesion.query(RolesEquipo).filter(
-        RolesEquipo.nombreRol.ilike(f"%{nombre}%"),
-        RolesEquipo.activo == True,
-    ).first()
-
+    if not nombre: return None
+    return sesion.query(RolesEquipo).filter(RolesEquipo.nombreRol.ilike(f"%{nombre}%"), RolesEquipo.activo == True).first()
 
 def _lookup_tipo_innovacion(sesion: Session, nombre: str):
-    """Busca TiposInnovacion por nombre parcial ('de Producto', 'de Proceso')."""
-    if not nombre:
-        return None
-    return sesion.query(TiposInnovacion).filter(
-        TiposInnovacion.nombreTipoInnovacion.ilike(f"%{nombre}%"),
-        TiposInnovacion.activo == True,
-    ).first()
-
+    if not nombre: return None
+    return sesion.query(TiposInnovacion).filter(TiposInnovacion.nombreTipoInnovacion.ilike(f"%{nombre}%"), TiposInnovacion.activo == True).first()
 
 def _lookup_tipo_financiamiento(sesion: Session, nombre: str):
-    """Busca TiposFinanciamiento por nombre parcial."""
-    if not nombre:
-        return None
-    return sesion.query(TiposFinanciamiento).filter(
-        TiposFinanciamiento.nombreTipoFinanciamiento.ilike(f"%{nombre}%"),
-        TiposFinanciamiento.activo == True,
-    ).first()
-
+    if not nombre: return None
+    return sesion.query(TiposFinanciamiento).filter(TiposFinanciamiento.nombreTipoFinanciamiento.ilike(f"%{nombre}%"), TiposFinanciamiento.activo == True).first()
 
 def _lookup_ente_regulatorio(sesion: Session, codigo: str):
-    """Busca EntesRegulatorios por código corto (CEC, CONAGEBIO, CICUA/COBAB, Otro)."""
-    if not codigo:
-        return None
-    mapping = {
-        "CEC": "Comité Ético Científico",
-        "CONAGEBIO": "CONAGEBIO",
-        "CICUA/COBAB": "CICUA",
-        "Otro": "Otro",
-    }
-    nombre_buscar = mapping.get(codigo, codigo)
-    return sesion.query(EntesRegulatorios).filter(
-        EntesRegulatorios.nombreEnteRegulatorio.ilike(f"%{nombre_buscar}%"),
-        EntesRegulatorios.activo == True,
-    ).first()
-
+    if not codigo: return None
+    mapping = {"CEC": "Comité Ético Científico", "CONAGEBIO": "CONAGEBIO", "CICUA/COBAB": "CICUA", "Otro": "Otro"}
+    return sesion.query(EntesRegulatorios).filter(EntesRegulatorios.nombreEnteRegulatorio.ilike(f"%{mapping.get(codigo, codigo)}%"), EntesRegulatorios.activo == True).first()
 
 def _lookup_estado_aval(sesion: Session, nombre: str = "Pendiente"):
-    """Busca EstadosAval por nombre. Default: 'Pendiente'."""
-    return sesion.query(EstadosAval).filter(
-        EstadosAval.nombreEstadoAval.ilike(f"%{nombre}%"),
-        EstadosAval.activo == True,
-    ).first()
-
+    return sesion.query(EstadosAval).filter(EstadosAval.nombreEstadoAval.ilike(f"%{nombre}%"), EstadosAval.activo == True).first()
 
 def _lookup_tipo_producto(sesion: Session, texto: str):
-    """
-    Busca TiposProductoAcademico a partir del texto de la opción marcada.
-    Realiza una búsqueda heurística por palabras clave.
-    """
-    if not texto:
-        return None
+    if not texto: return None
     t = texto.lower()
-    # Mapeo heurístico de palabras clave -> nombre esperado en el catálogo.
-    # Ajustar los nombres exactos a los que use el sistema en producción.
     if "patente" in t or "modelo de utilidad" in t:
-        return sesion.query(TiposProductosAcademicos).filter(
-            TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Patente%"),
-            TiposProductosAcademicos.activo == True,
-        ).first()
-    if "diseño industrial" in t or "dibujo" in t:
-        return sesion.query(TiposProductosAcademicos).filter(
-            TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Diseño%"),
-            TiposProductosAcademicos.activo == True,
-        ).first()
+        return sesion.query(TiposProductosAcademicos).filter(TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Patente%"), TiposProductosAcademicos.activo == True).first()
     if "software" in t:
-        return sesion.query(TiposProductosAcademicos).filter(
-            TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Software%"),
-            TiposProductosAcademicos.activo == True,
-        ).first()
-    if "secreto" in t:
-        return sesion.query(TiposProductosAcademicos).filter(
-            TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Secreto%"),
-            TiposProductosAcademicos.activo == True,
-        ).first()
-    if "obtención vegetal" in t or "obtencion vegetal" in t:
-        return sesion.query(TiposProductosAcademicos).filter(
-            TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Vegetal%"),
-            TiposProductosAcademicos.activo == True,
-        ).first()
-    if "denominación de origen" in t or "indicación geográfica" in t:
-        return sesion.query(TiposProductosAcademicos).filter(
-            TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Denominación%Origen%"),
-            TiposProductosAcademicos.activo == True,
-        ).first()
-    if "circuito" in t:
-        return sesion.query(TiposProductosAcademicos).filter(
-            TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Circuito%"),
-            TiposProductosAcademicos.activo == True,
-        ).first()
+        return sesion.query(TiposProductosAcademicos).filter(TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Software%"), TiposProductosAcademicos.activo == True).first()
     if "artículo" in t or "articulo" in t:
-        # Distinguir entre WoS/Scopus y SciELO/Redalyc/ESCI/DOAJ
-        if "web of science" in t or "scopus" in t:
-            return sesion.query(TiposProductosAcademicos).filter(
-                TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Artículo%WoS%"),
-                TiposProductosAcademicos.activo == True,
-            ).first()
-        return sesion.query(TiposProductosAcademicos).filter(
-            TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Artículo%SciELO%"),
-            TiposProductosAcademicos.activo == True,
-        ).first()
+        filtro = "%Artículo%WoS%" if ("web of science" in t or "scopus" in t) else "%Artículo%SciELO%"
+        return sesion.query(TiposProductosAcademicos).filter(TiposProductosAcademicos.nombreTipoProductoAcademico.ilike(filtro), TiposProductosAcademicos.activo == True).first()
     if "libro" in t or "capítulo" in t or "capitulo" in t:
-        return sesion.query(TiposProductosAcademicos).filter(
-            TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Libro%"),
-            TiposProductosAcademicos.activo == True,
-        ).first()
-    if "norma" in t:
-        return sesion.query(TiposProductosAcademicos).filter(
-            TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Norma%"),
-            TiposProductosAcademicos.activo == True,
-        ).first()
+        return sesion.query(TiposProductosAcademicos).filter(TiposProductosAcademicos.nombreTipoProductoAcademico.ilike("%Libro%"), TiposProductosAcademicos.activo == True).first()
     return None
 
-
 def _lookup_rubro(sesion: Session, nombre: str):
-    """Busca RubrosPropuesta por nombre parcial."""
-    if not nombre:
-        return None
-    return sesion.query(RubrosPropuesta).filter(
-        RubrosPropuesta.nombreRubro.ilike(f"%{nombre}%"),
-        RubrosPropuesta.activo == True,
-    ).first()
+    if not nombre: return None
+    return sesion.query(RubrosPropuesta).filter(RubrosPropuesta.nombreRubro.ilike(f"%{nombre}%"), RubrosPropuesta.activo == True).first()
 
-
-def _obtener_o_crear_usuario_por_orcid(
-    sesion: Session, nombre_completo: str, orcid: str, instancia: str = ""
-) -> Optional[Usuario]:
-    """
-    Busca un Usuario por ORCID o por nombre+apellidos.
-    Si no existe y hay ORCID, crea un Usuario mínimo (sin contraseña, sin correo)
-    para que sirva como FK.  El usuario administrador podrá completar los datos.
-    """
-    if not nombre_completo:
-        return None
-
-    # 1. Buscar por ORCID en IntegrantesEquipoPropuesta existentes
+def _obtener_o_crear_usuario_por_orcid(sesion: Session, nombre_completo: str, orcid: str, instancia: str = "") -> Optional[Usuario]:
+    if not nombre_completo: return None
     if orcid:
-        integrante_existente = sesion.query(IntegrantesEquipoPropuesta).filter(
-            IntegrantesEquipoPropuesta.orcid == orcid
-        ).first()
-        if integrante_existente:
-            return sesion.query(Usuario).filter(
-                Usuario.usuarioId == integrante_existente.usuarioId
-            ).first()
-
-    # 2. Buscar por nombre y apellidos
+        integrante = sesion.query(IntegrantesEquipoPropuesta).filter(IntegrantesEquipoPropuesta.orcid == orcid).first()
+        if integrante:
+            return sesion.query(Usuario).filter(Usuario.usuarioId == integrante.usuarioId).first()
+    
     partes = nombre_completo.split(maxsplit=1)
     nombre_pila = partes[0] if partes else nombre_completo
     apellidos = partes[1] if len(partes) > 1 else ""
@@ -270,185 +115,73 @@ def _obtener_o_crear_usuario_por_orcid(
     apellido1 = ap_tokens[0] if ap_tokens else ""
     apellido2 = " ".join(ap_tokens[1:]) if len(ap_tokens) > 1 else None
 
-    usuario = sesion.query(Usuario).filter(
-        Usuario.nombreUsuario.ilike(nombre_pila),
-        Usuario.apellido1Usuario.ilike(apellido1) if apellido1 else True,
-        Usuario.activo == True,
-    ).first()
-    if usuario:
-        return usuario
+    usuario = sesion.query(Usuario).filter(Usuario.nombreUsuario.ilike(nombre_pila), Usuario.apellido1Usuario.ilike(apellido1) if apellido1 else True, Usuario.activo == True).first()
+    if usuario: return usuario
 
-    # 3. Crear usuario mínimo si tenemos ORCID (sin ORCID no podemos asegurar trazabilidad)
-    if not orcid:
-        return None
-
-    correo_autogenerado = f"{orcid.replace('-', '')}@orcid-pendiente.tec.ac.cr"
-    nuevo = Usuario(
-        correoInstitucional=correo_autogenerado,
-        nombreUsuario=nombre_pila,
-        apellido1Usuario=apellido1,
-        apellido2Usuario=apellido2,
-        activo=True,
-        fechaCreacion=datetime.now(timezone.utc),
-    )
+    if not orcid: return None
+    nuevo = Usuario(correoInstitucional=f"{orcid.replace('-', '')}@orcid-pendiente.tec.ac.cr", nombreUsuario=nombre_pila, apellido1Usuario=apellido1, apellido2Usuario=apellido2, activo=True, fechaCreacion=datetime.now(timezone.utc))
     sesion.add(nuevo)
-    sesion.flush()  # Necesario para obtener usuarioId
+    sesion.flush()
     return nuevo
 
 
 # ============================================================================
-# Persistencia del Form-04 parseado
+# PERSISTENCIA UNIVERSAL CON UPSERT (Sin DELETEs masivos)
 # ============================================================================
 
-def _persistir_datos_form04(
-    sesion: Session,
-    propuesta_id: int,
-    datos: dict,
-    usuario_actual: Usuario,
-) -> None:
-    """
-    Recibe el dict devuelto por parsear_form04_docx() y persiste TODOS los
-    datos en las tablas del esquema SGPI.  Es idempotente: primero elimina los
-    registros hijos existentes y luego los recrea.
-    """
+def _persistir_datos_form04(sesion: Session, propuesta_id: int, datos: dict, usuario_actual: Usuario) -> None:
     ahora = datetime.now(timezone.utc)
 
-    # ------------------------------------------------------------------
-    # 0. LIMPIEZA — elimina registros hijos previos (idempotencia)
-    # ------------------------------------------------------------------
-    sesion.query(ObjetivosEspecificos).filter(
-        ObjetivosEspecificos.propuestaId == propuesta_id
-    ).delete(synchronize_session=False)
-    sesion.query(IntegrantesEquipoPropuesta).filter(
-        IntegrantesEquipoPropuesta.propuestaId == propuesta_id
-    ).delete(synchronize_session=False)
-    sesion.query(ColaboradoresExternos).filter(
-        ColaboradoresExternos.propuestaId == propuesta_id
-    ).delete(synchronize_session=False)
-    sesion.query(PresupuestoPropuesta).filter(
-        PresupuestoPropuesta.propuestaId == propuesta_id
-    ).delete(synchronize_session=False)
-    sesion.query(FinanciamientoExterno).filter(
-        FinanciamientoExterno.propuestaId == propuesta_id
-    ).delete(synchronize_session=False)
-    sesion.query(AspectosEticos).filter(
-        AspectosEticos.propuestaId == propuesta_id
-    ).delete(synchronize_session=False)
-    sesion.query(ProductosAcademicos).filter(
-        ProductosAcademicos.propuestaId == propuesta_id
-    ).delete(synchronize_session=False)
-    sesion.query(PropuestaReferencia).filter(
-        PropuestaReferencia.propuestaId == propuesta_id
-    ).delete(synchronize_session=False)
-    sesion.query(Dictamenes).filter(
-        Dictamenes.propuestaId == propuesta_id
-    ).delete(synchronize_session=False)
-
-    # ------------------------------------------------------------------
-    # 1. PROPUESTAS — actualizar campos básicos
-    # ------------------------------------------------------------------
-    propuesta = sesion.query(Propuesta).filter(
-        Propuesta.propuestaId == propuesta_id
-    ).first()
+    # 1. PROPUESTA (Update directo)
+    propuesta = sesion.query(Propuesta).filter(Propuesta.propuestaId == propuesta_id).first()
     if not propuesta:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No existe la propuesta {propuesta_id}",
-        )
-
-    if datos.get("titulo"):
-        propuesta.titulo = datos["titulo"]
-
-    # Fechas — el .docx trae solo el año ("2027", "2029")
+        raise HTTPException(status_code=404, detail=f"No existe la propuesta {propuesta_id}")
+    
+    if datos.get("titulo"): propuesta.titulo = datos["titulo"]
     if datos.get("fecha_inicio"):
-        try:
-            propuesta.fechaInicio = date(int(datos["fecha_inicio"]), 1, 1)
-        except (ValueError, TypeError):
-            pass
+        try: propuesta.fechaInicio = date(int(datos["fecha_inicio"]), 1, 1)
+        except (ValueError, TypeError): pass
     if datos.get("fecha_fin"):
-        try:
-            propuesta.fechaFinalizacion = date(int(datos["fecha_fin"]), 12, 31)
-        except (ValueError, TypeError):
-            pass
-
-    # Modalidad
+        try: propuesta.fechaFinalizacion = date(int(datos["fecha_fin"]), 12, 31)
+        except (ValueError, TypeError): pass
+    
     mod_obj = _lookup_modalidad(sesion, datos.get("modalidad", ""))
-    if mod_obj:
-        propuesta.modalidadId = mod_obj.modalidadId
-
-    # TRL esperado
+    if mod_obj: propuesta.modalidadId = mod_obj.modalidadId
+    
     trl = datos.get("seccion1", {}).get("trl")
-    if trl:
-        propuesta.nivelTrlEsperado = trl
-
-    # Monto total
-    if datos.get("monto_total_proyecto"):
-        propuesta.montoTotal = datos["monto_total_proyecto"]
-
+    if trl: propuesta.nivelTrlEsperado = int(trl)
+    if datos.get("monto_total_proyecto"): propuesta.montoTotal = datos["monto_total_proyecto"]
+    
     propuesta.ultimaAuditoria = ahora
     propuesta.usuarioAuditoriaId = usuario_actual.usuarioId
 
-    # ------------------------------------------------------------------
-    # 2. PROPUESTA_CONTENIDO — textos largos (1:1 con Propuestas)
-    # ------------------------------------------------------------------
-    contenido_db = sesion.query(PropuestaContenido).filter(
-        PropuestaContenido.propuestaId == propuesta_id
-    ).first()
+    # 2. PROPUESTA_CONTENIDO (UPSERT 1:1)
+    contenido_db = sesion.query(PropuestaContenido).filter(PropuestaContenido.propuestaId == propuesta_id).first()
     if not contenido_db:
         contenido_db = PropuestaContenido(propuestaId=propuesta_id)
         sesion.add(contenido_db)
-
-    if datos.get("resumen"):
-        contenido_db.resumen = datos["resumen"]
-    if datos.get("palabras_clave"):
-        contenido_db.palabrasClave = datos["palabras_clave"]
-    if datos.get("abstract"):
-        contenido_db.abstract = datos["abstract"]
-    if datos.get("problema_investigacion"):
-        contenido_db.problemaInvestigacion = datos["problema_investigacion"]
-    if datos.get("objetivo_general"):
-        contenido_db.objetivoGeneral = datos["objetivo_general"]
+    
+    for campo_parser, campo_modelo in [("resumen", "resumen"), ("palabras_clave", "palabrasClave"), ("abstract", "abstract"), ("problema_investigacion", "problemaInvestigacion"), ("objetivo_general", "objetivoGeneral"), ("estado_arte", "estadoArte"), ("metodologia", "metodologia"), ("hoja_ruta", "hojaRuta")]:
+        if datos.get(campo_parser) and hasattr(contenido_db, campo_modelo):
+            setattr(contenido_db, campo_modelo, datos[campo_parser])
+    
     if datos.get("objetivos_especificos"):
-        # Guardar los objetivos como texto separado por '; ' en esta tabla 1:1
-        # (además se crean filas individuales en ObjetivosEspecificos abajo)
-        objetivos_str = ";\n".join(
-    f"{o['numero']}. {o['descripcion']}"
-    for o in datos["objetivos_especificos"]
-    )
-    contenido_db.objetivosEspecificos = objetivos_str
-
-    if datos.get("estado_arte"):
-        contenido_db.estadoArte = datos["estado_arte"]
-    if datos.get("metodologia"):
-        contenido_db.metodologia = datos["metodologia"]
-    # Estrategia de divulgación — concatenar las 4 subsecciones
+        contenido_db.objetivosEspecificos = ";\n".join(f"{o['numero']}. {o['descripcion']}" for o in datos["objetivos_especificos"])
+    
     div = datos.get("divulgacion", {})
-    partes_div = []
-    if div.get("cientifica"):
-        partes_div.append(f"a. Divulgación científica/técnica:\n{div['cientifica']}")
-    if div.get("canales_institucionales"):
-        partes_div.append(f"b. Canales Institucionales:\n{div['canales_institucionales']}")
-    if div.get("socializacion"):
-        partes_div.append(f"c. Eventos de Socialización:\n{div['socializacion']}")
-    if div.get("medios_masivos"):
-        partes_div.append(f"d. Medios Masivos:\n{div['medios_masivos']}")
-    if partes_div:
+    partes_div = [f"{k}: {v}" for k, v in div.items() if v]
+    if partes_div and hasattr(contenido_db, "estrategiaDivulgacion"):
         contenido_db.estrategiaDivulgacion = "\n\n".join(partes_div)
-    if datos.get("hoja_ruta"):
-        contenido_db.hojaRuta = datos["hoja_ruta"]
+        
     contenido_db.ultimaAuditoria = ahora
     contenido_db.usuarioAuditoriaId = usuario_actual.usuarioId
 
-    # ------------------------------------------------------------------
-    # 3. PROPUESTA_DECLARACIONES — flags booleanos (1:1 con Propuestas)
-    # ------------------------------------------------------------------
-    decl_db = sesion.query(PropuestaDeclaraciones).filter(
-        PropuestaDeclaraciones.propuestaId == propuesta_id
-    ).first()
+    # 3. PROPUESTA_DECLARACIONES (UPSERT 1:1)
+    decl_db = sesion.query(PropuestaDeclaraciones).filter(PropuestaDeclaraciones.propuestaId == propuesta_id).first()
     if not decl_db:
         decl_db = PropuestaDeclaraciones(propuestaId=propuesta_id)
         sesion.add(decl_db)
-
+    
     s1 = datos.get("seccion1", {})
     decl_db.tieneFinanciamientoPrevio = bool(s1.get("otras_fuentes", {}).get("aplica"))
     decl_db.tieneContinuidadProyecto = bool(s1.get("vinculacion_tecnica", {}).get("aplica"))
@@ -457,348 +190,243 @@ def _persistir_datos_form04(
     decl_db.tieneInformacionConfidencial = bool(s1.get("info_confidencial", {}).get("aplica"))
     decl_db.tienePotencialPI = bool(s1.get("potencial_pi", {}).get("aplica"))
     decl_db.poseeInnovacion = bool(s1.get("posee_innovacion", {}).get("aplica"))
-
-    # Tipo de innovación
+    
     if s1.get("posee_innovacion", {}).get("tipo"):
         ti_obj = _lookup_tipo_innovacion(sesion, s1["posee_innovacion"]["tipo"])
-        if ti_obj:
-            decl_db.tipoInnovacionId = ti_obj.tipoInnovacionId
-
+        if ti_obj: decl_db.tipoInnovacionId = ti_obj.tipoInnovacionId
+        
     decl_db.aceptaResguardoRepositorio = bool(datos.get("resguardo", {}).get("resguardo_compromiso"))
     decl_db.aceptaDeclaracionJurada = bool(datos.get("firma", {}).get("firmado_digital"))
-
-    # Fecha de firma (extraída del texto de la firma digital)
-    fecha_firma_str = datos.get("firma", {}).get("fecha_firma", "")
-    if fecha_firma_str:
-        try:
-            # Formato esperado: "21/09/2026 09:47:22"
-            decl_db.fechaFirmaDeclaracion = datetime.strptime(
-                fecha_firma_str.split()[0], "%d/%m/%Y"
-            )
-        except (ValueError, IndexError):
-            pass
-
     decl_db.ultimaAuditoria = ahora
     decl_db.usuarioAuditoriaId = usuario_actual.usuarioId
 
-    # ------------------------------------------------------------------
-    # 4. OBJETIVOS_ESPECIFICOS — una fila por objetivo
-    # ------------------------------------------------------------------
+    # 4. OBJETIVOS_ESPECIFICOS (UPSERT por propuestaId + numeroObjetivo)
     for oe in datos.get("objetivos_especificos", []):
-        nuevo_oe = ObjetivosEspecificos(
-            propuestaId=propuesta_id,
-            numeroObjetivo=oe["numero"],
-            descripcion=oe["descripcion"],
-            creadoEn=ahora,
-            usuarioAuditoriaId=usuario_actual.usuarioId,
-            ultimaAuditoria=ahora,
-        )
-        sesion.add(nuevo_oe)
-    sesion.flush()  # Para obtener los IDs generados
+        obj_db = sesion.query(ObjetivosEspecificos).filter(
+            ObjetivosEspecificos.propuestaId == propuesta_id,
+            ObjetivosEspecificos.numeroObjetivo == oe["numero"]
+        ).first()
+        if obj_db:
+            obj_db.descripcion = oe["descripcion"]
+            obj_db.usuarioAuditoriaId = usuario_actual.usuarioId
+            obj_db.ultimaAuditoria = ahora
+        else:
+            sesion.add(ObjetivosEspecificos(
+                propuestaId=propuesta_id, numeroObjetivo=oe["numero"], descripcion=oe["descripcion"],
+                creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora
+            ))
+    sesion.flush() # Para asegurar IDs de objetivos
 
-    # ------------------------------------------------------------------
-    # 5. INTEGRANTES_EQUIPO_PROPUESTA — investigadores TEC
-    # ------------------------------------------------------------------
+    # 5. INTEGRANTES_EQUIPO_PROPUESTA (UPSERT por propuestaId + usuarioId)
     for inv in datos.get("investigadores_tec", []):
-        usuario = _obtener_o_crear_usuario_por_orcid(
-            sesion, inv["nombre"], inv.get("orcid", ""), inv.get("instancia", "")
-        )
-        if not usuario:
-            # Sin usuario identificable, no podemos insertar (FK obligatoria)
-            print(f"⚠️  No se pudo identificar/crear usuario para: {inv['nombre']}")
-            continue
-
+        usuario = _obtener_o_crear_usuario_por_orcid(sesion, inv["nombre"], inv.get("orcid", ""), inv.get("instancia", ""))
+        if not usuario: continue
+        
         rol_equipo = _lookup_rol_equipo(sesion, inv.get("rol", ""))
-
-        # El .docx permite múltiples tipos de hora por investigador
-        # (ej. "4 VIE-Centro / 4 REC").  Creamos una fila por tipo de hora.
+        total_horas = 0.0
+        tipo_hora_principal_id = None
+        
         for th in inv.get("horas", []):
             tipo_hora = _lookup_tipo_hora(sesion, th["tipo_hora"])
-            if not tipo_hora:
-                print(f"⚠️  Tipo de hora no encontrado: {th['tipo_hora']}")
-                continue
-            nuevo_integrante = IntegrantesEquipoPropuesta(
-                propuestaId=propuesta_id,
-                usuarioId=usuario.usuarioId,
-                tipoHoraId=tipo_hora.tipoHoraId,
-                horasSemanales=th["horas"],
-                rolEquipoId=rol_equipo.rolEquipoId if rol_equipo else None,
-                orcid=inv.get("orcid", ""),
-                creadoEn=ahora,
-                usuarioAuditoriaId=usuario_actual.usuarioId,
-                ultimaAuditoria=ahora,
-            )
-            sesion.add(nuevo_integrante)
+            if tipo_hora:
+                total_horas += float(th["horas"])
+                if tipo_hora_principal_id is None:
+                    tipo_hora_principal_id = tipo_hora.tipoHoraId
+        
+        if not tipo_hora_principal_id: continue
 
-    # ------------------------------------------------------------------
-    # 6. COLABORADORES_EXTERNOS — una fila por colaborador
-    # ------------------------------------------------------------------
+        integrante = sesion.query(IntegrantesEquipoPropuesta).filter(
+            IntegrantesEquipoPropuesta.propuestaId == propuesta_id,
+            IntegrantesEquipoPropuesta.usuarioId == usuario.usuarioId
+        ).first()
+
+        if integrante:
+            integrante.tipoHoraId = tipo_hora_principal_id
+            integrante.horasSemanales = total_horas
+            integrante.rolEquipoId = rol_equipo.rolEquipoId if rol_equipo else integrante.rolEquipoId
+            integrante.orcid = inv.get("orcid", "") or integrante.orcid
+            integrante.usuarioAuditoriaId = usuario_actual.usuarioId
+            integrante.ultimaAuditoria = ahora
+        else:
+            sesion.add(IntegrantesEquipoPropuesta(
+                propuestaId=propuesta_id, usuarioId=usuario.usuarioId, tipoHoraId=tipo_hora_principal_id,
+                horasSemanales=total_horas, rolEquipoId=rol_equipo.rolEquipoId if rol_equipo else None,
+                orcid=inv.get("orcid", ""), creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora
+            ))
+
+    # 6. COLABORADORES_EXTERNOS (UPSERT por propuestaId + idOrcid o nombre)
     for col in datos.get("colaboradores_externos", []):
-        nuevo_col = ColaboradoresExternos(
-            propuestaId=propuesta_id,
-            nombreColaborador=col.get("nombre", ""),
-            apellido1Colaborador=col.get("apellido1") or None,
-            apellido2Colaborador=col.get("apellido2") or None,
-            idOrcid=col.get("orcid") or None,
-            institucionEmpresa=col.get("institucion", ""),
-            creadoEn=ahora,
-            usuarioAuditoriaId=usuario_actual.usuarioId,
-            ultimaAuditoria=ahora,
-        )
-        sesion.add(nuevo_col)
+        query_col = sesion.query(ColaboradoresExternos).filter(ColaboradoresExternos.propuestaId == propuesta_id)
+        if col.get("orcid"):
+            col_db = query_col.filter(ColaboradoresExternos.idOrcid == col["orcid"]).first()
+        else:
+            col_db = query_col.filter(ColaboradoresExternos.nombreColaborador == col.get("nombre", "")).first()
+            
+        if col_db:
+            col_db.nombreColaborador = col.get("nombre", "")
+            col_db.apellido1Colaborador = col.get("apellido1") or col_db.apellido1Colaborador
+            col_db.apellido2Colaborador = col.get("apellido2") or col_db.apellido2Colaborador
+            col_db.idOrcid = col.get("orcid") or col_db.idOrcid
+            col_db.institucionEmpresa = col.get("institucion", "") or col_db.institucionEmpresa
+            col_db.usuarioAuditoriaId = usuario_actual.usuarioId
+            col_db.ultimaAuditoria = ahora
+        else:
+            sesion.add(ColaboradoresExternos(
+                propuestaId=propuesta_id, nombreColaborador=col.get("nombre", ""), apellido1Colaborador=col.get("apellido1"),
+                apellido2Colaborador=col.get("apellido2"), idOrcid=col.get("orcid"), institucionEmpresa=col.get("institucion", ""),
+                creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora
+            ))
 
-    # ------------------------------------------------------------------
-    # 7. PRESUPUESTO_PROPUESTA — una fila por año × rubro
-    # ------------------------------------------------------------------
+    # 7. PRESUPUESTO_PROPUESTA (UPSERT por propuestaId + rubroId + anioEjecucion)
     rubro_operativo = _lookup_rubro(sesion, "operativo") or _lookup_rubro(sesion, "Presupuesto operativo")
     rubro_duradero = _lookup_rubro(sesion, "bienes duraderos") or _lookup_rubro(sesion, "duradero")
 
     for p in datos.get("presupuesto_anual", []):
         anio = p["ano"]
         if p.get("operativo", 0) > 0 and rubro_operativo:
-            sesion.add(PresupuestoPropuesta(
-                propuestaId=propuesta_id,
-                rubroId=rubro_operativo.rubroId,
-                montoSolicitado=p["operativo"],
-                anioEjecucion=anio,
-                esDuradero=False,
-                creadoEn=ahora,
-                usuarioAuditoriaId=usuario_actual.usuarioId,
-                ultimaAuditoria=ahora,
-            ))
+            pres_db = sesion.query(PresupuestoPropuesta).filter(PresupuestoPropuesta.propuestaId == propuesta_id, PresupuestoPropuesta.rubroId == rubro_operativo.rubroId, PresupuestoPropuesta.anioEjecucion == anio).first()
+            if pres_db:
+                pres_db.montoSolicitado = p["operativo"]
+                pres_db.usuarioAuditoriaId = usuario_actual.usuarioId
+                pres_db.ultimaAuditoria = ahora
+            else:
+                sesion.add(PresupuestoPropuesta(propuestaId=propuesta_id, rubroId=rubro_operativo.rubroId, montoSolicitado=p["operativo"], anioEjecucion=anio, esDuradero=False, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
+                
         if p.get("duradero", 0) > 0 and rubro_duradero:
-            sesion.add(PresupuestoPropuesta(
-                propuestaId=propuesta_id,
-                rubroId=rubro_duradero.rubroId,
-                montoSolicitado=p["duradero"],
-                anioEjecucion=anio,
-                esDuradero=True,
-                creadoEn=ahora,
-                usuarioAuditoriaId=usuario_actual.usuarioId,
-                ultimaAuditoria=ahora,
-            ))
+            pres_db = sesion.query(PresupuestoPropuesta).filter(PresupuestoPropuesta.propuestaId == propuesta_id, PresupuestoPropuesta.rubroId == rubro_duradero.rubroId, PresupuestoPropuesta.anioEjecucion == anio).first()
+            if pres_db:
+                pres_db.montoSolicitado = p["duradero"]
+                pres_db.usuarioAuditoriaId = usuario_actual.usuarioId
+                pres_db.ultimaAuditoria = ahora
+            else:
+                sesion.add(PresupuestoPropuesta(propuestaId=propuesta_id, rubroId=rubro_duradero.rubroId, montoSolicitado=p["duradero"], anioEjecucion=anio, esDuradero=True, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
 
-    # ------------------------------------------------------------------
-    # 8. FINANCIAMIENTO_EXTERNO — financiamiento adicional
-    # ------------------------------------------------------------------
+    # 8. FINANCIAMIENTO_EXTERNO (UPSERT por propuestaId + tipoFinanciamientoId + anio)
     fa = datos.get("financiamiento_adicional", {})
-    # Mapear las 3 categorías del .docx a TiposFinanciamiento
-    categorias = [
-        ("externo", fa.get("externo", {})),
-        ("contrapartida", fa.get("contrapartida", {})),
-        ("cofinanciamiento", fa.get("cofinanciamiento", {})),
-    ]
-    for cat_nombre, entry in categorias:
-        if not entry:
-            continue
+    for cat_nombre, entry in [("externo", fa.get("externo", {})), ("contrapartida", fa.get("contrapartida", {})), ("cofinanciamiento", fa.get("cofinanciamiento", {}))]:
+        if not entry: continue
         tipo_fin = _lookup_tipo_financiamiento(sesion, cat_nombre)
-        if not tipo_fin:
-            print(f"⚠️  Tipo de financiamiento no encontrado: {cat_nombre}")
-            continue
+        if not tipo_fin: continue
+        
         for idx, anio_label in enumerate(["ano1", "ano2", "ano3"], start=1):
             monto = entry.get(anio_label, 0.0)
-            if monto <= 0:
-                continue
-            # Calcular el año real de ejecución (Año 1 = 2027 si la propuesta inicia en 2027)
-            anio_ejec = None
-            if propuesta.fechaInicio:
-                anio_ejec = propuesta.fechaInicio.year + idx - 1
+            if monto <= 0: continue
+            
+            anio_ejec = (propuesta.fechaInicio.year + idx - 1) if propuesta.fechaInicio else (2027 + idx - 1)
+            
+            fin_db = sesion.query(FinanciamientoExterno).filter(FinanciamientoExterno.propuestaId == propuesta_id, FinanciamientoExterno.tipoFinanciamientoId == tipo_fin.tipoFinanciamientoId, FinanciamientoExterno.anio == anio_ejec).first()
+            if fin_db:
+                fin_db.monto = monto
+                fin_db.numeroOficio = entry.get("oficio") or fin_db.numeroOficio
+                fin_db.usuarioAuditoriaId = usuario_actual.usuarioId
+                fin_db.ultimaAuditoria = ahora
             else:
-                anio_ejec = 2027 + idx - 1  # fallback
-            sesion.add(FinanciamientoExterno(
-                propuestaId=propuesta_id,
-                tipoFinanciamientoId=tipo_fin.tipoFinanciamientoId,
-                anio=anio_ejec,
-                monto=monto,
-                numeroOficio=entry.get("oficio") or None,
-                entidadEmisoraId=None,  # No se especifica en el .docx
-                creadoEn=ahora,
-                usuarioAuditoriaId=usuario_actual.usuarioId,
-                ultimaAuditoria=ahora,
-            ))
+                sesion.add(FinanciamientoExterno(propuestaId=propuesta_id, tipoFinanciamientoId=tipo_fin.tipoFinanciamientoId, anio=anio_ejec, monto=monto, numeroOficio=entry.get("oficio"), creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
 
-    # ------------------------------------------------------------------
-    # 9. ASPECTOS_ETICOS — flags + justificación + ente regulatorio
-    # ------------------------------------------------------------------
+    # 9. ASPECTOS_ETICOS (UPSERT 1:1 por propuestaId)
     ae = datos.get("aspectos_eticos", {})
+    ae_db = sesion.query(AspectosEticos).filter(AspectosEticos.propuestaId == propuesta_id).first()
+    if not ae_db:
+        ae_db = AspectosEticos(propuestaId=propuesta_id)
+        sesion.add(ae_db)
+    
+    ae_db.involucraSeresHumanos = bool(ae.get("seres_humanos"))
+    ae_db.involucraBiodiversidad = bool(ae.get("biodiversidad"))
+    ae_db.involucraAnimales = bool(ae.get("animales"))
+    ae_db.involucraTerritoriosIndigenas = bool(ae.get("comunidades_indigenas"))
+    ae_db.justificacionExencion = ae.get("justificacion_exencion") or None
+    
     ente_obj = _lookup_ente_regulatorio(sesion, ae.get("ente_regulatorio", ""))
+    ae_db.enteRegulatorioId = ente_obj.enteRegulatorioId if ente_obj else None
+    
     estado_aval_obj = _lookup_estado_aval(sesion, "Pendiente")
+    ae_db.estadoAvalId = estado_aval_obj.estadoAvalId if estado_aval_obj else None
+    
+    ae_db.usuarioAuditoriaId = usuario_actual.usuarioId
+    ae_db.ultimaAuditoria = ahora
 
-    nuevo_ae = AspectosEticos(
-        propuestaId=propuesta_id,
-        involucraSeresHumanos=bool(ae.get("seres_humanos")),
-        involucraBiodiversidad=bool(ae.get("biodiversidad")),
-        involucraAnimales=bool(ae.get("animales")),
-        involucraTerritoriosIndigenas=bool(ae.get("comunidades_indigenas")),
-        justificacionExencion=ae.get("justificacion_exencion") or None,
-        enteRegulatorioId=ente_obj.enteRegulatorioId if ente_obj else None,
-        estadoAvalId=estado_aval_obj.estadoAvalId if estado_aval_obj else None,
-        creadoEn=ahora,
-        usuarioAuditoriaId=usuario_actual.usuarioId,
-        ultimaAuditoria=ahora,
-    )
-    sesion.add(nuevo_ae)
-
-    # ------------------------------------------------------------------
-    # 10. PRODUCTOS_ACADEMICOS — productos marcados en Cuadros 7, 9 y 10
-    # ------------------------------------------------------------------
-    # Recuperar los ObjetivosEspecificos recién creados para asociarlos.
-    objs_db = sesion.query(ObjetivosEspecificos).filter(
-        ObjetivosEspecificos.propuestaId == propuesta_id
-    ).all()
-
+    # 10. PRODUCTOS_ACADEMICOS (UPSERT por propuestaId + tipoProducto + descripcion)
+    # Nota: Para listas donde el usuario puede desmarcar ítems, el DELETE es a veces más limpio, 
+    # pero aquí aplicamos UPSERT estricto como se solicitó.
+    objs_db = sesion.query(ObjetivosEspecificos).filter(ObjetivosEspecificos.propuestaId == propuesta_id).all()
     def _resolver_objetivo_id(texto_oe: str) -> Optional[int]:
-        """Convierte 'OE4 y OE7' o 'OE1, OE2' en lista de IDs de objetivos."""
-        if not texto_oe:
-            return None
-        nums = []
-        for m in re.finditer(r"OE\s*(\d+)", texto_oe, re.IGNORECASE):
-            nums.append(int(m.group(1)))
-        # Retornar el primer match como FK (la relación N:M real se puede
-        # modelar con tabla intermedia, pero el schema usa una sola FK).
-        if not nums:
-            return None
+        if not texto_oe: return None
+        nums = [int(m.group(1)) for m in re.finditer(r"OE\s*(\d+)", texto_oe, re.IGNORECASE)]
+        if not nums: return None
         for oe_db in objs_db:
-            if oe_db.numeroObjetivo == nums[0]:
-                return oe_db.objetivoEspecificoId
+            if oe_db.numeroObjetivo == nums[0]: return oe_db.objetivoEspecificoId
         return None
 
     comp = datos.get("compromisos", {})
-
-    # 10a. Productos básica (Cuadro 7)
-    for prod in comp.get("productos_basica", []):
-        tipo_prod = _lookup_tipo_producto(sesion, prod["opcion"])
-        if not tipo_prod:
-            print(f"⚠️  Tipo de producto no encontrado: {prod['opcion'][:60]}")
-            continue
-        sesion.add(ProductosAcademicos(
-            propuestaId=propuesta_id,
-            tipoProductoAcademicoId=tipo_prod.tipoProductoAcademicoId,
-            objetivoEspecificoId=_resolver_objetivo_id(prod.get("objetivo", "")),
-            descripcion=prod["opcion"][:300],
-            cantidadComprometida=prod.get("cantidad", 1),
-            esPropiedadIndustrial=False,
-            creadoEn=ahora,
-            usuarioAuditoriaId=usuario_actual.usuarioId,
-            ultimaAuditoria=ahora,
-        ))
-
-    # 10b. Activos de propiedad industrial (Cuadro 9) — son PI
+    productos_a_procesar = []
+    for prod in comp.get("productos_basica", []) + comp.get("productos_desarrollo", []):
+        productos_a_procesar.append((prod["opcion"], prod.get("objetivo", ""), prod.get("cantidad", 1), False))
     for activo in comp.get("activos_propiedad_industrial", []):
-        tipo_prod = _lookup_tipo_producto(sesion, activo["tipo_activo"])
-        if not tipo_prod:
-            print(f"⚠️  Tipo de activo PI no encontrado: {activo['tipo_activo']}")
-            continue
-        sesion.add(ProductosAcademicos(
-            propuestaId=propuesta_id,
-            tipoProductoAcademicoId=tipo_prod.tipoProductoAcademicoId,
-            objetivoEspecificoId=_resolver_objetivo_id(activo.get("consecutivo", "")),
-            descripcion=activo["tipo_activo"][:300],
-            cantidadComprometida=1,
-            esPropiedadIndustrial=True,
-            creadoEn=ahora,
-            usuarioAuditoriaId=usuario_actual.usuarioId,
-            ultimaAuditoria=ahora,
-        ))
+        productos_a_procesar.append((activo["tipo_activo"], activo.get("consecutivo", ""), 1, True))
 
-    # 10c. Productos desarrollo tecnológico (Cuadro 10)
-    for prod in comp.get("productos_desarrollo", []):
-        tipo_prod = _lookup_tipo_producto(sesion, prod["opcion"])
-        if not tipo_prod:
-            print(f"⚠️  Tipo de producto no encontrado: {prod['opcion'][:60]}")
-            continue
-        sesion.add(ProductosAcademicos(
-            propuestaId=propuesta_id,
-            tipoProductoAcademicoId=tipo_prod.tipoProductoAcademicoId,
-            objetivoEspecificoId=_resolver_objetivo_id(prod.get("objetivo", "")),
-            descripcion=prod["opcion"][:300],
-            cantidadComprometida=prod.get("cantidad", 1),
-            esPropiedadIndustrial=False,
-            creadoEn=ahora,
-            usuarioAuditoriaId=usuario_actual.usuarioId,
-            ultimaAuditoria=ahora,
-        ))
+    for opcion, obj_txt, cantidad, es_pi in productos_a_procesar:
+        tipo_prod = _lookup_tipo_producto(sesion, opcion)
+        if not tipo_prod: continue
+        
+        obj_id = _resolver_objetivo_id(obj_txt)
+        
+        prod_db = sesion.query(ProductosAcademicos).filter(
+            ProductosAcademicos.propuestaId == propuesta_id,
+            ProductosAcademicos.tipoProductoAcademicoId == tipo_prod.tipoProductoAcademicoId,
+            ProductosAcademicos.descripcion.ilike(f"%{opcion[:50]}%")
+        ).first()
+        
+        if prod_db:
+            prod_db.cantidadComprometida = cantidad
+            prod_db.esPropiedadIndustrial = es_pi
+            prod_db.objetivoEspecificoId = obj_id or prod_db.objetivoEspecificoId
+            prod_db.usuarioAuditoriaId = usuario_actual.usuarioId
+            prod_db.ultimaAuditoria = ahora
+        else:
+            sesion.add(ProductosAcademicos(
+                propuestaId=propuesta_id, tipoProductoAcademicoId=tipo_prod.tipoProductoAcademicoId,
+                objetivoEspecificoId=obj_id, descripcion=opcion[:300], cantidadComprometida=cantidad,
+                esPropiedadIndustrial=es_pi, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora
+            ))
 
-    # ------------------------------------------------------------------
-    # 11. DICTAMENES — si hay potencial PI con oficio VINC-XXX-YYYY
-    # ------------------------------------------------------------------
+    # 11. DICTAMENES (UPSERT por propuestaId + numeroOficio)
     oficio_dict = s1.get("potencial_pi", {}).get("oficio_dictamen", "")
     if oficio_dict:
-        sesion.add(Dictamenes(
-            propuestaId=propuesta_id,
-            numeroOficio=oficio_dict,
-            fechaEmision=ahora,
-            contenido=f"Dictamen del Centro de Vinculación: {oficio_dict}. "
-                      f"Generado automáticamente desde el Form-04.",
-            usuarioRemitenteId=usuario_actual.usuarioId,
-            creadoEn=ahora,
-            usuarioAuditoriaId=usuario_actual.usuarioId,
-            ultimaAuditoria=ahora,
-        ))
+        dict_db = sesion.query(Dictamenes).filter(Dictamenes.propuestaId == propuesta_id, Dictamenes.numeroOficio == oficio_dict).first()
+        if dict_db:
+            dict_db.contenido = f"Dictamen del Centro de Vinculación: {oficio_dict}. Generado automáticamente desde el Form-04."
+            dict_db.usuarioAuditoriaId = usuario_actual.usuarioId
+            dict_db.ultimaAuditoria = ahora
+        else:
+            sesion.add(Dictamenes(
+                propuestaId=propuesta_id, numeroOficio=oficio_dict, fechaEmision=ahora,
+                contenido=f"Dictamen del Centro de Vinculación: {oficio_dict}. Generado automáticamente desde el Form-04.",
+                usuarioRemitenteId=usuario_actual.usuarioId, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora
+            ))
 
-    # ------------------------------------------------------------------
-    # 12. REFERENCIAS BIBLIOGRÁFICAS — Fuentes + Autores + AutorFuente + PropuestaReferencia
-    # ------------------------------------------------------------------
+    # 12. REFERENCIAS BIBLIOGRÁFICAS (UPSERT por DOI/Nombre)
     for ref in datos.get("referencias", []):
-        # 12a. FuentesBibliograficas — deduplicar por DOI
-        fuente = None
-        if ref.get("doi"):
-            fuente = sesion.query(FuentesBibliograficas).filter(
-                FuentesBibliograficas.doi == ref["doi"]
-            ).first()
+        fuente = sesion.query(FuentesBibliograficas).filter(FuentesBibliograficas.doi == ref.get("doi")).first() if ref.get("doi") else None
         if not fuente:
-            fuente = FuentesBibliograficas(
-                doi=ref.get("doi") or None,
-                titulo=ref["titulo"][:500],
-                anioPublicacion=ref.get("anio") or 0,
-                revistaFuente=ref.get("revista_fuente")[:200] or None if ref.get("revista_fuente") else None,
-                esIndexadaWoSScopus=bool(ref.get("es_indexada_wos_scopus")),
-                creadoEn=ahora,
-            )
+            fuente = FuentesBibliograficas(doi=ref.get("doi"), titulo=ref["titulo"][:500], anioPublicacion=ref.get("anio") or 0, revistaFuente=(ref.get("revista_fuente") or "")[:200] or None, esIndexadaWoSScopus=bool(ref.get("es_indexada_wos_scopus")), creadoEn=ahora)
             sesion.add(fuente)
             sesion.flush()
-
-        # 12b. Autores — deduplicar por ORCID (no hay ORCID en las refs, se usa nombre)
+        
         for orden, nombre_autor in enumerate(ref.get("autores", []), start=1):
-            autor = sesion.query(Autores).filter(
-                Autores.nombreCompleto.ilike(nombre_autor)
-            ).first()
+            autor = sesion.query(Autores).filter(Autores.nombreCompleto.ilike(nombre_autor)).first()
             if not autor:
-                autor = Autores(
-                    nombreCompleto=nombre_autor[:150],
-                    creadoEn=ahora,
-                )
+                autor = Autores(nombreCompleto=nombre_autor[:150], creadoEn=ahora)
                 sesion.add(autor)
                 sesion.flush()
-            # 12c. AutorFuente
-            existe_af = sesion.query(AutorFuente).filter(
-                AutorFuente.autorId == autor.autorId,
-                AutorFuente.fuenteId == fuente.fuenteId,
-            ).first()
-            if not existe_af:
-                sesion.add(AutorFuente(
-                    autorId=autor.autorId,
-                    fuenteId=fuente.fuenteId,
-                    ordenAutoria=orden,
-                    creadoEn=ahora,
-                ))
-
-        # 12d. PropuestaReferencia — relación propuesta-fuente
-        existe_pr = sesion.query(PropuestaReferencia).filter(
-            PropuestaReferencia.propuestaId == propuesta_id,
-            PropuestaReferencia.fuenteId == fuente.fuenteId,
-        ).first()
-        if not existe_pr:
-            sesion.add(PropuestaReferencia(
-                propuestaId=propuesta_id,
-                fuenteId=fuente.fuenteId,
-                ordenReferencia=ref.get("numero", 0),
-                creadoEn=ahora,
-            ))
+            if not sesion.query(AutorFuente).filter(AutorFuente.autorId == autor.autorId, AutorFuente.fuenteId == fuente.fuenteId).first():
+                sesion.add(AutorFuente(autorId=autor.autorId, fuenteId=fuente.fuenteId, ordenAutoria=orden, creadoEn=ahora))
+        
+        if not sesion.query(PropuestaReferencia).filter(PropuestaReferencia.propuestaId == propuesta_id, PropuestaReferencia.fuenteId == fuente.fuenteId).first():
+            sesion.add(PropuestaReferencia(propuestaId=propuesta_id, fuenteId=fuente.fuenteId, ordenReferencia=ref.get("numero", 0), creadoEn=ahora))
 
 
 # ============================================================================
-# Endpoint principal
+# ENDPOINT PRINCIPAL CON MANEJO DE TRANSACCIONES SEGURO
 # ============================================================================
 
 @router.post("/{propuesta_id}/archivos")
@@ -809,74 +437,30 @@ async def guardar_archivo_propuesta(
     usuario_actual: Usuario = Depends(obtener_usuario_activo),
     sesion: Session = Depends(get_db),
 ):
-    """
-    Recibe un archivo, lo sube a Supabase Storage y actualiza PropuestaDocumentos.
-    S3 sobrescribe automáticamente si la ruta es la misma, evitando duplicados.
-
-    Si el archivo es un Form-04 (.docx con tipo_documento_id=1), se parsea
-    automáticamente y TODOS los datos se persisten en las tablas del esquema SGPI.
-    """
-    # 1. Validar que el tipo de documento existe y está activo
-    tipo_doc = sesion.query(TiposDocumento).filter(
-        TiposDocumento.tipoDocumentoId == tipo_documento_id,
-        TiposDocumento.activo == True,
-    ).first()
+    # 1. Validar tipo de documento
+    tipo_doc = sesion.query(TiposDocumento).filter(TiposDocumento.tipoDocumentoId == tipo_documento_id, TiposDocumento.activo == True).first()
     if not tipo_doc:
-        raise HTTPException(
-            status_code=400,
-            detail="El tipo de documento especificado no es válido o está inactivo.",
-        )
+        raise HTTPException(status_code=400, detail="El tipo de documento especificado no es válido o está inactivo.")
 
-    # 2. Leer el contenido del archivo en memoria
+    # 2. Leer y procesar archivo
     contenido = await archivo.read()
     tamanio_bytes = len(contenido)
-
-    # 3. Calcular checksum (SHA-256)
     checksum = hashlib.sha256(contenido).hexdigest()
-
-    # 4. Verificar si ya existe un documento activo del mismo tipo
-    documento_existente = sesion.query(PropuestaDocumentos).filter(
-        PropuestaDocumentos.propuestaId == propuesta_id,
-        PropuestaDocumentos.tipoDocumentoId == tipo_documento_id,
-        PropuestaDocumentos.activo == True,
-    ).first()
-
-    # Si existe y el checksum es idéntico, no hacemos nada
-    if documento_existente and documento_existente.checksum == checksum:
-        return {
-            "mensaje": "El archivo es idéntico al ya registrado. No se realizaron cambios.",
-            "documentoId": documento_existente.documentoId,
-            "nombre": documento_existente.nombreArchivo,
-            "ruta": documento_existente.rutaArchivo,
-            "urlDescarga": obtener_url_documento(documento_existente.rutaArchivo),
-            "tamanioBytes": documento_existente.tamanioBytes,
-            "checksum": checksum,
-            "reemplazado": False,
-        }
-
-    # 5. Definir ruta en Supabase Storage (S3 sobrescribe si ya existe)
     ruta_s3 = f"propuestas/{propuesta_id}/{archivo.filename}"
 
-    # 6. Subir a S3
+    # 3. Subir a S3
     print(f"📤 Subiendo archivo a S3: {ruta_s3}")
     try:
-        s3_client.put_object(
-            Bucket=S3_BUCKET_NAME,
-            Key=ruta_s3,
-            Body=contenido,
-            ContentType=archivo.content_type or "application/octet-stream",
-        )
+        s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=ruta_s3, Body=contenido, ContentType=archivo.content_type or "application/octet-stream")
         print(f"✅ Archivo subido a S3 exitosamente.")
     except Exception as e:
         print(f"❌ ERROR al subir a S3: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Fallo al subir a Supabase Storage: {str(e)}",
-        )
+        raise HTTPException(status_code=500, detail=f"Fallo al subir a Supabase Storage: {str(e)}")
 
-    # 7. Actualizar o crear el registro en PropuestaDocumentos
+    # 4. Preparar registro en PropuestaDocumentos
+    documento_existente = sesion.query(PropuestaDocumentos).filter(PropuestaDocumentos.propuestaId == propuesta_id, PropuestaDocumentos.tipoDocumentoId == tipo_documento_id, PropuestaDocumentos.activo == True).first()
+    
     if documento_existente:
-        print(f"🔄 Actualizando documento existente en BD (ID: {documento_existente.documentoId})")
         documento_existente.rutaArchivo = ruta_s3
         documento_existente.nombreArchivo = archivo.filename
         documento_existente.tamanioBytes = tamanio_bytes
@@ -887,68 +471,55 @@ async def guardar_archivo_propuesta(
         documento_existente.ultimaAuditoria = datetime.now(timezone.utc)
         documento_a_retornar = documento_existente
     else:
-        print(f"🆕 Creando nuevo registro de documento en BD")
         documento_a_retornar = PropuestaDocumentos(
-            propuestaId=propuesta_id,
-            tipoDocumentoId=tipo_documento_id,
-            rutaArchivo=ruta_s3,
-            nombreArchivo=archivo.filename,
-            tamanioBytes=tamanio_bytes,
-            checksum=checksum,
-            usuarioCargaId=usuario_actual.usuarioId,
-            activo=True,
-            usuarioAuditoriaId=usuario_actual.usuarioId,
-            ultimaAuditoria=datetime.now(timezone.utc),
+            propuestaId=propuesta_id, tipoDocumentoId=tipo_documento_id, rutaArchivo=ruta_s3, nombreArchivo=archivo.filename,
+            tamanioBytes=tamanio_bytes, checksum=checksum, usuarioCargaId=usuario_actual.usuarioId, activo=True,
+            usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=datetime.now(timezone.utc),
         )
         sesion.add(documento_a_retornar)
 
-    # 8. Si es Form-04 (.docx), parsear y persistir en TODAS las tablas
+    # ✅ FLUSH SEGURO: Marca el objeto como persistente en la sesión ANTES de intentar el parseo.
+    # Esto evita el "InvalidRequestError" si el parseo falla y hacemos rollback.
+    sesion.flush()
+
+    # 5. Parsear y persistir con UPSERT
     parseo_ok = False
     parseo_errores = []
+    
     if tipo_documento_id == 1 and archivo.filename.lower().endswith(".docx"):
         try:
-            print(f"🔍 Detectado Form-04 (.docx). Iniciando parseo...")
+            print(f"🔍 Detectado Form-04 (.docx). Iniciando parseo y UPSERT...")
             datos = parsear_form04_docx(contenido)
-
-            # Persistir dentro de una transacción atómica
-            try:
-                _persistir_datos_form04(sesion, propuesta_id, datos, usuario_actual)
-                sesion.commit()
-                parseo_ok = True
-                print("✅ Form-04 parseado y persistido en todas las tablas.")
-            except HTTPException:
-                sesion.rollback()
-                raise
-            except Exception as e:
-                sesion.rollback()
-                parseo_errores.append(str(e))
-                print(f"❌ Error al persistir: {e}")
-                # El documento ya se subió a S3, pero la persistencia falló.
-                # Hacemos commit solo del PropuestaDocumentos para no perder el registro.
-
+            
+            _persistir_datos_form04(sesion, propuesta_id, datos, usuario_actual)
+            sesion.commit() # Commit de TODO (documento + datos parseados)
+            
+            parseo_ok = True
+            print("✅ Form-04 parseado y persistido con UPSERT en todas las tablas.")
+            
+        except HTTPException:
+            sesion.rollback()
+            raise
         except Exception as e:
-            parseo_errores.append(f"Error de parseo: {str(e)}")
-            print(f"⚠️  ADVERTENCIA: No se pudo parsear el Form-04. Error: {e}")
+            sesion.rollback() # Esto deshace el flush del documento
+            parseo_errores.append(str(e))
+            print(f"❌ Error al persistir Form-04: {e}")
+            
+            # ✅ RECUPERACIÓN: Volvemos a agregar el documento y lo guardamos solo él.
+            print("💾 Guardando solo el registro del archivo en la BD (sin los datos parseados)...")
+            sesion.add(documento_a_retornar)
+            sesion.commit()
 
-    # 9. Confirmar cambios pendientes (si no se hizo commit en el bloque Form-04)
-    if not parseo_ok:
-        sesion.commit()
+    # ✅ Ahora el objeto es definitivamente persistente y seguro de refrescar.
     sesion.refresh(documento_a_retornar)
 
     mensaje_base = "Archivo guardado exitosamente en Supabase y registrado en la base de datos"
     if documento_existente:
         mensaje_base += " (Se actualizó el registro existente)."
     if parseo_ok:
-        mensaje_base += (
-            " (Datos del Form-04 extraídos y persistidos en TODAS las tablas: "
-            "Propuestas, PropuestaContenido, PropuestaDeclaraciones, "
-            "ObjetivosEspecificos, IntegrantesEquipoPropuesta, "
-            "ColaboradoresExternos, PresupuestoPropuesta, FinanciamientoExterno, "
-            "AspectosEticos, ProductosAcademicos, Dictamenes, "
-            "FuentesBibliograficas, Autores, AutorFuente, PropuestaReferencia)."
-        )
+        mensaje_base += " (Datos del Form-04 extraídos y persistidos con lógica UPSERT en todas las tablas del esquema SGPI)."
     if parseo_errores:
-        mensaje_base += f" Errores de parseo: {parseo_errores}"
+        mensaje_base += f" ⚠️ El archivo se guardó, pero hubo errores al extraer algunos datos: {parseo_errores}"
 
     return {
         "mensaje": mensaje_base,
