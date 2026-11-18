@@ -58,7 +58,7 @@ class FuentesBibliograficas(Base):
     titulo = Column("titulo", String(500), nullable=False)
     anioPublicacion = Column("aniopublicacion", Integer, nullable=False)
     revistaFuente = Column("revistafuente", String(200), nullable=True)
-    esIndexadaWoSScopus = Column("esindexadowossCopus", Boolean, default=False)
+    esIndexadaWoSScopus = Column("esindexadawosscopus", Boolean, default=False)
     creadoEn = Column("creadoen", DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     usuarioAuditoriaId = Column("usuarioauditoriaid", Integer, ForeignKey("usuarios.usuarioid"), nullable=True)
     ultimaAuditoria = Column("ultimaauditoria", DateTime, nullable=True)
