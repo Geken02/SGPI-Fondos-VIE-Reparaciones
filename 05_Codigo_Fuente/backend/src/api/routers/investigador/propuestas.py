@@ -124,6 +124,7 @@ def registrar_propuesta(
     summary="Obtener catálogos de convocatorias y escuelas para creación de propuestas"
 )
 def obtener_catalogos_formulario(
+    vigentes: bool = False,
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(obtener_usuario_activo)
 ):
@@ -143,7 +144,15 @@ def obtener_catalogos_formulario(
     from datetime import date
 
     hoy = date.today()
-    convocatorias = db.query(Convocatorias).order_by(Convocatorias.fechaCierre.desc()).all()
+    # Con vigentes=True solo se devuelven convocatorias activas cuya fecha de
+    # cierre (fechaCierre) sea hoy o posterior; se excluyen las ya cerradas por fecha.
+    consulta_convocatorias = db.query(Convocatorias)
+    if vigentes:
+        consulta_convocatorias = consulta_convocatorias.filter(
+            Convocatorias.activo == True,
+            Convocatorias.fechaCierre >= hoy
+        )
+    convocatorias = consulta_convocatorias.order_by(Convocatorias.fechaCierre.desc()).all()
     escuelas = db.query(Escuela).filter(Escuela.activo == True).order_by(Escuela.nombreEscuela).all()
     campus = db.query(Campus).filter(Campus.activo == True).order_by(Campus.nombreCampus).all()
     estados_propuesta = db.query(EstadosPropuesta).filter(

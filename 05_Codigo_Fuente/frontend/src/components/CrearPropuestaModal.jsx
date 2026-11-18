@@ -12,7 +12,7 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
   // Estados del formulario
   const [convocatorias, setConvocatorias] = useState([]);
   const [escuelas, setEscuelas] = useState([]);
-  const [convocatoriaId, setConvocatoriaId] = useState(1);
+  const [convocatoriaId, setConvocatoriaId] = useState('');
   const [titulo, setTitulo] = useState('');
   const [escuelaId, setEscuelaId] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -27,20 +27,14 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
     const cargarCatalogos = async () => {
       try {
         setCargandoCatalogos(true);
-        const data = await propuestaService.obtenerCatalogosFormulario();
-        if (data?.convocatorias?.length > 0) {
-          setConvocatorias(data.convocatorias);
-          setConvocatoriaId(data.convocatorias[0].convocatoriaId);
-        } else {
-          // Fallback con nombres institucionales VIE
-          setConvocatorias([
-            { convocatoriaId: 1, nombreConvocatoria: 'Convocatoria Ordinaria VIE 2027' },
-            { convocatoriaId: 2, nombreConvocatoria: 'Fondo Incentivos MICITT 2027' },
-            { convocatoriaId: 3, nombreConvocatoria: 'Fondo Semilla Biotecnología' },
-            { convocatoriaId: 4, nombreConvocatoria: 'Proyectos Fondos FEES 2027' },
-            { convocatoriaId: 5, nombreConvocatoria: 'Equipamiento Científico VIE' }
-          ]);
-        }
+        // Solo se solicitan convocatorias vigentes (activas y con fechaCierre >= hoy).
+        const data = await propuestaService.obtenerCatalogosFormulario({ vigentes: true });
+        // Respaldo en el cliente: descartar cualquier convocatoria cerrada o inactiva.
+        const convocatoriasVigentes = (data?.convocatorias || []).filter(
+          c => c.activo !== false && !c.cerrada
+        );
+        setConvocatorias(convocatoriasVigentes);
+        setConvocatoriaId(convocatoriasVigentes.length > 0 ? convocatoriasVigentes[0].convocatoriaId : '');
 
         if (data?.escuelas?.length > 0) {
           setEscuelas(data.escuelas);
@@ -59,9 +53,11 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
         }
       } catch (err) {
         console.warn('No se pudieron obtener los catálogos desde la base de datos:', err);
+        setConvocatorias([]);
+        setConvocatoriaId('');
         setEscuelas([]);
         setEscuelaId('');
-        setErrorMsg('No se pudieron cargar las escuelas desde la base de datos. Intente de nuevo.');
+        setErrorMsg('No se pudieron cargar los catálogos desde la base de datos. Intente de nuevo.');
       } finally {
         setCargandoCatalogos(false);
       }
@@ -88,6 +84,10 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
       setErrorMsg('El título preliminar debe tener al menos 5 caracteres.');
       return;
     }
+    if (!convocatoriaId) {
+      setErrorMsg('No hay convocatorias vigentes disponibles. No es posible crear una propuesta en este momento.');
+      return;
+    }
     if (!escuelaId) {
       setErrorMsg('Seleccione una escuela válida. No hay escuelas disponibles en el catálogo.');
       return;
@@ -99,7 +99,7 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
 
       const payload = {
         titulo: titulo.trim(),
-        convocatoriaId: Number(convocatoriaId) || 1,
+        convocatoriaId: Number(convocatoriaId),
         escuelaId: Number(escuelaId),
         montoTotal: '0',
         nivelTrlActual: 3,
@@ -253,14 +253,23 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
                   className="form-input-modal"
                   value={convocatoriaId}
                   onChange={(e) => setConvocatoriaId(e.target.value)}
-                  disabled={guardando}
+                  disabled={guardando || convocatorias.length === 0}
                 >
-                  {convocatorias.map((c) => (
-                    <option key={c.convocatoriaId} value={c.convocatoriaId}>
-                      {c.nombreConvocatoria}
-                    </option>
-                  ))}
+                  {convocatorias.length === 0 ? (
+                    <option value="">Sin convocatorias vigentes</option>
+                  ) : (
+                    convocatorias.map((c) => (
+                      <option key={c.convocatoriaId} value={c.convocatoriaId}>
+                        {c.nombreConvocatoria}
+                      </option>
+                    ))
+                  )}
                 </select>
+                {!cargandoCatalogos && convocatorias.length === 0 && (
+                  <span className="form-hint-modal" style={{ color: '#b91c1c', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                    No hay convocatorias vigentes disponibles. No es posible crear una propuesta en este momento.
+                  </span>
+                )}
               </div>
 
               {/* Título preliminar */}
@@ -329,7 +338,7 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
               <button 
                 type="submit" 
                 className="btn-modal-crear"
-                disabled={guardando || escuelas.length === 0}
+                disabled={guardando || escuelas.length === 0 || convocatorias.length === 0}
               >
                 {guardando ? 'Guardando en BD...' : 'Crear Propuesta'}
               </button>
