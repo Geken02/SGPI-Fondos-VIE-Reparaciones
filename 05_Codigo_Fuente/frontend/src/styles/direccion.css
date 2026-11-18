@@ -189,12 +189,3 @@
 /* Bloque principal de la card de resumen del dictamen (código + título) */
 .dir-resumen-principal { min-width: 0; overflow-wrap: anywhere; }
 
-/* Consistencia visual: acciones y estados azules en tablas de Dirección */
-table tbody td .dir-badge,
-table tbody td .gv-badge { background: #002855 !important; border: 1px solid #002855 !important; color: #fff !important; }
-table tbody td button,
-table tbody td a[class*="btn"],
-table tbody td a[class*="accion"] { background: #002855 !important; border: 1px solid #002855 !important; color: #fff !important; }
-table tbody td button:hover,
-table tbody td a[class*="btn"]:hover,
-table tbody td a[class*="accion"]:hover { background: #014080 !important; color: #fff !important; }

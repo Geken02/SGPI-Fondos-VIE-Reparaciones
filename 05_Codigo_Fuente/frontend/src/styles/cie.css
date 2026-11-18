@@ -806,12 +806,3 @@
 .cie-texto-documento { margin: 0; color: var(--gv-texto); font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 .cie-obligatorio { color: #b91c1c; font-weight: 600; }
 
-/* Consistencia visual: acciones y estados azules en tablas CIE */
-.gv-tabla tbody td .gv-badge,
-.gv-tabla tbody td .dir-badge { background: #002855 !important; border: 1px solid #002855 !important; color: #fff !important; }
-.gv-tabla tbody td button,
-.gv-tabla tbody td a[class*="btn"],
-.gv-tabla tbody td a[class*="accion"] { background: #002855 !important; border: 1px solid #002855 !important; color: #fff !important; }
-.gv-tabla tbody td button:hover,
-.gv-tabla tbody td a[class*="btn"]:hover,
-.gv-tabla tbody td a[class*="accion"]:hover { background: #014080 !important; color: #fff !important; }

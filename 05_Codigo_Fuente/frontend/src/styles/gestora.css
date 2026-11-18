@@ -723,18 +723,9 @@
 .gv-visor-modal { width: min(1100px, 96vw); height: min(90vh, 900px); background: #fff; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 24px 70px rgba(0,0,0,.35); }
 .gv-visor-modal > header { min-height: 54px; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #dbe2ea; color: #002855; }
 .gv-visor-modal > header strong { overflow-wrap: anywhere; }
-.gv-visor-modal > header button { border: 0; background: #002855; color: #fff; border-radius: 6px; width: 34px; height: 34px; font-size: 24px; cursor: pointer; }
+.gv-visor-modal > header button { border: 1px solid #c3d1e2; background: #e6edf5; color: #002855; border-radius: 6px; width: 34px; height: 34px; font-size: 24px; cursor: pointer; }
 .gv-visor-contenido { flex: 1; min-height: 0; overflow: auto; }
-.gv-btn-ver { border: 0; border-radius: 6px; background: #002855; color: #fff; padding: 7px 12px; font-weight: 600; cursor: pointer; }
-.gv-btn-ver:hover { background: #014080; color: #fff; }
+.gv-btn-ver { border: 1px solid #c3d1e2; border-radius: 6px; background: #e6edf5; color: #002855; padding: 7px 12px; font-weight: 600; cursor: pointer; }
+.gv-btn-ver:hover { background: #e6edf5; color: #002855; }
 @media (max-width: 640px) { .gv-visor-overlay { padding: 6px; } .gv-visor-modal { width: 100%; height: 96vh; } }
 
-/* Botones y estados dentro de las tablas de VIE */
-.gv-tabla tbody td .gv-badge,
-.gv-tabla tbody td .dir-badge { background: #002855 !important; border: 1px solid #002855 !important; color: #fff !important; }
-.gv-tabla tbody td button,
-.gv-tabla tbody td a[class*="btn"],
-.gv-tabla tbody td a[class*="accion"] { background: #002855 !important; border: 1px solid #002855 !important; color: #fff !important; }
-.gv-tabla tbody td button:hover,
-.gv-tabla tbody td a[class*="btn"]:hover,
-.gv-tabla tbody td a[class*="accion"]:hover { background: #014080 !important; color: #fff !important; }
