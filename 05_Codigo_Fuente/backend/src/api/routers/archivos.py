@@ -11,6 +11,8 @@ import hashlib
 import re
 from datetime import datetime, timezone, date
 from typing import Optional
+import unicodedata
+import os
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
@@ -50,6 +52,42 @@ from src.utils.s3_client import s3_client, S3_BUCKET_NAME, obtener_url_documento
 
 router = APIRouter(prefix="/api/propuestas", tags=["Archivos"])
 
+
+def _sanitizar_nombre_archivo(nombre: str) -> str:
+    """
+    Convierte un nombre de archivo en uno seguro para S3/Supabase Storage.
+    - Elimina acentos y diacríticos (ó -> o, ñ -> n)
+    - Reemplaza espacios por guiones bajos
+    - Elimina caracteres no permitidos
+    - Colapsa múltiples guiones bajos
+    """
+    if not nombre:
+        return "archivo"
+    
+    # 1. Normalizar Unicode: separa la letra del acento (é -> e + ´)
+    texto_normalizado = unicodedata.normalize("NFKD", nombre)
+    # 2. Eliminar los diacríticos (los caracteres de categoría "Mn")
+    texto_sin_acentos = "".join(
+        c for c in texto_normalizado if not unicodedata.category(c).startswith("M")
+    )
+    # 3. Reemplazar espacios y guiones por guiones bajos
+    texto_seguro = re.sub(r"[\s\-]+", "_", texto_sin_acentos)
+    # 4. Eliminar todo lo que no sea alfanumérico, punto, guion bajo o guion
+    texto_seguro = re.sub(r"[^a-zA-Z0-9._\-]", "", texto_seguro)
+    # 5. Colapsar múltiples guiones bajos y quitar del inicio/final
+    texto_seguro = re.sub(r"_+", "_", texto_seguro).strip("._-")
+    
+    # 6. Si queda vacío, usar un fallback
+    if not texto_seguro:
+        texto_seguro = "archivo"
+    
+    # 7. Limitar longitud (S3 permite hasta 1024 bytes, pero por seguridad 200)
+    if len(texto_seguro) > 200:
+        # Preservar la extensión
+        _, ext = os.path.splitext(nombre)
+        texto_seguro = texto_seguro[:200 - len(ext)] + ext
+    
+    return texto_seguro
 
 # ============================================================================
 # Helpers de lookup
@@ -749,7 +787,12 @@ async def guardar_archivo_propuesta(
     contenido = await archivo.read()
     tamanio_bytes = len(contenido)
     checksum = hashlib.sha256(contenido).hexdigest()
-    ruta_s3 = f"propuestas/{propuesta_id}/{archivo.filename}"
+    nombre_seguro = _sanitizar_nombre_archivo(archivo.filename)
+    # Agregar timestamp corto para evitar colisiones si hay dos archivos con el mismo nombre sanitizado
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    ruta_s3 = f"propuestas/{propuesta_id}/{timestamp}_{nombre_seguro}"
+    print(f"📝 Nombre original: {archivo.filename}")
+    print(f"📝 Nombre sanitizado para S3: {nombre_seguro}")
 
     # 3. Subir a S3
     print(f"📤 Subiendo archivo a S3: {ruta_s3}")
