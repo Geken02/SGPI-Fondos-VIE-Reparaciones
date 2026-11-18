@@ -274,7 +274,7 @@ const App = () => {
             <Route path="admin/usuarios" element={<Usuarios />} />
             <Route path="admin/convocatoria" element={<Convocatoria />} />
             <Route path="admin/gestoras" element={<AsignacionGestoras />} />
-            <Route path="/admin/auditoria" element={<Auditoria />} />
+            <Route path="admin/auditoria" element={<Auditoria />} />
           </Route>
 
           {/* Accesos directos a Formularios oficiales (nivel raíz) */}
