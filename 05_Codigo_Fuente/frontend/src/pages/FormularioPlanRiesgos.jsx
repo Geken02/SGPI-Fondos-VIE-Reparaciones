@@ -230,7 +230,7 @@ const FormularioPlanRiesgos = () => {
         id = localStorage.getItem('propuesta_activa_id');
         if (!id) {
           try {
-            const misProps = await propuestaService.obtenerMisPropuestas();
+            const misProps = await propuestaService.listarMisPropuestas();
             if (misProps && misProps.length > 0) {
               id = String(misProps[0].propuestaId);
               localStorage.setItem('propuesta_activa_id', id);
@@ -490,6 +490,8 @@ const FormularioPlanRiesgos = () => {
           ultimoPlanGuardado.current = JSON.stringify(payloadPlan);
         } catch (err) {
           console.warn('⚠️ No se pudo guardar el Plan de Acción en la BD:', err);
+          setGuardadoMsg('Error al guardar');
+          alert('No se pudo guardar el Plan de Acción (Form-05) en la base de datos. Verifique su conexión e intente de nuevo.');
         }
 
         try {
@@ -550,6 +552,9 @@ const FormularioPlanRiesgos = () => {
         ultimoPlanGuardado.current = JSON.stringify(payloadPlan);
       } catch (err) {
         console.warn('⚠️ No se pudo guardar el Plan de Acción al enviar:', err);
+        alert('No se pudo persistir el Plan de Acción (Form-05) en la base de datos. Intente nuevamente antes de continuar.');
+        setGuardando(false);
+        return;
       }
     }
     window.dispatchEvent(new Event('propuestaCreada'));

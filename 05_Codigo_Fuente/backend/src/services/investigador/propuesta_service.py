@@ -290,6 +290,11 @@ def listar_propuestas_investigador(
         f03 = db.query(PresupuestoPropuesta).filter(PresupuestoPropuesta.propuestaId == p.getPropuestaId()).count() > 0 or \
               db.query(PropuestaDocumentos).filter(PropuestaDocumentos.propuestaId == p.getPropuestaId(), PropuestaDocumentos.tipoDocumentoId == 3).count() > 0
 
+        # Aliases explícitos para el dashboard: el Form-05 corresponde al Plan de
+        # Acción y Riesgos (Actividades) y el Form-06 al Presupuesto Operativo.
+        f05 = f02
+        f06 = f03
+
         # Subsanación activa más reciente
         sub_orm = db.query(Subsanaciones).filter(
             Subsanaciones.propuestaId == p.getPropuestaId()
@@ -341,6 +346,8 @@ def listar_propuestas_investigador(
             form01Completado=f01,
             form02Completado=f02,
             form03Completado=f03,
+            form05Completado=f05,
+            form06Completado=f06,
             subsanacionActiva=sub_resp
         ))
     return resultado

@@ -687,35 +687,26 @@ const InvestigadorPropuestas = () => {
 
                   {/* Cuerpo desplegable del expediente */}
                   {estaAbierto && (() => {
+                    // Solo se marca "Completado" cuando el formulario fue ENVIADO
+                    // (botón Enviar / envío a Vinculación), nunca por tener datos guardados.
                     const f01Completado = Boolean(
                       fueEnviadaAVinculacion ||
                       prop.fechaEnvio ||
-                      prop.form01Completado || 
-                      prop.form04Completado ||
                       localStorage.getItem(`propuesta_${prop.propuestaId}_form04_enviado`) === 'true' ||
                       localStorage.getItem(`propuesta_${prop.propuestaId}_form04_completado`) === 'true' ||
-                      localStorage.getItem(`borrador_form04_${prop.propuestaId}_completado`) === 'true' ||
-                      localStorage.getItem(`borrador_form04_${prop.propuestaId}`) !== null ||
-                      (localStorage.getItem('form04_ultimo_completado_id') === String(prop.propuestaId)) ||
-                      (prop.contenido && (prop.contenido.resumen || prop.contenido.objetivoGeneral))
+                      localStorage.getItem(`borrador_form04_${prop.propuestaId}_completado`) === 'true'
                     );
                     const f02Completado = Boolean(
                       fueEnviadaAVinculacion ||
                       prop.fechaEnvio ||
-                      prop.form02Completado || 
-                      prop.form05Completado ||
                       localStorage.getItem(`propuesta_${prop.propuestaId}_form05_enviado`) === 'true' ||
-                      localStorage.getItem(`propuesta_${prop.propuestaId}_form05_completado`) === 'true' ||
-                      localStorage.getItem(`propuesta_${prop.propuestaId}_plan_riesgos`) !== null
+                      localStorage.getItem(`propuesta_${prop.propuestaId}_form05_completado`) === 'true'
                     );
                     const f03Completado = Boolean(
                       fueEnviadaAVinculacion ||
                       prop.fechaEnvio ||
-                      prop.form03Completado || 
-                      prop.form06Completado ||
                       localStorage.getItem(`propuesta_${prop.propuestaId}_form06_enviado`) === 'true' ||
-                      localStorage.getItem(`propuesta_${prop.propuestaId}_form06_completado`) === 'true' ||
-                      localStorage.getItem(`propuesta_${prop.propuestaId}_presupuesto_trienal`) !== null
+                      localStorage.getItem(`propuesta_${prop.propuestaId}_form06_completado`) === 'true'
                     );
 
                     return (

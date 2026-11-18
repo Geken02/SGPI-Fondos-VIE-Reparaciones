@@ -447,6 +447,8 @@ class PropuestaResumenResponse(BaseModel):
     form01Completado: Optional[bool] = False
     form02Completado: Optional[bool] = False
     form03Completado: Optional[bool] = False
+    form05Completado: Optional[bool] = False
+    form06Completado: Optional[bool] = False
     subsanacionActiva: Optional[SubsanacionResponse] = None
 
     class Config:
