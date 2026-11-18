@@ -625,6 +625,7 @@
 }
 
 /* Botón con flexbox estable */
+/* Botón centrado perfectamente */
 .btn-primary {
   width: 100%;
   height: 44px;
@@ -640,11 +641,12 @@
   transition: background-color 0.2s;
   margin-top: 8px;
   
-  /* ✅ FLEXBOX para alinear spinner + texto */
-  display: inline-flex !important;
+  /* ✅ Centrado perfecto del texto */
+  display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 8px !important; /* Espacio entre spinner y texto */
+  position: relative !important;
+  overflow: hidden;
 }
 
 .btn-primary:hover {
@@ -662,33 +664,32 @@
   transform: none;
 }
 
-/* ✅ Contenedor del spinner: SIEMPRE reserva espacio */
-.spinner-container {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 18px !important;
-  height: 18px !important;
-  min-width: 18px !important; /* ← CLAVE: reserva el ancho siempre */
-  flex-shrink: 0 !important;  /* ← Nunca se encoge */
-}
-
-/* ✅ El texto no se mueve porque el espacio ya está reservado */
-.btn-text {
-  white-space: nowrap;
-}
-
-/* ✅ Spinner con tamaño fijo */
+/* ✅ Spinner flotante: NO ocupa espacio en el layout */
 .spinner {
-  display: inline-block;
+  position: absolute !important;
+  left: calc(50% - 60px) !important; /* ← Posicionado a la izquierda del centro */
+  top: 50% !important;
+  transform: translateY(-50%) !important;
   width: 18px !important;
   height: 18px !important;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ✅ El texto se desplaza cuando hay spinner para no solaparse */
+.btn-primary:has(.spinner) .btn-text {
+  margin-left: 28px !important; /* ← Compensa el espacio del spinner */
+}
+
+.btn-text {
+  white-space: nowrap;
+  transition: margin-left 0.2s ease;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to { transform: translateY(-50%) rotate(360deg); }
 }
