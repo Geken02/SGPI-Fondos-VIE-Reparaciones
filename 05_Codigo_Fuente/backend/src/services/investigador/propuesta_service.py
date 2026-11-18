@@ -1326,61 +1326,66 @@ def guardar_plan_accion_riesgos(
     datos: PlanAccionRiesgosUpdate
 ) -> PlanAccionRiesgosResponse:
     """
-    Reemplaza de forma atómica y en una sola transacción el Plan de Acción y
-    Gestión de Riesgos: ObjetivosEspecificos, Actividades, ParticipantesActividad,
-    Riesgos y MedidasMitigacion. Es idempotente, por lo que el autoguardado puede
-    invocarse repetidamente sin generar duplicados ni filas huérfanas.
+    Reemplaza ATÓMICAMENTE las Actividades/Riesgos/Medidas/Participantes del Form-05.
+    NO toca ObjetivosEspecificos (son responsabilidad del Form-04).
+    Incluye guard anti-estado-no-hidratado: si no llega contenido, no purga.
     """
     propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
     anio_base = propuesta.getFechaInicio().year if propuesta.getFechaInicio() else date.today().year
 
+    # en estado no-hidratado (el GET aún no terminó). NO purgar la BD.
+    tiene_contenido = bool(datos.actividades) or bool(datos.objetivosEspecificos)
+    if not tiene_contenido:
+        return obtener_plan_accion_riesgos(db=db, propuesta_id=propuesta_id, usuario_id=usuario_id)
+
     try:
-        # 1. Purgar estructura previa (de hijos a padres) para evitar FKs huérfanas
-        actividades_previas = db.query(Actividades).filter(Actividades.propuestaId == propuesta_id).all()
+        # 1. Purgar SOLO la estructura del Form-05 (hijos de Actividades).
+        #    NO se borran ObjetivosEspecificos.
+        actividades_previas = db.query(Actividades).filter(
+            Actividades.propuestaId == propuesta_id
+        ).all()
         ids_actividades = [a.getActividadId() for a in actividades_previas]
         if ids_actividades:
             ids_riesgos = [
-                r.getRiesgoId() for r in db.query(Riesgos).filter(Riesgos.actividadId.in_(ids_actividades)).all()
+                r.getRiesgoId()
+                for r in db.query(Riesgos).filter(Riesgos.actividadId.in_(ids_actividades)).all()
             ]
             if ids_riesgos:
                 db.query(MedidasMitigacion).filter(
                     MedidasMitigacion.riesgoId.in_(ids_riesgos)
                 ).delete(synchronize_session=False)
-                db.query(Riesgos).filter(Riesgos.riesgoId.in_(ids_riesgos)).delete(synchronize_session=False)
+                db.query(Riesgos).filter(
+                    Riesgos.riesgoId.in_(ids_riesgos)
+                ).delete(synchronize_session=False)
             db.query(ParticipantesActividad).filter(
                 ParticipantesActividad.actividadId.in_(ids_actividades)
             ).delete(synchronize_session=False)
-            db.query(Actividades).filter(Actividades.propuestaId == propuesta_id).delete(synchronize_session=False)
-        db.query(ObjetivosEspecificos).filter(
-            ObjetivosEspecificos.propuestaId == propuesta_id
-        ).delete(synchronize_session=False)
+            db.query(Actividades).filter(
+                Actividades.propuestaId == propuesta_id
+            ).delete(synchronize_session=False)
         db.flush()
 
-        # 2. Objetivos específicos
-        objetivos_creados = []
-        for idx, obj in enumerate(datos.objetivosEspecificos):
+        # 2. Reutilizar los ObjetivosEspecificos EXISTENTES (del Form-04) como ancla.
+        objetivos_existentes = db.query(ObjetivosEspecificos).filter(
+            ObjetivosEspecificos.propuestaId == propuesta_id
+        ).order_by(ObjetivosEspecificos.numeroObjetivo).all()
+
+        # Si por alguna razón no hay objetivos (propuesta nueva sin Form-04),
+        # crear un objetivo contenedor por defecto SIN borrar nada.
+        if not objetivos_existentes:
             objetivo = ObjetivosEspecificos()
             objetivo.setPropuestaId(propuesta_id)
-            objetivo.setNumeroObjetivo(obj.numeroObjetivo or (idx + 1))
-            objetivo.setDescripcion((obj.descripcion or "").strip())
+            objetivo.setNumeroObjetivo(1)
+            objetivo.setDescripcion("Objetivo general")
             objetivo.setUsuarioAuditoriaId(usuario_id)
             db.add(objetivo)
-            objetivos_creados.append(objetivo)
-        db.flush()
+            db.flush()
+            objetivos_existentes = [objetivo]
 
-        # 3. Actividades con participantes, riesgos y medidas de mitigación
+        # 3. Crear Actividades/Riesgos/Medidas/Participantes apuntando a objetivos existentes.
         for act in datos.actividades:
             indice = act.objetivoEspecificoIndice
-            if not objetivos_creados:
-                objetivo_contenedor = ObjetivosEspecificos()
-                objetivo_contenedor.setPropuestaId(propuesta_id)
-                objetivo_contenedor.setNumeroObjetivo(1)
-                objetivo_contenedor.setDescripcion((act.descripcionActividad or "Objetivo general").strip()[:500])
-                objetivo_contenedor.setUsuarioAuditoriaId(usuario_id)
-                db.add(objetivo_contenedor)
-                db.flush()
-                objetivos_creados.append(objetivo_contenedor)
-            if indice is None or indice < 0 or indice >= len(objetivos_creados):
+            if indice is None or indice < 0 or indice >= len(objetivos_existentes):
                 indice = 0
 
             mes_inicio = act.mesInicio or 1
@@ -1388,7 +1393,7 @@ def guardar_plan_accion_riesgos(
 
             actividad = Actividades()
             actividad.setPropuestaId(propuesta_id)
-            actividad.setObjetivoEspecificoId(objetivos_creados[indice].getObjetivoEspecificoId())
+            actividad.setObjetivoEspecificoId(objetivos_existentes[indice].getObjetivoEspecificoId())
             actividad.setDescripcionActividad((act.descripcionActividad or "").strip())
             actividad.setResultadoEsperado((act.resultadoEsperado or "").strip())
             actividad.setMesInicio(mes_inicio)
@@ -1446,7 +1451,6 @@ def guardar_plan_accion_riesgos(
         )
 
     return obtener_plan_accion_riesgos(db=db, propuesta_id=propuesta_id, usuario_id=usuario_id)
-
 
 def guardar_aspectos_eticos(
     db: Session,

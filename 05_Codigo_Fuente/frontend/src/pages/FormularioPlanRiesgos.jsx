@@ -88,12 +88,13 @@ const FormularioPlanRiesgos = () => {
   const [actividades, setActividades] = useState([]);
   const [objetivosEspecificos, setObjetivosEspecificos] = useState([]);
   const [catalogosAux, setCatalogosAux] = useState({ tiposResponsabilidad: [], tiposHora: [], rolesEquipo: [] });
+  
   const isInitialMountF5 = useRef(true);
   const lastSyncedActividadesF5 = useRef('');
   const autosavePlanTimer = useRef(null);
   const ultimoPlanGuardado = useRef('');
 
-  const [guardadoMsg, setGuardadoMsg] = useState('Borrador listo para formulación');
+  const [guardadoMsg, setGuardadoMsg] = useState('Cargando datos...');
   const [guardando, setGuardando] = useState(false);
 
   const crearPeriodoVacio = () => {
@@ -105,7 +106,6 @@ const FormularioPlanRiesgos = () => {
     return periodo;
   };
 
-  // Rellena los checkboxes de periodo segun mes de inicio y duracion (misma tabla que el Form-04)
   const actualizarPeriodoDesdeMeses = (act, mesIni, durMeses) => {
     const inicio = parseInt(mesIni, 10);
     const duracion = parseInt(durMeses, 10);
@@ -129,7 +129,6 @@ const FormularioPlanRiesgos = () => {
     }
   };
 
-  // Resuelve IDs reales de catálogos (FKs) para el guardado en la BD.
   const resolverTipoHoraId = useCallback(() => {
     const horas = catalogosAux.tiposHora || [];
     const vye = horas.find(h => (h.codigoTipo || '').toUpperCase() === 'VIE') || horas[0];
@@ -160,12 +159,14 @@ const FormularioPlanRiesgos = () => {
     return aprox ? aprox.tipoResponsabilidadId : null;
   }, [catalogosAux.tiposResponsabilidad]);
 
-  // Construye el payload del Plan de Acción / Matriz de Riesgos para el backend.
+  // ✅ CONSTRUIR PAYLOAD SEGURO
   const construirPayloadPlan = useCallback(() => {
-    const objetivos = (objetivosEspecificos || []).map((desc, idx) => ({
-      numeroObjetivo: idx + 1,
-      descripcion: (desc || '').trim()
-    }));
+    const objetivos = (objetivosEspecificos || [])
+      .filter(desc => (desc || '').trim() !== '')
+      .map((desc, idx) => ({
+        numeroObjetivo: idx + 1,
+        descripcion: (desc || '').trim()
+      }));
 
     const buscarIntegrante = (iniciales) =>
       (integrantes || []).find(m => (m.iniciales || '').toUpperCase().trim() === (iniciales || '').toUpperCase().trim());
@@ -223,6 +224,7 @@ const FormularioPlanRiesgos = () => {
     }
   }, [usuario]);
 
+  // ✅ CARGA INICIAL DE DATOS
   useEffect(() => {
     const cargarPropuestaBD = async () => {
       let id = propuestaIdUrl;
@@ -242,6 +244,7 @@ const FormularioPlanRiesgos = () => {
 
       if (!id) return;
       localStorage.setItem('propuesta_activa_id', String(id));
+      setGuardadoMsg('Cargando datos...');
 
       let form04Data = null;
       let actsDesdeBD = null;
@@ -270,6 +273,7 @@ const FormularioPlanRiesgos = () => {
           if (prop.modalidad) setTipoIniciativa(prop.modalidad);
         }
 
+        // 1. Cargar Objetivos (Prioridad: Form04 Local > BD Contenido > BD PlanAccion)
         if (form04Data?.objetivosEspecificos && Array.isArray(form04Data.objetivosEspecificos)) {
           setObjetivosEspecificos(form04Data.objetivosEspecificos.filter(Boolean));
         } else if (prop?.contenido?.objetivosEspecificos) {
@@ -282,7 +286,7 @@ const FormularioPlanRiesgos = () => {
         const miembrosCompletos = construirIntegrantesDeEquipo(prop, form04Data, usuario);
         if (miembrosCompletos.length > 0) setIntegrantes(miembrosCompletos);
 
-        // Reconstruye el cronograma desde el Plan de Acción persistido en la BD.
+        // 2. Cargar Actividades desde la BD
         if (prop?.planAccion?.actividades?.length > 0) {
           const idxObjetivo = new Map(
             (prop.planAccion.objetivosEspecificos || []).map((o, i) => [o.objetivoEspecificoId, i])
@@ -315,8 +319,11 @@ const FormularioPlanRiesgos = () => {
             return act;
           });
         }
-      } catch (_e) {}
+      } catch (_e) {
+        console.error("Error cargando propuesta:", _e);
+      }
 
+      // 3. Fusionar con LocalStorage (si es más reciente)
       try {
         let actsCargadas = null;
         let l = null;
@@ -338,7 +345,6 @@ const FormularioPlanRiesgos = () => {
               return Array.from(mapa.values());
             });
           }
-          setGuardadoMsg('Borrador cargado');
         }
 
         if (form04Data?.actividadesCronograma && Array.isArray(form04Data.actividadesCronograma) && form04Data.actividadesCronograma.length > 0) {
@@ -347,7 +353,6 @@ const FormularioPlanRiesgos = () => {
           if (!actsCargadas || f4Time >= f5Time) actsCargadas = form04Data.actividadesCronograma;
         }
 
-        // Fallback: usar el plan persistido en la BD si no hay snapshot local.
         if ((!actsCargadas || actsCargadas.length === 0) && actsDesdeBD && actsDesdeBD.length > 0) {
           actsCargadas = actsDesdeBD;
         }
@@ -357,10 +362,15 @@ const FormularioPlanRiesgos = () => {
           lastSyncedActividadesF5.current = JSON.stringify(actsCargadas);
         }
       } catch (_e) {}
+
+      setGuardadoMsg('Listo para editar');
+      isInitialMountF5.current = false;
     };
-    cargarPropuestaBD().finally(() => { isInitialMountF5.current = false; });
+    
+    cargarPropuestaBD();
   }, [propuestaIdUrl]);
 
+  // ✅ AUTOGUARDADO LOCAL (LocalStorage)
   useEffect(() => {
     if (isInitialMountF5.current) return;
     const serialized = JSON.stringify(actividades);
@@ -394,13 +404,14 @@ const FormularioPlanRiesgos = () => {
     } catch (_e) {}
   }, [actividades, nombrePropuesta, tipoIniciativa, duracionMeses, integrantes]);
 
-  // Autoguardado del Plan de Acción / Matriz de Riesgos en la base de datos.
-  // Idempotente (el backend reemplaza en transacción) y con debounce para no
-  // saturar el API mientras el usuario escribe.
+  // ✅ AUTOGUARDADO EN BASE DE DATOS (Blindado contra payloads vacíos)
   useEffect(() => {
     if (isInitialMountF5.current) return;
     const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
     if (!id || id === 'undefined') return;
+
+    // 🛡️ GUARDIA CRÍTICA: No enviar nada si no hay datos (evita borrar la BD en el primer render)
+    if (actividades.length === 0 && objetivosEspecificos.length === 0) return;
 
     const payload = construirPayloadPlan();
     const serializado = JSON.stringify(payload);
@@ -409,17 +420,20 @@ const FormularioPlanRiesgos = () => {
     if (autosavePlanTimer.current) clearTimeout(autosavePlanTimer.current);
     autosavePlanTimer.current = setTimeout(async () => {
       try {
+        setGuardadoMsg('Guardando en la nube...');
         await propuestaService.guardarPlanAccion(id, payload);
         ultimoPlanGuardado.current = serializado;
-        setGuardadoMsg('Autoguardado');
+        setGuardadoMsg('Autoguardado en la nube');
       } catch (err) {
         console.warn('Error en autoguardado del Plan de Acción:', err);
+        setGuardadoMsg('Error al autoguardar');
       }
     }, 1500);
 
     return () => { if (autosavePlanTimer.current) clearTimeout(autosavePlanTimer.current); };
   }, [actividades, objetivosEspecificos, integrantes, propuestaIdUrl, construirPayloadPlan]);
 
+  // Sincronización entre pestañas
   useEffect(() => {
     const handleSync = (e) => {
       const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
@@ -463,9 +477,7 @@ const FormularioPlanRiesgos = () => {
 
   const handleGuardarBorrador = async () => {
     setGuardando(true);
-    const ahora = new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
     const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
-
     const dataToSave = { nombrePropuesta, tipoIniciativa, duracionMeses, integrantes, actividades, fechaGuardado: new Date().toISOString() };
 
     if (id) {
@@ -483,23 +495,21 @@ const FormularioPlanRiesgos = () => {
       try {
         await propuestaService.actualizarCabecera(id, { titulo: nombrePropuesta || 'Iniciativa de Investigación' });
 
-        // Persistir el Plan de Acción y Matriz de Riesgos (sección 3) en la BD.
         try {
           const payloadPlan = construirPayloadPlan();
           await propuestaService.guardarPlanAccion(id, payloadPlan);
           ultimoPlanGuardado.current = JSON.stringify(payloadPlan);
+          setGuardadoMsg('Guardado en la nube');
         } catch (err) {
           console.warn('⚠️ No se pudo guardar el Plan de Acción en la BD:', err);
-          setGuardadoMsg('Error al guardar');
-          alert('No se pudo guardar el Plan de Acción (Form-05) en la base de datos. Verifique su conexión e intente de nuevo.');
+          setGuardadoMsg('Error al guardar en la nube');
         }
 
         try {
           const { generarBlobForm05Excel, subirBlobASupabase } = await import('../utils/exportUtils');
           const blob = await generarBlobForm05Excel(dataToSave, id);
           if (blob && blob.size > 0) {
-            await subirBlobASupabase(propuestaService, id, 2, blob, `Form05_${id}.xlsx`); // ID 2 = Form-05
-            console.log('✅ Form-05 subido a Supabase');
+            await subirBlobASupabase(propuestaService, id, 2, blob, `Form05_${id}.xlsx`);
           }
         } catch (err) {
           console.warn('⚠️ No se pudo subir Form-05 a Supabase:', err);
@@ -508,9 +518,7 @@ const FormularioPlanRiesgos = () => {
       } catch (_e) {}
     }
     localStorage.setItem('propuesta_plan_riesgos_ultimo', JSON.stringify(dataToSave));
-
     window.dispatchEvent(new Event('propuestaCreada'));
-    setGuardadoMsg('Guardado');
     setGuardando(false);
     alert('¡Borrador del Plan de Acción y Gestión del Riesgo (Form-05) guardado con éxito!');
   };
@@ -524,28 +532,17 @@ const FormularioPlanRiesgos = () => {
       localStorage.setItem(`propuesta_${id}_plan_riesgos`, JSON.stringify(dataToSave));
       localStorage.setItem(`borrador_form05_${id}`, JSON.stringify(dataToSave));
       localStorage.setItem(`propuesta_${id}_form05_enviado`, 'true');
-      try {
-        const rawF4 = localStorage.getItem(`borrador_form04_${id}`);
-        const f4Data = rawF4 ? JSON.parse(rawF4) : {};
-        f4Data.actividadesCronograma = dataToSave.actividades;
-        f4Data.fechaGuardado = dataToSave.fechaGuardado;
-        localStorage.setItem(`borrador_form04_${id}`, JSON.stringify(f4Data));
-        localStorage.setItem('borrador_form04_ultimo', JSON.stringify(f4Data));
-      } catch (_e) {}
-
-      // ✅ NUEVO: Subir Excel a Supabase al enviar
+      
       try {
         const { generarBlobForm05Excel, subirBlobASupabase } = await import('../utils/exportUtils');
         const blob = await generarBlobForm05Excel(dataToSave, id);
         if (blob && blob.size > 0) {
           await subirBlobASupabase(propuestaService, id, 2, blob, `Form05_${id}.xlsx`);
-          console.log('✅ Form-05 subido a Supabase al enviar');
         }
       } catch (err) {
         console.warn('⚠️ No se pudo subir Form-05 a Supabase al enviar:', err);
       }
 
-      // Persistir el Plan de Acción y Matriz de Riesgos (sección 3) antes de salir.
       try {
         const payloadPlan = construirPayloadPlan();
         await propuestaService.guardarPlanAccion(id, payloadPlan);
@@ -558,7 +555,7 @@ const FormularioPlanRiesgos = () => {
       }
     }
     window.dispatchEvent(new Event('propuestaCreada'));
-    alert('¡Plan de Acción y Gestión del Riesgo guardado exitosamente!');
+    alert('¡Plan de Acción y Gestión del Riesgo guardado y enviado exitosamente!');
     setGuardando(false);
     navigate('/dashboard/propuestas');
   };
