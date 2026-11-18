@@ -10,6 +10,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Request, status, HTTPException
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 from src.api.schemas.admin.comunes import EstadoToggle
 from src.api.schemas.admin import usuarios as esquemas
@@ -28,6 +29,9 @@ router = APIRouter()
 depende_admin = Depends(requerir_rol(ROLES_ADMIN))
 
 
+class ImpersonarRolRequest(BaseModel):
+    rol_nombre: str
+
 # ============================================================================
 # ENDPOINT DE SUPLANTACIÓN (IMPERSONATION)
 # ============================================================================
@@ -38,11 +42,11 @@ depende_admin = Depends(requerir_rol(ROLES_ADMIN))
     response_description="Nuevo token JWT con el rol simulado"
 )
 def impersonar_rol(
-    cuerpo: dict,
+    cuerpo: ImpersonarRolRequest,  # ✅ 2. CAMBIA 'dict' POR EL MODELO PYDANTIC
     usuario_actual: Usuario = Depends(requerir_rol(["SuperAdministrador"])),
     sesion: Session = Depends(get_db)
 ):
-    rol_nombre = cuerpo.get("rol_nombre")
+    rol_nombre = cuerpo.rol_nombre  # ✅ 3. ACCESO DIRECTO, NO NECESITAS .get()
     
     if not rol_nombre:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El campo 'rol_nombre' es obligatorio")

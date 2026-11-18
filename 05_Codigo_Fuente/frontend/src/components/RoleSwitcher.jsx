@@ -143,40 +143,40 @@ export default function RoleSwitcher({ usuarioActual, isOpen, onClose }) {
     };
   }, [isOpen, onClose]);
 
-  const handleSeleccionarRol = async (rol) => {
+    const handleSeleccionarRol = async (rol) => {
     setCargando(true);
     try {
-      // Guardar el token original antes de cambiar (por si necesitamos restaurarlo manualmente)
       const tokenOriginal = localStorage.getItem('token');
       localStorage.setItem('token_original', tokenOriginal);
 
-      // ✅ USAR EL CLIENTE 'api' QUE YA TIENE LA baseURL DE RENDER Y EL INTERCEPTOR DEL TOKEN
-      const response = await api.post('/api/admin/impersonate', { 
+      console.log("🔄 Intentando cambiar a rol:", rol.id);
+
+      // Usamos 'api' que ya tiene la baseURL de Render y el token inyectado
+      const response = await api.post('/api/admin/impersonate', {
         rol_nombre: rol.id 
       });
 
       const data = response.data;
       
-      // Guardar el nuevo token de simulación
       localStorage.setItem('token', data.access_token);
       localStorage.setItem('rol_simulado', data.rolSimulado);
       
       toast.success(`Simulando: ${data.rolSimulado}`);
       onClose();
       
-      // Recargar la aplicación para actualizar el contexto de autenticación
       window.location.href = '/dashboard'; 
       
     } catch (error) {
-      console.error('Error en impersonation:', error);
-      // ✅ Manejo seguro del mensaje de error (evita el fallo de JSON en 405/500)
+      // Esto te mostrará en la consola del navegador la razón exacta del 400 o 403
+      console.error("❌ Error detallado del backend:", error.response?.data);
+      
       const mensajeError = error.response?.data?.detail || error.message || 'Error al cambiar de rol';
       toast.error(mensajeError);
     } finally {
       setCargando(false);
     }
   };
-
+  
   const irAPaginaAnterior = () => {
     setPaginaActual(prev => Math.max(0, prev - 1));
     setRolHovered(null);
