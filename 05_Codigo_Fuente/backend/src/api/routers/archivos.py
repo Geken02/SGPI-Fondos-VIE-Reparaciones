@@ -426,6 +426,242 @@ def _persistir_datos_form04(sesion: Session, propuesta_id: int, datos: dict, usu
 
 
 # ============================================================================
+# PERSISTENCIA FORM-05: Plan de Acción y Riesgos (UPSERT)
+# ============================================================================
+
+def _persistir_datos_form05(sesion: Session, propuesta_id: int, datos: dict, usuario_actual: Usuario) -> None:
+    """Persiste el Form-05 con lógica UPSERT. Vincula actividades a objetivos existentes."""
+    from src.models.propuesta_plan import Actividades, Riesgos, MedidasMitigacion
+    from src.models.propuesta_plan import ObjetivosEspecificos, ParticipantesActividad, TiposResponsabilidad
+
+    ahora = datetime.now(timezone.utc)
+    
+    # 1. Cargar objetivos de la propuesta para poder vincular las actividades
+    objs_db = sesion.query(ObjetivosEspecificos).filter(
+        ObjetivosEspecificos.propuestaId == propuesta_id
+    ).all()
+
+    def _resolver_objetivo_id(texto_objetivo: str) -> Optional[int]:
+        if not texto_objetivo:
+            return objs_db[0].objetivoEspecificoId if objs_db else None
+        
+        # Intentar extraer número: "OE1", "Objetivo 2", etc.
+        m = re.search(r"(?:OE|Objetivo)\s*(\d+)", texto_objetivo, re.IGNORECASE)
+        if m:
+            num = int(m.group(1))
+            for o in objs_db:
+                if o.numeroObjetivo == num:
+                    return o.objetivoEspecificoId
+        
+        # Fallback: coincidencia parcial de texto
+        texto_l = texto_objetivo.lower()[:50]
+        for o in objs_db:
+            if texto_l and texto_l in (o.descripcion or "").lower():
+                return o.objetivoEspecificoId
+                
+        return objs_db[0].objetivoEspecifico if objs_db else None
+
+    # Obtener propuesta para calcular año real de ejecución
+    propuesta = sesion.query(Propuesta).filter(Propuesta.propuestaId == propuesta_id).first()
+    anio_base = propuesta.fechaInicio.year if propuesta and propuesta.fechaInicio else 2027
+
+    # 2. UPSERT Actividades, Riesgos, Medidas y Participantes
+    for act in datos.get("actividades", []):
+        if not act.get("descripcion"):
+            continue
+            
+        obj_id = _resolver_objetivo_id(act.get("objetivo", ""))
+        if not obj_id:
+            continue # Sin objetivo no se puede vincular (FK obligatoria)
+
+        anio_ejec = anio_base + (act.get("anio_ejecucion", 1) - 1)
+
+        # UPSERT Actividad
+        actividad_db = sesion.query(Actividades).filter(
+            Actividades.propuestaId == propuesta_id,
+            Actividades.objetivoEspecificoId == obj_id,
+            Actividades.descripcionActividad.ilike(f"%{act['descripcion'][:80]}%")
+        ).first()
+
+        if actividad_db:
+            actividad_db.resultadoEsperado = act.get("resultado_esperado", "") or actividad_db.resultadoEsperado
+            actividad_db.mesInicio = act.get("mes_inicio") or actividad_db.mesInicio
+            actividad_db.duracionMeses = act.get("duracion_meses") or actividad_db.duracionMeses
+            actividad_db.anioEjecucion = anio_ejec
+            actividad_db.usuarioAuditoriaId = usuario_actual.usuarioId
+            actividad_db.ultimaAuditoria = ahora
+        else:
+            actividad_db = Actividades(
+                propuestaId=propuesta_id,
+                objetivoEspecificoId=obj_id,
+                descripcionActividad=act["descripcion"],
+                resultadoEsperado=act.get("resultado_esperado", "") or "N/A",
+                mesInicio=act.get("mes_inicio") or 1,
+                duracionMeses=act.get("duracion_meses") or 1,
+                anioEjecucion=anio_ejec,
+                esGira="gira" in act["descripcion"].lower(),
+                esPasantia="pasantía" in act["descripcion"].lower() or "pasantia" in act["descripcion"].lower(),
+                requiereInformeAvance=False,
+                creadoEn=ahora,
+                usuarioAuditoriaId=usuario_actual.usuarioId,
+                ultimaAuditoria=ahora,
+            )
+            sesion.add(actividad_db)
+            sesion.flush() # Necesario para obtener actividad_db.actividadId
+
+        # UPSERT Riesgos asociados a esta actividad
+        for rg in datos.get("riesgos", []):
+            if rg.get("actividad_index") != datos["actividades"].index(act):
+                continue
+            
+            riesgo_db = sesion.query(Riesgos).filter(
+                Riesgos.actividadId == actividad_db.actividadId,
+                Riesgos.descripcionRiesgo.ilike(f"%{rg['descripcion'][:80]}%")
+            ).first()
+
+            if not riesgo_db:
+                riesgo_db = Riesgos(
+                    actividadId=actividad_db.actividadId,
+                    descripcionRiesgo=rg["descripcion"],
+                    probabilidad=rg.get("probabilidad"),
+                    impacto=rg.get("impacto"),
+                    creadoEn=ahora,
+                    usuarioAuditoriaId=usuario_actual.usuarioId,
+                    ultimaAuditoria=ahora,
+                )
+                sesion.add(riesgo_db)
+                sesion.flush()
+
+            # UPSERT Medidas de mitigación asociadas a este riesgo
+            for med in datos.get("medidas_mitigacion", []):
+                if med.get("riesgo_index") != datos["riesgos"].index(rg):
+                    continue
+                
+                medida_db = sesion.query(MedidasMitigacion).filter(
+                    MedidasMitigacion.riesgoId == riesgo_db.riesgoId,
+                    MedidasMitigacion.descripcionMedida.ilike(f"%{med['descripcion'][:80]}%")
+                ).first()
+
+                if medida_db:
+                    medida_db.esPermisoEtico = med.get("es_permiso_etico", False)
+                    medida_db.usuarioAuditoriaId = usuario_actual.usuarioId
+                    medida_db.ultimaAuditoria = ahora
+                else:
+                    # Intentar resolver el responsable a un usuario real
+                    resp_usuario = None
+                    if med.get("responsable"):
+                        partes = med["responsable"].split(maxsplit=1)
+                        resp_usuario = sesion.query(Usuario).filter(
+                            Usuario.nombreUsuario.ilike(partes[0])
+                        ).first()
+
+                    sesion.add(MedidasMitigacion(
+                        riesgoId=riesgo_db.riesgoId,
+                        descripcionMedida=med["descripcion"],
+                        usuarioResponsableId=resp_usuario.usuarioId if resp_usuario else usuario_actual.usuarioId,
+                        esPermisoEtico=med.get("es_permiso_etico", False),
+                        creadoEn=ahora,
+                        usuarioAuditoriaId=usuario_actual.usuarioId,
+                        ultimaAuditoria=ahora,
+                    ))
+
+        # UPSERT Participantes de la actividad
+        tipo_resp = sesion.query(TiposResponsabilidad).filter(
+            TiposResponsabilidad.nombreTipoResponsabilidad.ilike("%investigador%")
+        ).first() or sesion.query(TiposResponsabilidad).first()
+
+        if act.get("participantes") and tipo_resp:
+            for nombre in [p.strip() for p in act["participantes"].split(",") if p.strip()]:
+                partes = nombre.split(maxsplit=1)
+                usuario = sesion.query(Usuario).filter(Usuario.nombreUsuario.ilike(partes[0])).first()
+                if not usuario:
+                    continue
+                
+                existe = sesion.query(ParticipantesActividad).filter(
+                    ParticipantesActividad.actividadId == actividad_db.actividadId,
+                    ParticipantesActividad.usuarioId == usuario.usuarioId,
+                    ParticipantesActividad.tipoResponsabilidadId == tipo_resp.tipoResponsabilidadId,
+                ).first()
+                
+                if not existe:
+                    sesion.add(ParticipantesActividad(
+                        actividadId=actividad_db.actividadId,
+                        usuarioId=usuario.usuarioId,
+                        tipoResponsabilidadId=tipo_resp.tipoResponsabilidadId,
+                        creadoEn=ahora,
+                        usuarioAuditoriaId=usuario_actual.usuarioId,
+                        ultimaAuditoria=ahora,
+                    ))
+
+
+# ============================================================================
+# PERSISTENCIA FORM-06: Presupuesto Operativo (UPSERT)
+# ============================================================================
+
+def _persistir_datos_form06(sesion: Session, propuesta_id: int, datos: dict, usuario_actual: Usuario) -> None:
+    """Persiste el Form-06 con lógica UPSERT por (propuestaId, rubroId, anioEjecucion)."""
+    ahora = datetime.now(timezone.utc)
+
+    def _resolver_rubro(categoria: str, detalle: str) -> Optional[RubrosPropuesta]:
+        texto = f"{categoria or ''} {detalle or ''}".lower()
+        if "beca" in texto or "asistente" in texto or "estudiante" in texto:
+            return _lookup_rubro(sesion, "Becas")
+        if "equipo" in texto or "duradero" in texto or "computador" in texto or "mobiliario" in texto:
+            return _lookup_rubro(sesion, "Bienes Duraderos")
+        if "material" in texto or "reactivo" in texto or "suministro" in texto or "oficina" in texto:
+            return _lookup_rubro(sesion, "Materiales")
+        
+        # Fallback: intentar buscar por el nombre de la categoría exacta
+        rubro = _lookup_rubro(sesion, categoria) if categoria else None
+        return rubro or _lookup_rubro(sesion, "Servicios") # Default a Servicios si no se encuentra
+
+    # 1. UPSERT Partidas Presupuestarias
+    for p in datos.get("partidas", []):
+        monto = float(p.get("monto", 0) or 0)
+        if monto <= 0:
+            continue
+            
+        rubro = _resolver_rubro(p.get("categoria", ""), p.get("detalle", ""))
+        if not rubro:
+            print(f"⚠️ Rubro no encontrado para: {p.get('categoria', '')} / {p.get('detalle', '')[:40]}")
+            continue
+
+        es_duradero = "duradero" in (p.get("categoria", "") + p.get("detalle", "")).lower() \
+                      or "equipo" in (p.get("categoria", "") + p.get("detalle", "")).lower()
+
+        pres_db = sesion.query(PresupuestoPropuesta).filter(
+            PresupuestoPropuesta.propuestaId == propuesta_id,
+            PresupuestoPropuesta.rubroId == rubro.rubroId,
+            PresupuestoPropuesta.anioEjecucion == p["anio"],
+        ).first()
+
+        if pres_db:
+            pres_db.montoSolicitado = monto
+            pres_db.esDuradero = es_duradero
+            pres_db.usuarioAuditoriaId = usuario_actual.usuarioId
+            pres_db.ultimaAuditoria = ahora
+        else:
+            sesion.add(PresupuestoPropuesta(
+                propuestaId=propuesta_id,
+                rubroId=rubro.rubroId,
+                montoSolicitado=monto,
+                anioEjecucion=p["anio"],
+                esDuradero=es_duradero,
+                creadoEn=ahora,
+                usuarioAuditoriaId=usuario_actual.usuarioId,
+                ultimaAuditoria=ahora,
+            ))
+
+    # 2. Actualizar el montoTotal de la propuesta con el GRAN TOTAL del resumen
+    gran_total = float(datos.get("gran_total", 0) or 0)
+    if gran_total > 0:
+        propuesta = sesion.query(Propuesta).filter(Propuesta.propuestaId == propuesta_id).first()
+        if propuesta:
+            propuesta.montoTotal = gran_total
+            propuesta.usuarioAuditoriaId = usuario_actual.usuarioId
+            propuesta.ultimaAuditoria = ahora
+
+# ============================================================================
 # ENDPOINT PRINCIPAL CON MANEJO DE TRANSACCIONES SEGURO
 # ============================================================================
 
@@ -485,30 +721,46 @@ async def guardar_archivo_propuesta(
     # 5. Parsear y persistir con UPSERT
     parseo_ok = False
     parseo_errores = []
-    
-    if tipo_documento_id == 1 and archivo.filename.lower().endswith(".docx"):
+
+    es_form04 = tipo_documento_id == 1 and archivo.filename.lower().endswith(".docx")
+    es_form05 = tipo_documento_id == 2 and archivo.filename.lower().endswith(".xlsx")
+    es_form06 = tipo_documento_id == 3 and archivo.filename.lower().endswith(".xlsx")
+
+    if es_form04 or es_form05 or es_form06:
         try:
-            print(f"🔍 Detectado Form-04 (.docx). Iniciando parseo y UPSERT...")
-            datos = parsear_form04_docx(contenido)
-            
-            _persistir_datos_form04(sesion, propuesta_id, datos, usuario_actual)
-            sesion.commit() # Commit de TODO (documento + datos parseados)
-            
+            if es_form04:
+                print(f"🔍 Detectado Form-04 (.docx). Iniciando parseo y UPSERT...")
+                from src.services.form04_parser import parsear_form04_docx
+                datos = parsear_form04_docx(contenido)
+                _persistir_datos_form04(sesion, propuesta_id, datos, usuario_actual)
+            elif es_form05:
+                print(f"🔍 Detectado Form-05 (.xlsx). Iniciando parseo y UPSERT...")
+                from src.services.form05_parser import parsear_form05_xlsx
+                datos = parsear_form05_xlsx(contenido)
+                _persistir_datos_form05(sesion, propuesta_id, datos, usuario_actual)
+            elif es_form06:
+                print(f"🔍 Detectado Form-06 (.xlsx). Iniciando parseo y UPSERT...")
+                from src.services.form06_parser import parsear_form06_xlsx
+                datos = parsear_form06_xlsx(contenido)
+                _persistir_datos_form06(sesion, propuesta_id, datos, usuario_actual)
+
+            sesion.commit()
             parseo_ok = True
-            print("✅ Form-04 parseado y persistido con UPSERT en todas las tablas.")
-            
+            print("✅ Documento parseado y persistido con UPSERT.")
+
         except HTTPException:
             sesion.rollback()
             raise
         except Exception as e:
-            sesion.rollback() # Esto deshace el flush del documento
+            sesion.rollback()
             parseo_errores.append(str(e))
-            print(f"❌ Error al persistir Form-04: {e}")
-            
-            # ✅ RECUPERACIÓN: Volvemos a agregar el documento y lo guardamos solo él.
-            print("💾 Guardando solo el registro del archivo en la BD (sin los datos parseados)...")
+            print(f"❌ Error al persistir: {e}")
+            print("💾 Guardando solo el registro del archivo en la BD...")
             sesion.add(documento_a_retornar)
             sesion.commit()
+    else:
+        # Documento normal (PDF, imagen, etc.) — solo guardar el registro
+        sesion.commit()
 
     # ✅ Ahora el objeto es definitivamente persistente y seguro de refrescar.
     sesion.refresh(documento_a_retornar)
