@@ -14,7 +14,6 @@ const SECCIONES = [
     titulo: 'Gestión VIE',
     items: [
       { path: '/gestora/expedientes', label: 'Expedientes', icono: 'clipboard' },
-      { path: '/gestora/validacion-normativa', label: 'Validación Normativa', icono: 'shield' },
       { path: '/gestora/subsanaciones', label: 'Subsanaciones', icono: 'alertTriangle' },
       { path: '/gestora/reportes', label: 'Reportes', icono: 'barChart' },
     ],

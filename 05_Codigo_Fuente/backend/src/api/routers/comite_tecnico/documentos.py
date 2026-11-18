@@ -9,9 +9,13 @@ from botocore.exceptions import ClientError
 from src.utils.s3_client import s3_client, S3_BUCKET_NAME
 from src.database import get_db
 from src.models import PropuestaDocumentos, asignaciones_comite, Usuario
-from src.utils.dependencias  import obtener_usuario_actual
+from src.utils.dependencias  import obtener_usuario_actual, requerir_rol
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(requerir_rol([
+    "GestoraVIE", "CoordinadoraGestora", "MiembroCIE", "CoordinadorCIE",
+    "PresidenteCIE", "DireccionInvestigacion", "SubdirectorInvestigacion",
+    "SuperAdministrador", "Administrador",
+]))])
 
 @router.get("/documentos/{documento_id}/ver")
 async def ver_documento_en_linea(

@@ -16,6 +16,7 @@ from src.api.routers import auth
 from src.api.routers.consejo_escuela import acuerdos
 from src.api.routers.admin import usuarios, catalogos, auditoria, dashboard 
 from src.api.routers.comite_tecnico import comite_tecnico
+from src.api.routers.comite_tecnico import documentos as documentos_comite
 from src.api.routers.comite_tecnico.asignacion import router as asignacion_router
 
 from src.api.routers import notificaciones as router_notificaciones
@@ -62,6 +63,7 @@ app.include_router(usuarios.router, prefix="/api/admin", tags=["Administración"
 app.include_router(auditoria.router, prefix="/api/admin", tags=["Administración"])
 app.include_router(dashboard.router)
 app.include_router(comite_tecnico.router)
+app.include_router(documentos_comite.router, prefix="/api/comite-tecnico")
 app.include_router(votaciones.router)
 app.include_router(propuestas.router)
 app.include_router(miembro_cie.router)
