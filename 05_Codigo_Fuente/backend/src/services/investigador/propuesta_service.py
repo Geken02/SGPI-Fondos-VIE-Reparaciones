@@ -513,6 +513,7 @@ def obtener_propuesta_detalle(
     contenido_resp = ContenidoForm04Response(
         resumen=contenido.getResumen() if contenido else None,
         palabrasClave=contenido.getPalabrasClave() if contenido else None,
+        keywords=contenido.getKeywords() if contenido else None,
         abstract=contenido.getAbstract() if contenido else None,
         problemaInvestigacion=contenido.getProblemaInvestigacion() if contenido else None,
         objetivoGeneral=contenido.getObjetivoGeneral() if contenido else None,
@@ -562,6 +563,7 @@ def obtener_propuesta_detalle(
         esPropietario=(propuesta.getInvestigadorCoordId() == usuario_id),
         resumen=contenido.getResumen() if contenido else None,
         palabrasClave=contenido.getPalabrasClave() if contenido else None,
+        keywords=contenido.getKeywords() if contenido else None,
         abstract=contenido.getAbstract() if contenido else None,
         objetivoGeneral=contenido.getObjetivoGeneral() if contenido else None,
         metodologia=contenido.getMetodologia() if contenido else None,
@@ -644,6 +646,8 @@ def actualizar_contenido_form04(
         contenido.setResumen(datos.resumen)
     if datos.palabrasClave is not None:
         contenido.setPalabrasClave(datos.palabrasClave)
+    if datos.keywords is not None:
+        contenido.setKeywords(datos.keywords)
     if datos.abstract is not None:
         contenido.setAbstract(datos.abstract)
     if datos.problemaInvestigacion is not None:

@@ -407,6 +407,7 @@ CREATE TABLE PropuestaContenido (
     propuestaId INT UNIQUE NOT NULL PRIMARY KEY, -- Relación 1:1 con Propuestas
     resumen VARCHAR(4000) NOT NULL,
     palabrasClave VARCHAR(255) NULL,
+    keywords VARCHAR(255) NULL,
     abstract VARCHAR(4000) NULL,
     problemaInvestigacion VARCHAR(4000) NULL,
     objetivoGeneral VARCHAR(2000) NULL,
