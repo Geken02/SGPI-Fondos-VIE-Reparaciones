@@ -1,11 +1,10 @@
 """
 propuesta_import.py
 ===================
-Endpoint robusto para importar el Form-04. 
-Sigue la misma lógica completa que archivos.py: 
+Endpoint robusto con lógica UPSERT completa para importar el Form-04.
 1. Sube a S3
-2. Registra en PropuestaDocumentos
-3. Persiste en TODAS las tablas del esquema SGPI de forma idempotente.
+2. Registra en PropuestaDocumentos (con flush seguro)
+3. Persiste en TODAS las tablas del esquema SGPI usando UPSERT (evita UniqueViolation)
 """
 import hashlib
 import re
@@ -37,7 +36,7 @@ router = APIRouter(prefix="/api/propuestas", tags=["Importación de Formularios"
 
 
 # ============================================================================
-# HELPERS DE LOOKUP (Idénticos a archivos.py para consistencia)
+# HELPERS DE LOOKUP
 # ============================================================================
 
 def _lookup_modalidad(sesion: Session, nombre: str):
@@ -111,15 +110,14 @@ def _obtener_o_crear_usuario_por_orcid(sesion: Session, nombre_completo: str, or
 
 
 # ============================================================================
-# PERSISTENCIA COMPLETA DEL FORM-04 (Idéntica a archivos.py)
+# PERSISTENCIA COMPLETA DEL FORM-04 CON UPSERT
 # ============================================================================
 
 def _persistir_datos_form04(sesion: Session, propuesta_id: int, datos: dict, usuario_actual: Usuario) -> None:
     ahora = datetime.now(timezone.utc)
 
-    # 0. LIMPIEZA (Idempotencia)
+    # 0. LIMPIEZA SELECTIVA (Solo para tablas 1:N sin restricción UNIQUE compuesta que cause conflicto)
     sesion.query(ObjetivosEspecificos).filter(ObjetivosEspecificos.propuestaId == propuesta_id).delete(synchronize_session=False)
-    sesion.query(IntegrantesEquipoPropuesta).filter(IntegrantesEquipoPropuesta.propuestaId == propuesta_id).delete(synchronize_session=False)
     sesion.query(ColaboradoresExternos).filter(ColaboradoresExternos.propuestaId == propuesta_id).delete(synchronize_session=False)
     sesion.query(PresupuestoPropuesta).filter(PresupuestoPropuesta.propuestaId == propuesta_id).delete(synchronize_session=False)
     sesion.query(FinanciamientoExterno).filter(FinanciamientoExterno.propuestaId == propuesta_id).delete(synchronize_session=False)
@@ -127,6 +125,7 @@ def _persistir_datos_form04(sesion: Session, propuesta_id: int, datos: dict, usu
     sesion.query(ProductosAcademicos).filter(ProductosAcademicos.propuestaId == propuesta_id).delete(synchronize_session=False)
     sesion.query(PropuestaReferencia).filter(PropuestaReferencia.propuestaId == propuesta_id).delete(synchronize_session=False)
     sesion.query(Dictamenes).filter(Dictamenes.propuestaId == propuesta_id).delete(synchronize_session=False)
+    # NOTA: NO borramos IntegrantesEquipoPropuesta aquí para permitir el UPSERT seguro abajo.
 
     # 1. PROPUESTA
     propuesta = sesion.query(Propuesta).filter(Propuesta.propuestaId == propuesta_id).first()
@@ -151,7 +150,7 @@ def _persistir_datos_form04(sesion: Session, propuesta_id: int, datos: dict, usu
     propuesta.ultimaAuditoria = ahora
     propuesta.usuarioAuditoriaId = usuario_actual.usuarioId
 
-    # 2. PROPUESTA_CONTENIDO
+    # 2. PROPUESTA_CONTENIDO (UPSERT)
     contenido_db = sesion.query(PropuestaContenido).filter(PropuestaContenido.propuestaId == propuesta_id).first()
     if not contenido_db:
         contenido_db = PropuestaContenido(propuestaId=propuesta_id)
@@ -172,7 +171,7 @@ def _persistir_datos_form04(sesion: Session, propuesta_id: int, datos: dict, usu
     contenido_db.ultimaAuditoria = ahora
     contenido_db.usuarioAuditoriaId = usuario_actual.usuarioId
 
-    # 3. PROPUESTA_DECLARACIONES
+    # 3. PROPUESTA_DECLARACIONES (UPSERT)
     decl_db = sesion.query(PropuestaDeclaraciones).filter(PropuestaDeclaraciones.propuestaId == propuesta_id).first()
     if not decl_db:
         decl_db = PropuestaDeclaraciones(propuestaId=propuesta_id)
@@ -196,26 +195,64 @@ def _persistir_datos_form04(sesion: Session, propuesta_id: int, datos: dict, usu
     decl_db.ultimaAuditoria = ahora
     decl_db.usuarioAuditoriaId = usuario_actual.usuarioId
 
-    # 4. OBJETIVOS_ESPECIFICOS
+    # 4. OBJETIVOS_ESPECIFICOS (Recreación segura tras DELETE)
     for oe in datos.get("objetivos_especificos", []):
         sesion.add(ObjetivosEspecificos(propuestaId=propuesta_id, numeroObjetivo=oe["numero"], descripcion=oe["descripcion"], creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
     sesion.flush()
 
-    # 5. INTEGRANTES_EQUIPO_PROPUESTA
+    # 5. INTEGRANTES_EQUIPO_PROPUESTA (✅ UPSERT REAL PARA EVITAR UniqueViolation)
     for inv in datos.get("investigadores_tec", []):
         usuario = _obtener_o_crear_usuario_por_orcid(sesion, inv["nombre"], inv.get("orcid", ""), inv.get("instancia", ""))
         if not usuario: continue
+        
         rol_equipo = _lookup_rol_equipo(sesion, inv.get("rol", ""))
+        
+        # Sumar horas de todos los tipos para este investigador
+        total_horas = 0.0
+        tipo_hora_principal_id = None
+        
         for th in inv.get("horas", []):
             tipo_hora = _lookup_tipo_hora(sesion, th["tipo_hora"])
-            if not tipo_hora: continue
-            sesion.add(IntegrantesEquipoPropuesta(propuestaId=propuesta_id, usuarioId=usuario.usuarioId, tipoHoraId=tipo_hora.tipoHoraId, horasSemanales=th["horas"], rolEquipoId=rol_equipo.rolEquipoId if rol_equipo else None, orcid=inv.get("orcid", ""), creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
+            if tipo_hora:
+                total_horas += float(th["horas"])
+                if tipo_hora_principal_id is None:
+                    tipo_hora_principal_id = tipo_hora.tipoHoraId
+        
+        if not tipo_hora_principal_id: continue
 
-    # 6. COLABORADORES_EXTERNOS
+        # BUSCAR si el usuario ya está asignado a esta propuesta
+        integrante = sesion.query(IntegrantesEquipoPropuesta).filter(
+            IntegrantesEquipoPropuesta.propuestaId == propuesta_id,
+            IntegrantesEquipoPropuesta.usuarioId == usuario.usuarioId
+        ).first()
+
+        if integrante:
+            # ✅ UPDATE
+            integrante.tipoHoraId = tipo_hora_principal_id
+            integrante.horasSemanales = total_horas
+            integrante.rolEquipoId = rol_equipo.rolEquipoId if rol_equipo else integrante.rolEquipoId
+            integrante.orcid = inv.get("orcid", "") or integrante.orcid
+            integrante.usuarioAuditoriaId = usuario_actual.usuarioId
+            integrante.ultimaAuditoria = ahora
+        else:
+            # ✅ INSERT
+            sesion.add(IntegrantesEquipoPropuesta(
+                propuestaId=propuesta_id,
+                usuarioId=usuario.usuarioId,
+                tipoHoraId=tipo_hora_principal_id,
+                horasSemanales=total_horas,
+                rolEquipoId=rol_equipo.rolEquipoId if rol_equipo else None,
+                orcid=inv.get("orcid", ""),
+                creadoEn=ahora,
+                usuarioAuditoriaId=usuario_actual.usuarioId,
+                ultimaAuditoria=ahora,
+            ))
+
+    # 6. COLABORADORES_EXTERNOS (Recreación segura)
     for col in datos.get("colaboradores_externos", []):
         sesion.add(ColaboradoresExternos(propuestaId=propuesta_id, nombreColaborador=col.get("nombre", ""), apellido1Colaborador=col.get("apellido1"), apellido2Colaborador=col.get("apellido2"), idOrcid=col.get("orcid"), institucionEmpresa=col.get("institucion", ""), creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
 
-    # 7. PRESUPUESTO_PROPUESTA
+    # 7. PRESUPUESTO_PROPUESTA (Recreación segura)
     rubro_operativo = _lookup_rubro(sesion, "operativo") or _lookup_rubro(sesion, "Presupuesto operativo")
     rubro_duradero = _lookup_rubro(sesion, "bienes duraderos") or _lookup_rubro(sesion, "duradero")
     for p in datos.get("presupuesto_anual", []):
@@ -225,7 +262,7 @@ def _persistir_datos_form04(sesion: Session, propuesta_id: int, datos: dict, usu
         if p.get("duradero", 0) > 0 and rubro_duradero:
             sesion.add(PresupuestoPropuesta(propuestaId=propuesta_id, rubroId=rubro_duradero.rubroId, montoSolicitado=p["duradero"], anioEjecucion=anio, esDuradero=True, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
 
-    # 8. FINANCIAMIENTO_EXTERNO
+    # 8. FINANCIAMIENTO_EXTERNO (Recreación segura)
     fa = datos.get("financiamiento_adicional", {})
     for cat_nombre, entry in [("externo", fa.get("externo", {})), ("contrapartida", fa.get("contrapartida", {})), ("cofinanciamiento", fa.get("cofinanciamiento", {}))]:
         if not entry: continue
@@ -237,11 +274,11 @@ def _persistir_datos_form04(sesion: Session, propuesta_id: int, datos: dict, usu
             anio_ejec = (propuesta.fechaInicio.year + idx - 1) if propuesta.fechaInicio else (2027 + idx - 1)
             sesion.add(FinanciamientoExterno(propuestaId=propuesta_id, tipoFinanciamientoId=tipo_fin.tipoFinanciamientoId, anio=anio_ejec, monto=monto, numeroOficio=entry.get("oficio"), creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
 
-    # 9. ASPECTOS_ETICOS
+    # 9. ASPECTOS_ETICOS (Recreación segura)
     ae = datos.get("aspectos_eticos", {})
     sesion.add(AspectosEticos(propuestaId=propuesta_id, involucraSeresHumanos=bool(ae.get("seres_humanos")), involucraBiodiversidad=bool(ae.get("biodiversidad")), involucraAnimales=bool(ae.get("animales")), involucraTerritoriosIndigenas=bool(ae.get("comunidades_indigenas")), justificacionExencion=ae.get("justificacion_exencion"), enteRegulatorioId=_lookup_ente_regulatorio(sesion, ae.get("ente_regulatorio", "")).enteRegulatorioId if _lookup_ente_regulatorio(sesion, ae.get("ente_regulatorio", "")) else None, estadoAvalId=_lookup_estado_aval(sesion, "Pendiente").estadoAvalId, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
 
-    # 10. PRODUCTOS_ACADEMICOS
+    # 10. PRODUCTOS_ACADEMICOS (Recreación segura)
     objs_db = sesion.query(ObjetivosEspecificos).filter(ObjetivosEspecificos.propuestaId == propuesta_id).all()
     def _resolver_objetivo_id(texto_oe: str) -> Optional[int]:
         if not texto_oe: return None
@@ -262,12 +299,12 @@ def _persistir_datos_form04(sesion: Session, propuesta_id: int, datos: dict, usu
         if tipo_prod:
             sesion.add(ProductosAcademicos(propuestaId=propuesta_id, tipoProductoAcademicoId=tipo_prod.tipoProductoAcademicoId, objetivoEspecificoId=_resolver_objetivo_id(activo.get("consecutivo", "")), descripcion=activo["tipo_activo"][:300], cantidadComprometida=1, esPropiedadIndustrial=True, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
 
-    # 11. DICTAMENES
+    # 11. DICTAMENES (Recreación segura)
     oficio_dict = s1.get("potencial_pi", {}).get("oficio_dictamen", "")
     if oficio_dict:
         sesion.add(Dictamenes(propuestaId=propuesta_id, numeroOficio=oficio_dict, fechaEmision=ahora, contenido=f"Dictamen del Centro de Vinculación: {oficio_dict}. Generado automáticamente desde el Form-04.", usuarioRemitenteId=usuario_actual.usuarioId, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora))
 
-    # 12. REFERENCIAS BIBLIOGRÁFICAS
+    # 12. REFERENCIAS BIBLIOGRÁFICAS (UPSERT por DOI/Nombre)
     for ref in datos.get("referencias", []):
         fuente = sesion.query(FuentesBibliograficas).filter(FuentesBibliograficas.doi == ref.get("doi")).first() if ref.get("doi") else None
         if not fuente:
@@ -289,7 +326,7 @@ def _persistir_datos_form04(sesion: Session, propuesta_id: int, datos: dict, usu
 
 
 # ============================================================================
-# ENDPOINT PRINCIPAL
+# ENDPOINT PRINCIPAL CON MANEJO DE TRANSACCIONES SEGURO
 # ============================================================================
 
 @router.post("/{propuesta_id}/importar-form04")
@@ -315,7 +352,12 @@ async def importar_form04(
         s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=ruta_s3, Body=contenido, ContentType=archivo.content_type or "application/octet-stream")
 
         # 2. Registrar en PropuestaDocumentos
-        documento_existente = sesion.query(PropuestaDocumentos).filter(PropuestaDocumentos.propuestaId == propuesta_id, PropuestaDocumentos.tipoDocumentoId == 1, PropuestaDocumentos.activo == True).first()
+        documento_existente = sesion.query(PropuestaDocumentos).filter(
+            PropuestaDocumentos.propuestaId == propuesta_id, 
+            PropuestaDocumentos.tipoDocumentoId == 1, 
+            PropuestaDocumentos.activo == True
+        ).first()
+        
         if documento_existente:
             documento_existente.rutaArchivo = ruta_s3
             documento_existente.nombreArchivo = archivo.filename
@@ -327,8 +369,23 @@ async def importar_form04(
             documento_existente.ultimaAuditoria = datetime.now(timezone.utc)
             documento_a_retornar = documento_existente
         else:
-            documento_a_retornar = PropuestaDocumentos(propuestaId=propuesta_id, tipoDocumentoId=1, rutaArchivo=ruta_s3, nombreArchivo=archivo.filename, tamanioBytes=tamanio_bytes, checksum=checksum, usuarioCargaId=usuario_actual.usuarioId, activo=True, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=datetime.now(timezone.utc))
+            documento_a_retornar = PropuestaDocumentos(
+                propuestaId=propuesta_id,
+                tipoDocumentoId=1,
+                rutaArchivo=ruta_s3,
+                nombreArchivo=archivo.filename,
+                tamanioBytes=tamanio_bytes,
+                checksum=checksum,
+                usuarioCargaId=usuario_actual.usuarioId,
+                activo=True,
+                usuarioAuditoriaId=usuario_actual.usuarioId,
+                ultimaAuditoria=datetime.now(timezone.utc),
+            )
             sesion.add(documento_a_retornar)
+
+        # ✅ FLUSH: Hace el INSERT/UPDATE en la BD y obtiene el ID, pero NO hace commit aún.
+        # Esto asegura que el objeto sea "persistent" en la sesión, evitando InvalidRequestError.
+        sesion.flush()
 
         # 3. Parsear y Persistir en TODAS las tablas
         parseo_ok = False
@@ -337,9 +394,12 @@ async def importar_form04(
             print("🔍 Parseando Form-04...")
             datos = parsear_form04_docx(contenido)
             _persistir_datos_form04(sesion, propuesta_id, datos, usuario_actual)
+            
+            # Si todo sale bien, hacemos commit de TODO (documento + datos parseados)
             sesion.commit()
             parseo_ok = True
             print("✅ Form-04 parseado y persistido en todas las tablas.")
+            
         except HTTPException:
             sesion.rollback()
             raise
@@ -347,16 +407,21 @@ async def importar_form04(
             sesion.rollback()
             parseo_errores.append(str(e))
             print(f"❌ Error al persistir Form-04: {e}")
-            # Hacemos commit del documento en S3/PropuestaDocumentos aunque el parseo falle
+            
+            # ✅ RECUPERACIÓN: Como el rollback eliminó todo, volvemos a agregar el documento
+            # y lo guardamos solo él, para no perder el archivo subido a S3.
+            print("💾 Guardando solo el registro del archivo en la BD (sin los datos parseados)...")
+            sesion.add(documento_a_retornar)
             sesion.commit()
 
+        # ✅ Ahora el objeto es definitivamente persistente y seguro de refrescar.
         sesion.refresh(documento_a_retornar)
 
         mensaje_base = "Form-04 importado y guardado exitosamente en la base de datos y S3"
         if parseo_ok:
-            mensaje_base += " (Datos extraídos y persistidos en TODAS las tablas del esquema SGPI)."
+            mensaje_base += " (Datos extraídos y persistidos con lógica UPSERT en todas las tablas del esquema SGPI)."
         if parseo_errores:
-            mensaje_base += f" Errores de parseo: {parseo_errores}"
+            mensaje_base += f" ⚠️ El archivo se guardó, pero hubo errores al extraer algunos datos: {parseo_errores}"
 
         return {
             "mensaje": mensaje_base,
