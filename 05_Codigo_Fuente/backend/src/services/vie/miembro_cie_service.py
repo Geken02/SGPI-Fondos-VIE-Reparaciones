@@ -201,6 +201,7 @@ def obtener_expediente_cie(db: Session, codigo: str) -> dict | None:
         "contenidoPropuesta": ({
             "resumen": contenido.resumen,
             "palabrasClave": contenido.palabrasClave,
+            "keywords": contenido.keywords,
             "abstract": contenido.abstract,
             "problemaInvestigacion": contenido.problemaInvestigacion,
             "objetivoGeneral": contenido.objetivoGeneral,

@@ -270,3 +270,10 @@ CREATE TABLE IF NOT EXISTS asignacionesconsejo (
         UNIQUE (propuestaid, usuarioid)
 );
 
+-- =============================================================================
+-- MIGRACIÓN 7: Keywords (inglés) en PropuestaContenido
+-- Agrega la columna equivalente a palabrasClave para el Form-04 (sección resumen).
+-- =============================================================================
+ALTER TABLE propuestacontenido
+ADD COLUMN IF NOT EXISTS keywords VARCHAR(255) NULL;
+

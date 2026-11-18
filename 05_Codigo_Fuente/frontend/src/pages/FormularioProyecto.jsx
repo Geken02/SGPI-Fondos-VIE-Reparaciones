@@ -459,6 +459,7 @@ const FormularioProyecto = () => {
           if (prop.contenido) {
             if (prop.contenido.resumen) setResumen(prop.contenido.resumen);
             if (prop.contenido.palabrasClave) setPalabrasClave(prop.contenido.palabrasClave);
+            if (prop.contenido.keywords) setKeywords(prop.contenido.keywords);
             if (prop.contenido.abstract) setAbstract(prop.contenido.abstract);
             if (prop.contenido.problemaInvestigacion) setProblemaInvestigacion(prop.contenido.problemaInvestigacion);
             if (prop.contenido.objetivoGeneral) setObjetivoGeneral(prop.contenido.objetivoGeneral);
@@ -796,6 +797,7 @@ const FormularioProyecto = () => {
       await propuestaService.guardarContenido(idParaGuardar, {
         resumen,
         palabrasClave,
+        keywords,
         abstract,
         problemaInvestigacion,
         objetivoGeneral,
@@ -945,7 +947,7 @@ const FormularioProyecto = () => {
 
     const firma = JSON.stringify({
       nombreProyecto, fechaInicio, fechaFin, trlSeleccionado,
-      resumen, palabrasClave, abstract, problemaInvestigacion,
+      resumen, palabrasClave, keywords, abstract, problemaInvestigacion,
       objetivoGeneral, objetivosEspecificos, estadoArte, metodologia,
       divulgacion, hojaRuta, otrasFuentes, vinculacionTecnica,
       requiereInstrumento, basePosgrado, infoConfidencial, potencialPI,
@@ -973,7 +975,7 @@ const FormularioProyecto = () => {
     return () => { if (autosaveForm04Timer.current) clearTimeout(autosaveForm04Timer.current); };
   }, [
     cargaCompletada, propuestaIdUrl, nombreProyecto, fechaInicio, fechaFin,
-    trlSeleccionado, resumen, palabrasClave, abstract, problemaInvestigacion,
+    trlSeleccionado, resumen, palabrasClave, keywords, abstract, problemaInvestigacion,
     objetivoGeneral, objetivosEspecificos, estadoArte, metodologia, divulgacion,
     hojaRuta, otrasFuentes, vinculacionTecnica, requiereInstrumento,
     basePosgrado, infoConfidencial, potencialPI, poseeInnovacion,

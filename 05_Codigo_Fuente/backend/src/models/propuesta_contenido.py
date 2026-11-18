@@ -9,6 +9,7 @@ class PropuestaContenido(Base):
     propuestaId = Column("propuestaid", Integer, ForeignKey("propuestas.propuestaid"), primary_key=True, unique=True)
     resumen = Column("resumen", String(4000), nullable=False)
     palabrasClave = Column("palabrasclave", String(255), nullable=True)
+    keywords = Column("keywords", String(255), nullable=True)
     abstract = Column("abstract", String(4000), nullable=True)
     problemaInvestigacion = Column("problemainvestigacion", String(4000), nullable=True)
     objetivoGeneral = Column("objetivogeneral", String(2000), nullable=True)
@@ -40,6 +41,12 @@ class PropuestaContenido(Base):
 
     def setPalabrasClave(self, valor):
         self.palabrasClave = valor
+
+    def getKeywords(self):
+        return self.keywords
+
+    def setKeywords(self, valor):
+        self.keywords = valor
 
     def getAbstract(self):
         return self.abstract
