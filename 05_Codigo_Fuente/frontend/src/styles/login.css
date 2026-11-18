@@ -564,3 +564,62 @@
   -webkit-text-fill-color: #FFFFFF !important;
   caret-color: #FFFF00 !important;
 }
+
+/* ==========================================================================
+   FIX ICONO QUE DESAPARECE EN HOVER/FOCUS/AUTOFILL
+   ========================================================================== */
+
+/* 1. El icono SIEMPRE por encima, con fondo transparente forzado */
+.input-wrapper .input-icon {
+  z-index: 100 !important;
+  background: transparent !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* 2. El input NO puede tapar el icono: recortar su fondo solo hasta el padding */
+.form-input {
+  background-clip: padding-box !important;
+  z-index: 1 !important;
+}
+
+/* 3. Hover del input: NO cambiar fondo, solo borde */
+.form-input:hover {
+  border-color: #94a3b8 !important;
+  background-color: #ffffff !important;
+}
+
+/* 4. Focus del input: ID */
+.form-input:focus {
+  border-color: #002855 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(0, 40, 85, 0.1) !important;
+}
+
+/* 5. Autofill de Chrome: el culpable real. Forzar blanco y no tapar el icono */
+.form-input:-webkit-autofill,
+.form-input:-webkit-autofill:hover,
+.form-input:-webkit-autofill:focus,
+.form-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #1a202c !important;
+  caret-color: #1a202c !important;
+  background-color: #ffffff !important;
+  background-clip: padding-box !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+}
+
+/* 6. Alto contraste: autofill negro, icono amarillo, nada se tapa */
+.high-contrast-mode .form-input:-webkit-autofill,
+.high-contrast-mode .form-input:-webkit-autofill:hover,
+.high-contrast-mode .form-input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #000000 inset !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+  caret-color: #FFFF00 !important;
+  background-color: #000000 !important;
+}
+
+.high-contrast-mode .input-wrapper .input-icon {
+  color: #FFFF00 !important;
+  z-index: 100 !important;
+}
