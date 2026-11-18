@@ -369,7 +369,12 @@ export default function AdminPanel() {
               ))}
             </div>
           )}
-          <Link to="/dashboard/admin/bitacora" className="view-all" tabIndex={0} aria-label="Ver toda la actividad del sistema en la bitácora">
+                    <Link 
+            to="/dashboard/admin/auditoria" 
+            className="view-all" 
+            tabIndex={0} 
+            aria-label="Ver toda la actividad del sistema en la bitácora de auditoría"
+          >
             Ver toda la actividad →
           </Link>
         </section>

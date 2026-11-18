@@ -52,4 +52,8 @@ cambiarEstadoUsuario: (id, data) => api.put(`/api/admin/usuarios/${id}/estado`, 
   
   obtenerDistribucionEscuelas: () => 
     api.get('/api/admin/dashboard/estadisticas/escuelas/distribucion'),
+
+  listarActividad: (params = {}) => api.get('/api/admin/actividad', { params }),
+
+obtenerDetalleLog: (logId) => api.get(`/api/admin/actividad/${logId}`),
 };

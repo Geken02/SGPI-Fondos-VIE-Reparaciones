@@ -23,6 +23,7 @@ import Catalogos from './pages/admin/Catalogos';
 import Usuarios from './pages/admin/Usuarios';
 import Convocatoria from './pages/admin/Convocatoria';
 import AsignacionGestoras from './pages/admin/AsignacionGestoras';
+import Auditoria from './pages/Auditoria';
 
 // 4. COMITÉ TÉCNICO
 import ComiteTecnicoLayout from './components/ComiteTecnicoLayout';
@@ -273,6 +274,7 @@ const App = () => {
             <Route path="admin/usuarios" element={<Usuarios />} />
             <Route path="admin/convocatoria" element={<Convocatoria />} />
             <Route path="admin/gestoras" element={<AsignacionGestoras />} />
+            <Route path="/admin/auditoria" element={<Auditoria />} />
           </Route>
 
           {/* Accesos directos a Formularios oficiales (nivel raíz) */}
