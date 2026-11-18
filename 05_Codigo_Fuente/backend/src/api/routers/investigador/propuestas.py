@@ -4,6 +4,7 @@ from typing import List
 
 from src.database import get_db
 from src.models.usuarios import Usuario
+from src.models.roles import RolesSistema, UsuarioRol
 from src.utils.dependencias import obtener_usuario_activo, requerir_rol
 from src.api.schemas.investigador.propuestas import (
     PropuestaCreate,
@@ -141,7 +142,40 @@ def obtener_catalogos_formulario(
         EstadosPropuesta.activo == True
     ).order_by(EstadosPropuesta.orden).all()
     niveles_trl = db.query(NivelesTrl).filter(NivelesTrl.activo == True).order_by(NivelesTrl.nivelTrlId).all()
-    investigadores = db.query(Usuario).filter(Usuario.activo == True).order_by(Usuario.nombreUsuario).all()
+
+    # Equipo de investigación: únicamente usuarios con rol InvestigadorCoordinador (2)
+    # o InvestigadorColaborador (3); se excluye cualquier otro rol del sistema.
+    ROLES_EQUIPO_INVESTIGADOR = ("InvestigadorCoordinador", "InvestigadorColaborador")
+    roles_investigador_ids = [
+        r.rolId
+        for r in db.query(RolesSistema)
+        .filter(RolesSistema.nombreRol.in_(list(ROLES_EQUIPO_INVESTIGADOR)))
+        .all()
+    ]
+    # Mapa usuarioId -> nombres de rol, para exponerlo y reforzar el filtro en el frontend.
+    roles_por_usuario: dict[int, list[str]] = {}
+    for usuario_id_rol, nombre_rol in (
+        db.query(UsuarioRol.usuarioId, RolesSistema.nombreRol)
+        .join(RolesSistema, RolesSistema.rolId == UsuarioRol.rolId)
+        .filter(UsuarioRol.activo == True)
+        .all()
+    ):
+        roles_por_usuario.setdefault(usuario_id_rol, []).append(nombre_rol)
+
+    investigadores = (
+        db.query(Usuario)
+        .join(UsuarioRol, UsuarioRol.usuarioId == Usuario.usuarioId)
+        .filter(
+            Usuario.activo == True,
+            UsuarioRol.activo == True,
+            UsuarioRol.rolId.in_(roles_investigador_ids),
+        )
+        .distinct()
+        .order_by(Usuario.nombreUsuario)
+        .all()
+        if roles_investigador_ids
+        else []
+    )
     roles_equipo = db.query(RolesEquipo).filter(RolesEquipo.activo == True).all()
     # Catálogos auxiliares (llaves foráneas de la sección 3 del esquema)
     rubros = db.query(RubrosPropuesta).filter(RubrosPropuesta.activo == True).all()
@@ -223,7 +257,8 @@ def obtener_catalogos_formulario(
                 "apellido1": u.apellido1Usuario,
                 "correo": u.correoInstitucional,
                 "escuelaId": u.escuelaId,
-                "escuela": u.escuela.nombreEscuela if u.escuela else "TEC"
+                "escuela": u.escuela.nombreEscuela if u.escuela else "TEC",
+                "roles": roles_por_usuario.get(u.usuarioId, [])
             } for u in investigadores
         ],
         "rolesEquipo": [
