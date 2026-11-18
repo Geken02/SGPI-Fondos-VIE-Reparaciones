@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { cieService } from '../../services/cieService';
+import VisorDocumentoModal from '../../components/VisorDocumentoModal';
 import { formatearFecha, formatearMonto } from '../../components/cie/cieConstantes';
 import { useCarga } from '../../components/cie/useCarga';
 import {
@@ -17,6 +18,7 @@ const ExpedienteConsolidado = () => {
   const { codigo } = useParams();
   const navigate = useNavigate();
   const [tab, setTab] = useState(TABS[0]);
+  const [documentoAbierto, setDocumentoAbierto] = useState(null);
   const { datos: e, cargando, error, recargar } = useCarga(() => cieService.obtenerExpediente(codigo), [codigo]);
 
   useEffect(() => { document.title = 'Expediente consolidado - Miembro del CIE'; }, []);
@@ -114,10 +116,11 @@ const ExpedienteConsolidado = () => {
         {tab === 'Documentos' && ((e.documentos ?? []).length === 0 ? <Vacio texto="El expediente no tiene documentos cargados." /> : (
           <div className="gv-tabla-scroll">
             <table className="gv-tabla">
-              <thead><tr><th>Archivo</th><th>Tipo</th><th>Fecha de carga</th></tr></thead>
+              <thead><tr><th>Archivo</th><th>Tipo</th><th>Fecha de carga</th><th>Acción</th></tr></thead>
               <tbody>
                 {(e.documentos ?? []).map((d) => (
-                  <tr key={d.documentoId}><td>{d.nombreArchivo}</td><td>{d.tipo}</td><td>{formatearFecha(d.fechaCarga)}</td></tr>
+                  <tr key={d.documentoId}><td>{d.nombreArchivo}</td><td>{d.tipo}</td><td>{formatearFecha(d.fechaCarga)}</td>
+                    <td>{d.documentoId && <button type="button" className="gv-btn-ver" onClick={() => setDocumentoAbierto({ id: d.documentoId, nombre: d.nombreArchivo })}>Ver documento</button>}</td></tr>
                 ))}
               </tbody>
             </table>
@@ -170,6 +173,9 @@ const ExpedienteConsolidado = () => {
           </button>
         )}
       </div>
+      {documentoAbierto && (
+        <VisorDocumentoModal documentoId={documentoAbierto.id} nombreArchivo={documentoAbierto.nombre} onClose={() => setDocumentoAbierto(null)} />
+      )}
     </>
   );
 };

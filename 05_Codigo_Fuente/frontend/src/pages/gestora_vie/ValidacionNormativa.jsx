@@ -5,8 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Icono from '../../components/gestora/Iconos';
-import UniversalViewer from '../../components/UniversalViewer';
-import api from '../../services/api';
+import VisorDocumentoModal from '../../components/VisorDocumentoModal';
 import ModalSolicitarSubsanacion from '../../components/gestora/ModalSolicitarSubsanacion';
 import { ESTADOS } from '../../data/estadosExpediente';
 import {
@@ -586,9 +585,8 @@ const DetalleValidacion = ({ codigo, lista }) => {
                     <span className={`gv-badge ${est.clase}`}>{est.etiqueta}</span>
                     {doc.documentoId && (
                       <button type="button" className="gv-btn-ver" onClick={() => setDocumentoAbierto({
-                        titulo: doc.archivo || doc.nombre,
-                        url: `${api.defaults.baseURL}/api/comite-tecnico/documentos/${doc.documentoId}/ver`,
-                        tipo: (doc.archivo || '').split('.').pop()?.toLowerCase(),
+                        id: doc.documentoId,
+                        nombre: doc.archivo || doc.nombre,
                       })}>Ver</button>
                     )}
                   </li>
@@ -617,12 +615,7 @@ const DetalleValidacion = ({ codigo, lista }) => {
       </div>
 
       {documentoAbierto && (
-        <div className="gv-visor-overlay" role="dialog" aria-modal="true" aria-label={`Visor: ${documentoAbierto.titulo}`} onClick={() => setDocumentoAbierto(null)}>
-          <div className="gv-visor-modal" onClick={(e) => e.stopPropagation()}>
-            <header><strong>{documentoAbierto.titulo}</strong><button type="button" onClick={() => setDocumentoAbierto(null)} aria-label="Cerrar visor">×</button></header>
-            <div className="gv-visor-contenido"><UniversalViewer url={documentoAbierto.url} tipoArchivo={documentoAbierto.tipo} /></div>
-          </div>
-        </div>
+        <VisorDocumentoModal documentoId={documentoAbierto.id} nombreArchivo={documentoAbierto.nombre} onClose={() => setDocumentoAbierto(null)} />
       )}
 
       {modalAbierto && (

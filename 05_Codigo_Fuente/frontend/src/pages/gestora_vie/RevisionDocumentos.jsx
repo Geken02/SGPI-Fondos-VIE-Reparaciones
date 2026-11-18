@@ -1,4 +1,5 @@
 import SeleccionExpediente from '../../components/gestora/SeleccionExpediente';
+import VisorDocumentoModal from '../../components/VisorDocumentoModal';
 // src/pages/gestora_vie/RevisionDocumentos.jsx
 // Ventana: Revisión de documentos - Gestora VIE (paso 2 del proceso)
 // Ruta: /gestora/expedientes/:expedienteId/documentos
@@ -46,6 +47,7 @@ const DetalleDocumentos = ({ codigo }) => {
   const [aviso, setAviso] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [enviandoCIE, setEnviandoCIE] = useState(false);
+  const [documentoAbierto, setDocumentoAbierto] = useState(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -246,6 +248,11 @@ const DetalleDocumentos = ({ codigo }) => {
                     <td className="gv-doc-archivo">
                       <span>{doc.archivo}</span>
                       {doc.cargadoPor && <span className="gv-doc-fecha">por {doc.cargadoPor}</span>}
+                      {doc.documentoId && (
+                        <button type="button" className="gv-btn-ver" onClick={() => setDocumentoAbierto({ id: doc.documentoId, nombre: doc.archivo || doc.nombre })}>
+                          Ver documento
+                        </button>
+                      )}
                     </td>
                     <td>{formatearFecha(doc.fecha, { punto: false })}</td>
                     <td>
@@ -303,6 +310,9 @@ const DetalleDocumentos = ({ codigo }) => {
         </p>
       </section>
 
+      {documentoAbierto && (
+        <VisorDocumentoModal documentoId={documentoAbierto.id} nombreArchivo={documentoAbierto.nombre} onClose={() => setDocumentoAbierto(null)} />
+      )}
       {modalAbierto && (
         <ModalSolicitarSubsanacion
           codigo={expediente.id}

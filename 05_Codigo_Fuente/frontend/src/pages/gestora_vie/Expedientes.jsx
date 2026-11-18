@@ -186,9 +186,6 @@ const Expedientes = () => {
                   <td>
                     <div className="gv-acciones-fila">
                       <button type="button" className="gv-btn-ver" aria-label={`Ver expediente ${exp.id}: ${exp.titulo}`} onClick={() => verExpediente(exp.id)}>Ver</button>
-                      <button type="button" className="gv-btn-kebab" aria-label={`Más acciones para expediente ${exp.id}`}>
-                        <Icono nombre="moreVertical" tamano={16} aria-hidden="true" />
-                      </button>
                     </div>
                   </td>
                 </tr>
