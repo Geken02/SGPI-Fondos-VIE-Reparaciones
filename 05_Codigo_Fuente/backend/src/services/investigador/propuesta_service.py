@@ -66,6 +66,12 @@ from src.api.schemas.investigador.propuestas import (
 )
 
 
+def _nombre_modalidad(propuesta: Propuesta) -> Optional[str]:
+    """Devuelve el nombre legible de la modalidad (Modalidades.nombreModalidad) o None."""
+    modalidad = propuesta.getModalidad()
+    return modalidad.nombreModalidad if modalidad else None
+
+
 def obtener_propuesta_con_acceso(
     db: Session,
     propuesta_id: int,
@@ -175,10 +181,14 @@ def crear_propuesta(
             detail=f"La convocatoria '{convocatoria.nombreConvocatoria}' se encuentra cerrada (Fecha de cierre: {convocatoria.fechaCierre}). No se pueden formular nuevas propuestas para esta convocatoria."
         )
 
-    esc_id = datos.escuelaId or usuario.escuelaId() or 1
+    # La escuela es obligatoria en la creación: si el id no existe, se rechaza la
+    # creación en lugar de guardar silenciosamente una escuela inexistente.
+    esc_id = datos.escuelaId or usuario.escuelaId
     if not db.query(Escuela).filter(Escuela.escuelaId == esc_id).first():
-        primera_esc = db.query(Escuela).filter(Escuela.activo == True).first()
-        esc_id = primera_esc.escuelaId if primera_esc else 1
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"La escuela indicada (ID {esc_id}) no existe. Seleccione una escuela válida."
+        )
 
     nueva_propuesta = Propuesta()
     nueva_propuesta.setCodigoPropuesta(codigo)
@@ -319,6 +329,8 @@ def listar_propuestas_investigador(
             convocatoriaId=p.getConvocatoriaId(),
             escuelaId=p.getEscuelaId(),
             nombreEscuela=escuela.nombreEscuela if escuela else None,
+            modalidadId=p.getModalidadId(),
+            modalidad=_nombre_modalidad(p),
             montoTotal=p.getMontoTotal(),
             nivelTrlActual=p.getNivelTrlActual(),
             nivelTrlEsperado=p.getNivelTrlEsperado(),
@@ -501,6 +513,7 @@ def obtener_propuesta_detalle(
     contenido_resp = ContenidoForm04Response(
         resumen=contenido.getResumen() if contenido else None,
         palabrasClave=contenido.getPalabrasClave() if contenido else None,
+        keywords=contenido.getKeywords() if contenido else None,
         abstract=contenido.getAbstract() if contenido else None,
         problemaInvestigacion=contenido.getProblemaInvestigacion() if contenido else None,
         objetivoGeneral=contenido.getObjetivoGeneral() if contenido else None,
@@ -535,8 +548,10 @@ def obtener_propuesta_detalle(
         etapaId=propuesta.getEtapaId(),
         convocatoriaId=propuesta.getConvocatoriaId(),
         escuelaId=propuesta.getEscuelaId(),
+        nombreEscuela=escuela.nombreEscuela if escuela else None,
         lineaInvestigacionId=propuesta.getLineaInvestigacionId(),
         modalidadId=propuesta.getModalidadId(),
+        modalidad=_nombre_modalidad(propuesta),
         montoTotal=propuesta.getMontoTotal(),
         nivelTrlActual=propuesta.getNivelTrlActual(),
         nivelTrlEsperado=propuesta.getNivelTrlEsperado(),
@@ -548,6 +563,7 @@ def obtener_propuesta_detalle(
         esPropietario=(propuesta.getInvestigadorCoordId() == usuario_id),
         resumen=contenido.getResumen() if contenido else None,
         palabrasClave=contenido.getPalabrasClave() if contenido else None,
+        keywords=contenido.getKeywords() if contenido else None,
         abstract=contenido.getAbstract() if contenido else None,
         objetivoGeneral=contenido.getObjetivoGeneral() if contenido else None,
         metodologia=contenido.getMetodologia() if contenido else None,
@@ -630,6 +646,8 @@ def actualizar_contenido_form04(
         contenido.setResumen(datos.resumen)
     if datos.palabrasClave is not None:
         contenido.setPalabrasClave(datos.palabrasClave)
+    if datos.keywords is not None:
+        contenido.setKeywords(datos.keywords)
     if datos.abstract is not None:
         contenido.setAbstract(datos.abstract)
     if datos.problemaInvestigacion is not None:

@@ -61,7 +61,7 @@ def bandeja_completitud(
     usuario: Usuario = Depends(obtener_usuario_actual)
 ):
     try:
-        codigos_estado_comite = ["ENVIADA", "EN_REVISION", "SUBSANACION", "EN_COMITE"]
+        codigos_estado_comite = ["EN_VIE", "EN_REVISION", "SUBSANACION", "EN_COMITE"]
         estados_comite = db.query(EstadosPropuesta).filter(
             EstadosPropuesta.codigoEstadoPropuesta.in_(codigos_estado_comite)
         ).all()
@@ -214,7 +214,7 @@ def propuestas_asignadas(
         
         # 2. Filtrar propuestas
         if es_gestor:
-            codigos_estado_comite = ["ENVIADA", "EN_REVISION", "SUBSANACION", "EN_COMITE", "EN_EVALUACION", "ASIGNADA"]
+            codigos_estado_comite = ["EN_VIE", "EN_REVISION", "SUBSANACION", "EN_COMITE", "EN_EVALUACION", "ASIGNADA"]
             estados_comite = db.query(EstadosPropuesta).filter(
                 EstadosPropuesta.codigoEstadoPropuesta.in_(codigos_estado_comite)
             ).all()

@@ -40,6 +40,7 @@ class ContenidoForm04Update(BaseModel):
     """Llenado del contenido de las secciones del Form-04."""
     resumen: Optional[str] = Field(None, max_length=4000, description="Resumen ejecutivo")
     palabrasClave: Optional[str] = Field(None, max_length=255, description="Palabras clave separadas por coma")
+    keywords: Optional[str] = Field(None, max_length=255, description="Keywords en inglés separadas por coma")
     abstract: Optional[str] = Field(None, max_length=4000, description="Resumen en idioma inglés")
     problemaInvestigacion: Optional[str] = Field(None, max_length=4000, description="Justificación y planteamiento")
     objetivoGeneral: Optional[str] = Field(None, max_length=2000, description="Objetivo general del proyecto")
@@ -434,6 +435,8 @@ class PropuestaResumenResponse(BaseModel):
     convocatoriaId: int
     escuelaId: int
     nombreEscuela: Optional[str] = None
+    modalidadId: Optional[int] = None
+    modalidad: Optional[str] = None
     montoTotal: Decimal
     nivelTrlActual: Optional[int] = None
     nivelTrlEsperado: Optional[int] = None
@@ -453,6 +456,7 @@ class PropuestaResumenResponse(BaseModel):
 class ContenidoForm04Response(BaseModel):
     resumen: Optional[str] = None
     palabrasClave: Optional[str] = None
+    keywords: Optional[str] = None
     abstract: Optional[str] = None
     problemaInvestigacion: Optional[str] = None
     objetivoGeneral: Optional[str] = None
@@ -491,8 +495,10 @@ class PropuestaDetalleResponse(BaseModel):
     etapaId: int
     convocatoriaId: int
     escuelaId: int
+    nombreEscuela: Optional[str] = None
     lineaInvestigacionId: Optional[int] = None
     modalidadId: Optional[int] = None
+    modalidad: Optional[str] = None
     montoTotal: Decimal
     nivelTrlActual: Optional[int] = None
     nivelTrlEsperado: Optional[int] = None
@@ -506,6 +512,7 @@ class PropuestaDetalleResponse(BaseModel):
     # Sub-entidades
     resumen: Optional[str] = None
     palabrasClave: Optional[str] = None
+    keywords: Optional[str] = None
     abstract: Optional[str] = None
     objetivoGeneral: Optional[str] = None
     metodologia: Optional[str] = None

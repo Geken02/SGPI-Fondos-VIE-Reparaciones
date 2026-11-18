@@ -5,6 +5,7 @@ from typing import List
 from src.database import get_db
 from src.models.usuarios import Usuario
 from src.models.roles import RolesSistema, UsuarioRol
+from src.models.escuelas import Escuela
 from src.utils.dependencias import obtener_usuario_activo, requerir_rol
 from src.api.schemas.investigador.propuestas import (
     PropuestaCreate,
@@ -94,6 +95,8 @@ def registrar_propuesta(
     usuario_actual: Usuario = Depends(obtener_usuario_activo)
 ):
     propuesta = crear_propuesta(db=db, usuario=usuario_actual, datos=datos)
+    escuela = db.query(Escuela).filter(Escuela.escuelaId == propuesta.getEscuelaId()).first()
+    modalidad = propuesta.getModalidad()
     return PropuestaResumenResponse(
         propuestaId=propuesta.getPropuestaId(),
         codigoPropuesta=propuesta.getCodigoPropuesta(),
@@ -103,11 +106,16 @@ def registrar_propuesta(
         etapaId=propuesta.getEtapaId(),
         convocatoriaId=propuesta.getConvocatoriaId(),
         escuelaId=propuesta.getEscuelaId(),
+        nombreEscuela=escuela.nombreEscuela if escuela else None,
+        modalidadId=propuesta.getModalidadId(),
+        modalidad=modalidad.nombreModalidad if modalidad else None,
         montoTotal=propuesta.getMontoTotal(),
         nivelTrlActual=propuesta.getNivelTrlActual(),
         nivelTrlEsperado=propuesta.getNivelTrlEsperado(),
         fechaCreacion=propuesta.getFechaCreacion(),
-        fechaEnvio=propuesta.getFechaEnvio()
+        fechaEnvio=propuesta.getFechaEnvio(),
+        investigadorCoordId=propuesta.getInvestigadorCoordId(),
+        esPropietario=(propuesta.getInvestigadorCoordId() == usuario_actual.usuarioId),
     )
 
 
@@ -116,6 +124,7 @@ def registrar_propuesta(
     summary="Obtener catálogos de convocatorias y escuelas para creación de propuestas"
 )
 def obtener_catalogos_formulario(
+    vigentes: bool = False,
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(obtener_usuario_activo)
 ):
@@ -135,7 +144,15 @@ def obtener_catalogos_formulario(
     from datetime import date
 
     hoy = date.today()
-    convocatorias = db.query(Convocatorias).order_by(Convocatorias.fechaCierre.desc()).all()
+    # Con vigentes=True solo se devuelven convocatorias activas cuya fecha de
+    # cierre (fechaCierre) sea hoy o posterior; se excluyen las ya cerradas por fecha.
+    consulta_convocatorias = db.query(Convocatorias)
+    if vigentes:
+        consulta_convocatorias = consulta_convocatorias.filter(
+            Convocatorias.activo == True,
+            Convocatorias.fechaCierre >= hoy
+        )
+    convocatorias = consulta_convocatorias.order_by(Convocatorias.fechaCierre.desc()).all()
     escuelas = db.query(Escuela).filter(Escuela.activo == True).order_by(Escuela.nombreEscuela).all()
     campus = db.query(Campus).filter(Campus.activo == True).order_by(Campus.nombreCampus).all()
     estados_propuesta = db.query(EstadosPropuesta).filter(
@@ -421,6 +438,8 @@ def actualizar_propuesta(
         usuario_id=usuario_actual.usuarioId,
         datos=datos
     )
+    escuela = db.query(Escuela).filter(Escuela.escuelaId == propuesta.getEscuelaId()).first()
+    modalidad = propuesta.getModalidad()
     return PropuestaResumenResponse(
         propuestaId=propuesta.getPropuestaId(),
         codigoPropuesta=propuesta.getCodigoPropuesta(),
@@ -430,11 +449,16 @@ def actualizar_propuesta(
         etapaId=propuesta.getEtapaId(),
         convocatoriaId=propuesta.getConvocatoriaId(),
         escuelaId=propuesta.getEscuelaId(),
+        nombreEscuela=escuela.nombreEscuela if escuela else None,
+        modalidadId=propuesta.getModalidadId(),
+        modalidad=modalidad.nombreModalidad if modalidad else None,
         montoTotal=propuesta.getMontoTotal(),
         nivelTrlActual=propuesta.getNivelTrlActual(),
         nivelTrlEsperado=propuesta.getNivelTrlEsperado(),
         fechaCreacion=propuesta.getFechaCreacion(),
-        fechaEnvio=propuesta.getFechaEnvio()
+        fechaEnvio=propuesta.getFechaEnvio(),
+        investigadorCoordId=propuesta.getInvestigadorCoordId(),
+        esPropietario=(propuesta.getInvestigadorCoordId() == usuario_actual.usuarioId),
     )
 
 

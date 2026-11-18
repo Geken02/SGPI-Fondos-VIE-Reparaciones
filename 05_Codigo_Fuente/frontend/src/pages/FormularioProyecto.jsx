@@ -16,6 +16,37 @@ import {
   resolverRolEquipoId
 } from '../utils/planAccionUtils';
 
+// El catálogo de modalidades en BD usa nombres cortos ("Básica", "Aplicada",
+// "Desarrollo Tecnológico", "Fortalecimiento"), mientras que el Form-04 usa claves
+// institucionales. Estas utilidades normalizan y clasifican en ambos sentidos.
+const normalizarModalidad = (texto) =>
+  String(texto || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+// Devuelve la clave de modalidad del Form-04 a partir de un texto libre.
+const clasificarModalidad = (texto) => {
+  const t = normalizarModalidad(texto);
+  if (!t) return null;
+  if (t.includes('desarrollo')) return 'Desarrollo tecnológico';
+  const basica = t.includes('basica');
+  const aplicada = t.includes('aplicada');
+  if (basica && aplicada) return 'Investigación básica y aplicada';
+  if (basica) return 'Investigación básica';
+  if (aplicada) return 'Investigación aplicada';
+  return null;
+};
+
+// Resuelve el modalidadId del catálogo que corresponde a una clave del Form-04.
+const resolverModalidadId = (clave, modalidades) => {
+  const objetivo = clasificarModalidad(clave);
+  if (!objetivo || !Array.isArray(modalidades)) return null;
+  const encontrada = modalidades.find((m) => clasificarModalidad(m?.nombreModalidad) === objetivo);
+  return encontrada ? encontrada.modalidadId : null;
+};
+
 const FormularioProyecto = () => {
   const { usuario } = useAuth();
   const navigate = useNavigate();
@@ -83,7 +114,8 @@ const FormularioProyecto = () => {
     rubros: [],
     entidadesEmisoras: [],
     entesRegulatorios: [],
-    estadosAval: []
+    estadosAval: [],
+    modalidades: []
   });
   // Cartas de compromiso por colaborador externo: { [colId]: { nombre, tamano, subiendo, subido, error } }
   const [cartasCompromiso, setCartasCompromiso] = useState({});
@@ -108,6 +140,9 @@ const FormularioProyecto = () => {
   const [riesgosMitigacion, setRiesgosMitigacion] = useState([]);
   const isInitialMount = useRef(true);
   const lastSyncedActividades = useRef('');
+  // Catálogo de modalidades en un ref para resolver modalidadId → nombre al autocompletar,
+  // sin provocar re-ejecuciones del efecto de carga.
+  const modalidadesRef = useRef([]);
 
   // Persistencia en backend: serializa escrituras (evita concurrencia) y
   // reintenta una vez si llega un cambio mientras hay un guardado en curso.
@@ -260,6 +295,8 @@ const FormularioProyecto = () => {
           setRolesEquipoDisponibles(cat.rolesEquipo);
         }
         // Catálogos auxiliares usados como llaves foráneas al persistir (sección 3).
+        const modalidades = cat?.modalidades || [];
+        modalidadesRef.current = modalidades;
         setCatalogosAux({
           tiposHora: cat?.tiposHora || [],
           rolesEquipo: cat?.rolesEquipo || [],
@@ -269,7 +306,8 @@ const FormularioProyecto = () => {
           rubros: cat?.rubros || [],
           entidadesEmisoras: cat?.entidadesEmisoras || [],
           entesRegulatorios: cat?.entesRegulatorios || [],
-          estadosAval: cat?.estadosAval || []
+          estadosAval: cat?.estadosAval || [],
+          modalidades
         });
       } catch (_e) {
         console.warn('Error cargando catálogo de investigadores:', _e);
@@ -408,12 +446,20 @@ const FormularioProyecto = () => {
           if (prop.titulo) setNombreProyecto(prop.titulo);
           if (prop.fechaInicio) setFechaInicio(prop.fechaInicio);
           if (prop.fechaFinalizacion) setFechaFin(prop.fechaFinalizacion);
-          if (prop.modalidad) setModalidad(prop.modalidad);
+          // Modalidad: el backend puede devolver el nombre (prop.modalidad) o el id
+          // (prop.modalidadId). Se normaliza a la clave usada por el formulario.
+          const modalidadApi = clasificarModalidad(prop.modalidad)
+            || clasificarModalidad(
+              (modalidadesRef.current || [])
+                .find((m) => Number(m.modalidadId) === Number(prop.modalidadId))?.nombreModalidad
+            );
+          if (modalidadApi) setModalidad(modalidadApi);
           if (prop.nivelTrlActual) setTrlSeleccionado(prop.nivelTrlActual);
           
           if (prop.contenido) {
             if (prop.contenido.resumen) setResumen(prop.contenido.resumen);
             if (prop.contenido.palabrasClave) setPalabrasClave(prop.contenido.palabrasClave);
+            if (prop.contenido.keywords) setKeywords(prop.contenido.keywords);
             if (prop.contenido.abstract) setAbstract(prop.contenido.abstract);
             if (prop.contenido.problemaInvestigacion) setProblemaInvestigacion(prop.contenido.problemaInvestigacion);
             if (prop.contenido.objetivoGeneral) setObjetivoGeneral(prop.contenido.objetivoGeneral);
@@ -738,11 +784,12 @@ const FormularioProyecto = () => {
     }
     persistenciaEnCursoRef.current = true;
     try {
-      // Cabecera (título, fechas, TRL)
+      // Cabecera (título, fechas, modalidad, TRL)
       await propuestaService.actualizarCabecera(idParaGuardar, {
         titulo: nombreProyecto || 'Borrador de Propuesta',
         fechaInicio: fechaInicio || null,
         fechaFinalizacion: fechaFin || null,
+        modalidadId: resolverModalidadId(modalidad, catalogosAux.modalidades),
         nivelTrlActual: Number(trlSeleccionado) || 1
       });
 
@@ -750,6 +797,7 @@ const FormularioProyecto = () => {
       await propuestaService.guardarContenido(idParaGuardar, {
         resumen,
         palabrasClave,
+        keywords,
         abstract,
         problemaInvestigacion,
         objetivoGeneral,
@@ -899,7 +947,7 @@ const FormularioProyecto = () => {
 
     const firma = JSON.stringify({
       nombreProyecto, fechaInicio, fechaFin, trlSeleccionado,
-      resumen, palabrasClave, abstract, problemaInvestigacion,
+      resumen, palabrasClave, keywords, abstract, problemaInvestigacion,
       objetivoGeneral, objetivosEspecificos, estadoArte, metodologia,
       divulgacion, hojaRuta, otrasFuentes, vinculacionTecnica,
       requiereInstrumento, basePosgrado, infoConfidencial, potencialPI,
@@ -927,7 +975,7 @@ const FormularioProyecto = () => {
     return () => { if (autosaveForm04Timer.current) clearTimeout(autosaveForm04Timer.current); };
   }, [
     cargaCompletada, propuestaIdUrl, nombreProyecto, fechaInicio, fechaFin,
-    trlSeleccionado, resumen, palabrasClave, abstract, problemaInvestigacion,
+    trlSeleccionado, resumen, palabrasClave, keywords, abstract, problemaInvestigacion,
     objetivoGeneral, objetivosEspecificos, estadoArte, metodologia, divulgacion,
     hojaRuta, otrasFuentes, vinculacionTecnica, requiereInstrumento,
     basePosgrado, infoConfidencial, potencialPI, poseeInnovacion,

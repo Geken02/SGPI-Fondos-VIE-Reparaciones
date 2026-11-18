@@ -30,9 +30,11 @@ export const propuestaService = {
     return response.data;
   },
 
-  obtenerCatalogosFormulario: async () => {
+  obtenerCatalogosFormulario: async ({ vigentes = false } = {}) => {
     try {
-      const response = await api.get('/investigador/propuestas/catalogos/formulario');
+      const response = await api.get('/investigador/propuestas/catalogos/formulario', {
+        params: vigentes ? { vigentes: true } : {}
+      });
       return response.data;
     } catch (error) {
       console.error('Error al obtener catálogos del formulario:', error?.response?.status, error?.message);
