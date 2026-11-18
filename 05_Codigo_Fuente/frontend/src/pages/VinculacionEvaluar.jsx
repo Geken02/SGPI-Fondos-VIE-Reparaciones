@@ -27,9 +27,10 @@ const VinculacionEvaluar = () => {
     patente: false
   });
 
-  // Archivos — sin predeterminado
-  const [archivoAdjunto, setArchivoAdjunto] = useState(null);
-  const [archivoSubida, setArchivoSubida] = useState(null);
+  // Dictamen adjunto — fuente única de verdad compartida por las pestañas
+  // "Formulario en línea" y "Subir documento firmado". Subir el archivo en
+  // cualquiera de las dos lo refleja de inmediato en la otra.
+  const [archivoDictamen, setArchivoDictamen] = useState(null);
   const fileInputRef = useRef(null);
   const fileInputSubidaRef = useRef(null);
 
@@ -116,8 +117,9 @@ const VinculacionEvaluar = () => {
     );
   }
 
-  // Documento adjunto según la pestaña activa y documento ya registrado previamente
-  const documentoActual = tabActiva === 'subida' ? archivoSubida : archivoAdjunto;
+  // Documento adjunto: única fuente de verdad compartida por ambas pestañas,
+  // más el documento ya registrado previamente en la propuesta.
+  const documentoActual = archivoDictamen;
   const tieneDocumentoPrevio = Boolean(rutaDocumentoPrevio);
   const verificandoDocumento = rutaDocumentoPrevio === undefined;
   // El envío queda bloqueado si no hay archivo nuevo ni documento guardado antes
@@ -142,15 +144,15 @@ const VinculacionEvaluar = () => {
     setResaltarArchivo(false);
 
     let textoContenido = analisisPI ? analisisPI.trim() : '';
-    const archivoParaGuardar = tabActiva === 'subida' ? archivoSubida : archivoAdjunto;
+    const archivoParaGuardar = archivoDictamen;
 
     if (tabActiva === 'subida') {
-      if (!archivoSubida && (!textoContenido || textoContenido.length < 10)) {
+      if (!archivoDictamen && (!textoContenido || textoContenido.length < 10)) {
         alert('Debe adjuntar el archivo firmado del dictamen o ingresar el análisis (mínimo 10 caracteres).');
         return;
       }
       if (!textoContenido || textoContenido.length < 10) {
-        textoContenido = `Dictamen de Vinculación emitido mediante documento adjunto: ${archivoSubida?.name || 'Documento oficial'}`;
+        textoContenido = `Dictamen de Vinculación emitido mediante documento adjunto: ${archivoDictamen?.name || 'Documento oficial'}`;
       }
     } else {
       if (!textoContenido || textoContenido.length < 10) {
@@ -417,21 +419,21 @@ const VinculacionEvaluar = () => {
                         type="file"
                         accept=".pdf,.doc,.docx"
                         style={{ display: 'none' }}
-                        onChange={(e) => handleFileChange(e, setArchivoAdjunto)}
+                        onChange={(e) => handleFileChange(e, setArchivoDictamen)}
                       />
-                      {archivoAdjunto ? (
+                      {archivoDictamen ? (
                         <div className="archivo-firmado-box">
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <IconoCie nombre="fileText" tamano={18} />
-                            <span className="archivo-firmado-nombre" style={{ fontSize: '13px', fontWeight: 500 }}>{archivoAdjunto.name}</span>
-                            <span style={{ fontSize: '12px', color: '#627d98' }}>({formatFileSize(archivoAdjunto.size)})</span>
+                            <span className="archivo-firmado-nombre" style={{ fontSize: '13px', fontWeight: 500 }}>{archivoDictamen.name}</span>
+                            <span style={{ fontSize: '12px', color: '#627d98' }}>({formatFileSize(archivoDictamen.size)})</span>
                           </div>
                           <button 
                             type="button" 
                             className="btn-eliminar-adjunto"
                             onClick={() => {
                               if (!confirm('¿Está seguro de que desea eliminar el archivo adjunto?')) return;
-                              setArchivoAdjunto(null);
+                              setArchivoDictamen(null);
                               if (fileInputRef.current) fileInputRef.current.value = '';
                             }}
                             title="Eliminar archivo"
@@ -485,16 +487,16 @@ const VinculacionEvaluar = () => {
                     type="file"
                     accept=".pdf,.doc,.docx"
                     style={{ display: 'none' }}
-                    onChange={(e) => handleFileChange(e, setArchivoSubida)}
+                    onChange={(e) => handleFileChange(e, setArchivoDictamen)}
                   />
 
-                {archivoSubida ? (
+                {archivoDictamen ? (
                   <div className="archivo-firmado-box" style={{ padding: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <IconoCie nombre="fileText" tamano={24} />
                       <div>
-                        <div className="archivo-firmado-nombre" style={{ fontWeight: 600 }}>{archivoSubida.name}</div>
-                        <div style={{ fontSize: '13px', color: '#627d98' }}>{formatFileSize(archivoSubida.size)}</div>
+                        <div className="archivo-firmado-nombre" style={{ fontWeight: 600 }}>{archivoDictamen.name}</div>
+                        <div style={{ fontSize: '13px', color: '#627d98' }}>{formatFileSize(archivoDictamen.size)}</div>
                       </div>
                     </div>
                     <button
@@ -502,7 +504,7 @@ const VinculacionEvaluar = () => {
                       className="btn-eliminar-adjunto"
                       onClick={() => {
                         if (!confirm('¿Está seguro de que desea eliminar el archivo adjunto?')) return;
-                        setArchivoSubida(null);
+                        setArchivoDictamen(null);
                         if (fileInputSubidaRef.current) fileInputSubidaRef.current.value = '';
                       }}
                       title="Eliminar archivo"
@@ -524,7 +526,7 @@ const VinculacionEvaluar = () => {
                           alert('El archivo no puede superar los 10 MB.');
                           return;
                         }
-                        setArchivoSubida(file);
+                        setArchivoDictamen(file);
                       }
                     }}
                   >
