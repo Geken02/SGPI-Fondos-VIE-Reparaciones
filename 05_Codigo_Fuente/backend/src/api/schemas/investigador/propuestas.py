@@ -434,6 +434,8 @@ class PropuestaResumenResponse(BaseModel):
     convocatoriaId: int
     escuelaId: int
     nombreEscuela: Optional[str] = None
+    modalidadId: Optional[int] = None
+    modalidad: Optional[str] = None
     montoTotal: Decimal
     nivelTrlActual: Optional[int] = None
     nivelTrlEsperado: Optional[int] = None
@@ -491,8 +493,10 @@ class PropuestaDetalleResponse(BaseModel):
     etapaId: int
     convocatoriaId: int
     escuelaId: int
+    nombreEscuela: Optional[str] = None
     lineaInvestigacionId: Optional[int] = None
     modalidadId: Optional[int] = None
+    modalidad: Optional[str] = None
     montoTotal: Decimal
     nivelTrlActual: Optional[int] = None
     nivelTrlEsperado: Optional[int] = None

@@ -5,6 +5,7 @@ from typing import List
 from src.database import get_db
 from src.models.usuarios import Usuario
 from src.models.roles import RolesSistema, UsuarioRol
+from src.models.escuelas import Escuela
 from src.utils.dependencias import obtener_usuario_activo, requerir_rol
 from src.api.schemas.investigador.propuestas import (
     PropuestaCreate,
@@ -94,6 +95,8 @@ def registrar_propuesta(
     usuario_actual: Usuario = Depends(obtener_usuario_activo)
 ):
     propuesta = crear_propuesta(db=db, usuario=usuario_actual, datos=datos)
+    escuela = db.query(Escuela).filter(Escuela.escuelaId == propuesta.getEscuelaId()).first()
+    modalidad = propuesta.getModalidad()
     return PropuestaResumenResponse(
         propuestaId=propuesta.getPropuestaId(),
         codigoPropuesta=propuesta.getCodigoPropuesta(),
@@ -103,11 +106,16 @@ def registrar_propuesta(
         etapaId=propuesta.getEtapaId(),
         convocatoriaId=propuesta.getConvocatoriaId(),
         escuelaId=propuesta.getEscuelaId(),
+        nombreEscuela=escuela.nombreEscuela if escuela else None,
+        modalidadId=propuesta.getModalidadId(),
+        modalidad=modalidad.nombreModalidad if modalidad else None,
         montoTotal=propuesta.getMontoTotal(),
         nivelTrlActual=propuesta.getNivelTrlActual(),
         nivelTrlEsperado=propuesta.getNivelTrlEsperado(),
         fechaCreacion=propuesta.getFechaCreacion(),
-        fechaEnvio=propuesta.getFechaEnvio()
+        fechaEnvio=propuesta.getFechaEnvio(),
+        investigadorCoordId=propuesta.getInvestigadorCoordId(),
+        esPropietario=(propuesta.getInvestigadorCoordId() == usuario_actual.usuarioId),
     )
 
 
@@ -421,6 +429,8 @@ def actualizar_propuesta(
         usuario_id=usuario_actual.usuarioId,
         datos=datos
     )
+    escuela = db.query(Escuela).filter(Escuela.escuelaId == propuesta.getEscuelaId()).first()
+    modalidad = propuesta.getModalidad()
     return PropuestaResumenResponse(
         propuestaId=propuesta.getPropuestaId(),
         codigoPropuesta=propuesta.getCodigoPropuesta(),
@@ -430,11 +440,16 @@ def actualizar_propuesta(
         etapaId=propuesta.getEtapaId(),
         convocatoriaId=propuesta.getConvocatoriaId(),
         escuelaId=propuesta.getEscuelaId(),
+        nombreEscuela=escuela.nombreEscuela if escuela else None,
+        modalidadId=propuesta.getModalidadId(),
+        modalidad=modalidad.nombreModalidad if modalidad else None,
         montoTotal=propuesta.getMontoTotal(),
         nivelTrlActual=propuesta.getNivelTrlActual(),
         nivelTrlEsperado=propuesta.getNivelTrlEsperado(),
         fechaCreacion=propuesta.getFechaCreacion(),
-        fechaEnvio=propuesta.getFechaEnvio()
+        fechaEnvio=propuesta.getFechaEnvio(),
+        investigadorCoordId=propuesta.getInvestigadorCoordId(),
+        esPropietario=(propuesta.getInvestigadorCoordId() == usuario_actual.usuarioId),
     )
 
 
