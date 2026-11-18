@@ -6,7 +6,7 @@
 export const ESTADOS_PROPUESTA = {
   1: { codigo: 'BORRADOR', etiqueta: 'Borrador', clase: 'borrador' },
   // En la BD el código es ENVIADA ("Enviada a VIE"); la interfaz muestra el texto institucional.
-  2: { codigo: 'ENVIADA', etiqueta: 'Enviada a Vinculación', clase: 'info' },
+  2: { codigo: 'ENVIADA', etiqueta: 'Enviada a VIE', clase: 'info' },
   3: { codigo: 'EN_VINCULACION', etiqueta: 'En Evaluación de Vinculación', clase: 'warning' },
   4: { codigo: 'EN_COMITE', etiqueta: 'En Comité Técnico', clase: 'comite' },
   5: { codigo: 'EN_CONSEJO', etiqueta: 'En Consejo de Escuela', clase: 'consejo' },

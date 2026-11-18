@@ -47,7 +47,7 @@ const FormularioPresupuesto = () => {
         id = localStorage.getItem('propuesta_activa_id');
         if (!id) {
           try {
-            const misProps = await propuestaService.obtenerMisPropuestas();
+            const misProps = await propuestaService.listarMisPropuestas();
             if (misProps && misProps.length > 0) {
               id = String(misProps[0].propuestaId);
               localStorage.setItem('propuesta_activa_id', id);
@@ -188,7 +188,13 @@ const FormularioPresupuesto = () => {
           console.warn('⚠️ No se pudo subir Form-06 a Supabase:', err);
         }
 
-      } catch (err) { console.warn('Error al guardar presupuesto en el backend:', err); }
+      } catch (err) {
+        console.warn('Error al guardar presupuesto en el backend:', err);
+        setGuardadoMsg('Error al guardar');
+        alert('No se pudo guardar el Presupuesto (Form-06) en la base de datos. Verifique su conexión e intente de nuevo.');
+        setGuardando(false);
+        return;
+      }
     }
 
     const ahora = new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
@@ -237,7 +243,12 @@ const FormularioPresupuesto = () => {
           console.warn('⚠️ No se pudo subir Form-06 a Supabase al enviar:', err);
         }
 
-      } catch (err) { console.warn('Error al persistir presupuesto en la BD:', err); }
+      } catch (err) {
+        console.warn('Error al persistir presupuesto en la BD:', err);
+        alert('No se pudo persistir el Presupuesto (Form-06) en la base de datos. Intente nuevamente antes de continuar.');
+        setGuardando(false);
+        return;
+      }
     }
 
     window.dispatchEvent(new Event('propuestaCreada'));

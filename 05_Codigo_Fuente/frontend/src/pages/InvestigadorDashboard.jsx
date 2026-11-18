@@ -426,11 +426,19 @@ const InvestigadorDashboard = () => {
                     {/* Pie de tarjeta con progreso y botón de acción */}
                     <div className="proposal-card-footer">
                       <div className="proposal-progress-pill">
-                        {prop.form01Completado 
-                          ? (prop.form02Completado && prop.form03Completado 
-                              ? 'Formularios: Completados (3/3)' 
-                              : 'Formularios: F-01 completado (1/3)')
-                          : (prop.progresoTexto || 'Formularios (F01 - F03): En formulación')}
+                        {(() => {
+                          // Solo cuenta como completado lo que fue ENVIADO (botón Enviar / Vinculación),
+                          // nunca lo que apenas tiene datos guardados.
+                          const fueEnviado = (codigo) =>
+                            Boolean(prop.fechaEnvio) ||
+                            prop.estadoId === 2 ||
+                            localStorage.getItem(`propuesta_${prop.propuestaId}_${codigo}_enviado`) === 'true' ||
+                            localStorage.getItem(`propuesta_${prop.propuestaId}_${codigo}_completado`) === 'true';
+                          const completados = ['form04', 'form05', 'form06'].filter(fueEnviado).length;
+                          if (completados === 0) return prop.progresoTexto || 'Formularios (F01 - F03): En formulación';
+                          if (completados === 3) return 'Formularios: Completados (3/3)';
+                          return `Formularios: ${completados}/3 completados`;
+                        })()}
                       </div>
                       <button 
                         type="button"
