@@ -623,3 +623,42 @@
   color: #FFFF00 !important;
   z-index: 100 !important;
 }
+
+/* ==========================================================================
+   FIX DEFINITIVO: Spinner que NO mueve el texto
+   ========================================================================== */
+
+.btn-primary {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+/* ✅ Reserva el espacio del spinner SIEMPRE (visible o no) */
+.spinner-slot {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important; /* ← CLAVE: reserva el ancho */
+  min-height: 18px !important;
+  flex-shrink: 0 !important;  /* ← NUNCA se encoge */
+}
+
+.btn-label {
+  white-space: nowrap !important;
+}
+
+.spinner {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0 !important;
+}
