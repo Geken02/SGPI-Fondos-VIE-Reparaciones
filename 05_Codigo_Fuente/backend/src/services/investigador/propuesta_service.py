@@ -855,12 +855,14 @@ def enviar_propuesta_revision(
     usuario_id: int
 ) -> Propuesta:
     """
-    Envía formalmente la propuesta a revisión institucional (cambia de BORRADOR a ENVIADA).
-    Restringido exclusivamente a la persona coordinadora / propietaria de la propuesta.
+    Envía formalmente la propuesta a revisión institucional.
+    Desde Borrador (1) ingresa a Vinculación (3); desde Subsanación (10) pasa
+    directamente a Comité Técnico (4). Restringido a la persona coordinadora / propietaria.
     """
     propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=True)
 
-    if propuesta.getEstadoId() not in [1, 10]:
+    estado_origen = propuesta.getEstadoId()
+    if estado_origen not in [1, 10]:
         raise HTTPException(status_code=400, detail="Solo se pueden enviar propuestas en estado Borrador o en Subsanación")
 
     # Validaciones mínimas de integridad
@@ -868,8 +870,8 @@ def enviar_propuesta_revision(
     if not contenido or not contenido.getResumen() or len(contenido.getResumen().strip()) < 20:
         raise HTTPException(status_code=400, detail="Debe completar al menos el Resumen Ejecutivo del Form-04")
 
-    # Cambiar estado a EN_VINCULACION (ID 3)
-    propuesta.setEstadoId(3)
+    # EN_SUBSANACION (10) -> EN_COMITE (4); BORRADOR (1) -> EN_VINCULACION (3)
+    propuesta.setEstadoId(4 if estado_origen == 10 else 3)
     propuesta.setFechaEnvio(datetime.now(timezone.utc))
     propuesta.setUsuarioAuditoriaId(usuario_id)
     propuesta.setUltimaAuditoria(datetime.now(timezone.utc))
@@ -938,8 +940,8 @@ def responder_subsanacion(
 ) -> SubsanacionResponse:
     """
     Registra la corrección o respuesta del investigador ante la subsanación.
-    Si se marca reenviarPropuesta=True, cambia el estado de la propuesta a 'Enviada a VIE' (Revisión)
-    cumpliendo el flujo: Revisión -> Subsanación -> Corrección por el solicitante -> Reenvío -> Nueva revisión.
+    Si se marca reenviarPropuesta=True, la propuesta pasa directamente a Comité Técnico (estado 4),
+    cumpliendo el flujo: Revisión -> Subsanación -> Corrección por el solicitante -> Reenvío -> Comité.
     """
     propuesta = obtener_propuesta_con_acceso(db, propuesta_id, usuario_id, requiere_coordinador=False)
 
@@ -963,7 +965,7 @@ def responder_subsanacion(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Solo la persona coordinadora (propietaria de la propuesta) puede reenviar la propuesta a revisión institucional."
             )
-        propuesta.setEstadoId(3)  # Enviada a Vinculación (ID 3) / En Evaluación
+        propuesta.setEstadoId(4)  # En Comité Técnico (ID 4): el reenvío tras subsanar entra directo a Comité
         propuesta.setFechaEnvio(datetime.now(timezone.utc))
         propuesta.setUltimaAuditoria(datetime.now(timezone.utc))
 
@@ -973,7 +975,7 @@ def responder_subsanacion(
             propuestaId=propuesta.getPropuestaId(),
             tipoNotificacionId=4,
             asunto=f"Subsanación Respondida: {propuesta.getCodigoPropuesta()}",
-            cuerpoMensaje=f"La propuesta '{propuesta.getTitulo()}' ha sido corregida y reenviada para nueva revisión por la Unidad de Vinculación.",
+            cuerpoMensaje=f"La propuesta '{propuesta.getTitulo()}' ha sido corregida y reenviada; pasa directamente al Comité Técnico.",
             canalId=1,
             leida=False,
             creadoEn=datetime.now(timezone.utc),

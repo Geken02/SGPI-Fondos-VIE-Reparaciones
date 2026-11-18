@@ -1561,6 +1561,33 @@ body, input, button, select, textarea {
 .dropzone-title { font-size: 15px; font-weight: 500; color: var(--tec-azul-principal); margin-bottom: 4px; }
 .dropzone-sub { font-size: 12px; color: var(--tec-texto-muted); }
 
+/* Resaltado del campo de dictamen cuando falta el documento obligatorio */
+.campo-archivo-error {
+  border: 2px solid #EF3340 !important;
+  border-radius: 8px;
+  padding: 10px;
+  background-color: #fef2f2;
+  box-shadow: 0 0 0 3px rgba(239, 51, 64, 0.12);
+}
+.campo-archivo-error .dropzone-upload-box {
+  border-color: #EF3340;
+  background-color: #fef2f2;
+}
+
+/* Mensaje de advertencia cuando falta el documento de dictámenes */
+.advertencia-dictamen {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background-color: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+  font-size: 13px;
+}
+
 /* ============================================================
    ESTILOS DE LA PÁGINA DE PERFIL
    ============================================================ */
