@@ -23,7 +23,7 @@ import Catalogos from './pages/admin/Catalogos';
 import Usuarios from './pages/admin/Usuarios';
 import Convocatoria from './pages/admin/Convocatoria';
 import AsignacionGestoras from './pages/admin/AsignacionGestoras';
-import Auditoria from './pages/Auditoria';
+import Auditoria from './pages/admin/Auditoria';
 
 // 4. COMITÉ TÉCNICO
 import ComiteTecnicoLayout from './components/ComiteTecnicoLayout';
