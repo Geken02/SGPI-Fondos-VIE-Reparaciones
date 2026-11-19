@@ -84,7 +84,8 @@ export default function AsignacionGestoras() {
 
   const mostrarToast = (mensaje, tipo = 'success') => {
     setToast({ mensaje, tipo });
-    setTimeout(() => setToast(null), 3000);
+    // ✅ MEJORA: 4 segundos para dar tiempo suficiente al lector de pantalla
+    setTimeout(() => setToast(null), 4000); 
   };
 
   const handleSeleccionarEscuela = (escuelaId) => {
@@ -106,7 +107,7 @@ export default function AsignacionGestoras() {
       prev.filter(e => !escuelasSeleccionadas.includes(e.escuelaId))
     );
     setEscuelasSeleccionadas([]);
-    setAnuncio(`Se movieron ${escuelasAMover.length} ${escuelasAMover.length === 1 ? 'escuela a' : 'escuelas a'} asignadas. Total de asignadas: ${escuelasAsignadas.length + escuelasAMover.length}.`);
+    setAnuncio(`Se movieron ${escuelasAMover.length} ${escuelasAMover.length === 1 ? 'escuela a' : 'escuelas a'} la lista de asignadas.`);
   };
 
   const handleMoverAIzquierda = (escuelaId) => {
@@ -114,7 +115,7 @@ export default function AsignacionGestoras() {
     if (escuela) {
       setEscuelasDisponibles(prev => [...prev, escuela]);
       setEscuelasAsignadas(prev => prev.filter(e => e.escuelaId !== escuelaId));
-      setAnuncio(`Se quitó ${escuela.nombreEscuela} de las asignadas. Total de asignadas: ${escuelasAsignadas.length - 1}.`);
+      setAnuncio(`Se quitó la escuela ${escuela.nombreEscuela} de la lista de asignadas.`);
     }
   };
 
@@ -123,7 +124,7 @@ export default function AsignacionGestoras() {
     const cantidad = escuelasAsignadas.length;
     setEscuelasDisponibles(prev => [...prev, ...escuelasAsignadas]);
     setEscuelasAsignadas([]);
-    setAnuncio(`Se quitaron las ${cantidad} escuelas asignadas. Total de asignadas: 0.`);
+    setAnuncio(`Se quitaron las ${cantidad} escuelas de la lista de asignadas.`);
   };
 
   const handleGuardar = async () => {
@@ -155,8 +156,8 @@ export default function AsignacionGestoras() {
           console.warn(`No se pudo asignar escuela ${escuela.escuelaId}:`, error);
         }
       }
-      mostrarToast('Asignaciones guardadas exitosamente');
-      setAnuncio(`Asignaciones guardadas. ${escuelasAsignadas.length} escuelas asignadas a la gestora seleccionada.`);
+      mostrarToast('Asignaciones guardadas exitosamente', 'success');
+      setAnuncio(`Asignaciones guardadas correctamente. ${escuelasAsignadas.length} escuelas asignadas.`);
       await cargarAsignaciones(gestoraSeleccionada);
     } catch (error) {
       console.error('Error guardando asignaciones:', error);
@@ -172,7 +173,7 @@ export default function AsignacionGestoras() {
     setGestoraSeleccionada('');
     setEscuelasAsignadas([]);
     setEscuelasSeleccionadas([]);
-    setAnuncio('Formulario cancelado.');
+    setAnuncio('Formulario cancelado. Seleccione una nueva gestora.');
   };
 
   const escuelasDisponiblesFiltradas = escuelasDisponibles.filter(e =>
@@ -184,8 +185,14 @@ export default function AsignacionGestoras() {
 
   return (
     <div className="asignacion-container">
+      {/* ✅ MEJORA: Toast con role dinámico (alert para errores, status para éxito) */}
       {toast && (
-        <div className={`toast ${toast.tipo}`} role="status" aria-live="polite">
+        <div 
+          className={`toast ${toast.tipo}`} 
+          role={toast.tipo === 'error' ? 'alert' : 'status'} 
+          aria-live={toast.tipo === 'error' ? 'assertive' : 'polite'}
+          aria-atomic="true"
+        >
           <span className="toast-icon" aria-hidden="true">
             {toast.tipo === 'success' ? (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -202,7 +209,8 @@ export default function AsignacionGestoras() {
         </div>
       )}
 
-      <div className="sr-only" role="status" aria-live="polite">
+      {/* ✅ MEJORA: aria-atomic="true" asegura que se lea la frase completa, no solo la parte cambiada */}
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {anuncio}
       </div>
 
@@ -215,14 +223,14 @@ export default function AsignacionGestoras() {
       </nav>
 
       <header className="asignacion-header">
-        <h1>Asignación de Escuelas a Gestoras VIE</h1>
-        <p>Seleccione una gestora y asigne las escuelas correspondientes.</p>
+        <h1 id="titulo-principal">Asignación de Escuelas a Gestoras VIE</h1>
+        <p id="subtitulo-principal">Seleccione una gestora y asigne las escuelas correspondientes.</p>
       </header>
 
       {/* Selector de Gestora */}
       <div className="card selector-card">
         <label className="form-label" htmlFor="select-gestora">
-          Seleccionar Gestora VIE: <span style={{ color: '#dc2626' }} aria-hidden="true">*</span>
+          Seleccionar Gestora VIE: <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span><span className="sr-only"> (obligatorio)</span>
         </label>
         <select
           id="select-gestora"
@@ -230,6 +238,7 @@ export default function AsignacionGestoras() {
           value={gestoraSeleccionada}
           onChange={(e) => setGestoraSeleccionada(e.target.value)}
           aria-required="true"
+          aria-invalid={!gestoraSeleccionada && gestoras.length > 0}
           aria-describedby={
             !gestoraSeleccionada && gestoras.length > 0
               ? 'aviso-gestora'
@@ -250,7 +259,7 @@ export default function AsignacionGestoras() {
           ))}
         </select>
         {!gestoraSeleccionada && gestoras.length > 0 && (
-          <p id="aviso-gestora" className="selector-aviso">
+          <p id="aviso-gestora" className="selector-aviso" role="status">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: '6px', verticalAlign: 'middle' }}>
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
               <line x1="12" y1="9" x2="12" y2="13"/>
@@ -270,8 +279,9 @@ export default function AsignacionGestoras() {
       <div className="dos-columnas">
         {/* Escuelas Disponibles */}
         <div className="card columna-izquierda">
-          <h2>Escuelas disponibles ({escuelasDisponiblesFiltradas.length})</h2>
+          <h2 id="titulo-disponibles">Escuelas disponibles ({escuelasDisponiblesFiltradas.length})</h2>
           <div className="buscador">
+            <label htmlFor="busqueda-disponibles" className="sr-only">Buscar en escuelas disponibles</label>
             <svg className="buscador-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
               <circle cx="11" cy="11" r="8"/>
               <line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -280,30 +290,33 @@ export default function AsignacionGestoras() {
               type="text"
               id="busqueda-disponibles"
               placeholder="Buscar escuela..."
-              aria-label="Buscar en escuelas disponibles"
               value={busquedaDisponibles}
               onChange={(e) => setBusquedaDisponibles(e.target.value)}
               className="buscador-input"
+              aria-describedby="titulo-disponibles"
             />
           </div>
 
-          <div className="lista-escuelas" role="list" aria-label="Escuelas disponibles">
+          <div className="lista-escuelas" role="list" aria-labelledby="titulo-disponibles">
             {escuelasDisponiblesFiltradas.length === 0 ? (
-              <p className="lista-vacia">No hay escuelas disponibles</p>
+              <p className="lista-vacia" role="status">No hay escuelas disponibles que coincidan con la búsqueda</p>
             ) : (
               escuelasDisponiblesFiltradas.map(escuela => {
                 const seleccionada = escuelasSeleccionadas.includes(escuela.escuelaId);
+                const chkId = `chk-disp-${escuela.escuelaId}`;
                 return (
                   <label
                     key={escuela.escuelaId}
+                    htmlFor={chkId}
                     className={`escuela-item ${seleccionada ? 'seleccionada' : ''}`}
                   >
                     <input
+                      id={chkId}
                       type="checkbox"
                       checked={seleccionada}
                       onChange={() => handleSeleccionarEscuela(escuela.escuelaId)}
                       className="escuela-checkbox"
-                      aria-label={`Seleccionar ${escuela.nombreEscuela}`}
+                      aria-label={`Seleccionar escuela ${escuela.nombreEscuela} para mover a asignadas`}
                     />
                     <span className="escuela-nombre">{escuela.nombreEscuela}</span>
                   </label>
@@ -312,18 +325,18 @@ export default function AsignacionGestoras() {
             )}
           </div>
 
-          <div className="lista-footer">
+          <div className="lista-footer" aria-hidden="true">
             Mostrando {escuelasDisponiblesFiltradas.length} de {escuelasDisponibles.length} escuelas
           </div>
         </div>
 
         {/* ✅ Botones de movimiento centrados verticalmente */}
-        <div className="botones-movimiento">
+        <div className="botones-movimiento" role="group" aria-label="Controles para mover escuelas entre listas">
           <button
             className="btn-mover"
             onClick={handleMoverADerecha}
             disabled={escuelasSeleccionadas.length === 0}
-            aria-label={`Mover ${escuelasSeleccionadas.length} escuelas seleccionadas a asignadas`}
+            aria-label={`Mover ${escuelasSeleccionadas.length} escuelas seleccionadas a la lista de asignadas`}
             title="Mover seleccionadas a asignadas"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
@@ -335,7 +348,7 @@ export default function AsignacionGestoras() {
             className="btn-mover"
             onClick={handleMoverTodasAIzquierda}
             disabled={escuelasAsignadas.length === 0}
-            aria-label="Quitar todas las escuelas asignadas"
+            aria-label="Quitar todas las escuelas de la lista de asignadas"
             title="Mover todas a disponibles"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
@@ -347,8 +360,9 @@ export default function AsignacionGestoras() {
 
         {/* Escuelas Asignadas */}
         <div className="card columna-derecha">
-          <h2>Escuelas asignadas ({escuelasAsignadasFiltradas.length})</h2>
+          <h2 id="titulo-asignadas">Escuelas asignadas ({escuelasAsignadasFiltradas.length})</h2>
           <div className="buscador">
+            <label htmlFor="busqueda-asignadas" className="sr-only">Buscar en escuelas asignadas</label>
             <svg className="buscador-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
               <circle cx="11" cy="11" r="8"/>
               <line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -357,16 +371,16 @@ export default function AsignacionGestoras() {
               type="text"
               id="busqueda-asignadas"
               placeholder="Buscar escuela..."
-              aria-label="Buscar en escuelas asignadas"
               value={busquedaAsignadas}
               onChange={(e) => setBusquedaAsignadas(e.target.value)}
               className="buscador-input"
+              aria-describedby="titulo-asignadas"
             />
           </div>
 
-          <div className="lista-escuelas" role="list" aria-label="Escuelas asignadas">
+          <div className="lista-escuelas" role="list" aria-labelledby="titulo-asignadas">
             {escuelasAsignadasFiltradas.length === 0 ? (
-              <p className="lista-vacia">No hay escuelas asignadas</p>
+              <p className="lista-vacia" role="status">No hay escuelas asignadas</p>
             ) : (
               escuelasAsignadasFiltradas.map(escuela => (
                 <div key={escuela.escuelaId} className="escuela-item asignada" role="listitem">
@@ -378,7 +392,7 @@ export default function AsignacionGestoras() {
                   <button
                     className="btn-quitar"
                     onClick={() => handleMoverAIzquierda(escuela.escuelaId)}
-                    aria-label={`Quitar ${escuela.nombreEscuela} de las asignadas`}
+                    aria-label={`Quitar escuela ${escuela.nombreEscuela} de la lista de asignadas`}
                     title="Quitar de asignadas"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
@@ -391,13 +405,13 @@ export default function AsignacionGestoras() {
             )}
           </div>
 
-          <div className="lista-footer">
-            {escuelasAsignadasFiltradas.length} escuelas seleccionadas
+          <div className="lista-footer" aria-hidden="true">
+            {escuelasAsignadasFiltradas.length} escuelas en la lista
           </div>
         </div>
       </div>
 
-      {/* ✅ Botones con jerarquía visual correcta (no full-width) */}
+      {/* Botones de acción */}
       <div className="form-actions">
         <button className="btn-cancel" onClick={handleCancelar} disabled={guardando}>
           Cancelar
@@ -407,6 +421,7 @@ export default function AsignacionGestoras() {
           onClick={handleGuardar}
           disabled={guardando || !gestoraSeleccionada}
           aria-busy={guardando}
+          aria-label={guardando ? 'Guardando asignaciones, por favor espere' : 'Guardar asignación de escuelas'}
         >
           {guardando && <div className="spinner-small" aria-hidden="true"></div>}
           Guardar Asignación
