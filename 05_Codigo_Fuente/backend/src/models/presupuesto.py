@@ -76,6 +76,9 @@ class RubrosPropuesta(Base):
     rubroId = Column("rubroid", Integer, primary_key=True, index=True)
     nombreRubro = Column("nombrerubro", String(100), nullable=False)
     descripcionRubro = Column("descripcionrubro", String(300), nullable=True)
+    codigo = Column("codigo", String(20), nullable=True)          # Código de Objeto de Gasto (OG)
+    categoria = Column("categoria", String(50), nullable=True)    # Becas / Servicios / Materiales / Equipo
+    esAsistencia = Column("esasistencia", Boolean, default=False) # Partida de asistencia estudiantil
     activo = Column("activo", Boolean, default=True)
     creadoEn = Column("creadoen", DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     usuarioAuditoriaId = Column("usuarioauditoriaid", Integer, ForeignKey("usuarios.usuarioid"), nullable=True)
@@ -88,6 +91,12 @@ class RubrosPropuesta(Base):
     def setNombreRubro(self, valor): self.nombreRubro = valor
     def getDescripcionRubro(self): return self.descripcionRubro
     def setDescripcionRubro(self, valor): self.descripcionRubro = valor
+    def getCodigo(self): return self.codigo
+    def setCodigo(self, valor): self.codigo = valor
+    def getCategoria(self): return self.categoria
+    def setCategoria(self, valor): self.categoria = valor
+    def getEsAsistencia(self): return self.esAsistencia
+    def setEsAsistencia(self, valor): self.esAsistencia = valor
     def getActivo(self): return self.activo
     def setActivo(self, valor): self.activo = valor
     def getCreadoEn(self): return self.creadoEn
