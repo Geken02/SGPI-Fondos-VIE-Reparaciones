@@ -123,6 +123,8 @@ class PresupuestoPropuesta(Base):
     creadoEn = Column("creadoen", DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     usuarioAuditoriaId = Column("usuarioauditoriaid", Integer, ForeignKey("usuarios.usuarioid"), nullable=True)
     ultimaAuditoria = Column("ultimaauditoria", DateTime, nullable=True)
+    justificacion = Column("justificacion", String(3000), nullable=True)
+
     
     # Relaciones
     propuesta = relationship("Propuesta", back_populates="presupuesto")
@@ -171,6 +173,7 @@ class FinanciamientoExterno(Base):
     creadoEn = Column("creadoen", DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     usuarioAuditoriaId = Column("usuarioauditoriaid", Integer, ForeignKey("usuarios.usuarioid"), nullable=True)
     ultimaAuditoria = Column("ultimaauditoria", DateTime, nullable=True)
+    
     
     # Relaciones
     propuesta = relationship("Propuesta", back_populates="financiamientoExterno")
