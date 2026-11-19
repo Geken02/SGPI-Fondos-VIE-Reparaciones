@@ -77,8 +77,18 @@ enviarEvaluacion: (propuestaId, data) =>
   analizarJustificacionIA: (data) => 
     api.post('/api/comite-tecnico/ia/analizar-justificacion', data),
 
-analizarDocumentoIA: (propuestaId, data) => 
-  api.post(`/api/comite-tecnico/ia/analizar-documento/${propuestaId}`, data),
+// src/services/comiteTecnicoService.js
+
+analizarDocumentoIA: (propuestaId, data) => {
+  console.log("🔍 DEBUG: Intentando llamar a IA con propuestaId:", propuestaId, "Tipo:", typeof propuestaId);
+  
+  // Si propuestaId es undefined, null o vacío, detén la petición
+  if (!propuestaId || propuestaId === 'undefined') {
+    throw new Error("El ID de la propuesta no está definido. Revisa la ruta de React.");
+  }
+
+  return api.post(`/api/comite-tecnico/ia/analizar-documento/${propuestaId}`, data);
+},
 
   obtenerEvaluadoresDisponibles: async () => {
     const response = await api.get('/api/comite-tecnico/evaluadores-disponibles');
