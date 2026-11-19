@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
@@ -168,11 +168,14 @@ const FormularioPresupuesto = () => {
   const subtotalCalculado = ogActualObj?.esAsistencia ? (numEstudiantes * horasMes * meses * 2400) : Number(montoManual || 0);
 
   const filasActuales = presupuestos[anoActivo] || [];
-  const totalServicios = filasActuales.filter(f => f.categoria === 'Servicios').reduce((acc, f) => acc + Number(f.monto || 0), 0);
-  const totalMateriales = filasActuales.filter(f => f.categoria === 'Materiales').reduce((acc, f) => acc + Number(f.monto || 0), 0);
-  const totalBecas = filasActuales.filter(f => f.categoria === 'Becas').reduce((acc, f) => acc + Number(f.monto || 0), 0);
-  const totalEquipo = filasActuales.filter(f => f.categoria === 'Equipo').reduce((acc, f) => acc + Number(f.monto || 0), 0);
-  const granTotalAno = totalServicios + totalMateriales + totalBecas + totalEquipo;
+  // Totales por categoría usando las categorías reales del catálogo de rubros (BD).
+  const totalesPorCategoria = filasActuales.reduce((acc, f) => {
+    const cat = f.categoria || 'Otros';
+    acc[cat] = (acc[cat] || 0) + Number(f.monto || 0);
+    return acc;
+  }, {});
+  // Total del año = suma de TODAS las partidas (no depende del nombre de la categoría).
+  const granTotalAno = filasActuales.reduce((acc, f) => acc + Number(f.monto || 0), 0);
 
   const handleInsertarFila = (e) => {
     e.preventDefault();
@@ -482,13 +485,16 @@ const FormularioPresupuesto = () => {
 
         <div className="presupuesto-summary-footer-box">
           <div className="categories-breakdown">
-            <span>Servicios: <strong>₡ {totalServicios.toLocaleString('es-CR')}</strong></span>
-            <span className="sep">•</span>
-            <span>Materiales: <strong>₡ {totalMateriales.toLocaleString('es-CR')}</strong></span>
-            <span className="sep">•</span>
-            <span>Becas: <strong>₡ {totalBecas.toLocaleString('es-CR')}</strong></span>
-            <span className="sep">•</span>
-            <span>Equipo: <strong>₡ {totalEquipo.toLocaleString('es-CR')}</strong></span>
+            {Object.entries(totalesPorCategoria).length === 0 ? (
+              <span>Sin partidas registradas para el año {anoActivo}</span>
+            ) : (
+              Object.entries(totalesPorCategoria).map(([cat, monto], idx) => (
+                <Fragment key={cat}>
+                  {idx > 0 && <span className="sep">•</span>}
+                  <span>{cat}: <strong>₡ {monto.toLocaleString('es-CR')}</strong></span>
+                </Fragment>
+              ))
+            )}
           </div>
           <div className="grand-total-amount">
             PRESUPUESTO TOTAL AÑO {anoActivo}: <strong>₡ {granTotalAno.toLocaleString('es-CR')},00</strong>
