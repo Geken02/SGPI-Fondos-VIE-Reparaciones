@@ -156,6 +156,7 @@ class RubroPresupuestoCreate(BaseModel):
     montoSolicitado: Decimal = Field(..., gt=0, description="Monto solicitado a la VIE")
     anioEjecucion: int = Field(..., description="Año de ejecución presupuestaria")
     esDuradero: bool = False
+    justificacion: Optional[str] = Field(None, max_length=3000, description="Justificación del gasto")
 
 
 class RubroPresupuestoResponse(BaseModel):
@@ -166,6 +167,7 @@ class RubroPresupuestoResponse(BaseModel):
     montoAprobado: Optional[Decimal] = None
     anioEjecucion: int
     esDuradero: bool
+    justificacion: Optional[str] = None
 
     class Config:
         from_attributes = True
