@@ -227,7 +227,7 @@ DESCRIPTORES: dict[str, CatalogoDescriptor] = {
     ),
     "rubros": CatalogoDescriptor(
         clase=RubrosPropuesta, nombre="Rubro de presupuesto", pk="rubroId",
-        campos_busqueda=["nombreRubro", "descripcionRubro"], campo_orden="nombreRubro",
+        campos_busqueda=["codigo", "nombreRubro", "descripcionRubro"], campo_orden="nombreRubro",
     ),
     "tipos-documento": CatalogoDescriptor(
         clase=TiposDocumento, nombre="Tipo de documento", pk="tipoDocumentoId",

@@ -2,10 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
+import { catalogoService } from '../services/catalogoService';
 import { LimitedInput, LimitedTextarea } from '../components/LimitedInput';
 import { exportarPresupuestoExcel } from '../utils/exportUtils';
 import IconoCie from '../components/cie/IconoCie';
 
+// Catálogo local de respaldo: se usa SOLO si la tabla RubrosPropuesta (catálogo
+// 'rubros' de la BD) no devuelve objetos de gasto con código. La fuente real de
+// verdad es la base de datos (columnas codigo / categoria / esAsistencia).
 const CATALOGO_OG = [
   { codigo: '6-02-03-03', detalle: 'Becas estudiante asistente especial', categoria: 'Becas', esAsistencia: true, rubroId: 9 },
   { codigo: '1-05-02-01', detalle: 'Viáticos dentro del país (Equipo TEC)', categoria: 'Servicios', esAsistencia: false, rubroId: 3 },
@@ -28,6 +32,11 @@ const FormularioPresupuesto = () => {
   const [presupuestos, setPresupuestos] = useState(PRESUPUESTO_INICIAL);
   const [mostrarFormNuevaFila, setMostrarFormNuevaFila] = useState(false);
 
+  // Catálogo de Objetos de Gasto activo: se hidrata desde la tabla RubrosPropuesta
+  // (catálogo 'rubros') usando las columnas codigo / categoria / esAsistencia.
+  // Mientras llega la respuesta de la BD se usa CATALOGO_OG como respaldo local.
+  const [catalogoOG, setCatalogoOG] = useState(CATALOGO_OG);
+
   const [ogSeleccionado, setOgSeleccionado] = useState(CATALOGO_OG[0].codigo);
   const [numEstudiantes, setNumEstudiantes] = useState(1);
   const [horasMes, setHorasMes] = useState(20);
@@ -37,6 +46,33 @@ const FormularioPresupuesto = () => {
 
   const [guardadoMsg, setGuardadoMsg] = useState('Cargando datos...');
   const [guardando, setGuardando] = useState(false);
+
+  // Hidratar el catálogo de Objetos de Gasto desde la tabla RubrosPropuesta.
+  // Solo se consideran rubros con código OG (columnas nuevas codigo/categoria/esAsistencia).
+  useEffect(() => {
+    const cargarCatalogoOG = async () => {
+      try {
+        const respuesta = await catalogoService.listar('rubros', { tamanoPagina: 100 });
+        const items = respuesta?.data?.items || [];
+        const mapeados = items
+          .filter((r) => r.codigo && String(r.codigo).trim() !== '')
+          .map((r) => ({
+            codigo: r.codigo,
+            detalle: r.nombreRubro || r.descripcionRubro || '',
+            categoria: r.categoria || 'Otros',
+            esAsistencia: Boolean(r.esAsistencia),
+            rubroId: r.rubroId,
+          }));
+        if (mapeados.length > 0) {
+          setCatalogoOG(mapeados);
+          setOgSeleccionado((prev) => (mapeados.some((m) => m.codigo === prev) ? prev : mapeados[0].codigo));
+        }
+      } catch (err) {
+        console.warn('No se pudo cargar el catálogo de rubros (OG) desde la BD; se usa el respaldo local:', err);
+      }
+    };
+    cargarCatalogoOG();
+  }, []);
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -72,7 +108,7 @@ const FormularioPresupuesto = () => {
             propData.presupuesto.forEach((item) => {
               const anio = item.anioEjecucion || 2027;
               if (!transformado[anio]) transformado[anio] = [];
-              const catObj = CATALOGO_OG.find(c => c.rubroId === item.rubroId) || CATALOGO_OG[0];
+              const catObj = catalogoOG.find(c => c.rubroId === item.rubroId) || catalogoOG[0];
               transformado[anio].push({
                 id: item.presupuestoId || (Date.now() + Math.random()),
                 codigo: catObj.codigo,
@@ -122,7 +158,7 @@ const FormularioPresupuesto = () => {
     };
     
     cargarDatos();
-  }, [propuestaIdUrl, navigate]);
+  }, [propuestaIdUrl, navigate, catalogoOG]);
 
   useEffect(() => {
     const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
@@ -140,7 +176,7 @@ const FormularioPresupuesto = () => {
     return () => clearTimeout(t);
   }, [presupuestos, propuestaIdUrl]);
 
-  const ogActualObj = CATALOGO_OG.find(item => item.codigo === ogSeleccionado) || CATALOGO_OG[0];
+  const ogActualObj = catalogoOG.find(item => item.codigo === ogSeleccionado) || catalogoOG[0];
   const subtotalCalculado = ogActualObj.esAsistencia ? (numEstudiantes * horasMes * meses * 2400) : Number(montoManual || 0);
 
   const filasActuales = presupuestos[anoActivo] || [];
@@ -205,7 +241,7 @@ const FormularioPresupuesto = () => {
         Object.entries(presupuestos).forEach(([anio, filas]) => {
           (filas || []).forEach(f => {
             payload.push({
-              rubroId: f.rubroId || (CATALOGO_OG.find(c => c.codigo === f.codigo)?.rubroId || 1),
+              rubroId: f.rubroId || (catalogoOG.find(c => c.codigo === f.codigo)?.rubroId || 1),
               montoSolicitado: Number(f.monto) || 0,
               anioEjecucion: Number(anio),
               esDuradero: f.categoria === 'Equipo',
@@ -260,7 +296,7 @@ const FormularioPresupuesto = () => {
         Object.entries(presupuestos).forEach(([anio, filas]) => {
           (filas || []).forEach(f => {
             payload.push({
-              rubroId: f.rubroId || (CATALOGO_OG.find(c => c.codigo === f.codigo)?.rubroId || 1),
+              rubroId: f.rubroId || (catalogoOG.find(c => c.codigo === f.codigo)?.rubroId || 1),
               montoSolicitado: Number(f.monto) || 0,
               anioEjecucion: Number(anio),
               esDuradero: f.categoria === 'Equipo',
@@ -380,7 +416,7 @@ const FormularioPresupuesto = () => {
               <div className="modal-form-group">
                 <label className="modal-form-label">1. SELECCIONAR OBJETO DE GASTO (CATÁLOGO VIE):</label>
                 <select className="modal-form-select" value={ogSeleccionado} onChange={(e) => setOgSeleccionado(e.target.value)}>
-                  {CATALOGO_OG.map(item => (
+                  {catalogoOG.map(item => (
                     <option key={item.codigo} value={item.codigo}>{item.codigo} — {item.detalle} ({item.categoria})</option>
                   ))}
                 </select>

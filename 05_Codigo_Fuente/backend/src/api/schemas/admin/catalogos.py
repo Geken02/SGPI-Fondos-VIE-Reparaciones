@@ -130,15 +130,24 @@ class TipoResponsabilidadResponse(CatalogoBase):
 class RubroCreate(BaseModel):
     nombreRubro: str = Field(min_length=2, max_length=100)
     descripcionRubro: Optional[str] = Field(default=None, max_length=300)
+    codigo: Optional[str] = Field(default=None, max_length=20)
+    categoria: Optional[str] = Field(default=None, max_length=50)
+    esAsistencia: Optional[bool] = False
 
 class RubroUpdate(BaseModel):
     nombreRubro: Optional[str] = Field(default=None, min_length=2, max_length=100)
     descripcionRubro: Optional[str] = Field(default=None, max_length=300)
+    codigo: Optional[str] = Field(default=None, max_length=20)
+    categoria: Optional[str] = Field(default=None, max_length=50)
+    esAsistencia: Optional[bool] = None
 
 class RubroResponse(CatalogoBase):
     rubroId: int
     nombreRubro: str
     descripcionRubro: Optional[str] = None
+    codigo: Optional[str] = None
+    categoria: Optional[str] = None
+    esAsistencia: Optional[bool] = False
 
 
 # ---------------------------------------------------------------- TiposDocumento
