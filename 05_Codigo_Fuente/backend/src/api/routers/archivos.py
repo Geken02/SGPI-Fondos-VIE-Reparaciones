@@ -132,8 +132,25 @@ def _lookup_tipo_producto(sesion: Session, texto: str):
     return None
 
 def _lookup_rubro(sesion: Session, nombre: str):
+    """Lookup de RubroPropuesta por nombre (parcial, case-insensitive)."""
     if not nombre: return None
-    return sesion.query(RubrosPropuesta).filter(RubrosPropuesta.nombreRubro.ilike(f"%{nombre}%"), RubrosPropuesta.activo == True).first()
+    return sesion.query(RubrosPropuesta).filter(
+        RubrosPropuesta.nombreRubro.ilike(f"%{nombre}%"),
+        RubrosPropuesta.activo == True,
+    ).first()
+
+
+def _lookup_rubro_por_codigo(sesion: Session, codigo: str):
+    """
+    Lookup de RubroPropuesta por código OG (exacto, case-insensitive).
+    Ej: codigo="1-04-99-01" → busca WHERE codigo ILIKE '1-04-99-01'.
+    """
+    if not codigo:
+        return None
+    return sesion.query(RubrosPropuesta).filter(
+        RubrosPropuesta.codigo.ilike(codigo.strip()),
+        RubrosPropuesta.activo == True,
+    ).first()
 
 def _obtener_o_crear_usuario_por_orcid(sesion: Session, nombre_completo: str, orcid: str, instancia: str = "") -> Optional[Usuario]:
     if not nombre_completo: return None
@@ -991,10 +1008,12 @@ def _persistir_datos_form06(
 
     APAÑO: antes de insertar las partidas, asegura que TODOS los rubros
     referenciados en el Excel existan en la tabla RubrosPropuesta.  Si un
-    rubro (identificado por su código OG del Form-06, ej. "1-04-99-01") no
-    existe en la BD, lo INSERTA automáticamente con su nombre y sección.
-    Esto permite que el presupuesto se persista con rubros específicos en
-    lugar de caer en un rubro genérico como "Servicios".
+    rubro (identificado por su código OG, ej. "1-04-99-01") no existe en
+    la BD, lo INSERTA automáticamente con:
+      - codigo = código OG del Form-06
+      - nombreRubro = descripción del OG
+      - categoria = macro-categoría (Servicios / Materiales / Equipo / Becas)
+      - esAsistencia = True si es una partida de asistencia estudiantil
 
     Devuelve un dict con estadísticas para que el endpoint lo incluya en
     la respuesta HTTP:
@@ -1018,11 +1037,12 @@ def _persistir_datos_form06(
     # ------------------------------------------------------------------
     # 1. APAÑO: Asegurar que los rubros existan en RubrosPropuesta
     # ------------------------------------------------------------------
-    # Construir un cache {og_code → rubroId} que se usará al insertar las
-    # partidas.  Para cada rubro único que aparece en el Excel:
-    #   a) Buscar si ya existe por nombreRubro (coincidencia con el Detalle del Excel).
-    #   b) Si no existe, INSERTARLO con su código OG + nombre + sección.
-    rubros_cache: Dict[str, RubrosPropuesta] = {}  # {og_code: objeto RubrosPropuesta}
+    # Cache {og_code → objeto RubrosPropuesta} que se usa al insertar partidas.
+    # Para cada rubro único que aparece en el Excel:
+    #   a) Buscar por codigo OG (lookup exacto, case-insensitive).
+    #   b) Si no existe por codigo, buscar por nombreRubro (fallback).
+    #   c) Si tampoco existe, INSERTARLO con codigo + categoria + esAsistencia.
+    rubros_cache: Dict[str, RubrosPropuesta] = {}
 
     rubros_encontrados = datos.get("rubros_encontrados", [])
     if rubros_encontrados:
@@ -1031,32 +1051,47 @@ def _persistir_datos_form06(
     for rubro_info in rubros_encontrados:
         og_code = rubro_info.get("og", "")
         nombre = rubro_info.get("nombre", "")
-        seccion = rubro_info.get("seccion", "")
-        es_dura = rubro_info.get("es_duradero", False)
+        categoria = rubro_info.get("categoria", "")
+        es_asist = rubro_info.get("es_asistencia", False)
 
         if not og_code or not nombre:
             continue
 
-        # a) Buscar por nombre exacto (case-insensitive) en RubrosPropuesta
-        rubro_db = sesion.query(RubrosPropuesta).filter(
-            RubrosPropuesta.nombreRubro.ilike(nombre),
-            RubrosPropuesta.activo == True,
-        ).first()
+        # a) Lookup por codigo OG (clave primaria natural del rubro)
+        rubro_db = _lookup_rubro_por_codigo(sesion, og_code)
+
+        # b) Fallback por nombre exacto (por si el rubro se cargó sin codigo)
+        if not rubro_db:
+            rubro_db = sesion.query(RubrosPropuesta).filter(
+                RubrosPropuesta.nombreRubro.ilike(nombre),
+                RubrosPropuesta.activo == True,
+            ).first()
+            # Si lo encontramos por nombre pero no tiene codigo, lo actualizamos
+            # para que futuras cargas lo encuentren por codigo OG.
+            if rubro_db and not rubro_db.codigo:
+                rubro_db.codigo = og_code
+                if categoria and not rubro_db.categoria:
+                    rubro_db.categoria = categoria
+                rubro_db.esAsistencia = es_asist or rubro_db.esAsistencia
+                rubro_db.usuarioAuditoriaId = usuario_actual.usuarioId
+                rubro_db.ultimaAuditoria = ahora
+                print(f"   ♻️ Rubro actualizado con codigo OG: '{nombre}' "
+                      f"(id={rubro_db.rubroId}, codigo={og_code})")
 
         if rubro_db:
             rubros_cache[og_code] = rubro_db
             stats["rubros_existentes"] += 1
-            print(f"   ✓ Rubro existente: '{nombre}' (id={rubro_db.rubroId})")
+            print(f"   ✓ Rubro existente: '{nombre}' (id={rubro_db.rubroId}, "
+                  f"codigo={rubro_db.codigo})")
             continue
 
-        # b) No existe → INSERTARLO
-        # Descripción compuesta: "OG {código} — {sección}" para que se
-        # pueda buscar por OG también en el futuro.
-        descripcion = f"OG {og_code} — {seccion}" if seccion else f"OG {og_code}"
-
+        # c) No existe → INSERTARLO con el esquema nuevo
         nuevo_rubro = RubrosPropuesta(
             nombreRubro=nombre,
-            descripcionRubro=descripcion,
+            descripcionRubro=f"OG {og_code} — {categoria}" if categoria else f"OG {og_code}",
+            codigo=og_code,
+            categoria=categoria,
+            esAsistencia=es_asist,
             activo=True,
             creadoEn=ahora,
             usuarioAuditoriaId=usuario_actual.usuarioId,
@@ -1066,13 +1101,13 @@ def _persistir_datos_form06(
         sesion.flush()  # Necesario para obtener rubroId
         rubros_cache[og_code] = nuevo_rubro
         stats["rubros_creados"] += 1
-        print(f"   🆕 Rubro creado: '{nombre}' (id={nuevo_rubro.rubroId}, OG={og_code})")
+        print(f"   🆕 Rubro creado: '{nombre}' (id={nuevo_rubro.rubroId}, "
+              f"codigo={og_code}, categoria={categoria}, esAsistencia={es_asist})")
 
     # ------------------------------------------------------------------
     # 2. UPSERT Partidas Presupuestarias (usando el cache de rubros)
     # ------------------------------------------------------------------
-    # Mapeo fallback para partidas que no tengan OG (caso de un Excel
-    # mal formateado) — se usa el resolver antiguo por keywords.
+    # Fallback para partidas que no tengan OG (Excel mal formateado).
     def _resolver_rubro_generico(categoria: str, detalle: str) -> Optional[RubrosPropuesta]:
         texto = f"{categoria or ''} {detalle or ''}".lower()
         if "beca" in texto or "asistente" in texto or "estudiante" in texto:
@@ -1089,9 +1124,14 @@ def _persistir_datos_form06(
         if monto <= 0:
             continue
 
-        # Resolver el rubro: preferir el cache por OG code, fallback al genérico
+        # Resolver rubro: preferir lookup por OG code en el cache,
+        # luego por codigo en BD, luego fallback genérico por keywords.
         og_code = p.get("og", "")
         rubro = rubros_cache.get(og_code) if og_code else None
+        if not rubro and og_code:
+            rubro = _lookup_rubro_por_codigo(sesion, og_code)
+            if rubro:
+                rubros_cache[og_code] = rubro
         if not rubro:
             rubro = _resolver_rubro_generico(p.get("categoria", ""), p.get("detalle", ""))
 
