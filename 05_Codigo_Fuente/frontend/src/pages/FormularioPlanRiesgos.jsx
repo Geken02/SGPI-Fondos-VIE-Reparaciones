@@ -91,7 +91,6 @@ const FormularioPlanRiesgos = () => {
   
   const isInitialMountF5 = useRef(true);
   const lastSyncedActividadesF5 = useRef('');
-  const autosavePlanTimer = useRef(null);
   const ultimoPlanGuardado = useRef('');
 
   const [guardadoMsg, setGuardadoMsg] = useState('Cargando datos...');
@@ -159,7 +158,6 @@ const FormularioPlanRiesgos = () => {
     return aprox ? aprox.tipoResponsabilidadId : null;
   }, [catalogosAux.tiposResponsabilidad]);
 
-  // ✅ CONSTRUIR PAYLOAD SEGURO
   const construirPayloadPlan = useCallback(() => {
     const objetivos = (objetivosEspecificos || [])
       .filter(desc => (desc || '').trim() !== '')
@@ -224,7 +222,7 @@ const FormularioPlanRiesgos = () => {
     }
   }, [usuario]);
 
-  // ✅ CARGA INICIAL DE DATOS
+  // ✅ CARGA INICIAL DE DATOS (BD es la fuente de verdad)
   useEffect(() => {
     const cargarPropuestaBD = async () => {
       let id = propuestaIdUrl;
@@ -273,20 +271,20 @@ const FormularioPlanRiesgos = () => {
           if (prop.modalidad) setTipoIniciativa(prop.modalidad);
         }
 
-        // 1. Cargar Objetivos (Prioridad: Form04 Local > BD Contenido > BD PlanAccion)
-        if (form04Data?.objetivosEspecificos && Array.isArray(form04Data.objetivosEspecificos)) {
-          setObjetivosEspecificos(form04Data.objetivosEspecificos.filter(Boolean));
+        // 1. Cargar Objetivos (Prioridad: BD PlanAccion > BD Contenido > Form04 Local)
+        if (prop?.planAccion?.objetivosEspecificos?.length > 0) {
+          setObjetivosEspecificos(prop.planAccion.objetivosEspecificos.map(o => o.descripcion || ''));
         } else if (prop?.contenido?.objetivosEspecificos) {
           const objs = prop.contenido.objetivosEspecificos.split(';\n').filter(Boolean);
           if (objs.length > 0) setObjetivosEspecificos(objs);
-        } else if (prop?.planAccion?.objetivosEspecificos?.length > 0) {
-          setObjetivosEspecificos(prop.planAccion.objetivosEspecificos.map(o => o.descripcion || ''));
+        } else if (form04Data?.objetivosEspecificos && Array.isArray(form04Data.objetivosEspecificos)) {
+          setObjetivosEspecificos(form04Data.objetivosEspecificos.filter(Boolean));
         }
 
         const miembrosCompletos = construirIntegrantesDeEquipo(prop, form04Data, usuario);
         if (miembrosCompletos.length > 0) setIntegrantes(miembrosCompletos);
 
-        // 2. Cargar Actividades desde la BD
+        // 2. Cargar Actividades desde la BD (Fuente de verdad)
         if (prop?.planAccion?.actividades?.length > 0) {
           const idxObjetivo = new Map(
             (prop.planAccion.objetivosEspecificos || []).map((o, i) => [o.objetivoEspecificoId, i])
@@ -323,9 +321,9 @@ const FormularioPlanRiesgos = () => {
         console.error("Error cargando propuesta:", _e);
       }
 
-      // 3. Fusionar con LocalStorage (si es más reciente)
+      // 3. Fusionar con LocalStorage (SOLO si la BD está vacía, y SANITIZANDO basura)
       try {
-        let actsCargadas = null;
+        let actsCargadasLocal = null;
         let l = null;
         const localRaw = localStorage.getItem(`propuesta_${id}_plan_riesgos`);
         if (localRaw) {
@@ -333,7 +331,7 @@ const FormularioPlanRiesgos = () => {
           if (l.nombrePropuesta) setNombrePropuesta(l.nombrePropuesta);
           if (l.tipoIniciativa) setTipoIniciativa(l.tipoIniciativa);
           if (l.duracionMeses) setDuracionMeses(l.duracionMeses);
-          if (l.actividades && l.actividades.length > 0) actsCargadas = l.actividades;
+          if (l.actividades && l.actividades.length > 0) actsCargadasLocal = l.actividades;
           if (l.integrantes && l.integrantes.length > 0) {
             setIntegrantes(prev => {
               const mapa = new Map();
@@ -347,19 +345,18 @@ const FormularioPlanRiesgos = () => {
           }
         }
 
-        if (form04Data?.actividadesCronograma && Array.isArray(form04Data.actividadesCronograma) && form04Data.actividadesCronograma.length > 0) {
-          const f4Time = form04Data.fechaGuardado ? new Date(form04Data.fechaGuardado).getTime() : 0;
-          const f5Time = l?.fechaGuardado ? new Date(l.fechaGuardado).getTime() : 0;
-          if (!actsCargadas || f4Time >= f5Time) actsCargadas = form04Data.actividadesCronograma;
+        // ✅ Si la BD está vacía, usamos el localStorage, pero SANITIZADO para evitar basura de pruebas
+        if ((!actsDesdeBD || actsDesdeBD.length === 0) && actsCargadasLocal && actsCargadasLocal.length > 0) {
+          actsCargadasLocal = actsCargadasLocal.filter(a => {
+            const txt = (a.actividad || '').trim().toLowerCase();
+            return txt.length >= 3 && !['abc','aaa','test','jhhha','adasd','fvvv','jjj','a','hahaha'].includes(txt);
+          });
+          actsDesdeBD = actsCargadasLocal; // Asignamos a la variable principal para ser usada abajo
         }
 
-        if ((!actsCargadas || actsCargadas.length === 0) && actsDesdeBD && actsDesdeBD.length > 0) {
-          actsCargadas = actsDesdeBD;
-        }
-
-        if (actsCargadas && actsCargadas.length > 0) {
-          setActividades(actsCargadas);
-          lastSyncedActividadesF5.current = JSON.stringify(actsCargadas);
+        if (actsDesdeBD && actsDesdeBD.length > 0) {
+          setActividades(actsDesdeBD);
+          lastSyncedActividadesF5.current = JSON.stringify(actsDesdeBD);
         }
       } catch (_e) {}
 
@@ -370,68 +367,31 @@ const FormularioPlanRiesgos = () => {
     cargarPropuestaBD();
   }, [propuestaIdUrl]);
 
-  // ✅ AUTOGUARDADO LOCAL (LocalStorage)
-  useEffect(() => {
-    if (isInitialMountF5.current) return;
-    const serialized = JSON.stringify(actividades);
-    if (serialized === lastSyncedActividadesF5.current) return;
-    lastSyncedActividadesF5.current = serialized;
-
-    const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
-    if (!id || id === 'undefined') return;
-
-    try {
-      const ahora = new Date().toISOString();
-      const rawF5 = localStorage.getItem(`propuesta_${id}_plan_riesgos`);
-      const f5Data = rawF5 ? JSON.parse(rawF5) : {};
-      f5Data.actividades = actividades;
-      f5Data.nombrePropuesta = nombrePropuesta || f5Data.nombrePropuesta;
-      f5Data.tipoIniciativa = tipoIniciativa || f5Data.tipoIniciativa;
-      f5Data.duracionMeses = duracionMeses || f5Data.duracionMeses;
-      f5Data.integrantes = integrantes || f5Data.integrantes;
-      f5Data.fechaGuardado = ahora;
-      localStorage.setItem(`propuesta_${id}_plan_riesgos`, JSON.stringify(f5Data));
-      localStorage.setItem(`borrador_form05_${id}`, JSON.stringify(f5Data));
-
-      const rawF4 = localStorage.getItem(`borrador_form04_${id}`);
-      const f4Data = rawF4 ? JSON.parse(rawF4) : {};
-      f4Data.actividadesCronograma = actividades;
-      f4Data.fechaGuardado = ahora;
-      localStorage.setItem(`borrador_form04_${id}`, JSON.stringify(f4Data));
-      localStorage.setItem('borrador_form04_ultimo', JSON.stringify(f4Data));
-
-      window.dispatchEvent(new CustomEvent('sgpi_matrices_sync', { detail: { propuestaId: String(id), actividades: actividades, fuente: 'form05' } }));
-    } catch (_e) {}
-  }, [actividades, nombrePropuesta, tipoIniciativa, duracionMeses, integrantes]);
-
-  // ✅ AUTOGUARDADO EN BASE DE DATOS (Blindado contra payloads vacíos)
+  // ✅ AUTOGUARDADO LOCAL (Solo localStorage, NUNCA a la BD automáticamente)
   useEffect(() => {
     if (isInitialMountF5.current) return;
     const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
     if (!id || id === 'undefined') return;
-
-    // 🛡️ GUARDIA CRÍTICA: No enviar nada si no hay datos (evita borrar la BD en el primer render)
-    if (actividades.length === 0 && objetivosEspecificos.length === 0) return;
-
-    const payload = construirPayloadPlan();
-    const serializado = JSON.stringify(payload);
-    if (serializado === ultimoPlanGuardado.current) return;
-
-    if (autosavePlanTimer.current) clearTimeout(autosavePlanTimer.current);
-    autosavePlanTimer.current = setTimeout(async () => {
+    
+    const t = setTimeout(() => {
       try {
-        setGuardadoMsg('Guardando en la nube...');
-        await propuestaService.guardarPlanAccion(id, payload);
-        ultimoPlanGuardado.current = serializado;
-        setGuardadoMsg('Autoguardado en la nube');
-      } catch (err) {
-        console.warn('Error en autoguardado del Plan de Acción:', err);
-        setGuardadoMsg('Error al autoguardar');
-      }
-    }, 1500);
-
-    return () => { if (autosavePlanTimer.current) clearTimeout(autosavePlanTimer.current); };
-  }, [actividades, objetivosEspecificos, integrantes, propuestaIdUrl, construirPayloadPlan]);
+        const ahora = new Date().toISOString();
+        const raw = localStorage.getItem(`propuesta_${id}_plan_riesgos`);
+        const f5 = raw ? JSON.parse(raw) : {};
+        f5.actividades = actividades;
+        f5.objetivosEspecificos = objetivosEspecificos;
+        f5.integrantes = integrantes;
+        f5.nombrePropuesta = nombrePropuesta || f5.nombrePropuesta;
+        f5.tipoIniciativa = tipoIniciativa || f5.tipoIniciativa;
+        f5.duracionMeses = duracionMeses || f5.duracionMeses;
+        f5.fechaGuardado = ahora;
+        localStorage.setItem(`propuesta_${id}_plan_riesgos`, JSON.stringify(f5));
+        localStorage.setItem(`borrador_form05_${id}`, JSON.stringify(f5));
+        setGuardadoMsg('Guardado local');
+      } catch (_e) {}
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [actividades, objetivosEspecificos, integrantes, nombrePropuesta, tipoIniciativa, duracionMeses, propuestaIdUrl]);
 
   // Sincronización entre pestañas
   useEffect(() => {
@@ -478,46 +438,32 @@ const FormularioPlanRiesgos = () => {
   const handleGuardarBorrador = async () => {
     setGuardando(true);
     const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
-    const dataToSave = { nombrePropuesta, tipoIniciativa, duracionMeses, integrantes, actividades, fechaGuardado: new Date().toISOString() };
+    const dataToSave = { nombrePropuesta, tipoIniciativa, duracionMeses, integrantes, actividades, objetivosEspecificos, fechaGuardado: new Date().toISOString() };
 
     if (id) {
       localStorage.setItem(`propuesta_${id}_plan_riesgos`, JSON.stringify(dataToSave));
       localStorage.setItem(`borrador_form05_${id}`, JSON.stringify(dataToSave));
-      try {
-        const rawF4 = localStorage.getItem(`borrador_form04_${id}`);
-        const f4Data = rawF4 ? JSON.parse(rawF4) : {};
-        f4Data.actividadesCronograma = dataToSave.actividades;
-        f4Data.fechaGuardado = dataToSave.fechaGuardado;
-        localStorage.setItem(`borrador_form04_${id}`, JSON.stringify(f4Data));
-        localStorage.setItem('borrador_form04_ultimo', JSON.stringify(f4Data));
-      } catch (_e) {}
       
       try {
-        await propuestaService.actualizarCabecera(id, { titulo: nombrePropuesta || 'Iniciativa de Investigación' });
+        const payloadPlan = construirPayloadPlan();
+        await propuestaService.guardarPlanAccion(id, payloadPlan);
+        ultimoPlanGuardado.current = JSON.stringify(payloadPlan);
+        setGuardadoMsg('Guardado en la nube');
+      } catch (err) {
+        console.warn('⚠️ No se pudo guardar el Plan de Acción en la BD:', err);
+        setGuardadoMsg('Error al guardar en la nube');
+      }
 
-        try {
-          const payloadPlan = construirPayloadPlan();
-          await propuestaService.guardarPlanAccion(id, payloadPlan);
-          ultimoPlanGuardado.current = JSON.stringify(payloadPlan);
-          setGuardadoMsg('Guardado en la nube');
-        } catch (err) {
-          console.warn('⚠️ No se pudo guardar el Plan de Acción en la BD:', err);
-          setGuardadoMsg('Error al guardar en la nube');
+      try {
+        const { generarBlobForm05Excel, subirBlobASupabase } = await import('../utils/exportUtils');
+        const blob = await generarBlobForm05Excel(dataToSave, id);
+        if (blob && blob.size > 0) {
+          await subirBlobASupabase(propuestaService, id, 2, blob, `Form05_${id}.xlsx`);
         }
-
-        try {
-          const { generarBlobForm05Excel, subirBlobASupabase } = await import('../utils/exportUtils');
-          const blob = await generarBlobForm05Excel(dataToSave, id);
-          if (blob && blob.size > 0) {
-            await subirBlobASupabase(propuestaService, id, 2, blob, `Form05_${id}.xlsx`);
-          }
-        } catch (err) {
-          console.warn('⚠️ No se pudo subir Form-05 a Supabase:', err);
-        }
-
-      } catch (_e) {}
+      } catch (err) {
+        console.warn('⚠️ No se pudo subir Form-05 a Supabase:', err);
+      }
     }
-    localStorage.setItem('propuesta_plan_riesgos_ultimo', JSON.stringify(dataToSave));
     window.dispatchEvent(new Event('propuestaCreada'));
     setGuardando(false);
     alert('¡Borrador del Plan de Acción y Gestión del Riesgo (Form-05) guardado con éxito!');
@@ -526,7 +472,7 @@ const FormularioPlanRiesgos = () => {
   const handleEnviarPlan = async () => {
     setGuardando(true);
     const id = propuestaIdUrl || localStorage.getItem('propuesta_activa_id');
-    const dataToSave = { nombrePropuesta, tipoIniciativa, duracionMeses, integrantes, actividades, fechaGuardado: new Date().toISOString() };
+    const dataToSave = { nombrePropuesta, tipoIniciativa, duracionMeses, integrantes, actividades, objetivosEspecificos, fechaGuardado: new Date().toISOString() };
 
     if (id) {
       localStorage.setItem(`propuesta_${id}_plan_riesgos`, JSON.stringify(dataToSave));
@@ -832,7 +778,7 @@ const FormularioPlanRiesgos = () => {
 
         <div className="form-footer-action-bar">
           <div className="footer-left">
-            <button type="button" className="btn-form-nav btn-outline" onClick={() => { const idProp = propuestaIdUrl || localStorage.getItem('propuesta_activa_id') || ''; exportarForm05Excel({ nombrePropuesta, tipoIniciativa, duracionMeses, integrantes, actividades }, idProp ? `Propuesta-${idProp}` : 'Form05'); }}><IconoCie nombre="download" tamano={14} /> Descargar Excel</button>
+            <button type="button" className="btn-form-nav btn-outline" onClick={() => { const idProp = propuestaIdUrl || localStorage.getItem('propuesta_activa_id') || ''; exportarForm05Excel({ nombrePropuesta, tipoIniciativa, duracionMeses, integrantes, actividades, objetivosEspecificos }, idProp ? `Propuesta-${idProp}` : 'Form05'); }}><IconoCie nombre="download" tamano={14} /> Descargar Excel</button>
           </div>
           <div className="footer-center">
             <button type="button" className="btn-form-nav btn-outline" onClick={handleGuardarBorrador} disabled={guardando}>Guardar Borrador</button>
