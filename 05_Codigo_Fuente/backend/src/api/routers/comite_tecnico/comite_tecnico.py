@@ -814,6 +814,7 @@ def emitir_dictamen(
 # ============================================================================
 # ASISTENTE DE IA
 # ============================================================================
+@router.post("/ia/analizar-documento/{propuesta_id}", response_model=AnalisisDocumentoIAResponse)
 def analizar_documento_completo_ia(
     propuesta_id: int,
     request: AnalisisDocumentoIARequest,
