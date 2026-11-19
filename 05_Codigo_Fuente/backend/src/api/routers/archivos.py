@@ -614,20 +614,10 @@ def _persistir_datos_form04(sesion: Session, propuesta_id: int, datos: dict, usu
                 esPropiedadIndustrial=es_pi, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora
             ))
 
-    # 11. DICTAMENES
     oficio_dict = s1.get("potencial_pi", {}).get("oficio_dictamen", "")
     if oficio_dict:
-        dict_db = sesion.query(Dictamenes).filter(Dictamenes.propuestaId == propuesta_id, Dictamenes.numeroOficio == oficio_dict).first()
-        if dict_db:
-            dict_db.contenido = f"Dictamen del Centro de Vinculación: {oficio_dict}. Generado automáticamente desde el Form-04."
-            dict_db.usuarioAuditoriaId = usuario_actual.usuarioId
-            dict_db.ultimaAuditoria = ahora
-        else:
-            sesion.add(Dictamenes(
-                propuestaId=propuesta_id, numeroOficio=oficio_dict, fechaEmision=ahora,
-                contenido=f"Dictamen del Centro de Vinculación: {oficio_dict}. Generado automáticamente desde el Form-04.",
-                usuarioRemitenteId=usuario_actual.usuarioId, creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora
-            ))
+        print(f"📋 Oficio de potencial PI declarado en Form-04: '{oficio_dict}'")
+        print(f"   (No se crea registro en Dictamenes — eso es responsabilidad del rol de Vinculación.)")
 
     # 12. REFERENCIAS BIBLIOGRÁFICAS
     for ref in datos.get("referencias", []):
