@@ -5,6 +5,7 @@ import json
 import re
 import os
 import requests
+from sqlalchemy.orm import Session
 from src.utils.s3_client import s3_client, S3_BUCKET_NAME
 from src.services.comite_tecnico.rubricas_data import (
     RUBRICA_FORTALECIMIENTO, RUBRICA_BASICA_APLICADA, RUBRICA_DESARROLLO_TECNOLOGICO
@@ -203,7 +204,12 @@ def llamar_a_ia(prompt: str) -> str:
     
     raise Exception(f"Cloudflare falló: {data.get('errors')}")
 
-def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, criterios_reales_por_seccion: dict = None) -> dict:
+def analizar_documento_completo(
+    propuesta_id: int, 
+    db: Session, 
+    tipo_modalidad: str = None, 
+    criterios_reales_por_seccion: dict = None
+) -> dict:
     inicio_total = time.time()
     sugerencias = {}
     total_evaluados = 0
@@ -214,14 +220,31 @@ def analizar_documento_completo(propuesta_id: int, tipo_modalidad: str = None, c
     rubrica = obtener_rubrica_por_modalidad(tipo_modalidad)
     print(f"📚 Rúbrica: {rubrica['nombre']}")
     
-    # 1. Extraer texto completo del documento
+    # 1. Extraer texto completo del documento usando la RUTA REAL de la Base de Datos
     try:
-        texto_completo = extraer_texto_documento(f"propuestas/{propuesta_id}/Form-04.docx")
+        from src.models.propuesta_documentos import PropuestaDocumentos
+        
+        # Buscamos el documento activo de tipo Form-04 (asumimos tipoDocumentoId == 1)
+        # Si en tu BD el Form-04 tiene otro ID, cámbialo aquí.
+        doc = db.query(PropuestaDocumentos).filter(
+            PropuestaDocumentos.propuestaId == propuesta_id,
+            PropuestaDocumentos.tipoDocumentoId == 1,
+            PropuestaDocumentos.activo == True
+        ).first()
+        
+        if not doc:
+            return {"error": f"No se ha subido el Formulario 04 (tipoDocumentoId=1) para la propuesta {propuesta_id}."}
+            
+        ruta_real = doc.rutaArchivo
+        print(f"📂 Ruta real del documento en S3: {ruta_real}")
+        
+        texto_completo = extraer_texto_documento(ruta_real)
         print(f"📏 Texto extraído: {len(texto_completo)} caracteres")
+        
     except Exception as e:
         return {"error": f"No se pudo leer el documento: {str(e)}"}
 
-    # 2. Iterar por cada sección de la rúbrica
+    # 2. Iterar por cada sección de la rúbrica (el resto de tu código sigue igual)
     for seccion in rubrica["secciones"]:
         nombre = seccion["nombre"]
         seccion_id = seccion["id"]
@@ -272,7 +295,7 @@ Formato:
                 if evaluaciones_validas:
                     sugerencias[str(seccion_id)] = {"nombre": nombre, "criterios": evaluaciones_validas}
                     total_evaluados += len(evaluaciones_validas)
-                    print(f"  ✅ {nombre}: {len(evaluaciones_validas)} criterios")
+                    print(f"  {nombre}: {len(evaluaciones_validas)} criterios")
                 else:
                     print(f"  ⚠️ {nombre}: JSON vacío o inválido. Respuesta: {str(respuesta_raw)[:100]}")
             else:

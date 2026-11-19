@@ -814,7 +814,6 @@ def emitir_dictamen(
 # ============================================================================
 # ASISTENTE DE IA
 # ============================================================================
-@router.post("/ia/analizar-documento/{propuesta_id}", response_model=AnalisisDocumentoIAResponse)
 def analizar_documento_completo_ia(
     propuesta_id: int,
     request: AnalisisDocumentoIARequest,
@@ -825,12 +824,13 @@ def analizar_documento_completo_ia(
         print(f"🤖 Iniciando análisis con Cloudflare AI para propuesta {propuesta_id}")
         resultado = analizar_documento_completo(
             propuesta_id=propuesta_id,
+            db=db,
             tipo_modalidad=request.tipoModalidad,
             criterios_reales_por_seccion=request.criteriosPorSeccion
         )
         
         if "error" in resultado:
-            raise HTTPException(status_code=500, detail=resultado["error"])
+            raise HTTPException(status_code=400, detail=resultado["error"])
         
         return resultado
         
