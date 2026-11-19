@@ -19,7 +19,7 @@ from src.api.schemas.admin import catalogos as esquemas
 from src.database import get_db
 from src.models.usuarios import Usuario
 from src.services.admin import catalogo_service
-from src.utils.dependencias import requerir_rol
+from src.utils.dependencias import requerir_rol, obtener_usuario_activo
 from src.utils.seguridad import registrar_log_request
 from src.utils.permisos import verificar_permiso  
 
@@ -147,6 +147,9 @@ def registrar_rutas_catalogo(clave: str) -> None:
     descriptor = catalogo_service.DESCRIPTORES[clave]
     esquema_crear, esquema_actualizar, esquema_response = MAPEO_ESQUEMAS[clave]
     depende_admin = Depends(requerir_rol(ROLES_ADMIN))
+    # Lectura de catálogos: cualquier usuario autenticado (p. ej. investigadores que
+    # consumen los catálogos en los formularios). La escritura sigue siendo solo admin.
+    depende_autenticado = Depends(obtener_usuario_activo)
     
     depende_permiso = Depends(verificar_permiso("catalogos.gestionar"))
 
@@ -162,10 +165,10 @@ def registrar_rutas_catalogo(clave: str) -> None:
     EVENTO_CAMBIAR_ESTADO = "ADMIN.CATALOGO_MODIFICADO" # ID 55
 
     # -------------------------------------------------------------------------
-    # LISTAR (GET) - Solo requiere rol admin
+    # LISTAR (GET) - Accesible a cualquier usuario autenticado
     # -------------------------------------------------------------------------
     @router.get(f"/{clave}", tags=["Administración - Catálogos"], summary=f"Listar {descriptor.nombre}",
-                 dependencies=[depende_admin])
+                 dependencies=[depende_autenticado])
     def listar_registros(
         sesion: Session = Depends(get_db),
         pagina: int = Query(default=1, ge=1),
@@ -180,10 +183,10 @@ def registrar_rutas_catalogo(clave: str) -> None:
         return _envoltura(clave, items, metadatos, esquema_response)
 
     # -------------------------------------------------------------------------
-    # OBTENER POR ID (GET) - Solo requiere rol admin
+    # OBTENER POR ID (GET) - Accesible a cualquier usuario autenticado
     # -------------------------------------------------------------------------
     @router.get(f"/{clave}/{{registro_id}}", tags=["Administración - Catálogos"], summary=f"Obtener {descriptor.nombre}",
-                 dependencies=[depende_admin])
+                 dependencies=[depende_autenticado])
     def obtener_registro(registro_id: int, sesion: Session = Depends(get_db)):
         registro = catalogo_service.obtener(sesion, descriptor, registro_id)
         return _serializar(clave, registro, esquema_response)

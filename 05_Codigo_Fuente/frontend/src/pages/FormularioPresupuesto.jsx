@@ -7,18 +7,9 @@ import { LimitedInput, LimitedTextarea } from '../components/LimitedInput';
 import { exportarPresupuestoExcel } from '../utils/exportUtils';
 import IconoCie from '../components/cie/IconoCie';
 
-// Catálogo local de respaldo: se usa SOLO si la tabla RubrosPropuesta (catálogo
-// 'rubros' de la BD) no devuelve objetos de gasto con código. La fuente real de
-// verdad es la base de datos (columnas codigo / categoria / esAsistencia).
-const CATALOGO_OG = [
-  { codigo: '6-02-03-03', detalle: 'Becas estudiante asistente especial', categoria: 'Becas', esAsistencia: true, rubroId: 9 },
-  { codigo: '1-05-02-01', detalle: 'Viáticos dentro del país (Equipo TEC)', categoria: 'Servicios', esAsistencia: false, rubroId: 3 },
-  { codigo: '2-01-99-01', detalle: 'Otros productos químicos y reactivos', categoria: 'Materiales', esAsistencia: false, rubroId: 4 },
-  { codigo: '5-01-05-01', detalle: 'Equipo sanitario, de lab e investigación', categoria: 'Equipo', esAsistencia: false, rubroId: 8 },
-  { codigo: '1-04-01-01', detalle: 'Servicios de gestión y software en la nube', categoria: 'Servicios', esAsistencia: false, rubroId: 6 },
-  { codigo: '2-04-01-01', detalle: 'Materiales y suministros eléctricos / sensores', categoria: 'Materiales', esAsistencia: false, rubroId: 4 }
-];
-
+// Los Objetos de Gasto se cargan desde la tabla RubrosPropuesta (catálogo 'rubros'
+// de la BD) usando las columnas codigo / categoria / esAsistencia. No hay catálogo
+// hardcodeado: si la BD no devuelve rubros con código, el formulario queda sin OG.
 const PRESUPUESTO_INICIAL = { 2027: [], 2028: [], 2029: [] };
 
 const FormularioPresupuesto = () => {
@@ -32,12 +23,11 @@ const FormularioPresupuesto = () => {
   const [presupuestos, setPresupuestos] = useState(PRESUPUESTO_INICIAL);
   const [mostrarFormNuevaFila, setMostrarFormNuevaFila] = useState(false);
 
-  // Catálogo de Objetos de Gasto activo: se hidrata desde la tabla RubrosPropuesta
-  // (catálogo 'rubros') usando las columnas codigo / categoria / esAsistencia.
-  // Mientras llega la respuesta de la BD se usa CATALOGO_OG como respaldo local.
-  const [catalogoOG, setCatalogoOG] = useState(CATALOGO_OG);
+  // Catálogo de Objetos de Gasto: se carga desde la tabla RubrosPropuesta (catálogo
+  // 'rubros') usando las columnas codigo / categoria / esAsistencia.
+  const [catalogoOG, setCatalogoOG] = useState([]);
 
-  const [ogSeleccionado, setOgSeleccionado] = useState(CATALOGO_OG[0].codigo);
+  const [ogSeleccionado, setOgSeleccionado] = useState('');
   const [numEstudiantes, setNumEstudiantes] = useState(1);
   const [horasMes, setHorasMes] = useState(20);
   const [meses, setMeses] = useState(10);
@@ -47,8 +37,8 @@ const FormularioPresupuesto = () => {
   const [guardadoMsg, setGuardadoMsg] = useState('Cargando datos...');
   const [guardando, setGuardando] = useState(false);
 
-  // Hidratar el catálogo de Objetos de Gasto desde la tabla RubrosPropuesta.
-  // Solo se consideran rubros con código OG (columnas nuevas codigo/categoria/esAsistencia).
+  // Cargar el catálogo de Objetos de Gasto desde la tabla RubrosPropuesta.
+  // Solo se consideran rubros con código OG (columnas codigo/categoria/esAsistencia).
   useEffect(() => {
     const cargarCatalogoOG = async () => {
       try {
@@ -63,12 +53,10 @@ const FormularioPresupuesto = () => {
             esAsistencia: Boolean(r.esAsistencia),
             rubroId: r.rubroId,
           }));
-        if (mapeados.length > 0) {
-          setCatalogoOG(mapeados);
-          setOgSeleccionado((prev) => (mapeados.some((m) => m.codigo === prev) ? prev : mapeados[0].codigo));
-        }
+        setCatalogoOG(mapeados);
+        setOgSeleccionado((prev) => (mapeados.some((m) => m.codigo === prev) ? prev : (mapeados[0]?.codigo || '')));
       } catch (err) {
-        console.warn('No se pudo cargar el catálogo de rubros (OG) desde la BD; se usa el respaldo local:', err);
+        console.warn('No se pudo cargar el catálogo de rubros (OG) desde la BD:', err);
       }
     };
     cargarCatalogoOG();
@@ -108,14 +96,14 @@ const FormularioPresupuesto = () => {
             propData.presupuesto.forEach((item) => {
               const anio = item.anioEjecucion || 2027;
               if (!transformado[anio]) transformado[anio] = [];
-              const catObj = catalogoOG.find(c => c.rubroId === item.rubroId) || catalogoOG[0];
+              const catObj = catalogoOG.find(c => c.rubroId === item.rubroId);
               transformado[anio].push({
                 id: item.presupuestoId || (Date.now() + Math.random()),
-                codigo: catObj.codigo,
-                detalle: catObj.detalle,
+                codigo: catObj?.codigo || '—',
+                detalle: catObj?.detalle || 'Rubro presupuestado',
                 monto: Number(item.montoSolicitado) || 0,
                 justificacion: item.justificacion || 'Rubro presupuestado desde el sistema',
-                categoria: catObj.categoria,
+                categoria: catObj?.categoria || 'Otros',
                 rubroId: item.rubroId
               });
             });
@@ -176,8 +164,8 @@ const FormularioPresupuesto = () => {
     return () => clearTimeout(t);
   }, [presupuestos, propuestaIdUrl]);
 
-  const ogActualObj = catalogoOG.find(item => item.codigo === ogSeleccionado) || catalogoOG[0];
-  const subtotalCalculado = ogActualObj.esAsistencia ? (numEstudiantes * horasMes * meses * 2400) : Number(montoManual || 0);
+  const ogActualObj = catalogoOG.find(item => item.codigo === ogSeleccionado) || catalogoOG[0] || null;
+  const subtotalCalculado = ogActualObj?.esAsistencia ? (numEstudiantes * horasMes * meses * 2400) : Number(montoManual || 0);
 
   const filasActuales = presupuestos[anoActivo] || [];
   const totalServicios = filasActuales.filter(f => f.categoria === 'Servicios').reduce((acc, f) => acc + Number(f.monto || 0), 0);
@@ -188,6 +176,10 @@ const FormularioPresupuesto = () => {
 
   const handleInsertarFila = (e) => {
     e.preventDefault();
+    if (!ogActualObj) {
+      alert('No hay objetos de gasto disponibles. Configure rubros con código OG en el catálogo.');
+      return;
+    }
     if (!justificacionFila.trim()) { 
       alert('Por favor ingrese una justificación técnica para el rubro.'); 
       return; 
@@ -405,11 +397,17 @@ const FormularioPresupuesto = () => {
           </table>
         </div>
 
-        {!mostrarFormNuevaFila && (
+        {!mostrarFormNuevaFila && catalogoOG.length === 0 && (
+          <div style={{ padding: '16px 20px', color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '14px' }}>
+            No hay objetos de gasto configurados en el catálogo. Un administrador debe registrar rubros con código OG (columnas <strong>codigo / categoria / esAsistencia</strong>) para poder presupuestar.
+          </div>
+        )}
+
+        {!mostrarFormNuevaFila && catalogoOG.length > 0 && (
           <button type="button" className="btn-dashed-add-row" onClick={() => setMostrarFormNuevaFila(true)}>+ AGREGAR NUEVO OBJETO DE GASTO (NUEVA FILA)</button>
         )}
 
-        {mostrarFormNuevaFila && (
+        {mostrarFormNuevaFila && catalogoOG.length > 0 && (
           <div className="new-expense-card-panel">
             <div className="new-expense-header">+ FORMULARIO DE NUEVA FILA — SELECCIÓN DE OBJETO DE GASTO (OG)</div>
             <form onSubmit={handleInsertarFila} style={{ padding: '20px' }}>
