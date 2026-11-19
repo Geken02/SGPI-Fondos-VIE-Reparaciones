@@ -1151,6 +1151,7 @@ def _persistir_datos_form06(
         if pres_db:
             pres_db.montoSolicitado = monto
             pres_db.esDuradero = es_duradero
+            pres_db.justificacion = p.get("justificacion", "") or pres_db.justificacion
             pres_db.usuarioAuditoriaId = usuario_actual.usuarioId
             pres_db.ultimaAuditoria = ahora
             stats["partidas_actualizadas"] += 1
@@ -1158,6 +1159,7 @@ def _persistir_datos_form06(
             sesion.add(PresupuestoPropuesta(
                 propuestaId=propuesta_id, rubroId=rubro.rubroId,
                 montoSolicitado=monto, anioEjecucion=p["anio"], esDuradero=es_duradero,
+                justificacion=p.get("justificacion", "") or None,
                 creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora,
             ))
             stats["partidas_creadas"] += 1
