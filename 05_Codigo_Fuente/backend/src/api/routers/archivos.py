@@ -157,79 +157,87 @@ def _obtener_o_crear_usuario_por_orcid(sesion: Session, nombre_completo: str, or
 
 
 # ============================================================================
-# NUEVOS HELPERS PARA FORM-05: Cache de iniciales → usuarioId
+# HELPERS PARA FORM-05: Comparar NOMBRES (no iniciales) con regex
+# ============================================================================
+# Estrategia simple:
+#   1. Extraer de la BD: nombre, apellido1, apellido2 (de Usuarios y
+#      ColaboradoresExternos).
+#   2. Convertir esos 3 campos en una HILERA de texto normalizada:
+#        "Mario" + "Chacón" + "Rivas" → "mario chacon rivas"
+#   3. El parser ya nos da equipo_map = {"MChR": "Mario Chacón Rivas", ...}
+#      desde la tabla de equipo del Excel.
+#   4. Para cada {iniciales → nombre_excel} del equipo_map, buscar en la BD
+#      un usuario cuyo nombre (ya convertido a hilera) coincida con el
+#      nombre del Excel usando regex flexible.
+#   5. El cache final es {iniciales → usuarioId} — lookup directo, sin regex
+#      en cada actividad.
 # ============================================================================
 
-def _normalizar_nombre(nombre: str) -> str:
-    """Normaliza un nombre: lowercase, sin acentos, espacios colapsados."""
-    if not nombre:
-        return ""
-    norm = unicodedata.normalize("NFKD", nombre.lower())
+def _nombre_a_hilera(
+    nombre: str,
+    apellido1: str = "",
+    apellido2: str = "",
+) -> str:
+    """
+    Convierte los campos de la BD en una HILERA de texto normalizada:
+      - Concatena nombre + apellido1 + apellido2
+      - Quita acentos (Chacón → Chacon)
+      - Convierte a minúsculas
+      - Colapsa espacios múltiples
+
+    Ejemplo:
+      nombre="Mario", apellido1="Chacón", apellido2="Rivas"
+      → "mario chacon rivas"
+    """
+    partes: List[str] = []
+    if nombre:
+        partes.extend([p for p in str(nombre).split() if p])
+    if apellido1:
+        partes.extend([p for p in str(apellido1).split() if p])
+    if apellido2:
+        partes.extend([p for p in str(apellido2).split() if p])
+    hilera = " ".join(partes)
+    # Quitar acentos
+    norm = unicodedata.normalize("NFKD", hilera.lower())
     sin_acentos = "".join(c for c in norm if not unicodedata.category(c).startswith("M"))
     return " ".join(sin_acentos.split())
 
 
-def _nombres_coinciden(nombre_a: str, nombre_b: str) -> bool:
-    """Coincidencia flexible entre dos nombres completos."""
-    a, b = _normalizar_nombre(nombre_a), _normalizar_nombre(nombre_b)
-    if not a or not b:
+def _nombres_coinciden_regex(nombre_a: str, nombre_b: str) -> bool:
+    """
+    Compara dos hileras de nombres normalizadas usando regex.
+
+    Devuelve True si:
+      1. Son exactamente iguales, o
+      2. Una es substring de la otra (ej: "mario chacon" está dentro de
+         "mario chacon rivas"), o
+      3. Los tokens de A aparecen EN ORDEN dentro de B (con caracteres
+         opcionales entre ellos), o viceversa.
+         Ej: "mario rivas" → regex "mario.*rivas" → matchea "mario chacon rivas"
+
+    Esto permite que el nombre del Excel coincida con el de la BD aunque
+    falten apellidos intermedios o haya pequeñas diferencias.
+    """
+    if not nombre_a or not nombre_b:
         return False
-    if a == b:
+    if nombre_a == nombre_b:
         return True
-    tokens_a = set(a.split())
-    tokens_b = set(b.split())
-    comunes = tokens_a & tokens_b
-    if len(comunes) >= 2:
+    # Substring directo
+    if nombre_a in nombre_b or nombre_b in nombre_a:
         return True
-    # Coincidencia por primer nombre
-    if tokens_a and tokens_b and list(tokens_a)[0] == list(tokens_b)[0]:
-        return True
+    # Regex: tokens de A en orden dentro de B
+    tokens_a = [t for t in nombre_a.split() if t]
+    if tokens_a:
+        patron = ".*".join(re.escape(t) for t in tokens_a)
+        if re.match(f"^{patron}$", nombre_b):
+            return True
+    # Regex inverso: tokens de B en orden dentro de A
+    tokens_b = [t for t in nombre_b.split() if t]
+    if tokens_b:
+        patron = ".*".join(re.escape(t) for t in tokens_b)
+        if re.match(f"^{patron}$", nombre_a):
+            return True
     return False
-
-
-def _buscar_usuario_por_nombre(sesion: Session, nombre_completo: str) -> Optional[Usuario]:
-    """Busca un Usuario por nombre + apellido1 (coincidencia flexible)."""
-    if not nombre_completo:
-        return None
-    partes = nombre_completo.split(maxsplit=1)
-    nombre_pila = partes[0]
-    apellido1 = ""
-    if len(partes) > 1:
-        ap_tokens = partes[1].split()
-        apellido1 = ap_tokens[0] if ap_tokens else ""
-    if apellido1:
-        return sesion.query(Usuario).filter(
-            Usuario.nombreUsuario.ilike(f"%{nombre_pila}%"),
-            Usuario.apellido1Usuario.ilike(f"%{apellido1}%"),
-            Usuario.activo == True,
-        ).first()
-    return sesion.query(Usuario).filter(
-        Usuario.nombreUsuario.ilike(nombre_pila),
-        Usuario.activo == True,
-    ).first()
-
-
-def _buscar_colaborador_por_nombre(sesion: Session, propuesta_id: int, nombre_completo: str):
-    """Busca un ColaboradoresExternos por nombre en una propuesta."""
-    if not nombre_completo:
-        return None
-    partes = nombre_completo.split(maxsplit=1)
-    nombre_pila = partes[0]
-    apellido1 = ""
-    if len(partes) > 1:
-        ap_tokens = partes[1].split()
-        apellido1 = ap_tokens[0] if ap_tokens else ""
-    q = sesion.query(ColaboradoresExternos).filter(
-        ColaboradoresExternos.propuestaId == propuesta_id,
-    )
-    if apellido1:
-        return q.filter(
-            ColaboradoresExternos.nombreColaborador.ilike(f"%{nombre_pila}%"),
-            ColaboradoresExternos.apellido1Colaborador.ilike(f"%{apellido1}%"),
-        ).first()
-    return q.filter(
-        ColaboradoresExternos.nombreColaborador.ilike(nombre_pila),
-    ).first()
 
 
 def _construir_cache_iniciales(
@@ -238,78 +246,111 @@ def _construir_cache_iniciales(
     equipo_map: Dict[str, str],
 ) -> Dict[str, Dict[str, Any]]:
     """
-    Para cada {iniciales → nombre_completo} del equipo_map, busca el usuarioId
-    consultando en orden:
-      1. IntegrantesEquipoPropuesta (ya cargados desde el Form-04 con ORCID)
-      2. Usuarios (TEC staff por nombre + apellido1)
-      3. ColaboradoresExternos (externos por nombre + apellido1)
+    Construye el cache {iniciales → info_usuario} comparando NOMBRES.
+
+    Flujo:
+      1. Extrae de la BD todos los Usuarios y ColaboradoresExternos, y para
+         cada uno convierte (nombre + apellido1 + apellido2) en una hilera.
+      2. Para cada par {iniciales → nombre_excel} del equipo_map del parser,
+         busca en la BD un usuario/collaborator cuyo nombre coincida con
+         nombre_excel usando regex.
+      3. El cache final mapea las INICIALES del Excel directamente al
+         usuarioId encontrado.
 
     Devuelve:
         {
-          "MCHR": {"usuarioId": 4, "nombre": "Mario Chacón Rivas", "origen": "Usuarios"},
-          "NPR":  {"usuarioId": None, "colaboradorId": 7, "origen": "ColaboradoresExternos"},
+          "MChR": {"usuarioId": 4, "nombre": "Mario Chacón Rivas", "origen": "Usuarios"},
+          "YL":   {"usuarioId": 5, "nombre": "Yuen Law",            "origen": "Usuarios"},
+          "NPR":  {"usuarioId": None, "colaboradorId": 7,           "origen": "ColaboradoresExternos"},
           "PCD":  {"usuarioId": None, "origen": "NoEncontrado"},
           ...
         }
     """
     cache: Dict[str, Dict[str, Any]] = {}
 
-    # Pre-cargar IntegrantesEquipoPropuesta con sus usuarios
-    integrantes = sesion.query(IntegrantesEquipoPropuesta).filter(
-        IntegrantesEquipoPropuesta.propuestaId == propuesta_id,
-    ).all()
+    # 1. Cargar usuarios de la BD y convertir cada uno en una hilera
+    usuarios_db: List[Dict[str, Any]] = []
+    for u in sesion.query(Usuario).filter(Usuario.activo == True).all():
+        nombre_full = f"{u.nombreUsuario or ''} {u.apellido1Usuario or ''} {u.apellido2Usuario or ''}".strip()
+        usuarios_db.append({
+            "usuarioId": u.usuarioId,
+            "nombre_original": nombre_full,
+            "hilera": _nombre_a_hilera(u.nombreUsuario, u.apellido1Usuario, u.apellido2Usuario),
+        })
 
-    for iniciales, nombre_completo in equipo_map.items():
-        # 1. Buscar en IntegrantesEquipoPropuesta (Form-04 ya los cargó)
-        usuario_encontrado = None
-        for integ in integrantes:
-            usuario = sesion.query(Usuario).filter(
-                Usuario.usuarioId == integ.usuarioId,
-                Usuario.activo == True,
-            ).first()
-            if usuario:
-                nombre_full = f"{usuario.nombreUsuario} {usuario.apellido1Usuario or ''} {usuario.apellido2Usuario or ''}".strip()
-                if _nombres_coinciden(nombre_completo, nombre_full):
-                    usuario_encontrado = usuario
-                    break
+    # 2. Cargar colaboradores externos de la propuesta
+    colaboradores_db: List[Dict[str, Any]] = []
+    for c in sesion.query(ColaboradoresExternos).filter(
+        ColaboradoresExternos.propuestaId == propuesta_id
+    ).all():
+        nombre_full = f"{c.nombreColaborador or ''} {c.apellido1Colaborador or ''} {c.apellido2Colaborador or ''}".strip()
+        colaboradores_db.append({
+            "colaboradorId": c.colaboradorId,
+            "nombre_original": nombre_full,
+            "hilera": _nombre_a_hilera(c.nombreColaborador, c.apellido1Colaborador, c.apellido2Colaborador),
+        })
 
-        if usuario_encontrado:
+    # 3. Para cada {iniciales → nombre_excel} del equipo_map, buscar coincidencia por NOMBRE
+    for iniciales, nombre_excel in equipo_map.items():
+        hilera_excel = _nombre_a_hilera(nombre_excel)
+
+        # 3a. Buscar en Usuarios
+        usuario_match = None
+        for u in usuarios_db:
+            if _nombres_coinciden_regex(hilera_excel, u["hilera"]):
+                usuario_match = u
+                break
+
+        if usuario_match:
             cache[iniciales] = {
-                "usuarioId": usuario_encontrado.usuarioId,
-                "nombre": nombre_completo,
-                "origen": "IntegrantesEquipoPropuesta",
-            }
-            continue
-
-        # 2. Buscar directamente en Usuarios por nombre
-        usuario = _buscar_usuario_por_nombre(sesion, nombre_completo)
-        if usuario:
-            cache[iniciales] = {
-                "usuarioId": usuario.usuarioId,
-                "nombre": nombre_completo,
+                "usuarioId": usuario_match["usuarioId"],
+                "nombre": usuario_match["nombre_original"],
                 "origen": "Usuarios",
             }
             continue
 
-        # 3. Buscar en ColaboradoresExternos
-        col = _buscar_colaborador_por_nombre(sesion, propuesta_id, nombre_completo)
-        if col:
+        # 3b. Buscar en ColaboradoresExternos
+        col_match = None
+        for c in colaboradores_db:
+            if _nombres_coinciden_regex(hilera_excel, c["hilera"]):
+                col_match = c
+                break
+
+        if col_match:
             cache[iniciales] = {
-                "usuarioId": None,  # ColaboradoresExternos no tiene usuarioId
-                "colaboradorId": col.colaboradorId,
-                "nombre": nombre_completo,
+                "usuarioId": None,
+                "colaboradorId": col_match["colaboradorId"],
+                "nombre": col_match["nombre_original"],
                 "origen": "ColaboradoresExternos",
             }
             continue
 
-        # 4. No encontrado
+        # 3c. No encontrado en ninguna tabla
         cache[iniciales] = {
             "usuarioId": None,
-            "nombre": nombre_completo,
+            "nombre": nombre_excel,
             "origen": "NoEncontrado",
         }
 
     return cache
+
+
+def _resolver_iniciales_con_regex(
+    iniciales: str,
+    cache: Dict[str, Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
+    """
+    Lookup directo en el cache por las iniciales del Excel.
+
+    El cache ya fue construido comparando NOMBRES con regex en
+    _construir_cache_iniciales, así que aquí solo hacemos un lookup exacto
+    por las iniciales.  Esta función se mantiene como punto único de
+    acceso para que, si en el futuro se quiere añadir lógica adicional
+    (fallback por nombre, etc.), basta cambiarla aquí.
+    """
+    if not iniciales or not cache:
+        return None
+    return cache.get(iniciales.upper().strip())
 
 
 # ============================================================================
@@ -662,28 +703,45 @@ def _persistir_datos_form05(
     advertencias: List[Dict[str, Any]] = []
 
     # ------------------------------------------------------------------
-    # 1. CONSTRUIR CACHE: iniciales → usuarioId
+    # 1. CONSTRUIR CACHE: {iniciales_excel → usuarioId} comparando NOMBRES
     # ------------------------------------------------------------------
     equipo_map = datos.get("equipo_map", {})
-    print(f"👥 Construyendo cache de iniciales para {len(equipo_map)} personas del equipo...")
+    print(f"👥 Construyendo cache comparando NOMBRES del Excel vs BD...")
+    print(f"   Equipo en Excel: {len(equipo_map)} personas")
     cache_iniciales = _construir_cache_iniciales(sesion, propuesta_id, equipo_map)
 
-    # Reportar en logs el origen de cada inicial
+    # Reportar en logs el resultado del matching por nombre
     for ini, info in cache_iniciales.items():
         uid = info.get("usuarioId")
-        origen = info.get("origen")
+        nombre_bd = info.get("nombre", "")
+        origen = info.get("origen", "NoEncontrado")
         if uid:
-            print(f"   ✓ {ini:6s} → usuarioId={uid} ({origen})")
-        else:
-            print(f"   ⚠️ {ini:6s} → SIN usuarioId ({origen})")
+            print(f"   ✓ {ini:6s} → usuarioId={uid}  "
+                  f"(Excel='{equipo_map.get(ini, '')}' ↔ BD='{nombre_bd}')")
+        elif info.get("colaboradorId"):
+            print(f"   ⚠️ {ini:6s} → SIN usuarioId, colaboradorId={info['colaboradorId']}  "
+                  f"(Excel='{equipo_map.get(ini, '')}' ↔ BD='{nombre_bd}')")
             advertencias.append({
                 "tipo": "participante_sin_usuario",
                 "iniciales": ini,
-                "nombre": info.get("nombre", ""),
+                "nombre": equipo_map.get(ini, ""),
                 "origen": origen,
                 "mensaje": (
-                    f"No se encontró usuario para las iniciales '{ini}' "
-                    f"({info.get('nombre', '')}). Origen: {origen}."
+                    f"No se encontró un Usuario en la BD para '{equipo_map.get(ini, '')}'. "
+                    f"Sí se encontró como ColaboradorExterno (id={info['colaboradorId']})."
+                ),
+            })
+        else:
+            print(f"   ⚠️ {ini:6s} → NO ENCONTRADO en BD  "
+                  f"(Excel='{equipo_map.get(ini, '')}')")
+            advertencias.append({
+                "tipo": "participante_sin_usuario",
+                "iniciales": ini,
+                "nombre": equipo_map.get(ini, ""),
+                "origen": origen,
+                "mensaje": (
+                    f"No se encontró usuario en la BD para '{equipo_map.get(ini, '')}' "
+                    f"(iniciales '{ini}')."
                 ),
             })
 
@@ -813,11 +871,13 @@ def _persistir_datos_form05(
                 ini = p.get("iniciales", "").upper()
                 if not ini:
                     continue
-                info = cache_iniciales.get(ini)
+                # Lookup directo en el cache (que ya se construyó comparando
+                # NOMBRES con regex arriba, en _construir_cache_iniciales).
+                info = _resolver_iniciales_con_regex(ini, cache_iniciales)
                 usuario_id = info["usuarioId"] if info else None
 
                 if not usuario_id:
-                    # Ya reportado en advertencias arriba
+                    # Ya reportado arriba al construir el cache; aquí solo saltamos.
                     continue
 
                 existe = sesion.query(ParticipantesActividad).filter(
@@ -883,12 +943,13 @@ def _persistir_datos_form05(
                         responsable_lista.append({"iniciales": token.upper(), "nombre": ""})
 
                 # Tomar el primer responsable con usuarioId conocido
+                # (resolver las iniciales con regex contra el cache)
                 usuario_resp_id = None
                 for r in responsable_lista:
                     ini = r.get("iniciales", "").upper()
                     if not ini:
                         continue
-                    info = cache_iniciales.get(ini)
+                    info = _resolver_iniciales_con_regex(ini, cache_iniciales)
                     if info and info.get("usuarioId"):
                         usuario_resp_id = info["usuarioId"]
                         break
