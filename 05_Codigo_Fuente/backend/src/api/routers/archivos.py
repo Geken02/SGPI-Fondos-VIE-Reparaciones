@@ -980,11 +980,100 @@ def _persistir_datos_form05(
 # PERSISTENCIA FORM-06: Presupuesto Operativo (UPSERT)
 # ============================================================================
 
-def _persistir_datos_form06(sesion: Session, propuesta_id: int, datos: dict, usuario_actual: Usuario) -> None:
-    """Persiste el Form-06 con lógica UPSERT por (propuestaId, rubroId, anioEjecucion)."""
-    ahora = datetime.now(timezone.utc)
+def _persistir_datos_form06(
+    sesion: Session,
+    propuesta_id: int,
+    datos: dict,
+    usuario_actual: Usuario,
+) -> Dict[str, Any]:
+    """
+    Persiste el Form-06 con lógica UPSERT por (propuestaId, rubroId, anioEjecucion).
 
-    def _resolver_rubro(categoria: str, detalle: str) -> Optional[RubrosPropuesta]:
+    APAÑO: antes de insertar las partidas, asegura que TODOS los rubros
+    referenciados en el Excel existan en la tabla RubrosPropuesta.  Si un
+    rubro (identificado por su código OG del Form-06, ej. "1-04-99-01") no
+    existe en la BD, lo INSERTA automáticamente con su nombre y sección.
+    Esto permite que el presupuesto se persista con rubros específicos en
+    lugar de caer en un rubro genérico como "Servicios".
+
+    Devuelve un dict con estadísticas para que el endpoint lo incluya en
+    la respuesta HTTP:
+        {
+          "rubros_creados": 4,
+          "rubros_existentes": 0,
+          "partidas_creadas": 12,
+          "partidas_actualizadas": 0,
+          "gran_total": 15000000.00,
+        }
+    """
+    ahora = datetime.now(timezone.utc)
+    stats: Dict[str, Any] = {
+        "rubros_creados": 0,
+        "rubros_existentes": 0,
+        "partidas_creadas": 0,
+        "partidas_actualizadas": 0,
+        "gran_total": 0.0,
+    }
+
+    # ------------------------------------------------------------------
+    # 1. APAÑO: Asegurar que los rubros existan en RubrosPropuesta
+    # ------------------------------------------------------------------
+    # Construir un cache {og_code → rubroId} que se usará al insertar las
+    # partidas.  Para cada rubro único que aparece en el Excel:
+    #   a) Buscar si ya existe por nombreRubro (coincidencia con el Detalle del Excel).
+    #   b) Si no existe, INSERTARLO con su código OG + nombre + sección.
+    rubros_cache: Dict[str, RubrosPropuesta] = {}  # {og_code: objeto RubrosPropuesta}
+
+    rubros_encontrados = datos.get("rubros_encontrados", [])
+    if rubros_encontrados:
+        print(f"💰 Asegurando {len(rubros_encontrados)} rubros en RubrosPropuesta...")
+
+    for rubro_info in rubros_encontrados:
+        og_code = rubro_info.get("og", "")
+        nombre = rubro_info.get("nombre", "")
+        seccion = rubro_info.get("seccion", "")
+        es_dura = rubro_info.get("es_duradero", False)
+
+        if not og_code or not nombre:
+            continue
+
+        # a) Buscar por nombre exacto (case-insensitive) en RubrosPropuesta
+        rubro_db = sesion.query(RubrosPropuesta).filter(
+            RubrosPropuesta.nombreRubro.ilike(nombre),
+            RubrosPropuesta.activo == True,
+        ).first()
+
+        if rubro_db:
+            rubros_cache[og_code] = rubro_db
+            stats["rubros_existentes"] += 1
+            print(f"   ✓ Rubro existente: '{nombre}' (id={rubro_db.rubroId})")
+            continue
+
+        # b) No existe → INSERTARLO
+        # Descripción compuesta: "OG {código} — {sección}" para que se
+        # pueda buscar por OG también en el futuro.
+        descripcion = f"OG {og_code} — {seccion}" if seccion else f"OG {og_code}"
+
+        nuevo_rubro = RubrosPropuesta(
+            nombreRubro=nombre,
+            descripcionRubro=descripcion,
+            activo=True,
+            creadoEn=ahora,
+            usuarioAuditoriaId=usuario_actual.usuarioId,
+            ultimaAuditoria=ahora,
+        )
+        sesion.add(nuevo_rubro)
+        sesion.flush()  # Necesario para obtener rubroId
+        rubros_cache[og_code] = nuevo_rubro
+        stats["rubros_creados"] += 1
+        print(f"   🆕 Rubro creado: '{nombre}' (id={nuevo_rubro.rubroId}, OG={og_code})")
+
+    # ------------------------------------------------------------------
+    # 2. UPSERT Partidas Presupuestarias (usando el cache de rubros)
+    # ------------------------------------------------------------------
+    # Mapeo fallback para partidas que no tengan OG (caso de un Excel
+    # mal formateado) — se usa el resolver antiguo por keywords.
+    def _resolver_rubro_generico(categoria: str, detalle: str) -> Optional[RubrosPropuesta]:
         texto = f"{categoria or ''} {detalle or ''}".lower()
         if "beca" in texto or "asistente" in texto or "estudiante" in texto:
             return _lookup_rubro(sesion, "Becas")
@@ -999,40 +1088,59 @@ def _persistir_datos_form06(sesion: Session, propuesta_id: int, datos: dict, usu
         monto = float(p.get("monto", 0) or 0)
         if monto <= 0:
             continue
-        rubro = _resolver_rubro(p.get("categoria", ""), p.get("detalle", ""))
+
+        # Resolver el rubro: preferir el cache por OG code, fallback al genérico
+        og_code = p.get("og", "")
+        rubro = rubros_cache.get(og_code) if og_code else None
         if not rubro:
-            print(f"⚠️ Rubro no encontrado para: {p.get('categoria', '')} / {p.get('detalle', '')[:40]}")
+            rubro = _resolver_rubro_generico(p.get("categoria", ""), p.get("detalle", ""))
+
+        if not rubro:
+            print(f"⚠️ Rubro no encontrado para: OG={og_code} / {p.get('categoria', '')[:40]}")
             continue
-        es_duradero = "duradero" in (p.get("categoria", "") + p.get("detalle", "")).lower() \
-                      or "equipo" in (p.get("categoria", "") + p.get("detalle", "")).lower()
-        # El parser Form-06 ya devuelve es_duradero calculado — usarlo si está disponible
-        if "es_duradero" in p:
-            es_duradero = p["es_duradero"]
+
+        # El parser Form-06 ya devuelve es_duradero calculado desde el código OG
+        es_duradero = p.get("es_duradero", False)
 
         pres_db = sesion.query(PresupuestoPropuesta).filter(
             PresupuestoPropuesta.propuestaId == propuesta_id,
             PresupuestoPropuesta.rubroId == rubro.rubroId,
             PresupuestoPropuesta.anioEjecucion == p["anio"],
         ).first()
+
         if pres_db:
             pres_db.montoSolicitado = monto
             pres_db.esDuradero = es_duradero
             pres_db.usuarioAuditoriaId = usuario_actual.usuarioId
             pres_db.ultimaAuditoria = ahora
+            stats["partidas_actualizadas"] += 1
         else:
             sesion.add(PresupuestoPropuesta(
                 propuestaId=propuesta_id, rubroId=rubro.rubroId,
                 montoSolicitado=monto, anioEjecucion=p["anio"], esDuradero=es_duradero,
                 creadoEn=ahora, usuarioAuditoriaId=usuario_actual.usuarioId, ultimaAuditoria=ahora,
             ))
+            stats["partidas_creadas"] += 1
 
+    # ------------------------------------------------------------------
+    # 3. Actualizar montoTotal de la propuesta con el GRAN TOTAL del Excel
+    # ------------------------------------------------------------------
     gran_total = float(datos.get("gran_total", 0) or 0)
+    stats["gran_total"] = gran_total
     if gran_total > 0:
         propuesta = sesion.query(Propuesta).filter(Propuesta.propuestaId == propuesta_id).first()
         if propuesta:
             propuesta.montoTotal = gran_total
             propuesta.usuarioAuditoriaId = usuario_actual.usuarioId
             propuesta.ultimaAuditoria = ahora
+
+    print(f"💰 Form-06 persistido: {stats['rubros_creados']} rubros nuevos, "
+          f"{stats['rubros_existentes']} existentes, "
+          f"{stats['partidas_creadas']} partidas creadas, "
+          f"{stats['partidas_actualizadas']} actualizadas, "
+          f"gran_total=₡{gran_total:,.2f}")
+
+    return stats
 
 
 # ============================================================================
@@ -1108,7 +1216,8 @@ async def guardar_archivo_propuesta(
     # 5. Parsear y persistir con UPSERT
     parseo_ok = False
     parseo_errores = []
-    advertencias_form05 = []   # ← NUEVO: advertencias del Form-05 (iniciales no resueltas)
+    advertencias_form05 = []   # advertencias del Form-05 (iniciales no resueltas)
+    stats_form06: Dict[str, Any] = {}   # stats del Form-06 (rubros creados, partidas, etc.)
 
     es_form04 = tipo_documento_id == 1 and archivo.filename.lower().endswith(".docx")
     es_form05 = tipo_documento_id == 2 and archivo.filename.lower().endswith(".xlsx")
@@ -1137,7 +1246,10 @@ async def guardar_archivo_propuesta(
                 print(f"🔍 Detectado Form-06 (.xlsx). Iniciando parseo y UPSERT...")
                 from src.services.form06_parser import parsear_form06_xlsx
                 datos = parsear_form06_xlsx(contenido)
-                _persistir_datos_form06(sesion, propuesta_id, datos, usuario_actual)
+                # _persistir_datos_form06 ahora devuelve stats (rubros creados, etc.)
+                stats_form06 = _persistir_datos_form06(
+                    sesion, propuesta_id, datos, usuario_actual
+                )
 
             sesion.commit()
             parseo_ok = True
@@ -1177,6 +1289,8 @@ async def guardar_archivo_propuesta(
         "reemplazado": documento_existente is not None,
         "form04_parseado": parseo_ok,
         "form04_errores": parseo_errores,
-        # ← NUEVO: advertencias del Form-05 sobre participantes no resueltos
+        # advertencias del Form-05 sobre participantes no resueltos
         "advertencias_form05": advertencias_form05,
+        # stats del Form-06: rubros creados automáticamente, partidas, gran_total
+        "stats_form06": stats_form06,
     }

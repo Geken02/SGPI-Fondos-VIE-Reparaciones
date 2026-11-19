@@ -181,6 +181,11 @@ def parsear_form06_xlsx(archivo_bytes: bytes) -> Dict[str, Any]:
         "gran_total": 0.0,
         "totales_por_anio": {},
         "notas": [],
+        # NUEVO: lista única de rubros (OG + nombre) encontrados en el Excel.
+        # El router la usa para insertar en RubrosPropuesta los rubros que falten.
+        "rubros_encontrados": [],
+        # NUEVO: dict {og_code: {nombre, seccion, es_duradero}} para lookup rápido.
+        "rubros_por_og": {},
     }
 
     # ------------------------------------------------------------------
@@ -264,6 +269,7 @@ def parsear_form06_xlsx(archivo_bytes: bytes) -> Dict[str, Any]:
                 continue
 
             seccion = _determinar_seccion(val_og)
+            es_dura = _es_duradero(val_og, seccion)
             datos["partidas"].append({
                 "og": val_og,
                 "categoria": val_detalle,
@@ -272,8 +278,19 @@ def parsear_form06_xlsx(archivo_bytes: bytes) -> Dict[str, Any]:
                 "anio": anio,
                 "justificacion": val_just,
                 "seccion": seccion,
-                "es_duradero": _es_duradero(val_og, seccion),
+                "es_duradero": es_dura,
             })
+
+            # NUEVO: registrar el rubro único encontrado (para que el router
+            # lo inserte en RubrosPropuesta si no existe).
+            if val_og not in datos["rubros_por_og"]:
+                datos["rubros_por_og"][val_og] = {
+                    "og": val_og,
+                    "nombre": val_detalle,        # nombre visible (ej. "Otros servicios de gestión y apoyo")
+                    "seccion": seccion,            # macro-categoría (Servicios / Materiales / Equipo / Becas)
+                    "es_duradero": es_dura,
+                }
+                datos["rubros_encontrados"].append(datos["rubros_por_og"][val_og])
 
         # Si no se encontró la fila "Monto Total", sumar las partidas del año
         if anio not in datos["totales_por_anio"]:
