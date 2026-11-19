@@ -155,6 +155,8 @@ class PresupuestoPropuesta(Base):
     def setPropuesta(self, valor): self.propuesta = valor
     def getRubro(self): return self.rubro
     def setRubro(self, valor): self.rubro = valor
+    def getJustificacion(self): return self.justificacion
+    def setJustificacion(self, valor): self.justificacion = valor
 
 
 # ============================================================================
