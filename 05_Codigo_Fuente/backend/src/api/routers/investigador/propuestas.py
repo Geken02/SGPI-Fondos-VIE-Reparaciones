@@ -643,7 +643,8 @@ def registrar_rubro(
         montoSolicitado=item.getMontoSolicitado(),
         montoAprobado=item.getMontoAprobado(),
         anioEjecucion=item.getAnioEjecucion(),
-        esDuradero=item.getEsDuradero()
+        esDuradero=item.getEsDuradero(),
+        justificacion=item.getJustificacion()
     )
 
 
@@ -673,7 +674,8 @@ def reemplazar_presupuesto(
             montoSolicitado=item.getMontoSolicitado(),
             montoAprobado=item.getMontoAprobado(),
             anioEjecucion=item.getAnioEjecucion(),
-            esDuradero=item.getEsDuradero()
+            esDuradero=item.getEsDuradero(),
+            justificacion=item.getJustificacion()
         ) for item in items
     ]
 

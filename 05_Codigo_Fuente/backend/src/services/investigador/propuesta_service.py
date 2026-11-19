@@ -434,7 +434,8 @@ def obtener_propuesta_detalle(
             montoSolicitado=pre.getMontoSolicitado(),
             montoAprobado=pre.getMontoAprobado(),
             anioEjecucion=pre.getAnioEjecucion(),
-            esDuradero=pre.getEsDuradero()
+            esDuradero=pre.getEsDuradero(),
+            justificacion=pre.getJustificacion()
         ) for pre in presupuesto_orm
     ]
 
@@ -823,6 +824,7 @@ def agregar_rubro_presupuesto(
     item.setMontoSolicitado(datos.montoSolicitado)
     item.setAnioEjecucion(datos.anioEjecucion)
     item.setEsDuradero(datos.esDuradero)
+    item.setJustificacion(datos.justificacion)
     item.setUsuarioAuditoriaId(usuario_id)
 
     db.add(item)
@@ -862,6 +864,7 @@ def guardar_presupuesto_completo(
         item.setMontoSolicitado(Decimal(str(r.montoSolicitado)))
         item.setAnioEjecucion(r.anioEjecucion)
         item.setEsDuradero(r.esDuradero)
+        item.setJustificacion(r.justificacion)
         item.setUsuarioAuditoriaId(usuario_id)
         db.add(item)
         nuevos.append(item)
