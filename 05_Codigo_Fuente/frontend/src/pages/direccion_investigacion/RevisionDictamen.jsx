@@ -21,7 +21,10 @@ const RevisionDictamen = () => {
   if (cargando) return <><VolverALaBandeja /><Cargando texto="Cargando dictamen..." /></>;
   if (error) return <><VolverALaBandeja /><ErrorCarga error={error} alReintentar={error.estado === 404 ? null : recargar} /></>;
 
-  const promedio = promedioPonderado(d.criterios);
+  const criteriosCompletos = d.criterios.length > 0 && d.criterios.every(
+    (criterio) => criterio.puntaje != null && Number.isFinite(Number(criterio.puntaje)),
+  );
+  const promedio = criteriosCompletos ? promedioPonderado(d.criterios) : null;
   const eventos = [
     { fecha: d.fechaDictamen, texto: `Resolución del CIE: ${d.decision === 'Aprobar' ? 'aprobada' : 'rechazada'}`, responsable: 'CIE' },
     ...(d.historial ?? []).map((h) => ({ fecha: h.fecha, texto: h.estado, responsable: h.responsable })),
@@ -86,13 +89,23 @@ const RevisionDictamen = () => {
                 <h3 className="gv-subcard-titulo">Rúbrica VIE (resumen)</h3>
                 <div className="cie-criterios">
                   <div className="cie-criterios-head"><span>Criterio</span><span>Peso · Puntaje</span></div>
-                  {d.criterios.map((c) => (
-                    <div className="cie-criterio" key={c.nombre}>
+                  {d.criterios.length === 0 ? (
+                    <p className="gv-sin-resultados">No hay una rúbrica CIE registrada para este dictamen.</p>
+                  ) : d.criterios.map((c) => (
+                    <div className="cie-criterio" key={c.criterioId ?? c.nombre}>
                       <span>{c.nombre}</span>
-                      <span><span className="cie-peso">{c.peso}%</span> · <b>{c.puntaje.toFixed(1)}</b></span>
+                      <span>
+                        <span className="cie-peso">{Number(c.peso || 0)}%</span> ·{' '}
+                        <b>{c.puntaje == null ? '—' : Number(c.puntaje).toFixed(1)}</b>
+                      </span>
                     </div>
                   ))}
-                  <div className="cie-promedio"><strong>Promedio</strong><strong>{promedio.toFixed(1)} / 5</strong></div>
+                  {d.criterios.length > 0 && (
+                    <div className="cie-promedio">
+                      <strong>Promedio ponderado</strong>
+                      <strong>{promedio == null ? '—' : `${promedio.toFixed(1)} / 10`}</strong>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

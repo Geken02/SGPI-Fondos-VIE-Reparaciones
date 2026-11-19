@@ -8,6 +8,10 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from src.models.dictamenes import Dictamenes, TiposDictamen
+from src.models.evaluaciones import (
+    Evaluaciones, TiposEvaluacion, CriteriosEvaluacion, DetalleEvaluacion,
+    EstadosEvaluacion,
+)
 from src.models.usuarios import Usuario
 from src.models.escuelas import Escuela
 from src.services.documento_oficial_pdf import generar_oficio_pdf
@@ -145,6 +149,70 @@ def listar_dictamenes(db: Session):
     return resultado
 
 
+def _obtener_criterios_rubrica_cie(
+    db: Session, propuesta_id: int, evaluador_id: int | None = None,
+) -> list[dict]:
+    """Recupera los puntajes de la rúbrica CIE que respaldó el dictamen."""
+    tipo_evaluacion = db.query(TiposEvaluacion).filter(
+        TiposEvaluacion.nombreTipoEvaluacion == "CIE",
+        TiposEvaluacion.activo.is_(True),
+    ).first()
+    if tipo_evaluacion is None:
+        return []
+
+    # La resolución CIE solo puede emitirse después de completar la evaluación.
+    # Se vincula la evaluación con el remitente del dictamen cuando está
+    # disponible, para recuperar exactamente la rúbrica que originó la resolución.
+    consulta_evaluacion = (
+        db.query(Evaluaciones)
+        .join(EstadosEvaluacion, Evaluaciones.estadoEvaluacionId == EstadosEvaluacion.estadoEvaluacionId)
+        .filter(
+            Evaluaciones.propuestaId == propuesta_id,
+            Evaluaciones.tipoEvaluacionId == tipo_evaluacion.tipoEvaluacionId,
+            EstadosEvaluacion.nombreEstadoEvaluacion == "Completada",
+        )
+    )
+    # El remitente del dictamen es el mismo usuario que registró la evaluación
+    # al emitir la resolución CIE; usarlo evita mezclar rúbricas de evaluadores.
+    if evaluador_id is not None:
+        consulta_evaluacion = consulta_evaluacion.filter(
+            Evaluaciones.evaluadorId == evaluador_id,
+        )
+    evaluacion = consulta_evaluacion.order_by(
+        Evaluaciones.fechaEvaluacion.desc(), Evaluaciones.evaluacionId.desc(),
+    ).first()
+    if evaluacion is None:
+        return []
+
+    criterios = (
+        db.query(CriteriosEvaluacion)
+        .filter(
+            CriteriosEvaluacion.tipoEvaluacionId == tipo_evaluacion.tipoEvaluacionId,
+            CriteriosEvaluacion.activo.is_(True),
+        )
+        .order_by(CriteriosEvaluacion.orden, CriteriosEvaluacion.criterioId)
+        .all()
+    )
+    detalles = db.query(DetalleEvaluacion).filter(
+        DetalleEvaluacion.evaluacionId == evaluacion.evaluacionId,
+    ).all()
+    detalles_por_criterio = {detalle.criterioId: detalle for detalle in detalles}
+
+    resultado = []
+    for criterio in criterios:
+        detalle = detalles_por_criterio.get(criterio.criterioId)
+        resultado.append({
+            "criterioId": criterio.criterioId,
+            "seccion": criterio.nombreSeccion,
+            "nombre": criterio.nombreCriterio,
+            "peso": float(criterio.pesoPorcentaje or 0),
+            "puntaje": float(detalle.puntajeObtenido) if detalle and detalle.puntajeObtenido is not None else None,
+            "justificacion": detalle.justificacion if detalle else None,
+            "requisitoCumplido": detalle.esRequisitoObligatorioCumplido if detalle else None,
+        })
+    return resultado
+
+
 def obtener_dictamen(db: Session, codigo: str):
     propuesta = _buscar_propuesta(db, codigo)
     d = (
@@ -183,7 +251,9 @@ def obtener_dictamen(db: Session, codigo: str):
         },
         "justificacion": justificacion,
         "observaciones": observaciones,
-        "criterios": [],
+        "criterios": _obtener_criterios_rubrica_cie(
+            db, propuesta.propuestaId, d.usuarioRemitenteId,
+        ),
         "documentos": documentos,
         "historial": [],
     }
