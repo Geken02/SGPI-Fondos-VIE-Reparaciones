@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { catalogoService } from '../../services/catalogoService';
 import Modal from '../../components/Modal';
@@ -31,9 +31,19 @@ export default function Convocatoria() {
   });
   const [cargandoEtapa, setCargandoEtapa] = useState(false);
 
+  // ✅ MEJORA: Referencia para devolver el foco al botón que abrió el modal
+  const botonAgregarEtapaRef = useRef(null);
+
   useEffect(() => {
     cargarConvocatorias();
   }, []);
+
+  // ✅ MEJORA: Devolver el foco al botón cuando se cierra el modal
+  useEffect(() => {
+    if (!modalEtapaAbierto && botonAgregarEtapaRef.current) {
+      botonAgregarEtapaRef.current.focus();
+    }
+  }, [modalEtapaAbierto]);
 
   const cargarConvocatorias = async () => {
     setCargando(true);
@@ -89,7 +99,7 @@ export default function Convocatoria() {
 
   const mostrarToast = (mensaje, tipo = 'success') => {
     setToast({ mensaje, tipo });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 4000); // ✅ MEJORA: 4 segundos para dar tiempo a leer
   };
 
   const handleChange = (campo, valor) => {
@@ -113,7 +123,7 @@ export default function Convocatoria() {
         fechaBloqueoOrion: fechaBloqueoCompleta,
       };
       await catalogoService.actualizar('convocatorias', convocatoriaSeleccionada.convocatoriaId, datosActualizados);
-      mostrarToast('Convocatoria actualizada exitosamente');
+      mostrarToast('Convocatoria actualizada exitosamente', 'success');
       await cargarConvocatorias();
     } catch (error) {
       console.error('Error guardando convocatoria:', error);
@@ -136,6 +146,7 @@ export default function Convocatoria() {
         bloqueoAutomatico: true,
         notificar48h: true,
       });
+      mostrarToast('Cambios cancelados', 'success');
     }
   };
 
@@ -176,10 +187,10 @@ export default function Convocatoria() {
       };
       if (etapaEditando) {
         await catalogoService.actualizar('etapas', etapaEditando.etapaId, datosEtapa);
-        mostrarToast('Etapa actualizada exitosamente');
+        mostrarToast('Etapa actualizada exitosamente', 'success');
       } else {
         await catalogoService.crear('etapas', datosEtapa);
-        mostrarToast('Etapa creada exitosamente');
+        mostrarToast('Etapa creada exitosamente', 'success');
       }
       setModalEtapaAbierto(false);
       await cargarEtapas(convocatoriaSeleccionada.convocatoriaId);
@@ -196,10 +207,10 @@ export default function Convocatoria() {
   };
 
   const handleEliminarEtapa = async (etapaId, nombreEtapa) => {
-    if (!window.confirm(`¿Está seguro de eliminar la etapa "${nombreEtapa}"?`)) return;
+    if (!window.confirm(`¿Está seguro de eliminar la etapa "${nombreEtapa}"? Esta acción no se puede deshacer.`)) return;
     try {
       await catalogoService.eliminar('etapas', etapaId);
-      mostrarToast('Etapa eliminada exitosamente');
+      mostrarToast('Etapa eliminada exitosamente', 'success');
       await cargarEtapas(convocatoriaSeleccionada.convocatoriaId);
     } catch (error) {
       console.error('Error eliminando etapa:', error);
@@ -235,7 +246,7 @@ export default function Convocatoria() {
   if (cargando) {
     return (
       <div className="convocatoria-container">
-        <div className="loading-state" role="status" aria-live="polite">
+        <div className="loading-state" role="status" aria-live="polite" aria-busy="true">
           <div className="spinner" aria-hidden="true"></div>
           <p>Cargando configuración de convocatorias...</p>
         </div>
@@ -245,8 +256,14 @@ export default function Convocatoria() {
 
   return (
     <div className="convocatoria-container">
+      {/* ✅ MEJORA: Toast con role="alert" para errores (interrumpe) y role="status" para éxito */}
       {toast && (
-        <div className={`toast ${toast.tipo}`} role="status" aria-live="polite">
+        <div 
+          className={`toast ${toast.tipo}`} 
+          role={toast.tipo === 'error' ? 'alert' : 'status'} 
+          aria-live={toast.tipo === 'error' ? 'assertive' : 'polite'}
+          aria-atomic="true"
+        >
           <span className="toast-icon" aria-hidden="true">{toast.tipo === 'success' ? '✓' : '✕'}</span>
           <span className="toast-message">{toast.mensaje}</span>
         </div>
@@ -254,7 +271,7 @@ export default function Convocatoria() {
 
       <nav className="breadcrumbs" aria-label="Ruta de navegación">
         <ol className="breadcrumbs-list">
-         <li><Link to="/dashboard">Inicio</Link></li>
+          <li><Link to="/dashboard">Inicio</Link></li>
           <li className="breadcrumb-separator" aria-hidden="true">›</li>
           <li aria-current="page">Configuración de Convocatoria</li>
         </ol>
@@ -262,20 +279,25 @@ export default function Convocatoria() {
 
       <header className="convocatoria-header">
         <h1 id="titulo-convocatoria">Configuración de Convocatoria</h1>
-        <p>Definir fechas límite, plazos de evaluación y bloqueo automático en Orión.</p>
+        <p id="subtitulo-convocatoria">Definir fechas límite, plazos de evaluación y bloqueo automático en Orión.</p>
       </header>
 
-      {/* ✅ Selector convertido en tablist accesible */}
+      {/* ✅ MEJORA: Patrón de pestañas (Tabs) ARIA completo y robusto */}
       <div className="convocatorias-compactas" role="tablist" aria-label="Selector de convocatorias">
         {convocatorias.map((conv) => {
           const estado = calcularEstado(conv);
           const isSelected = convocatoriaSeleccionada?.convocatoriaId === conv.convocatoriaId;
+          const tabId = `tab-conv-${conv.convocatoriaId}`;
+          const panelId = `panel-conv-${conv.convocatoriaId}`;
+          
           return (
             <button
               key={conv.convocatoriaId}
               type="button"
               role="tab"
+              id={tabId}
               aria-selected={isSelected}
+              aria-controls={panelId}
               tabIndex={isSelected ? 0 : -1}
               className={`convocatoria-tab ${isSelected ? 'seleccionada' : ''}`}
               onClick={() => seleccionarConvocatoria(conv)}
@@ -286,13 +308,19 @@ export default function Convocatoria() {
             </button>
           );
         })}
-        <span className="convocatorias-contador">
+        <span className="convocatorias-contador" aria-hidden="true">
           {convocatorias.length} {convocatorias.length === 1 ? 'convocatoria' : 'convocatorias'}
         </span>
       </div>
 
       {convocatoriaSeleccionada && (
-        <>
+        // ✅ MEJORA: Contenedor del panel de pestañas vinculado al tab seleccionado
+        <div 
+          role="tabpanel" 
+          id={`panel-conv-${convocatoriaSeleccionada.convocatoriaId}`}
+          aria-labelledby={`tab-conv-${convocatoriaSeleccionada.convocatoriaId}`}
+          tabIndex="0"
+        >
           {/* Timeline HORIZONTAL accesible */}
           <div className="card timeline-card">
             <div className="timeline-header">
@@ -309,11 +337,7 @@ export default function Convocatoria() {
             ) : (
               <div className="timeline-horizontal" role="list" aria-labelledby="titulo-timeline">
                 {/* 1. Punto de INICIO */}
-                <div
-                  className="timeline-step"
-                  role="listitem"
-                  aria-label={`Inicio de la convocatoria el ${formatearFecha(formData.fechaApertura)}, estado abierto`}
-                >
+                <div className="timeline-step" role="listitem">
                   <div className="step-connector" aria-hidden="true"></div>
                   <div className="step-dot azul" aria-hidden="true"></div>
                   <div className="step-content">
@@ -327,12 +351,7 @@ export default function Convocatoria() {
                 {etapas.map((etapa) => {
                   const estadoEtapa = calcularEstadoEtapa(etapa);
                   return (
-                    <div
-                      key={etapa.etapaId}
-                      className="timeline-step"
-                      role="listitem"
-                      aria-label={`Etapa ${etapa.nombreEtapa}, del ${formatearFecha(etapa.fechaInicio)} al ${formatearFecha(etapa.fechaFin)}, estado ${estadoEtapa.texto}${etapa.esBloqueante ? ', etapa bloqueante' : ''}`}
-                    >
+                    <div key={etapa.etapaId} className="timeline-step" role="listitem">
                       <div className="step-connector" aria-hidden="true"></div>
                       <div className={`step-dot ${estadoEtapa.clase}`} aria-hidden="true"></div>
                       <div className="step-content">
@@ -352,11 +371,7 @@ export default function Convocatoria() {
                 })}
 
                 {/* 3. Punto de CIERRE */}
-                <div
-                  className="timeline-step"
-                  role="listitem"
-                  aria-label={`Cierre de la convocatoria el ${formatearFecha(formData.fechaCierre)}`}
-                >
+                <div className="timeline-step" role="listitem">
                   <div className="step-connector" aria-hidden="true"></div>
                   <div className="step-dot rojo" aria-hidden="true"></div>
                   <div className="step-content">
@@ -375,7 +390,7 @@ export default function Convocatoria() {
               <h2>Fechas de Convocatoria</h2>
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label" htmlFor="fecha-apertura">Fecha de inicio</label>
+                  <label className="form-label" htmlFor="fecha-apertura">Fecha de inicio <span aria-hidden="true">*</span><span className="sr-only"> (obligatorio)</span></label>
                   <div className="input-with-icon">
                     <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
                       <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -389,11 +404,13 @@ export default function Convocatoria() {
                       className="form-input"
                       value={formData.fechaApertura}
                       onChange={(e) => handleChange('fechaApertura', e.target.value)}
+                      required
+                      aria-required="true"
                     />
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="fecha-cierre">Fecha de cierre</label>
+                  <label className="form-label" htmlFor="fecha-cierre">Fecha de cierre <span aria-hidden="true">*</span><span className="sr-only"> (obligatorio)</span></label>
                   <div className="input-with-icon">
                     <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
                       <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -407,6 +424,8 @@ export default function Convocatoria() {
                       className="form-input"
                       value={formData.fechaCierre}
                       onChange={(e) => handleChange('fechaCierre', e.target.value)}
+                      required
+                      aria-required="true"
                     />
                   </div>
                 </div>
@@ -417,7 +436,13 @@ export default function Convocatoria() {
             <div className="card etapas-card">
               <div className="etapas-header">
                 <h2 id="titulo-etapas">Plazos de Evaluación (Etapas)</h2>
-                <button className="btn-small" onClick={() => handleAbrirModalEtapa()} aria-haspopup="dialog">
+                <button 
+                  ref={botonAgregarEtapaRef}
+                  className="btn-small" 
+                  onClick={() => handleAbrirModalEtapa()} 
+                  aria-haspopup="dialog"
+                  aria-expanded={modalEtapaAbierto}
+                >
                   + Agregar Etapa
                 </button>
               </div>
@@ -433,7 +458,7 @@ export default function Convocatoria() {
                       <div className="etapa-info">
                         <div className="etapa-nombre">
                           {etapa.nombreEtapa}
-                          {etapa.esBloqueante && <span className="etapa-badge bloqueante" aria-label="Etapa bloqueante">Bloqueante</span>}
+                          {etapa.esBloqueante && <span className="etapa-badge bloqueante">Bloqueante</span>}
                         </div>
                         <div className="etapa-fechas">
                           {formatearFecha(etapa.fechaInicio)} → {formatearFecha(etapa.fechaFin)}
@@ -443,7 +468,7 @@ export default function Convocatoria() {
                         <button
                           className="btn-icon"
                           onClick={() => handleAbrirModalEtapa(etapa)}
-                          aria-label={`Editar etapa ${etapa.nombreEtapa}`}
+                          aria-label={`Editar etapa: ${etapa.nombreEtapa}`}
                           aria-haspopup="dialog"
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
@@ -454,7 +479,7 @@ export default function Convocatoria() {
                         <button
                           className="btn-icon danger"
                           onClick={() => handleEliminarEtapa(etapa.etapaId, etapa.nombreEtapa)}
-                          aria-label={`Eliminar etapa ${etapa.nombreEtapa}`}
+                          aria-label={`Eliminar etapa: ${etapa.nombreEtapa}`}
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
                             <polyline points="3 6 5 6 21 6"/>
@@ -471,12 +496,12 @@ export default function Convocatoria() {
 
           {/* Bloqueo Automático */}
           <div className="card bloqueo-card">
-            <h2>Configuración de Bloqueo Automático</h2>
-            <p className="descripcion-bloqueo">
+            <h2 id="titulo-bloqueo">Configuración de Bloqueo Automático</h2>
+            <p id="desc-bloqueo" className="descripcion-bloqueo">
               Activar el bloqueo automático del sistema Orión al finalizar el período de convocatoria.
             </p>
 
-            <div className="toggle-group">
+            <div className="toggle-group" role="group" aria-labelledby="titulo-bloqueo" aria-describedby="desc-bloqueo">
               <div className="toggle-item">
                 <span className="toggle-label" id="label-bloqueo-auto">Bloqueo automático al cierre</span>
                 <label className="toggle-switch" htmlFor="toggle-bloqueo-auto">
@@ -564,7 +589,7 @@ export default function Convocatoria() {
               Guardar Cambios
             </button>
           </div>
-        </>
+        </div>
       )}
 
       {/* Modal para crear/editar etapa */}
@@ -573,10 +598,11 @@ export default function Convocatoria() {
         onClose={() => setModalEtapaAbierto(false)}
         title={etapaEditando ? 'Editar Etapa' : 'Nueva Etapa'}
         size="medium"
+        // ✅ NOTA: Asegúrate de que tu componente Modal interno tenga: role="dialog", aria-modal="true" y atrape el foco.
       >
         <div className="form-group">
           <label className="form-label" htmlFor="etapa-nombre">
-            Nombre de la Etapa <span style={{ color: '#dc2626' }} aria-hidden="true">*</span>
+            Nombre de la Etapa <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span><span className="sr-only"> (obligatorio)</span>
           </label>
           <input
             id="etapa-nombre"
@@ -587,13 +613,14 @@ export default function Convocatoria() {
             placeholder="Ej: Evaluación Comité Técnico"
             required
             aria-required="true"
+            aria-invalid={formDataEtapa.nombreEtapa === '' && cargandoEtapa} // Ejemplo de validación en tiempo real
           />
         </div>
 
         <div className="form-row">
           <div className="form-group">
             <label className="form-label" htmlFor="etapa-inicio">
-              Fecha de Inicio <span style={{ color: '#dc2626' }} aria-hidden="true">*</span>
+              Fecha de Inicio <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span><span className="sr-only"> (obligatorio)</span>
             </label>
             <input
               id="etapa-inicio"
@@ -607,7 +634,7 @@ export default function Convocatoria() {
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="etapa-fin">
-              Fecha de Fin <span style={{ color: '#dc2626' }} aria-hidden="true">*</span>
+              Fecha de Fin <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span><span className="sr-only"> (obligatorio)</span>
             </label>
             <input
               id="etapa-fin"
