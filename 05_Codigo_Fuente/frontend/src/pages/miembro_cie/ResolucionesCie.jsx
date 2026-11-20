@@ -27,7 +27,7 @@ const ResolucionesCie = () => {
     if (!q) return historial;
 
     return historial.filter((r) =>
-      [r.codigo, r.titulo, r.numeroOficio, r.contenido]
+      [r.codigo, r.titulo, r.numeroOficio, r.decision, r.justificacion, r.contenido]
         .some((campo) => String(campo ?? '').toLowerCase().includes(q))
     );
   }, [historial, busqueda]);
@@ -107,13 +107,14 @@ const ResolucionesCie = () => {
                     <th scope="col">Código</th>
                     <th scope="col">Título de la propuesta</th>
                     <th scope="col">Número de oficio</th>
+                    <th scope="col">Decisión</th>
                     <th scope="col">Fecha de emisión</th>
                     <th scope="col">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {visibles.map((r) => {
-                    const id = r.dictamenId ?? r.propuestaId ?? r.codigo;
+                    const id = r.resolucionCieId ?? r.dictamenId ?? r.propuestaId ?? r.codigo;
                     const expandida = abierta === id;
 
                     return (
@@ -122,6 +123,7 @@ const ResolucionesCie = () => {
                           <td>{r.codigo || '—'}</td>
                           <td>{r.titulo || 'Sin título disponible'}</td>
                           <td>{r.numeroOficio || 'No indicado'}</td>
+                          <td>{r.decision || '—'}</td>
                           <td>{r.fechaEmision ? formatearFecha(r.fechaEmision) : '—'}</td>
                           <td>
                             <button
@@ -137,8 +139,26 @@ const ResolucionesCie = () => {
                         </tr>
                         {expandida && (
                           <tr className="cie-fila-detalle">
-                            <td colSpan={5}>
+                            <td colSpan={6}>
                               <div className="cie-detalle">
+                                {r.justificacion && (
+                                  <>
+                                    <strong>Justificación</strong>
+                                    <p style={{ whiteSpace: 'pre-wrap' }}>{r.justificacion}</p>
+                                  </>
+                                )}
+                                {r.calificacion != null && (
+                                  <p><strong>Calificación:</strong> {r.calificacion}/10</p>
+                                )}
+                                {r.recomendacion && (
+                                  <p><strong>Recomendación de la rúbrica:</strong> {r.recomendacion}</p>
+                                )}
+                                {r.observaciones && (
+                                  <>
+                                    <strong>Observaciones de evaluación</strong>
+                                    <p style={{ whiteSpace: 'pre-wrap' }}>{r.observaciones}</p>
+                                  </>
+                                )}
                                 <strong>Contenido de la resolución</strong>
                                 <p style={{ whiteSpace: 'pre-wrap' }}>
                                   {r.contenido || 'La resolución no tiene contenido registrado.'}
@@ -165,7 +185,7 @@ const ResolucionesCie = () => {
 
                   {visibles.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="gv-sin-resultados">
+                      <td colSpan={6} className="gv-sin-resultados">
                         {historial.length === 0
                           ? 'Aún no hay resoluciones registradas.'
                           : 'No hay resoluciones que coincidan con la búsqueda.'}

@@ -10,6 +10,7 @@ from src.models.evaluaciones import (
     EstadosEvaluacion, TiposRecomendacion,
 )
 from src.models.dictamenes import Dictamenes, TiposDictamen
+from src.models.resoluciones_cie import ResolucionesCIE
 from src.models.subsanaciones import Subsanaciones, EstadosSubsanacion
 from src.models.propuesta_documentos import PropuestaDocumentos
 from src.models.propuesta_contenido import PropuestaContenido
@@ -366,10 +367,14 @@ def registrar_resolucion_cie(db: Session, codigo: str, usuario_id: int, datos) -
     tipo_eval = _tipo_evaluacion(db)
     if not tipo_dictamen or not tipo_eval:
         raise HTTPException(status_code=409, detail="Faltan catálogos CIE activos.")
-    if db.query(Dictamenes).filter(
+    resolucion_existente = db.query(ResolucionesCIE).filter(
+        ResolucionesCIE.propuestaId == propuesta.propuestaId,
+    ).first()
+    dictamen_existente = db.query(Dictamenes).filter(
         Dictamenes.propuestaId == propuesta.propuestaId,
         Dictamenes.tipoDictamenId == tipo_dictamen.tipoDictamenId,
-    ).first():
+    ).first()
+    if resolucion_existente or dictamen_existente:
         raise HTTPException(status_code=409, detail="La propuesta ya tiene una resolución CIE.")
     evaluacion = db.query(Evaluaciones).filter(
         Evaluaciones.propuestaId == propuesta.propuestaId,
@@ -398,6 +403,26 @@ def registrar_resolucion_cie(db: Session, codigo: str, usuario_id: int, datos) -
     )
     try:
         estado_anterior_id = propuesta.estadoId
+        resolucion = ResolucionesCIE(
+            propuestaId=propuesta.propuestaId,
+            numeroOficio=datos.numeroOficio,
+            decision=datos.decision,
+            justificacion=datos.justificacion.strip(),
+            calificacion=evaluacion.calificacion,
+            recomendacion=(
+                evaluacion.tipoRecomendacion.nombreTipoRecomendacion
+                if evaluacion.tipoRecomendacion else None
+            ),
+            observaciones=evaluacion.observaciones,
+            contenido=contenido,
+            rutaArchivo=datos.rutaArchivo,
+            usuarioRemitenteId=usuario_id,
+            usuarioAuditoriaId=usuario_id,
+        )
+        db.add(resolucion)
+
+        # Se conserva el dictamen general para que DI siga recibiendo la
+        # resolución mediante la integración que ya utiliza.
         dictamen = Dictamenes(
             propuestaId=propuesta.propuestaId,
             tipoDictamenId=tipo_dictamen.tipoDictamenId,
@@ -417,12 +442,14 @@ def registrar_resolucion_cie(db: Session, codigo: str, usuario_id: int, datos) -
             observaciones=f"Resolución CIE: {datos.decision}. {datos.justificacion.strip()}",
         ))
         db.commit()
+        db.refresh(resolucion)
         db.refresh(dictamen)
     except Exception:
         db.rollback()
         raise
     return {
         "mensaje": "Resolución CIE registrada y remitida a Dirección de Investigación.",
+        "resolucionCieId": resolucion.resolucionCieId,
         "dictamenId": dictamen.dictamenId,
         "propuestaId": propuesta.propuestaId,
         "codigo": propuesta.codigoPropuesta,
@@ -434,19 +461,66 @@ def registrar_resolucion_cie(db: Session, codigo: str, usuario_id: int, datos) -
 
 
 def listar_resoluciones_cie(db: Session) -> list[dict]:
+    filas = db.query(ResolucionesCIE, Propuesta).join(
+        Propuesta, ResolucionesCIE.propuestaId == Propuesta.propuestaId
+    ).order_by(
+        ResolucionesCIE.fechaEmision.desc(),
+        ResolucionesCIE.resolucionCieId.desc(),
+    ).all()
+
+    resultado = [{
+        "resolucionCieId": r.resolucionCieId,
+        # Alias para mantener compatibilidad con la pantalla y enlaces existentes.
+        "dictamenId": r.resolucionCieId,
+        "propuestaId": p.propuestaId,
+        "codigo": p.codigoPropuesta,
+        "titulo": p.titulo,
+        "numeroOficio": r.numeroOficio,
+        "fechaEmision": r.fechaEmision.isoformat() if r.fechaEmision else None,
+        "decision": r.decision,
+        "justificacion": r.justificacion,
+        "calificacion": float(r.calificacion) if r.calificacion is not None else None,
+        "recomendacion": r.recomendacion,
+        "observaciones": r.observaciones,
+        "contenido": r.contenido,
+        "rutaArchivo": r.rutaArchivo,
+    } for r, p in filas]
+
+    # Compatibilidad: mostrar también resoluciones antiguas que solo existan
+    # en Dictamenes hasta que se migren a la nueva tabla dedicada.
     tipo = _tipo_dictamen(db)
-    if not tipo:
-        return []
-    filas = db.query(Dictamenes, Propuesta).join(
-        Propuesta, Dictamenes.propuestaId == Propuesta.propuestaId
-    ).filter(
-        Dictamenes.tipoDictamenId == tipo.tipoDictamenId
-    ).order_by(Dictamenes.fechaEmision.desc(), Dictamenes.dictamenId.desc()).all()
-    return [{
-        "dictamenId": d.dictamenId, "propuestaId": p.propuestaId,
-        "codigo": p.codigoPropuesta, "titulo": p.titulo,
-        "numeroOficio": d.numeroOficio,
-        "fechaEmision": d.fechaEmision.isoformat() if d.fechaEmision else None,
-        "contenido": d.contenido, "rutaArchivo": d.rutaArchivo,
-        "decision": "Aprobar" if "Decisión: APROBADA" in (d.contenido or "") else "Rechazar",
-    } for d, p in filas]
+    propuestas_con_resolucion = {r["propuestaId"] for r in resultado}
+    if tipo:
+        antiguas = db.query(Dictamenes, Propuesta).join(
+            Propuesta, Dictamenes.propuestaId == Propuesta.propuestaId
+        ).filter(
+            Dictamenes.tipoDictamenId == tipo.tipoDictamenId,
+        ).order_by(
+            Dictamenes.fechaEmision.desc(),
+            Dictamenes.dictamenId.desc(),
+        ).all()
+
+        for d, p in antiguas:
+            if p.propuestaId in propuestas_con_resolucion:
+                continue
+            contenido = d.contenido or ""
+            resultado.append({
+                "resolucionCieId": None,
+                "dictamenId": d.dictamenId,
+                "propuestaId": p.propuestaId,
+                "codigo": p.codigoPropuesta,
+                "titulo": p.titulo,
+                "numeroOficio": d.numeroOficio,
+                "fechaEmision": d.fechaEmision.isoformat() if d.fechaEmision else None,
+                "decision": "Aprobar" if "Decisión: APROBADA" in contenido else "Rechazar",
+                "justificacion": None,
+                "calificacion": None,
+                "recomendacion": None,
+                "observaciones": None,
+                "contenido": d.contenido,
+                "rutaArchivo": d.rutaArchivo,
+            })
+            propuestas_con_resolucion.add(p.propuestaId)
+
+    resultado.sort(key=lambda r: r["fechaEmision"] or "", reverse=True)
+    return resultado

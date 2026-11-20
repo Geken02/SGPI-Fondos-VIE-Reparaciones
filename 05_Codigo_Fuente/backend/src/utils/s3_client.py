@@ -51,3 +51,16 @@ def eliminar_archivo(ruta_s3: str) -> bool:
     except Exception as e:
         print(f"Error eliminando archivo: {e}")
         return False
+
+def subir_archivo_desde_memoria(file_obj, ruta_s3: str, content_type: str = "application/octet-stream") -> str:
+    """
+    Sube un archivo directamente desde la memoria (ej. UploadFile de FastAPI) 
+    sin necesidad de guardarlo primero en el disco del servidor.
+    """
+    s3_client.upload_fileobj(
+        file_obj,
+        S3_BUCKET_NAME,
+        ruta_s3,
+        ExtraArgs={"ContentType": content_type}
+    )
+    return obtener_url_documento(ruta_s3)

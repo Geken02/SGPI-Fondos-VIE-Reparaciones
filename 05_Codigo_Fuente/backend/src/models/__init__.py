@@ -22,6 +22,7 @@ from src.models.evaluaciones import (
     TiposEvaluacion, TiposRecomendacion, EstadosEvaluacion
 )
 from src.models.dictamenes import Dictamenes, TiposDictamen
+from src.models.resoluciones_cie import ResolucionesCIE
 from src.models.acuerdos import AcuerdosConsejo, TiposAcuerdo, AcuerdoConsejoPresupuesto
 from src.models.votaciones_consejo import VotacionesConsejo, VotosConsejo
 from src.models.subsanaciones import Subsanaciones, EstadosSubsanacion
@@ -53,7 +54,7 @@ __all__ = [
     "ProductosAcademicos", "TiposProductosAcademicos",
     "Evaluaciones", "CriteriosEvaluacion", "DetalleEvaluacion",
     "TiposEvaluacion", "TiposRecomendacion", "EstadosEvaluacion",
-    "Dictamenes", "TiposDictamen",
+    "Dictamenes", "TiposDictamen", "ResolucionesCIE",
     "AcuerdosConsejo", "TiposAcuerdo", "AcuerdoConsejoPresupuesto",
     "VotacionesConsejo", "VotosConsejo",
     "Subsanaciones", "EstadosSubsanacion",
