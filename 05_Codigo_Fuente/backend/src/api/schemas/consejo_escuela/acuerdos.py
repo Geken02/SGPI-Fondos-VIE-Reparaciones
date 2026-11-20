@@ -12,10 +12,10 @@ class AcuerdoBase(BaseModel):
     tipoAcuerdoId: int = Field(gt=0)
     numeroAcuerdo: str | None = Field(default=None, max_length=50)
     fechaAcuerdo: date | None = None
-    horasAprobadas: Decimal | None = Field(default=None, ge=0, max_digits=4, decimal_places=1)
+    horasAprobadas: Decimal | None = Field(default=None,ge=0,le=10,max_digits=4,decimal_places=1,)    
     tipoHoraId: int | None = Field(default=None, gt=0)
     periodoNombramiento: str | None = Field(default=None, max_length=100)
-    presupuestoAprobado: Decimal | None = Field(default=None, ge=0, max_digits=12, decimal_places=2)
+    presupuestoAprobado: Decimal | None = Field(default=None,ge=0,le=9999999999.99,max_digits=12,decimal_places=2,)    
     rutaArchivo: str | None = Field(default=None, max_length=500)
 
 
@@ -27,10 +27,10 @@ class AcuerdoActualizar(BaseModel):
     tipoAcuerdoId: int | None = Field(default=None, gt=0)
     numeroAcuerdo: str | None = Field(default=None, max_length=50)
     fechaAcuerdo: date | None = None
-    horasAprobadas: Decimal | None = Field(default=None, ge=0, max_digits=4, decimal_places=1)
+    horasAprobadas: Decimal | None = Field(default=None,ge=0,le=10,max_digits=4,decimal_places=1,)    
     tipoHoraId: int | None = Field(default=None, gt=0)
     periodoNombramiento: str | None = Field(default=None, max_length=100)
-    presupuestoAprobado: Decimal | None = Field(default=None, ge=0, max_digits=12, decimal_places=2)
+    presupuestoAprobado: Decimal | None = Field(default=None,ge=0,le=9999999999.99,max_digits=12,decimal_places=2,)    
     rutaArchivo: str | None = Field(default=None, max_length=500)
 
 
