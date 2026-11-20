@@ -82,11 +82,11 @@ const ROLES_DISPONIBLES = [
     icono: '🖋️', 
     color: '#d97706',
     colorBg: '#fed7aa',
-    descripcion: 'Firma digitalmente el Acuerdo de Consejo (Form-07/08) y comunica el aval oficial a la VIE.'
+    descripcion: 'Firma digitalmente el Acuerdo de Consejo (Form-07/08) y comunica el aval oficial a la V\u200BI\u200BE.'
   },
   { 
     id: 'GestoraVIE', 
-    nombre: 'Gestora VIE', 
+    nombre: 'Gestora V\u200BI\u200BE', 
     icono: '🔍', 
     color: '#ea580c',
     colorBg: '#ffedd5',
@@ -98,7 +98,7 @@ const ROLES_DISPONIBLES = [
     icono: '⚖️', 
     color: '#dc2626',
     colorBg: '#fee2e2',
-    descripcion: 'Miembro del Consejo de Investigación y Extensión. Evalúa con rúbrica VIE y determina aprobación o rechazo.'
+    descripcion: 'Miembro del Consejo de Investigación y Extensión. Evalúa con rúbrica V\u200BI\u200BE y determina aprobación o rechazo.'
   },
   { 
     id: 'DireccionInvestigacion', 

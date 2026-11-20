@@ -29,7 +29,7 @@ const CONFIG_CAMPOS = {
   },
   'tipos-hora': {
     campos: [
-      { nombre: 'codigoTipo', label: 'Código', tipo: 'text', requerido: true, placeholder: 'VIE', maxLength: 20 },
+      { nombre: 'codigoTipo', label: 'Código', tipo: 'text', requerido: true, placeholder: 'V I E', maxLength: 20 },
       { nombre: 'descripcion', label: 'Descripción', tipo: 'text', requerido: true, placeholder: 'Horas de Vinculación', maxLength: 100 },
     ]
   },

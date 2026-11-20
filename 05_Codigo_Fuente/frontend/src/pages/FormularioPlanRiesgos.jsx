@@ -5,6 +5,7 @@ import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from '../components/LimitedInput';
 import { exportarForm05Excel } from '../utils/exportUtils';
 import IconoCie from '../components/cie/IconoCie';
+import SiglaVie from '../components/SiglaVie';
 
 const obtenerIniciales = (nombre) => {
   if (!nombre) return 'TEC';
@@ -610,7 +611,7 @@ const FormularioPlanRiesgos = () => {
     <div className="formulario-proyecto-master-wrapper">
       <div className="form-top-banner">
         <div className="form-banner-left">
-          <span className="form-banner-tec-title">TEC | SGPI — Formulario de Plan de Acción y Gestión del Riesgo (VIE 2027)</span>
+          <span className="form-banner-tec-title">TEC | SGPI — Formulario de Plan de Acción y Gestión del Riesgo (<SiglaVie /> 2027)</span>
         </div>
         <div className="form-banner-right">
           <span className="autoguardado-badge" role="status">
@@ -775,7 +776,7 @@ const FormularioPlanRiesgos = () => {
 
         <div className="vie-reminder-box">
           <span className="reminder-icon"><IconoCie nombre="check" tamano={14} /></span>
-          <div className="reminder-text"><strong>Recordatorio VIE:</strong> Dentro de la programación de actividades se deben incluir obligatoriamente las giras de campo y los informes de avance. Además, deberá registrarse cualquier pasantía nacional o internacional que se requiera para el desarrollo del proyecto.</div>
+          <div className="reminder-text"><strong>Recordatorio <SiglaVie />:</strong> Dentro de la programación de actividades se deben incluir obligatoriamente las giras de campo y los informes de avance. Además, deberá registrarse cualquier pasantía nacional o internacional que se requiera para el desarrollo del proyecto.</div>
         </div>
 
         <div className="form-footer-action-bar">

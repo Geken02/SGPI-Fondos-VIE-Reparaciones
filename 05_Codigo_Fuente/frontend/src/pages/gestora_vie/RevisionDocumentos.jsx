@@ -18,7 +18,7 @@ const RUTA_BANDEJA = '/gestora/expedientes';
 
 const mensajeDeError = (error) =>
   error.response?.status === 403
-    ? 'Tu usuario no tiene el rol de Gestora VIE para ver este expediente.'
+    ? 'Tu usuario no tiene el rol de Gestora V\u200BI\u200BE para ver este expediente.'
     : 'No se pudo cargar el expediente. Verifica que el servidor esté en ejecución e intenta de nuevo.';
 
 const VolverALaBandeja = () => (
@@ -330,7 +330,7 @@ const RevisionDocumentos = () => {
   const { expedienteId } = useParams();
 
   useEffect(() => {
-    document.title = 'Revisión de documentos - Gestora VIE';
+    document.title = 'Revisión de documentos - Gestora V I E';
   }, []);
 
   if (!expedienteId) return <SeleccionExpediente titulo="Revisión de documentos" ruta="/gestora/revision-documentos" />;

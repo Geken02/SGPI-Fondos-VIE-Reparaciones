@@ -21,7 +21,9 @@ export const formatearNombreRol = (rol) => {
     'MiembroComiteTecnico': 'Miembro Comité Técnico',
     'CoordinadorComiteTecnico': 'Coordinador Comité Técnico',
     'AsistenteComiteTecnico': 'Asistente Comité Técnico',
-    'GestoraVIE': 'Gestora VIE',
+    // Sigla institucional V.I.E. con separadores invisibles (U+200B) para que el
+    // lector de pantalla deletree "V I E" en lugar de leerla como "viernes".
+    'GestoraVIE': 'Gestora V\u200BI\u200BE',
     'CoordinadoraGestora': 'Coordinadora Gestora',
     'MiembroCIE': 'Miembro CIE',
     'PresidenteCIE': 'Presidente CIE',

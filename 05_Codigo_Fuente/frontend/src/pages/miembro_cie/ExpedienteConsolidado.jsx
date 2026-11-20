@@ -9,6 +9,7 @@ import { useCarga } from '../../components/cie/useCarga';
 import {
   Icono, CabeceraExpediente, Pasos, EncabezadoPagina, VolverALaBandeja, Cargando, ErrorCarga,
 } from '../../components/cie/CieUi';
+import SiglaVie from '../../components/SiglaVie';
 
 const TABS = ['Información general', 'Formulario Form-04', 'Documentos', 'Dictámenes', 'Historial'];
 
@@ -41,7 +42,7 @@ const ExpedienteConsolidado = () => {
     <>
       <VolverALaBandeja />
       <EncabezadoPagina titulo="Expediente consolidado"
-        subtitulo="Consulta el resumen, los dictámenes y el historial antes de evaluar con la rúbrica VIE." />
+        subtitulo={<>Consulta el resumen, los dictámenes y el historial antes de evaluar con la rúbrica <SiglaVie />.</>} />
 
       <CabeceraExpediente expediente={e} />
 
@@ -65,9 +66,9 @@ const ExpedienteConsolidado = () => {
             </div>
 
             <div className="gv-subcard">
-              <h3 className="gv-subcard-titulo">Observaciones de la Gestora VIE</h3>
+              <h3 className="gv-subcard-titulo">Observaciones de la Gestora <SiglaVie /></h3>
               {(e.subsanaciones ?? []).length === 0 ? (
-                <Vacio texto="La Gestora VIE no ha registrado observaciones." />
+                <Vacio texto={<>La Gestora <SiglaVie /> no ha registrado observaciones.</>} />
               ) : (
                 <ul className="cie-checklist">
                   {(e.subsanaciones ?? []).map((s) => (
@@ -171,7 +172,7 @@ const ExpedienteConsolidado = () => {
         ) : (
           <button type="button" className="gv-btn-primario"
             onClick={() => navigate(`/cie/expedientes/${codigo}/rubrica`)} aria-label="Evaluar propuesta con la rúbrica V I E">
-            Evaluar con rúbrica VIE <Icono nombre="arrowRight" size={16} aria-hidden="true" />
+            Evaluar con rúbrica <SiglaVie /> <Icono nombre="arrowRight" size={16} aria-hidden="true" />
           </button>
         )}
       </div>

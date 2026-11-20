@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Icono from './Iconos';
+import SiglaVie from '../SiglaVie';
 
 // Nombre de respaldo para ver la ventana sin sesión (solo prototipo).
 const NOMBRE_RESPALDO = 'Lic. Mariela Campos';
@@ -29,7 +30,7 @@ const HeaderGestora = () => {
 
       <div className="gv-header-bienvenida">
         <span className="gv-bienvenida-nombre">Bienvenida, {nombre}</span>
-        <span className="gv-bienvenida-rol">Gestora VIE</span>
+        <span className="gv-bienvenida-rol">Gestora <SiglaVie /></span>
       </div>
 
       <div className="gv-header-acciones">

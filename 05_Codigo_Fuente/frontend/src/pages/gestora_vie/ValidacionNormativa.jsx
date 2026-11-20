@@ -18,13 +18,14 @@ import {
 import { expedienteService } from '../../services/expedienteService';
 import { detalleDeError } from '../../utils/errores';
 import { formatearFecha } from '../../utils/fechas';
+import SiglaVie from '../../components/SiglaVie';
 
 const RUTA_BANDEJA = '/gestora/expedientes';
 const RUTA_VALIDACION = '/gestora/validacion-normativa';
 const OPCIONES_ESTADO = ['CUMPLE', 'NO_CUMPLE', 'PENDIENTE', 'NO_APLICA'];
 
 const mensajeDeError = (error) => {
-  if (error.response?.status === 403) return 'Tu usuario no tiene el rol de Gestora VIE para ver esta información.';
+  if (error.response?.status === 403) return 'Tu usuario no tiene el rol de Gestora V\u200BI\u200BE para ver esta información.';
   return 'No se pudo cargar la información. Verifica que el servidor esté en ejecución e intenta de nuevo.';
 };
 
@@ -638,7 +639,7 @@ const ValidacionNormativa = () => {
   const [errorLista, setErrorLista] = useState('');
 
   useEffect(() => {
-    document.title = 'Validación Normativa - Gestora VIE';
+    document.title = 'Validación Normativa - Gestora V I E';
   }, []);
 
   // Lista de expedientes enviados: alimenta el selector y el expediente inicial
@@ -671,7 +672,7 @@ const ValidacionNormativa = () => {
       return (
         <MensajeEstado
           titulo="Aún no hay expedientes para validar"
-          texto="Cuando una persona investigadora envíe una propuesta a la VIE, podrás validarla aquí."
+          texto={<>Cuando una persona investigadora envíe una propuesta a la <SiglaVie />, podrás validarla aquí.</>}
         />
       );
     }

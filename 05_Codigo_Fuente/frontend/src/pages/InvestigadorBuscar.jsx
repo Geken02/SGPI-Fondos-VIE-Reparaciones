@@ -5,6 +5,7 @@ import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from '../components/LimitedInput';
 import IconoCie from '../components/cie/IconoCie';
 import { claseBadgeEstado } from '../data/estadosPropuesta';
+import SiglaVie from '../components/SiglaVie';
 
 const InvestigadorBuscar = () => {
   const navigate = useNavigate();
@@ -80,7 +81,7 @@ const InvestigadorBuscar = () => {
       estadoClase: claseBadgeEstado(p.estadoId, p.nombreEstado),
       titulo: p.titulo,
       investigador: usuario?.nombre ? `${usuario.nombre} ${usuario.apellido1 || ''}`.trim() : 'Investigador TEC',
-      convocatoria: p.nombreConvocatoria || 'Convocatoria Ordinaria VIE 2027',
+      convocatoria: p.nombreConvocatoria || 'Convocatoria Ordinaria V\u200BI\u200BE 2027',
       fecha: p.fechaCreacion ? new Date(p.fechaCreacion).toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Reciente',
       monto: `₡ ${Number(p.montoTotal || 0).toLocaleString('es-CR')}`,
       evaluacion: p.nombreEstado === 'Borrador' ? 'En formulación' : 'En proceso',
@@ -99,10 +100,10 @@ const InvestigadorBuscar = () => {
     estado: 'Convocatoria Abierta',
     estadoClase: 'badge-status success',
     titulo: c.nombreConvocatoria,
-    investigador: 'VIE — Fondos Institucionales',
+    investigador: 'V\u200BI\u200BE — Fondos Institucionales',
     convocatoria: c.nombreConvocatoria,
     fecha: c.fechaCierre ? `Cierre: ${c.fechaCierre}` : 'Cierre: Por definir',
-    monto: 'Fondos VIE / TEC',
+    monto: 'Fondos V\u200BI\u200BE / TEC',
     evaluacion: 'Bases y Formularios Oficiales',
     ruta: '/dashboard/convocatorias'
   }));
@@ -344,7 +345,7 @@ const InvestigadorBuscar = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '10px' }}>
                 {[
                   { label: 'FVIE-2026-001 (Propuesta en Borrador)', query: 'FVIE-2026-001' },
-                  { label: 'Convocatoria Ordinaria VIE 2027', query: 'Convocatoria Ordinaria' },
+                  { label: 'Convocatoria Ordinaria V\u200BI\u200BE 2027', query: 'Convocatoria Ordinaria' },
                   { label: 'Fondo Incentivos MICITT 2027', query: 'MICITT' },
                   { label: 'Proyectos Fondos FEES 2027', query: 'FEES' }
                 ].map((item, i) => (
@@ -400,7 +401,7 @@ const InvestigadorBuscar = () => {
             </div>
 
             <div className="quick-card">
-              <div className="quick-card-badge">VIE</div>
+              <div className="quick-card-badge"><SiglaVie /></div>
               <h3 className="quick-card-title">Guías y Plantillas</h3>
               <p className="quick-card-desc">Accede a las instrucciones para la postulación y búsqueda de convocatorias.</p>
               <button 

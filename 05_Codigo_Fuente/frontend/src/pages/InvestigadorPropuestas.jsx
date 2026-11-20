@@ -8,6 +8,7 @@ import { descargarPropuestaPDF, descargarPlanRiesgoExcel, descargarPresupuestoDi
 import UniversalViewer from '../components/UniversalViewer';
 import IconoCie from '../components/cie/IconoCie';
 import { claseBadgeEstado, etiquetaEstado } from '../data/estadosPropuesta';
+import SiglaVie from '../components/SiglaVie';
 
 const documentoMasReciente = (documentos, coincide) => {
   const encontrados = (documentos || []).filter(coincide);
@@ -450,7 +451,7 @@ const InvestigadorPropuestas = () => {
           <div className="dashboard-title-group">
             <h1 className="dashboard-main-title">Mis Propuestas</h1>
             <p className="dashboard-subtitle">
-              Gestión detallada de expedientes, formularios de proyecto, subsanaciones y dictámenes oficiales de la VIE.
+              Gestión detallada de expedientes, formularios de proyecto, subsanaciones y dictámenes oficiales de la <SiglaVie />.
             </p>
           </div>
           <div className="dashboard-actions-group">
@@ -771,7 +772,7 @@ const InvestigadorPropuestas = () => {
                               PROPUESTA DEVUELTA EN ESTADO: SUBSANACIÓN REQUERIDA
                             </div>
                             <div className="subsanacion-banner-sub">
-                              La instancia revisora de la VIE ha devuelto esta propuesta con observaciones. Corrija los formularios o adjunte los documentos faltantes indicados a continuación y reenvíe la propuesta para una nueva revisión.
+                              La instancia revisora de la <SiglaVie /> ha devuelto esta propuesta con observaciones. Corrija los formularios o adjunte los documentos faltantes indicados a continuación y reenvíe la propuesta para una nueva revisión.
                             </div>
                           </div>
                         </div>
@@ -1025,7 +1026,7 @@ const InvestigadorPropuestas = () => {
                               <div>
                                 <span className="subsanacion-meta-label">Instancia Revisora:</span>
                                 <strong className="subsanacion-meta-value">
-                                  {subActiva?.nombreRevisor || 'Gestoría de Proyectos — VIE'}
+                                  {subActiva?.nombreRevisor || 'Gestoría de Proyectos — V\u200BI\u200BE'}
                                 </strong>
                               </div>
                               <div>
@@ -1051,7 +1052,7 @@ const InvestigadorPropuestas = () => {
                             {/* Aviso si la respuesta anterior fue rechazada */}
                             {subRechazada && subActiva?.comentarioResolucion && (
                               <div className="banner-subsanacion-rechazada" style={{ margin: '12px 0', padding: '10px 14px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '6px', color: '#991b1b', fontSize: '13px' }}>
-                                <strong><IconoCie nombre="alertTriangle" tamano={14} /> Respuesta rechazada por la Gestoría VIE:</strong>
+                                <strong><IconoCie nombre="alertTriangle" tamano={14} /> Respuesta rechazada por la Gestoría <SiglaVie />:</strong>
                                 <div style={{ marginTop: '6px' }}>"{subActiva.comentarioResolucion}"</div>
                                 <div style={{ marginTop: '6px', color: '#7f1d1d', fontSize: '12px' }}>Debe corregir nuevamente y reenviar la propuesta.</div>
                               </div>
@@ -1161,7 +1162,7 @@ const InvestigadorPropuestas = () => {
                               Fecha de reenvío: {subActiva?.fechaRespuestaInvestigador ? new Date(subActiva.fechaRespuestaInvestigador).toLocaleString('es-CR') : new Date().toLocaleString('es-CR')}
                             </div>
                             <div className="subsanacion-resp-content">
-                              <strong>Respuesta del Investigador:</strong> "{subActiva?.respuestaInvestigador || 'Se subsanaron las observaciones requeridas por la VIE.'}"
+                              <strong>Respuesta del Investigador:</strong> "{subActiva?.respuestaInvestigador || 'Se subsanaron las observaciones requeridas por la V\u200BI\u200BE.'}"
                             </div>
                             <div className="subsanacion-resp-footnote">
                               La propuesta se encuentra nuevamente en manos de la instancia revisora para su nueva evaluación (Aprobación, Rechazo o Nueva Subsanación).
