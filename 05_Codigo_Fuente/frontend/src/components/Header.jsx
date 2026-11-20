@@ -60,7 +60,10 @@ const Header = () => {
     <header className="tec-header">
       <div className="tec-header-welcome">
         <h1 className="welcome-title">Bienvenido, {nombreMostrar}</h1>
-        <p className="welcome-role">{rolMostrar}</p>
+        <p className="welcome-role">
+          <span aria-hidden="true">{rolMostrar}</span>
+          <span className="sr-only">{String(rolMostrar).replace(/\bVIE\b/g, 'V I E')}</span>
+        </p>
       </div>
 
       <div className="tec-header-actions">
@@ -97,7 +100,7 @@ const Header = () => {
         <div className="header-icon-container">
           <button 
             type="button"
-            className="btn-notification-bell" aria-label="Abrir notificaciones"
+            className="btn-notification-bell"
             onClick={() => {
               setShowNotifications(!showNotifications);
               setShowProfile(false);
@@ -125,7 +128,7 @@ const Header = () => {
         <div className="header-avatar-container">
           <button 
             type="button"
-            className="btn-user-avatar" aria-label="Abrir perfil de usuario"
+            className="btn-user-avatar"
             onClick={() => {
               setShowProfile(!showProfile);
               setShowNotifications(false);

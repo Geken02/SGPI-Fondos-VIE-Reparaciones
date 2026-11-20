@@ -150,17 +150,17 @@ const InvestigadorConvocatorias = () => {
 
         {/* Cajas de métricas superiores calculadas dinámicamente desde la BD */}
         <div className="convocatorias-stats-grid">
-          <div className="conv-stat-card">
+          <div className="conv-stat-card" tabIndex={0} role="group" aria-label={`Convocatorias vigentes: ${convocatoriasVigentes}`}>
             <div className="stat-indicator-dot dot-green"></div>
             <div className="stat-number">{convocatoriasVigentes}</div>
             <div className="stat-label">Convocatorias Vigentes</div>
           </div>
-          <div className="conv-stat-card">
+          <div className="conv-stat-card" tabIndex={0} role="group" aria-label={`Convocatorias que cierran pronto, en menos de 15 días: ${cierranPronto}`}>
             <div className="stat-indicator-dot dot-orange"></div>
             <div className="stat-number">{cierranPronto}</div>
             <div className="stat-label">Cierran pronto (&lt; 15 días)</div>
           </div>
-          <div className="conv-stat-card">
+          <div className="conv-stat-card" tabIndex={0} role="group" aria-label={`Convocatorias favoritas: ${favoritas.length}`}>
             <div className="stat-star-icon"><IconoCie nombre="star" tamano={16} /></div>
             <div className="stat-number">{favoritas.length}</div>
             <div className="stat-label">Convocatorias Favoritas</div>

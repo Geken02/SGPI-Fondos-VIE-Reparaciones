@@ -170,7 +170,7 @@ const ExpedienteConsolidado = () => {
           </button>
         ) : (
           <button type="button" className="gv-btn-primario"
-            onClick={() => navigate(`/cie/expedientes/${codigo}/rubrica`)} aria-label="Evaluar propuesta con la rúbrica VIE">
+            onClick={() => navigate(`/cie/expedientes/${codigo}/rubrica`)} aria-label="Evaluar propuesta con la rúbrica V I E">
             Evaluar con rúbrica VIE <Icono nombre="arrowRight" size={16} aria-hidden="true" />
           </button>
         )}

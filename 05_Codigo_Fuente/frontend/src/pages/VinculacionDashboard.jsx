@@ -108,7 +108,7 @@ const VinculacionDashboard = () => {
 
         {/* Fila de 3 Tarjetas KPI */}
         <div className="kpi-cards-grid">
-          <div className="kpi-card">
+          <div className="kpi-card" tabIndex={0} role="group" aria-label={`Propuestas asignadas: ${totalAsignadas}`}>
             <div className="kpi-card-label">PROPUESTAS ASIGNADAS</div>
             <div className="kpi-stat-row">
               <span className="kpi-big-number">{totalAsignadas}</span>
@@ -116,7 +116,7 @@ const VinculacionDashboard = () => {
             </div>
           </div>
 
-          <div className="kpi-card kpi-card-highlight">
+          <div className="kpi-card kpi-card-highlight" tabIndex={0} role="group" aria-label={`Pendientes por evaluar: ${pendientes}`}>
             <div className="kpi-card-label">PENDIENTES POR EVALUAR</div>
             <div className="kpi-stat-row">
               <span className="kpi-big-number">{pendientes}</span>
@@ -124,7 +124,7 @@ const VinculacionDashboard = () => {
             </div>
           </div>
 
-          <div className="kpi-card">
+          <div className="kpi-card" tabIndex={0} role="group" aria-label={`Evaluaciones completadas: ${completadas}`}>
             <div className="kpi-card-label">EVALUACIONES COMPLETADAS</div>
             <div className="kpi-stat-row">
               <span className="kpi-big-number">{completadas}</span>
