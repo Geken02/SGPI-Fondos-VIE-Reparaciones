@@ -3,7 +3,6 @@ import api from './api';
 
 export const authService = {
   login: async (data) => {
-    // 👇 ASEGÚRATE QUE DIGA '/api/auth/login'
     const response = await api.post('/api/auth/login', data);
     return response.data;
   },
@@ -14,7 +13,23 @@ export const authService = {
   },
 
   actualizarPerfil: async (datos) => {
-    const response = await api.put('/auth/perfil', datos);
+    // Nota: Verifica si tu backend espera '/api/auth/perfil' o '/auth/perfil'
+    const response = await api.put('/api/auth/perfil', datos); 
+    return response.data;
+  },
+
+  // ✅ NUEVA FUNCIÓN AGREGADA: Sube la foto de perfil al backend
+  actualizarFotoPerfil: async (usuarioId, archivo) => {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+
+    // Esta ruta debe coincidir exactamente con la que creamos en el backend
+    const response = await api.post(`/api/usuarios/${usuarioId}/foto-perfil`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
     return response.data;
   },
 
@@ -38,22 +53,5 @@ export const authService = {
     localStorage.removeItem('usuario');
   },
 
-
   obtenerDashboardUsuario: () => api.get('/api/auth/me/dashboard'),
-
-  
-};
-
-export const actualizarFotoPerfil = async (usuarioId, archivo) => {
-  const formData = new FormData();
-  formData.append('archivo', archivo);
-
-  // Asumiendo que 'api' es tu instancia de axios configurada con el token y baseURL
-  const response = await api.post(`/api/usuarios/${usuarioId}/foto-perfil`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  
-  return response.data;
 };
