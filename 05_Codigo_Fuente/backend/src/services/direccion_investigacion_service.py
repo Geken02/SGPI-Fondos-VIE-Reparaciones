@@ -16,7 +16,7 @@ from src.models.usuarios import Usuario
 from src.models.escuelas import Escuela
 from src.services.documento_oficial_pdf import generar_oficio_pdf
 from src.models.propuesta_documentos import PropuestaDocumentos, TiposDocumento
-from src.models.catalogos import ConfiguracionesSistema
+from src.models.catalogos import ConfiguracionesSistema, HistorialEstadosPropuesta
 from src.models.notificaciones import (
     Notificaciones, TiposNotificacion, CanalesComunicacion
 )
@@ -225,6 +225,26 @@ def obtener_dictamen(db: Session, codigo: str):
 
     persona = _datos_propuesta(propuesta)
     documentos = listar_documentos(db, codigo)
+    historial_db = (
+        db.query(HistorialEstadosPropuesta)
+        .filter(HistorialEstadosPropuesta.propuestaId == propuesta.propuestaId)
+        .order_by(
+            HistorialEstadosPropuesta.fechaCambio.asc(),
+            HistorialEstadosPropuesta.historialEstadoId.asc(),
+        )
+        .all()
+    )
+    historial = [{
+        "fecha": h.fechaCambio.isoformat() if h.fechaCambio else None,
+        "estadoAnterior": h.estadoAnterior.nombreEstadoPropuesta if h.estadoAnterior else None,
+        "estadoNuevo": h.estadoNuevo.nombreEstadoPropuesta if h.estadoNuevo else None,
+        "responsable": " ".join(x for x in (
+            h.usuarioResponsable.nombreUsuario,
+            h.usuarioResponsable.apellido1Usuario,
+            h.usuarioResponsable.apellido2Usuario,
+        ) if x) if h.usuarioResponsable else "Sistema",
+        "observaciones": h.observaciones,
+    } for h in historial_db]
     contenido = d.contenido or ""
     justificacion = contenido
     observaciones = ""
@@ -255,7 +275,7 @@ def obtener_dictamen(db: Session, codigo: str):
             db, propuesta.propuestaId, d.usuarioRemitenteId,
         ),
         "documentos": documentos,
-        "historial": [],
+        "historial": historial,
     }
 
 

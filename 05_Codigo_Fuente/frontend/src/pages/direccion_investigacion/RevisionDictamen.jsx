@@ -7,7 +7,6 @@ import { useCarga } from '../../components/cie/useCarga';
 import {
   Icono, EstadoTramiteBadge, DecisionBadge, EncabezadoPagina, VolverALaBandeja, Cargando, ErrorCarga,
 } from '../../components/direccion/DireccionUi';
-import SiglaVie from '../../components/SiglaVie';
 
 const TABS = ['Resumen', 'Dictamen del CIE', 'Documentos', 'Historial'];
 
@@ -27,9 +26,23 @@ const RevisionDictamen = () => {
   );
   const promedio = criteriosCompletos ? promedioPonderado(d.criterios) : null;
   const eventos = [
-    { fecha: d.fechaDictamen, texto: `Resolución del CIE: ${d.decision === 'Aprobar' ? 'aprobada' : 'rechazada'}`, responsable: 'CIE' },
-    ...(d.historial ?? []).map((h) => ({ fecha: h.fecha, texto: h.estado, responsable: h.responsable })),
-  ];
+    ...(d.historial ?? []).map((h) => ({
+      fecha: h.fecha,
+      texto: h.estadoAnterior
+        ? `Cambio de estado: ${h.estadoAnterior} → ${h.estadoNuevo || '—'}`
+        : `Estado inicial: ${h.estadoNuevo || '—'}`,
+      responsable: h.responsable || 'Sistema',
+      observaciones: h.observaciones,
+    })),
+    ...((d.historial ?? []).some((h) =>
+      ['APROBADA', 'RECHAZADA'].includes(String(h.estadoNuevo || '').toUpperCase())
+    ) ? [] : [{
+      fecha: d.fechaDictamen,
+      texto: `Resolución del CIE: ${d.decision === 'Aprobar' ? 'aprobada' : 'rechazada'}`,
+      responsable: 'CIE',
+      observaciones: '',
+    }]),
+  ].sort((a, b) => new Date(a.fecha || 0) - new Date(b.fecha || 0));
 
   return (
     <>
@@ -87,7 +100,7 @@ const RevisionDictamen = () => {
               </div>
 
               <div className="dir-subcard">
-                <h3 className="gv-subcard-titulo">Rúbrica <SiglaVie /> (resumen)</h3>
+                <h3 className="gv-subcard-titulo">Rúbrica VIE (resumen)</h3>
                 <div className="cie-criterios">
                   <div className="cie-criterios-head"><span>Criterio</span><span>Peso · Puntaje</span></div>
                   {d.criterios.length === 0 ? (
@@ -138,9 +151,18 @@ const RevisionDictamen = () => {
           <div className="gv-tabla-scroll">
             <table className="gv-tabla">
               <caption className="sr-only">Historial del dictamen</caption>
-              <thead><tr><th scope="col">Fecha</th><th scope="col">Evento</th><th scope="col">Responsable</th></tr></thead>
+              <thead><tr><th scope="col">Fecha</th><th scope="col">Evento</th><th scope="col">Responsable</th><th scope="col">Observaciones</th></tr></thead>
               <tbody>
-                {eventos.map((e, i) => <tr key={i}><td>{formatearFechaHora(e.fecha)}</td><td>{e.texto}</td><td>{e.responsable}</td></tr>)}
+                {eventos.length === 0 ? (
+                  <tr><td colSpan="4">No hay movimientos registrados para este expediente.</td></tr>
+                ) : eventos.map((e, i) => (
+                  <tr key={i}>
+                    <td>{formatearFechaHora(e.fecha)}</td>
+                    <td>{e.texto}</td>
+                    <td>{e.responsable}</td>
+                    <td>{e.observaciones || '—'}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

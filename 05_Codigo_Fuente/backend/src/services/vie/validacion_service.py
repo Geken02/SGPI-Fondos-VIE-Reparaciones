@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from src.models.convocatorias import Convocatorias, EstadosPropuesta, EtapasConvocatoria
 from src.models.propuestas import Propuesta
 from src.models.revision_gestora import ValidacionRequisito
+from src.models.catalogos import HistorialEstadosPropuesta
 from src.services.vie.errores import ConflictoNegocio, SolicitudInvalida
 from src.services.vie.expediente_service import (
     ESTADO_BORRADOR,
@@ -498,10 +499,22 @@ def enviar_al_cie(db: Session, codigo_propuesta: str, gestora_id: int) -> dict:
     )
     # La evaluación compartida ya confirmó que el estado existe.
     ahora = datetime.now()
-    p.estadoId = estado_cie.estadoPropuestaId
-    p.usuarioAuditoriaId = gestora_id
-    p.ultimaAuditoria = ahora
-    db.commit()
+    estado_anterior_id = p.estadoId
+    try:
+        p.estadoId = estado_cie.estadoPropuestaId
+        p.usuarioAuditoriaId = gestora_id
+        p.ultimaAuditoria = ahora
+        db.add(HistorialEstadosPropuesta(
+            propuestaId=p.propuestaId,
+            estadoAnteriorId=estado_anterior_id,
+            estadoNuevoId=estado_cie.estadoPropuestaId,
+            usuarioResponsableId=gestora_id,
+            observaciones="Expediente remitido al CIE por la gestora VIE.",
+        ))
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
     return {
         "codigo": p.codigoPropuesta,
