@@ -21,6 +21,10 @@ from src.services.admin import usuario_service
 from src.utils.dependencias import requerir_rol, obtener_usuario_activo
 from src.utils.seguridad import registrar_log_request, crear_token_acceso
 from src.utils.permisos import verificar_permiso
+from fastapi import UploadFile, File
+from datetime import datetime, timezone
+import time
+from src.utils.s3_client import subir_archivo_desde_memoria, eliminar_archivo
 
 ROLES_ADMIN = ["SuperAdministrador", "Administrador"]
 
@@ -453,23 +457,12 @@ def revocar_asignacion(request: Request, asignacion_id: int, sesion: Session = D
 # ==============================================================================
 # AGREGAR AL FINAL DE: src/api/routers/admin/usuarios.py
 # ==============================================================================
-from fastapi import UploadFile, File, HTTPException, status, Depends
-from sqlalchemy.orm import Session
-from datetime import datetime, timezone
-import time
-
-# Asegúrate de que estos imports coincidan con tu estructura
-from src.database import get_db
-from src.models.usuarios import Usuario
-from src.utils.dependencias import obtener_usuario_activo  # O como se llame tu dependencia de auth
-from src.utils.s3_client import subir_archivo_desde_memoria, eliminar_archivo
-
 @router.post("/{usuario_id}/foto-perfil")
 async def actualizar_foto_perfil(
     usuario_id: int,
     archivo: UploadFile = File(...),
     db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_activo)
+    usuario_actual: Usuario = Depends(obtener_usuario_activo) 
 ):
     """
     Actualiza la foto de perfil de un usuario en Supabase Storage.
