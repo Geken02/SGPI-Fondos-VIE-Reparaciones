@@ -52,7 +52,7 @@ export default function BandejaEvaluacion() {
     return (
       <div className="comite-loading">
         <div className="spinner"></div>
-        <p>Cargando bandeja de evaluación...</p>
+        <p role="status">Cargando bandeja de evaluación...</p>
       </div>
     );
   }
@@ -121,13 +121,14 @@ export default function BandejaEvaluacion() {
           </div>
         ) : (
           <table className="tabla-moderna">
+            <caption className="sr-only">Propuestas asignadas para evaluación independiente</caption>
             <thead>
               <tr>
-                <th>ID Propuesta</th>
-                <th>Título</th>
-                <th>Fecha de Asignación</th>
-                <th>Estado</th>
-                <th style={{ textAlign: 'right' }}>Acciones</th>
+                <th scope="col">ID Propuesta</th>
+                <th scope="col">Título</th>
+                <th scope="col">Fecha de Asignación</th>
+                <th scope="col">Estado</th>
+                <th scope="col" style={{ textAlign: 'right' }}>Acciones</th>
               </tr>
             </thead>
             <tbody>

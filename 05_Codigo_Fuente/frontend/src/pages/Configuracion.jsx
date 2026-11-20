@@ -246,12 +246,13 @@ const Configuracion = () => {
               {/* Tabla de asistentes */}
               <div className="vinculacion-table-wrapper">
                 <table className="vinculacion-table">
+                  <caption className="sr-only">Asistentes con acceso a notificaciones</caption>
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>NOMBRE COMPLETO</th>
-                      <th>PERMISOS</th>
-                      <th>ACCIÓN</th>
+                      <th scope="col">ID</th>
+                      <th scope="col">NOMBRE COMPLETO</th>
+                      <th scope="col">PERMISOS</th>
+                      <th scope="col">ACCIÓN</th>
                     </tr>
                   </thead>
                   <tbody>

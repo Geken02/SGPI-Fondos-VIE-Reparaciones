@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 
 export default function SubsanacionModal({ isOpen, onClose, propuesta, onSubmit }) {
   const [detalle, setDetalle] = useState('');
+  const tituloId = useId();
   const [documentosFaltantes, setDocumentosFaltantes] = useState({
     form04: false,
     form05: false,
@@ -54,7 +55,7 @@ export default function SubsanacionModal({ isOpen, onClose, propuesta, onSubmit 
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
     }}>
       {/* Usamos las clases globales para que el CSS haga todo el trabajo pesado */}
-      <div className="modal-content card" style={{
+      <div className="modal-content card" role="dialog" aria-modal="true" aria-labelledby={tituloId} style={{
         maxWidth: '600px', width: '90%', maxHeight: '90vh', overflow: 'auto',
         padding: '24px', borderRadius: esAltoContraste ? '0px' : '8px'
       }}>
@@ -62,7 +63,7 @@ export default function SubsanacionModal({ isOpen, onClose, propuesta, onSubmit 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', borderBottom: `1px solid var(--color-borde)`, paddingBottom: '16px' }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: 'var(--color-texto-principal)' }}>
+            <h2 id={tituloId} style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: 'var(--color-texto-principal)' }}>
               Solicitar Subsanación
             </h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: 'var(--color-texto-secundario)' }}>

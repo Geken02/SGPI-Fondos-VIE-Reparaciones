@@ -334,7 +334,7 @@ const FormularioPresupuesto = () => {
           <span className="form-banner-tec-title">TEC | SGPI — Módulo de Formulación Presupuestaria (VIE 2027-2029)</span>
         </div>
         <div className="form-banner-right">
-          <span className="autoguardado-badge">
+          <span className="autoguardado-badge" role="status">
             <span className="dot-pulse"></span>
             {guardando ? 'Guardando...' : guardadoMsg}
           </span>
@@ -364,13 +364,14 @@ const FormularioPresupuesto = () => {
 
         <div className="table-responsive-container" style={{ marginBottom: '16px' }}>
           <table className="institucional-data-table">
+            <caption className="sr-only">Tabla de objetos de gasto del presupuesto</caption>
             <thead>
               <tr>
-                <th style={{ width: '14%' }}>CÓDIGO OG</th>
-                <th style={{ width: '32%' }}>DETALLE DE OBJETO DE GASTO</th>
-                <th style={{ width: '18%' }}>MONTO (₡)</th>
-                <th>JUSTIFICACIÓN TÉCNICA</th>
-                <th style={{ width: '6%', textAlign: 'center' }}></th>
+                <th scope="col" style={{ width: '14%' }}>CÓDIGO OG</th>
+                <th scope="col" style={{ width: '32%' }}>DETALLE DE OBJETO DE GASTO</th>
+                <th scope="col" style={{ width: '18%' }}>MONTO (₡)</th>
+                <th scope="col">JUSTIFICACIÓN TÉCNICA</th>
+                <th scope="col" style={{ width: '6%', textAlign: 'center' }}></th>
               </tr>
             </thead>
             <tbody>
@@ -401,7 +402,7 @@ const FormularioPresupuesto = () => {
         </div>
 
         {!mostrarFormNuevaFila && catalogoOG.length === 0 && (
-          <div style={{ padding: '16px 20px', color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '14px' }}>
+          <div role="alert" style={{ padding: '16px 20px', color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '14px' }}>
             No hay objetos de gasto configurados en el catálogo. Un administrador debe registrar rubros con código OG (columnas <strong>codigo / categoria / esAsistencia</strong>) para poder presupuestar.
           </div>
         )}

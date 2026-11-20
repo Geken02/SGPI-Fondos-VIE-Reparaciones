@@ -153,7 +153,7 @@ const FormularioDocumento = ({ dictamen, config, cambiarDictamen, lista }) => {
 
           <div className="dir-subcard">
             <h3 className="gv-subcard-titulo">Documentos generados</h3>
-            {docs.cargando ? <p className="cie-pad">Cargando...</p> : generados.length === 0 ? (
+            {docs.cargando ? <p className="cie-pad" role="status">Cargando...</p> : generados.length === 0 ? (
               <p className="gv-sin-resultados">Aún no se han generado documentos para esta propuesta.</p>
             ) : (
               <ul className="dir-docs">

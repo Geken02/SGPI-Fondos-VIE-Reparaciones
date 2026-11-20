@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
@@ -8,6 +8,7 @@ import IconoCie from './cie/IconoCie';
 const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
   const { usuario } = useAuth();
   const navigate = useNavigate();
+  const tituloId = useId();
 
   // Estados del formulario
   const [convocatorias, setConvocatorias] = useState([]);
@@ -151,10 +152,15 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
 
   return (
     <div className="crear-propuesta-modal-overlay">
-      <div className="crear-propuesta-modal-card">
+      <div
+        className="crear-propuesta-modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={tituloId}
+      >
         {/* Cabecera azul institucional */}
         <div className="crear-propuesta-modal-header">
-          <div className="modal-header-title">
+          <div className="modal-header-title" id={tituloId}>
             <span style={{ fontSize: '18px', marginRight: '6px' }}>+</span>
             Crear Nueva Propuesta
           </div>
@@ -241,7 +247,7 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
               </p>
 
               {errorMsg && (
-                <div className="alert-error-box" style={{ marginBottom: '14px', padding: '10px 14px', backgroundColor: '#fee2e2', border: '1px solid #ef4444', borderRadius: '6px', color: '#b91c1c', fontSize: '13px' }}>
+                <div className="alert-error-box" role="alert" style={{ marginBottom: '14px', padding: '10px 14px', backgroundColor: '#fee2e2', border: '1px solid #ef4444', borderRadius: '6px', color: '#b91c1c', fontSize: '13px' }}>
                   {errorMsg}
                 </div>
               )}

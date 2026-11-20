@@ -74,7 +74,12 @@ export default function RoleLayout({ role }) {
 
   return (
     <div className={`dashboard-layout role-layout role-layout-${role} ${role === 'gestora' ? `gestora-densidad-${densidad}` : ''}`}>
-      <aside className="tec-sidebar">
+      {/* Skip link para navegación por teclado: se oculta hasta que el usuario presiona Tab */}
+      <a href="#contenido-principal" className="skip-link">
+        Saltar al contenido principal
+      </a>
+
+      <aside className="tec-sidebar" aria-label="Menú de navegación lateral">
         <div className="tec-sidebar-logo-container">
           <img 
             src="/Logo-TEC-Blanco.png" 
@@ -111,7 +116,7 @@ export default function RoleLayout({ role }) {
       
       <div className="main-content">
         <Header />
-        <main className="main-body role-content">
+        <main className="main-body role-content" id="contenido-principal" aria-label="Contenido principal de la página">
           <Outlet />
         </main>
       </div>

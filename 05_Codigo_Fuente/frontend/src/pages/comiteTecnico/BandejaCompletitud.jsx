@@ -114,7 +114,7 @@ export default function BandejaDeCompletitud() {
         {cargando ? (
           <div className="loading-state">
             <div className="spinner"></div>
-            <p>Cargando propuestas...</p>
+            <p role="status">Cargando propuestas...</p>
           </div>
         ) : propuestas.length === 0 ? (
           <div className="empty-state">
@@ -122,15 +122,16 @@ export default function BandejaDeCompletitud() {
           </div>
         ) : (
           <table className="tabla-bandeja">
+            <caption className="sr-only">Propuestas recibidas y su estado de completitud documental</caption>
             <thead>
               <tr>
-                <th>ID Propuesta</th>
-                <th>Título</th>
-                <th>Investigador</th>
-                <th>Escuela</th>
-                <th>Documentación</th>
-                <th>Estado</th>
-                <th>Acciones</th>
+                <th scope="col">ID Propuesta</th>
+                <th scope="col">Título</th>
+                <th scope="col">Investigador</th>
+                <th scope="col">Escuela</th>
+                <th scope="col">Documentación</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Acciones</th>
               </tr>
             </thead>
             <tbody>

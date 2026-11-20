@@ -282,14 +282,14 @@ export default function RubricaDigital() {
     return (
       <div className="rubrica-loading">
         <div className="spinner"></div>
-        <p>Cargando rúbrica...</p>
+        <p role="status">Cargando rúbrica...</p>
       </div>
     );
   }
 
   if (!rubricaData) {
     return (
-      <div className="rubrica-error">
+      <div className="rubrica-error" role="alert">
         <p>No se pudo cargar la rúbrica</p>
         <button className="btn-volver" onClick={() => navigate('/comite-tecnico/bandeja-evaluacion')}>Volver</button>
       </div>
@@ -486,10 +486,11 @@ export default function RubricaDigital() {
       <div className="resumen-calificaciones">
         <h3 className="resumen-titulo">Resumen de calificaciones por sección</h3>
         <table className="tabla-resumen">
+          <caption className="sr-only">Resumen de calificaciones por sección</caption>
           <thead>
             <tr>
-              <th>Sección</th>
-              <th>Nota</th>
+              <th scope="col">Sección</th>
+              <th scope="col">Nota</th>
             </tr>
           </thead>
           <tbody>

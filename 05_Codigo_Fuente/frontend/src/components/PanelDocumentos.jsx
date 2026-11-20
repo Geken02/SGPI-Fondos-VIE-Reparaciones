@@ -106,7 +106,7 @@ export default function PanelDocumentos({ propuestaId }) {
     return (
       <div className="panel-documentos" style={{ padding: '20px' }}>
         <h3 className="panel-titulo" style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#002855' }}>Expediente de la Propuesta</h3>
-        <div style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>Cargando documentos...</div>
+        <div role="status" style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>Cargando documentos...</div>
       </div>
     );
   }
@@ -115,7 +115,7 @@ export default function PanelDocumentos({ propuestaId }) {
     return (
       <div className="panel-documentos" style={{ padding: '20px' }}>
         <h3 className="panel-titulo" style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#002855' }}>Expediente de la Propuesta</h3>
-        <div style={{ background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b', padding: '16px', borderRadius: '8px' }}>
+        <div role="alert" style={{ background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b', padding: '16px', borderRadius: '8px' }}>
           <p style={{ margin: 0 }}>{error}</p>
         </div>
       </div>

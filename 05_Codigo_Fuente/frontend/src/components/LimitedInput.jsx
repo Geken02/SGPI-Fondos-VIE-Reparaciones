@@ -45,6 +45,14 @@ export const LimitedInput = ({
   const isAtLimit = Boolean(maxLength && currentLength >= maxLength);
   const shouldShowCounter = showCounter !== undefined ? showCounter : Boolean(label);
 
+  // Accesibilidad: id estable para ligar label↔campo y describir contador/error con el lector de pantalla.
+  const autoId = React.useId();
+  const fieldId = id || name || autoId;
+  const counterId = `${fieldId}-counter`;
+  const errorId = `${fieldId}-error`;
+  const showCounterField = Boolean(maxLength && shouldShowCounter && type !== 'number' && type !== 'date');
+  const describedBy = [showCounterField ? counterId : null, isAtLimit ? errorId : null].filter(Boolean).join(' ') || undefined;
+
   const displayValue = formatoMonto
     ? (isFocused ? rawVal : formatearMontoEspacios(rawVal))
     : (value !== null && value !== undefined ? value : '');
@@ -101,12 +109,13 @@ export const LimitedInput = ({
       {(label || (maxLength && shouldShowCounter)) && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
           {label && (
-            <label className="limited-input-label" style={{ fontSize: '13px', fontWeight: 600 }}>
-              {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
+            <label htmlFor={fieldId} className="limited-input-label" style={{ fontSize: '13px', fontWeight: 600 }}>
+              {label} {required && <span aria-hidden="true" style={{ color: '#ef4444' }}>*</span>}
             </label>
           )}
-          {maxLength && shouldShowCounter && type !== 'number' && type !== 'date' && (
+          {showCounterField && (
             <span 
+              id={counterId}
               className={`limited-counter ${isAtLimit ? 'at-limit' : ''}`}
               style={{
                 fontSize: '11px',
@@ -123,8 +132,9 @@ export const LimitedInput = ({
       <input
         type={formatoMonto ? 'text' : type}
         inputMode={formatoMonto ? 'numeric' : undefined}
-        id={id}
+        id={fieldId}
         name={name}
+        aria-describedby={describedBy}
         value={displayValue}
         onChange={handleChange}
         onFocus={handleFocus}
@@ -147,7 +157,7 @@ export const LimitedInput = ({
         {...props}
       />
       {isAtLimit && (
-        <span className="limit-error-msg" style={{ color: '#ef4444', fontSize: '11px', fontWeight: 600, marginTop: '3px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+        <span id={errorId} role="alert" className="limit-error-msg" style={{ color: '#ef4444', fontSize: '11px', fontWeight: 600, marginTop: '3px', display: 'flex', alignItems: 'center', gap: '3px' }}>
           ⚠️ Límite de texto superado
         </span>
       )}
@@ -180,6 +190,14 @@ export const LimitedTextarea = ({
   const currentLength = strVal.length;
   const isAtLimit = Boolean(maxLength && currentLength >= maxLength);
 
+  // Accesibilidad: id estable para ligar label↔campo y describir contador/error con el lector de pantalla.
+  const autoId = React.useId();
+  const fieldId = id || name || autoId;
+  const counterId = `${fieldId}-counter`;
+  const errorId = `${fieldId}-error`;
+  const showCounterField = Boolean(maxLength && showCounter);
+  const describedBy = [showCounterField ? counterId : null, isAtLimit ? errorId : null].filter(Boolean).join(' ') || undefined;
+
   const handleChange = (e) => {
     let val = e.target.value;
     if (maxLength && val.length > maxLength) {
@@ -196,12 +214,13 @@ export const LimitedTextarea = ({
       {(label || (maxLength && showCounter)) && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
           {label && (
-            <label className="limited-input-label" style={{ fontSize: '13px', fontWeight: 600 }}>
-              {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
+            <label htmlFor={fieldId} className="limited-input-label" style={{ fontSize: '13px', fontWeight: 600 }}>
+              {label} {required && <span aria-hidden="true" style={{ color: '#ef4444' }}>*</span>}
             </label>
           )}
-          {maxLength && showCounter && (
+          {showCounterField && (
             <span 
+              id={counterId}
               className={`limited-counter ${isAtLimit ? 'at-limit' : ''}`}
               style={{
                 fontSize: '11px',
@@ -216,8 +235,9 @@ export const LimitedTextarea = ({
         </div>
       )}
       <textarea
-        id={id}
+        id={fieldId}
         name={name}
+        aria-describedby={describedBy}
         rows={rows}
         value={value}
         onChange={handleChange}
@@ -234,7 +254,7 @@ export const LimitedTextarea = ({
         {...props}
       />
       {isAtLimit && (
-        <span className="limit-error-msg" style={{ color: '#ef4444', fontSize: '11px', fontWeight: 600, marginTop: '3px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+        <span id={errorId} role="alert" className="limit-error-msg" style={{ color: '#ef4444', fontSize: '11px', fontWeight: 600, marginTop: '3px', display: 'flex', alignItems: 'center', gap: '3px' }}>
           ⚠️ Límite de texto superado
         </span>
       )}

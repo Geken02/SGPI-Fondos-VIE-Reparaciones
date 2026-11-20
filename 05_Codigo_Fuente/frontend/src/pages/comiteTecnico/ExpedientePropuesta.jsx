@@ -94,7 +94,7 @@ export default function ExpedientePropuesta() {
       <div className="exp-container">
         <div className="exp-loading">
           <div className="exp-spinner"></div>
-          <p>Cargando expediente...</p>
+          <p role="status">Cargando expediente...</p>
         </div>
       </div>
     );
@@ -103,7 +103,7 @@ export default function ExpedientePropuesta() {
   if (error || !propuesta) {
     return (
       <div className="exp-container">
-        <div className="exp-error">
+        <div className="exp-error" role="alert">
           <h2>Error al cargar el expediente</h2>
           <p>{error || 'Propuesta no encontrada'}</p>
           <button onClick={() => navigate('/comite-tecnico/bandeja-evaluacion')} className="exp-btn-back">
@@ -225,12 +225,13 @@ export default function ExpedientePropuesta() {
               <div className="exp-summary-box">
                 <h3 className="exp-summary-title">Desglose por Año de Ejecución</h3>
                 <table className="exp-table-simple">
+                  <caption className="sr-only">Desglose del presupuesto por año de ejecución</caption>
                   <thead>
                     <tr>
-                      <th>Año</th>
-                      <th>Operativo</th>
-                      <th>Bienes Duraderos</th>
-                      <th>Total</th>
+                      <th scope="col">Año</th>
+                      <th scope="col">Operativo</th>
+                      <th scope="col">Bienes Duraderos</th>
+                      <th scope="col">Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -460,10 +461,10 @@ export default function ExpedientePropuesta() {
               </h2>
             </div>
             <div className="exp-doc-header-actions">
-              <button className="exp-icon-btn" title="Zoom">
+              <button className="exp-icon-btn" title="Zoom" aria-label="Zoom">
                 <Icon path={ICONS.zoom} size={14} />
               </button>
-              <button className="exp-icon-btn" title="Descargar">
+              <button className="exp-icon-btn" title="Descargar" aria-label="Descargar">
                 <Icon path={ICONS.download} size={14} />
               </button>
             </div>

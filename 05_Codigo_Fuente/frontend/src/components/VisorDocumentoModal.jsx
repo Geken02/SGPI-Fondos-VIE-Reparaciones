@@ -47,7 +47,7 @@ export default function VisorDocumentoModal({ documentoId, nombreArchivo, onClos
         <div className="gv-visor-contenido">
           {error ? <p role="alert" style={{ padding: 24, color: '#991b1b' }}>{error}</p>
             : url ? <UniversalViewer url={url} tipoArchivo={extension} />
-            : <p style={{ padding: 24, textAlign: 'center' }}>Cargando documento...</p>}
+            : <p role="status" style={{ padding: 24, textAlign: 'center' }}>Cargando documento...</p>}
         </div>
       </div>
     </div>

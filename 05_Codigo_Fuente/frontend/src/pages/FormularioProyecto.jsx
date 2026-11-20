@@ -1387,7 +1387,7 @@ const guardarBorradorActual = async () => {
           <span className="form-banner-sub">Formulación de Propuesta de Investigación</span>
         </div>
         <div className="form-banner-right">
-          <span className="autoguardado-badge">
+          <span className="autoguardado-badge" role="status">
             <span className="dot-pulse"></span>
             {guardando ? 'Guardando en BD...' : mensajeGuardado}
           </span>
@@ -1937,11 +1937,12 @@ const guardarBorradorActual = async () => {
 
                 <div className="table-responsive-container">
                   <table className="institucional-data-table">
+                    <caption className="sr-only">Tabla de niveles de madurez tecnológica (TRL)</caption>
                     <thead>
                       <tr>
-                        <th style={{ width: '15%' }}>ESCALA TRL</th>
-                        <th style={{ width: '75%' }}>DESCRIPCIÓN DEL NIVEL DE MADUREZ TECNOLÓGICA</th>
-                        <th style={{ width: '10%', textAlign: 'center' }}>SELECCIÓN</th>
+                        <th scope="col" style={{ width: '15%' }}>ESCALA TRL</th>
+                        <th scope="col" style={{ width: '75%' }}>DESCRIPCIÓN DEL NIVEL DE MADUREZ TECNOLÓGICA</th>
+                        <th scope="col" style={{ width: '10%', textAlign: 'center' }}>SELECCIÓN</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1960,6 +1961,9 @@ const guardarBorradorActual = async () => {
                           key={item.nivel} 
                           onClick={() => setTrlSeleccionado(item.nivel)}
                           className={`trl-table-row ${trlSeleccionado === item.nivel ? 'is-selected' : ''}`} style={{ cursor: 'pointer' }}
+                          tabIndex={0}
+                          aria-selected={trlSeleccionado === item.nivel}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTrlSeleccionado(item.nivel); } }}
                         >
                           <td className="trl-label-cell"><strong>{item.label}</strong></td>
                           <td className="trl-desc-cell">{item.desc}</td>
@@ -2072,15 +2076,16 @@ const guardarBorradorActual = async () => {
                 </div>
                 <div className="table-responsive-container">
                   <table className="institucional-data-table">
+                    <caption className="sr-only">Tabla de integrantes del equipo investigador TEC</caption>
                     <thead>
                       <tr>
-                        <th>Nombre y apellidos *</th>
-                        <th>ID ORCID *</th>
-                        <th>Instancia académica</th>
-                        <th>Condición (Rol) *</th>
-                        <th>Horas (Tipo/Cant) *</th>
-                        <th>Nombramiento</th>
-                        <th style={{ width: '48px', textAlign: 'center' }}>Acción</th>
+                        <th scope="col">Nombre y apellidos *</th>
+                        <th scope="col">ID ORCID *</th>
+                        <th scope="col">Instancia académica</th>
+                        <th scope="col">Condición (Rol) *</th>
+                        <th scope="col">Horas (Tipo/Cant) *</th>
+                        <th scope="col">Nombramiento</th>
+                        <th scope="col" style={{ width: '48px', textAlign: 'center' }}>Acción</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2234,13 +2239,14 @@ const guardarBorradorActual = async () => {
                 </h3>
                 <div className="table-responsive-container">
                   <table className="institucional-data-table">
+                    <caption className="sr-only">Tabla de colaboradores externos</caption>
                     <thead>
                       <tr>
-                        <th>Nombre completo del colaborador externo</th>
-                        <th>ID ORCID *</th>
-                        <th>Institución o empresa que representa</th>
-                        <th style={{ width: '160px', textAlign: 'center'}}>Carta de Compromiso</th>
-                        <th style={{ width: '48px', textAlign: 'center' }}>Acción</th>
+                        <th scope="col">Nombre completo del colaborador externo</th>
+                        <th scope="col">ID ORCID *</th>
+                        <th scope="col">Institución o empresa que representa</th>
+                        <th scope="col" style={{ width: '160px', textAlign: 'center'}}>Carta de Compromiso</th>
+                        <th scope="col" style={{ width: '48px', textAlign: 'center' }}>Acción</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2351,10 +2357,10 @@ const guardarBorradorActual = async () => {
                                   </button>
                                 </div>
                               ) : cartaInfo && cartaInfo.subiendo ? (
-                                <span style={{ fontSize: '12px', color: '#1e4080' }}>Subiendo…</span>
+                                <span role="status" style={{ fontSize: '12px', color: '#1e4080' }}>Subiendo…</span>
                               ) : cartaInfo && cartaInfo.error ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                                  <span style={{ fontSize: '11px', color: '#dc2626' }} title={cartaInfo.error}><IconoCie nombre="alertTriangle" tamano={12} /> Error</span>
+                                  <span role="alert" style={{ fontSize: '11px', color: '#dc2626' }} title={cartaInfo.error}><IconoCie nombre="alertTriangle" tamano={12} /> Error</span>
                                   <button
                                     type="button"
                                     className="btn-carta-compromiso error"
@@ -2622,27 +2628,28 @@ const guardarBorradorActual = async () => {
 
                 <div className="table-responsive-container" style={{ overflowX: 'auto', width: '100%', maxWidth: '100%', boxSizing: 'border-box', marginBottom: '14px' }}>
                   <table className="institucional-data-table" style={{ minWidth: numAniosCronograma === 3 ? '2200px' : numAniosCronograma === 2 ? '1800px' : '1400px' }}>
+                    <caption className="sr-only">Tabla de cronograma de actividades por año</caption>
                     <thead>
                       <tr>
-                        <th rowSpan={2} style={{ width: '80px', minWidth: '80px' }}>OBJETIVO</th>
-                        <th rowSpan={2} style={{ minWidth: '150px' }}>ACTIVIDADES</th>
-                        <th rowSpan={2} style={{ minWidth: '130px' }}>RESULTADO ESPERADO</th>
-                        <th rowSpan={2} style={{ width: "140px", minWidth: "140px" }}>PARTICIPANTES</th>
-                        <th rowSpan={2} style={{ width: '90px', minWidth: '90px' }}>RESPONSABILIDAD</th>
-                        <th rowSpan={2} style={{ minWidth: '130px' }}>RIESGOS IDENTIFICADOS</th>
-                        <th rowSpan={2} style={{ minWidth: '130px' }}>MEDIDAS DE MITIGACIÓN</th>
-                        <th rowSpan={2} style={{ width: "140px", minWidth: "140px" }}>RESPONSABLE DE GESTIÓN</th>
-                        <th rowSpan={2} style={{ width: '70px', minWidth: '70px', textAlign: 'center' }}>MES INICIO</th>
-                        <th rowSpan={2} style={{ width: '70px', minWidth: '70px', textAlign: 'center' }}>DURACIÓN (MESES)</th>
+                        <th scope="col" rowSpan={2} style={{ width: '80px', minWidth: '80px' }}>OBJETIVO</th>
+                        <th scope="col" rowSpan={2} style={{ minWidth: '150px' }}>ACTIVIDADES</th>
+                        <th scope="col" rowSpan={2} style={{ minWidth: '130px' }}>RESULTADO ESPERADO</th>
+                        <th scope="col" rowSpan={2} style={{ width: "140px", minWidth: "140px" }}>PARTICIPANTES</th>
+                        <th scope="col" rowSpan={2} style={{ width: '90px', minWidth: '90px' }}>RESPONSABILIDAD</th>
+                        <th scope="col" rowSpan={2} style={{ minWidth: '130px' }}>RIESGOS IDENTIFICADOS</th>
+                        <th scope="col" rowSpan={2} style={{ minWidth: '130px' }}>MEDIDAS DE MITIGACIÓN</th>
+                        <th scope="col" rowSpan={2} style={{ width: "140px", minWidth: "140px" }}>RESPONSABLE DE GESTIÓN</th>
+                        <th scope="col" rowSpan={2} style={{ width: '70px', minWidth: '70px', textAlign: 'center' }}>MES INICIO</th>
+                        <th scope="col" rowSpan={2} style={{ width: '70px', minWidth: '70px', textAlign: 'center' }}>DURACIÓN (MESES)</th>
                         {Array.from({ length: numAniosCronograma }, (_, a) => (
-                          <th key={`anio-${a+1}`} colSpan={12} style={{ textAlign: 'center' }}>{`AÑO ${a + 1}`}</th>
+                          <th scope="col" key={`anio-${a+1}`} colSpan={12} style={{ textAlign: 'center' }}>{`AÑO ${a + 1}`}</th>
                         ))}
-                        <th rowSpan={2} style={{ width: '40px', textAlign: 'center' }}></th>
+                        <th scope="col" rowSpan={2} style={{ width: '40px', textAlign: 'center' }}></th>
                       </tr>
                       <tr>
                         {Array.from({ length: numAniosCronograma }, (_, a) =>
                           Array.from({ length: 12 }, (_, m) => (
-                            <th key={`a${a+1}-m${m+1}`} style={{ width: '28px', minWidth: '28px', textAlign: 'center', fontSize: '10px', padding: '2px' }}>
+                            <th scope="col" key={`a${a+1}-m${m+1}`} style={{ width: '28px', minWidth: '28px', textAlign: 'center', fontSize: '10px', padding: '2px' }}>
                               {m + 1}
                             </th>
                           ))
@@ -2944,12 +2951,13 @@ const guardarBorradorActual = async () => {
                 </div>
                 <div className="table-responsive-container">
                   <table className="institucional-data-table">
+                    <caption className="sr-only">Tabla de riesgos identificados y medidas de mitigación</caption>
                     <thead>
                       <tr>
-                        <th>Riesgo Identificado (Técnico / Operativo / Financiero)</th>
-                        <th>Estrategia de mitigación / Plan de contingencia</th>
-                        <th style={{ width: '130px' }}>Responsable</th>
-                        <th style={{ width: '48px', textAlign: 'center' }}>Acción</th>
+                        <th scope="col">Riesgo Identificado (Técnico / Operativo / Financiero)</th>
+                        <th scope="col">Estrategia de mitigación / Plan de contingencia</th>
+                        <th scope="col" style={{ width: '130px' }}>Responsable</th>
+                        <th scope="col" style={{ width: '48px', textAlign: 'center' }}>Acción</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3060,12 +3068,13 @@ const guardarBorradorActual = async () => {
                 </h3>
                 <div className="table-responsive-container">
                   <table className="institucional-data-table">
+                    <caption className="sr-only">Tabla de presupuesto solicitado por año (Recursos VIE)</caption>
                     <thead>
                       <tr>
-                        <th>Año</th>
-                        <th>Presupuesto Operativo (₡)</th>
-                        <th>Bienes Duraderos / Equipamiento (₡)</th>
-                        <th>Total Solicitado (₡)</th>
+                        <th scope="col">Año</th>
+                        <th scope="col">Presupuesto Operativo (₡)</th>
+                        <th scope="col">Bienes Duraderos / Equipamiento (₡)</th>
+                        <th scope="col">Total Solicitado (₡)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3132,13 +3141,14 @@ const guardarBorradorActual = async () => {
                 </h3>
                 <div className="table-responsive-container">
                   <table className="institucional-data-table">
+                    <caption className="sr-only">Tabla de desglose de fuentes de financiamiento adicionales</caption>
                     <thead>
                       <tr>
-                        <th>Desglose de Fuente</th>
-                        <th>Año 1 (₡)</th>
-                        <th>Año 2 (₡)</th>
-                        <th>Año 3 (₡)</th>
-                        <th>Oficio Aprobación *</th>
+                        <th scope="col">Desglose de Fuente</th>
+                        <th scope="col">Año 1 (₡)</th>
+                        <th scope="col">Año 2 (₡)</th>
+                        <th scope="col">Año 3 (₡)</th>
+                        <th scope="col">Oficio Aprobación *</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3300,7 +3310,7 @@ const guardarBorradorActual = async () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="adjuntar-plan-box" onClick={() => fileInputPlanRef.current && fileInputPlanRef.current.click()}>
+                  <div className="adjuntar-plan-box" role="button" tabIndex={0} onClick={() => fileInputPlanRef.current && fileInputPlanRef.current.click()} onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (fileInputPlanRef.current) fileInputPlanRef.current.click(); } }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ fontSize: '22px' }}><IconoCie nombre="barChart" tamano={22} /></span>
                       <div>
@@ -3338,11 +3348,12 @@ const guardarBorradorActual = async () => {
                 </h3>
                 <div className="compromiso-table-wrapper">
                   <table className="compromiso-grid-table">
+                    <caption className="sr-only">Tabla de compromisos de productos según carga académica</caption>
                     <thead>
                       <tr>
-                        <th style={{ width: '32%' }}>Total de horas</th>
-                        <th style={{ width: '48%' }}>Productos mínimos requeridos</th>
-                        <th style={{ width: '20%', textAlign: 'center' }}>Selección del compromiso</th>
+                        <th scope="col" style={{ width: '32%' }}>Total de horas</th>
+                        <th scope="col" style={{ width: '48%' }}>Productos mínimos requeridos</th>
+                        <th scope="col" style={{ width: '20%', textAlign: 'center' }}>Selección del compromiso</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3357,6 +3368,9 @@ const guardarBorradorActual = async () => {
                             key={item.rango}
                             className={`clickable-row ${esSeleccionado ? 'is-selected' : ''}`}
                             onClick={() => setRangoHorasCompromiso(item.rango)}
+                            tabIndex={0}
+                            aria-selected={esSeleccionado}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setRangoHorasCompromiso(item.rango); } }}
                           >
                             <td><strong>{item.rango}</strong></td>
                             <td>{item.desc}</td>
@@ -3385,12 +3399,13 @@ const guardarBorradorActual = async () => {
                 </h3>
                 <div className="compromiso-table-wrapper">
                   <table className="compromiso-grid-table">
+                    <caption className="sr-only">Tabla de selección de productos académicos</caption>
                     <thead>
                       <tr>
-                        <th style={{ width: '8%', textAlign: 'center' }}>Selección</th>
-                        <th style={{ width: '12%' }}>Cantidad</th>
-                        <th style={{ width: '45%' }}>Opción de Producto</th>
-                        <th style={{ width: '35%' }}>Objetivo específico</th>
+                        <th scope="col" style={{ width: '8%', textAlign: 'center' }}>Selección</th>
+                        <th scope="col" style={{ width: '12%' }}>Cantidad</th>
+                        <th scope="col" style={{ width: '45%' }}>Opción de Producto</th>
+                        <th scope="col" style={{ width: '35%' }}>Objetivo específico</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3639,11 +3654,12 @@ const guardarBorradorActual = async () => {
                 </h3>
                 <div className="compromiso-table-wrapper">
                   <table className="compromiso-grid-table">
+                    <caption className="sr-only">Tabla de compromisos de productos según carga académica</caption>
                     <thead>
                       <tr>
-                        <th style={{ width: '32%' }}>Total de horas</th>
-                        <th style={{ width: '48%' }}>Productos mínimos requeridos</th>
-                        <th style={{ width: '20%', textAlign: 'center' }}>Selección del compromiso</th>
+                        <th scope="col" style={{ width: '32%' }}>Total de horas</th>
+                        <th scope="col" style={{ width: '48%' }}>Productos mínimos requeridos</th>
+                        <th scope="col" style={{ width: '20%', textAlign: 'center' }}>Selección del compromiso</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3658,6 +3674,9 @@ const guardarBorradorActual = async () => {
                             key={item.rango}
                             className={`clickable-row ${esSeleccionado ? 'is-selected' : ''}`}
                             onClick={() => setRangoHorasCompromiso(item.rango)}
+                            tabIndex={0}
+                            aria-selected={esSeleccionado}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setRangoHorasCompromiso(item.rango); } }}
                           >
                             <td><strong>{item.rango}</strong></td>
                             <td>{item.desc}</td>
@@ -3686,12 +3705,13 @@ const guardarBorradorActual = async () => {
                 </h3>
                 <div className="compromiso-table-wrapper">
                   <table className="compromiso-grid-table">
+                    <caption className="sr-only">Tabla de selección de activos de propiedad industrial</caption>
                     <thead>
                       <tr>
-                        <th style={{ width: '8%', textAlign: 'center' }}>Selección</th>
-                        <th style={{ width: '10%' }}>Cantidad</th>
-                        <th style={{ width: '50%' }}>Tipo de activo (Opción Mínima Obligatoria)</th>
-                        <th style={{ width: '32%' }}>Consecutivo del dictamen (Centro de Vinculación) *</th>
+                        <th scope="col" style={{ width: '8%', textAlign: 'center' }}>Selección</th>
+                        <th scope="col" style={{ width: '10%' }}>Cantidad</th>
+                        <th scope="col" style={{ width: '50%' }}>Tipo de activo (Opción Mínima Obligatoria)</th>
+                        <th scope="col" style={{ width: '32%' }}>Consecutivo del dictamen (Centro de Vinculación) *</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3778,12 +3798,13 @@ const guardarBorradorActual = async () => {
                 </p>
                 <div className="compromiso-table-wrapper">
                   <table className="compromiso-grid-table">
+                    <caption className="sr-only">Tabla de selección de productos tecnológicos</caption>
                     <thead>
                       <tr>
-                        <th style={{ width: '8%', textAlign: 'center' }}>Selección</th>
-                        <th style={{ width: '10%' }}>Cantidad</th>
-                        <th style={{ width: '47%' }}>Tipo de Producto</th>
-                        <th style={{ width: '35%' }}>Objetivo específico asociado al producto</th>
+                        <th scope="col" style={{ width: '8%', textAlign: 'center' }}>Selección</th>
+                        <th scope="col" style={{ width: '10%' }}>Cantidad</th>
+                        <th scope="col" style={{ width: '47%' }}>Tipo de Producto</th>
+                        <th scope="col" style={{ width: '35%' }}>Objetivo específico asociado al producto</th>
                       </tr>
                     </thead>
                     <tbody>

@@ -46,7 +46,9 @@ const ICONOS = {
   zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />,
 };
 
-const IconoCie = ({ nombre, tamano = 16, size, className = '' }) => (
+// Iconos decorativos por defecto (aria-hidden). Si se pasa `titulo`, el ícono se
+// expone al lector de pantalla como imagen con nombre accesible.
+const IconoCie = ({ nombre, tamano = 16, size, className = '', titulo }) => (
   <svg
     width={size ?? tamano}
     height={size ?? tamano}
@@ -56,9 +58,13 @@ const IconoCie = ({ nombre, tamano = 16, size, className = '' }) => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    aria-hidden="true"
+    role={titulo ? 'img' : undefined}
+    aria-label={titulo || undefined}
+    aria-hidden={titulo ? undefined : 'true'}
+    focusable="false"
     className={className}
   >
+    {titulo ? <title>{titulo}</title> : null}
     {ICONOS[nombre] ?? ICONOS.info}
   </svg>
 );

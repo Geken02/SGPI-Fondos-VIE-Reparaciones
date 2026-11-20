@@ -613,7 +613,7 @@ const FormularioPlanRiesgos = () => {
           <span className="form-banner-tec-title">TEC | SGPI — Formulario de Plan de Acción y Gestión del Riesgo (VIE 2027)</span>
         </div>
         <div className="form-banner-right">
-          <span className="autoguardado-badge">
+          <span className="autoguardado-badge" role="status">
             <span className="dot-pulse"></span>
             {guardando ? 'Guardando...' : guardadoMsg}
           </span>
@@ -655,12 +655,13 @@ const FormularioPlanRiesgos = () => {
           </div>
           <div className="table-responsive-container">
             <table className="institucional-data-table">
+              <caption className="sr-only">Tabla de integrantes del proyecto</caption>
               <thead>
                 <tr>
-                  <th>Nombre Completo del Participante</th>
-                  <th style={{ width: '15%' }}>Iniciales</th>
-                  <th>Rol de Referencia</th>
-                  <th style={{ width: '10%', textAlign: 'center' }}>Acciones</th>
+                  <th scope="col">Nombre Completo del Participante</th>
+                  <th scope="col" style={{ width: '15%' }}>Iniciales</th>
+                  <th scope="col">Rol de Referencia</th>
+                  <th scope="col" style={{ width: '10%', textAlign: 'center' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -685,23 +686,24 @@ const FormularioPlanRiesgos = () => {
           <div style={{ marginBottom: "12px" }}><h2 className="section-title-h2" style={{ margin: 0 }}>3. Plan de Acción y Matriz de Riesgos</h2></div>
           <div className="table-responsive-container" style={{ overflowX: 'auto' }}>
             <table className="institucional-data-table" style={{ minWidth: numAnios === 3 ? '2200px' : numAnios === 2 ? '1800px' : '1400px' }}>
+              <caption className="sr-only">Tabla de cronograma de actividades</caption>
               <thead>
                 <tr>
-                  <th rowSpan={2} style={{ width: '70px', minWidth: '70px' }}>OBJETIVO</th>
-                  <th rowSpan={2} style={{ minWidth: '140px' }}>ACTIVIDADES</th>
-                  <th rowSpan={2} style={{ minWidth: '120px' }}>RESULTADO ESPERADO</th>
-                  <th rowSpan={2} style={{ width: "130px", minWidth: "130px" }}>PARTICIPANTES</th>
-                  <th rowSpan={2} style={{ width: '90px', minWidth: '90px' }}>RESPONSABILIDAD</th>
-                  <th rowSpan={2} style={{ minWidth: '120px' }}>RIESGOS IDENTIFICADOS</th>
-                  <th rowSpan={2} style={{ minWidth: '120px' }}>MEDIDAS DE MITIGACIÓN</th>
-                  <th rowSpan={2} style={{ width: "140px", minWidth: "140px" }}>RESPONSABLE DE GESTIÓN</th>
-                  <th rowSpan={2} style={{ width: '70px', minWidth: '70px' }}>MES DE INICIO</th>
-                  <th rowSpan={2} style={{ width: '70px', minWidth: '70px' }}>DURACIÓN (MESES)</th>
-                  {Array.from({ length: numAnios }, (_, a) => (<th key={`anio-${a+1}`} colSpan={12} style={{ textAlign: 'center' }}>{`AÑO ${a + 1}`}</th>))}
-                  <th rowSpan={2} style={{ width: '40px', textAlign: 'center' }}></th>
+                  <th scope="col" rowSpan={2} style={{ width: '70px', minWidth: '70px' }}>OBJETIVO</th>
+                  <th scope="col" rowSpan={2} style={{ minWidth: '140px' }}>ACTIVIDADES</th>
+                  <th scope="col" rowSpan={2} style={{ minWidth: '120px' }}>RESULTADO ESPERADO</th>
+                  <th scope="col" rowSpan={2} style={{ width: "130px", minWidth: "130px" }}>PARTICIPANTES</th>
+                  <th scope="col" rowSpan={2} style={{ width: '90px', minWidth: '90px' }}>RESPONSABILIDAD</th>
+                  <th scope="col" rowSpan={2} style={{ minWidth: '120px' }}>RIESGOS IDENTIFICADOS</th>
+                  <th scope="col" rowSpan={2} style={{ minWidth: '120px' }}>MEDIDAS DE MITIGACIÓN</th>
+                  <th scope="col" rowSpan={2} style={{ width: "140px", minWidth: "140px" }}>RESPONSABLE DE GESTIÓN</th>
+                  <th scope="col" rowSpan={2} style={{ width: '70px', minWidth: '70px' }}>MES DE INICIO</th>
+                  <th scope="col" rowSpan={2} style={{ width: '70px', minWidth: '70px' }}>DURACIÓN (MESES)</th>
+                  {Array.from({ length: numAnios }, (_, a) => (<th scope="col" key={`anio-${a+1}`} colSpan={12} style={{ textAlign: 'center' }}>{`AÑO ${a + 1}`}</th>))}
+                  <th scope="col" rowSpan={2} style={{ width: '40px', textAlign: 'center' }}></th>
                 </tr>
                 <tr>
-                  {Array.from({ length: numAnios }, (_, a) => Array.from({ length: 12 }, (_, m) => (<th key={`a${a+1}-m${m+1}`} style={{ width: '28px', minWidth: '28px', textAlign: 'center', fontSize: '10px', padding: '2px' }}>{m + 1}</th>)))}
+                  {Array.from({ length: numAnios }, (_, a) => Array.from({ length: 12 }, (_, m) => (<th scope="col" key={`a${a+1}-m${m+1}`} style={{ width: '28px', minWidth: '28px', textAlign: 'center', fontSize: '10px', padding: '2px' }}>{m + 1}</th>)))}
                 </tr>
               </thead>
               <tbody>
@@ -876,7 +878,7 @@ const FormularioPlanRiesgos = () => {
                   </div>
 
                   {errorModalIntegrante && (
-                    <div style={{ padding: '10px 14px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#b91c1c', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}><IconoCie nombre="alertTriangle" tamano={14} /><span>{errorModalIntegrante}</span></div>
+                    <div role="alert" style={{ padding: '10px 14px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#b91c1c', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}><IconoCie nombre="alertTriangle" tamano={14} /><span>{errorModalIntegrante}</span></div>
                   )}
                 </div>
 

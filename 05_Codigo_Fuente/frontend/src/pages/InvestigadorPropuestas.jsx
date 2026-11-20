@@ -585,7 +585,20 @@ const InvestigadorPropuestas = () => {
                 <div key={itemKey} id={`propuesta-card-${itemKey}`} className={`propuesta-accordion-card ${estaAbierto ? 'is-expanded' : ''} ${esSubsanacion ? 'is-subsanacion' : ''} ${esCancelada ? 'is-cancelada' : ''}`}
                 >
                   {/* Encabezado del Acordeón */}
-                  <div className="accordion-card-header" onClick={() => toggleAcordeon(itemKey)}>
+                  <div
+                    className="accordion-card-header"
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={estaAbierto}
+                    onClick={() => toggleAcordeon(itemKey)}
+                    onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleAcordeon(itemKey);
+                      }
+                    }}
+                  >
                     <div className="header-left-info">
                       <span className="propuesta-codigo-pill">{prop.codigoPropuesta}</span>
                       <span className="meta-separator">|</span>
@@ -661,7 +674,20 @@ const InvestigadorPropuestas = () => {
                   </div>
 
                   {/* Título de la propuesta */}
-                  <div className="accordion-title-row" onClick={() => toggleAcordeon(itemKey)}>
+                  <div
+                    className="accordion-title-row"
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={estaAbierto}
+                    onClick={() => toggleAcordeon(itemKey)}
+                    onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleAcordeon(itemKey);
+                      }
+                    }}
+                  >
                     <h2 className="accordion-propuesta-title">{prop.titulo}</h2>
                     <div className="accordion-propuesta-subtitle">
                       Investigador: <strong>{prop.propietario || nombreInvestigador}</strong> 

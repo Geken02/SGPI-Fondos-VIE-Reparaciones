@@ -96,10 +96,11 @@ const BandejaCie = () => {
           <div className="gv-card gv-tabla-contenedor">
             <div className="gv-tabla-scroll">
               <table className="gv-tabla">
+                <caption className="sr-only">Expedientes para resolución del CIE</caption>
                 <thead>
                   <tr>
-                    <th>ID</th><th>Título de la propuesta</th><th>Investigador/a principal</th>
-                    <th>Escuela</th><th>Fecha límite</th><th>Estado</th><th>Acciones</th>
+                    <th scope="col">ID</th><th scope="col">Título de la propuesta</th><th scope="col">Investigador/a principal</th>
+                    <th scope="col">Escuela</th><th scope="col">Fecha límite</th><th scope="col">Estado</th><th scope="col">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>

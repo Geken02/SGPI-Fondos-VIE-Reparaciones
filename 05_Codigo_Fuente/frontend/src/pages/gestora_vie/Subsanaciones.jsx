@@ -125,14 +125,15 @@ const Subsanaciones = () => {
       <section className="gv-card gv-tabla-contenedor">
         <div className="gv-tabla-scroll">
           <table className="gv-tabla">
+            <caption className="sr-only">Subsanaciones solicitadas y su estado</caption>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Título de la propuesta</th>
-                <th>Investigador/a</th>
-                <th>Fecha de observación</th>
-                <th>Estado</th>
-                <th>Acciones</th>
+                <th scope="col">ID</th>
+                <th scope="col">Título de la propuesta</th>
+                <th scope="col">Investigador/a</th>
+                <th scope="col">Fecha de observación</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -157,12 +158,12 @@ const Subsanaciones = () => {
               })}
               {cargando && (
                 <tr>
-                  <td colSpan={6} className="gv-sin-resultados">Cargando subsanaciones...</td>
+                  <td colSpan={6} className="gv-sin-resultados" role="status">Cargando subsanaciones...</td>
                 </tr>
               )}
               {!cargando && error && (
                 <tr>
-                  <td colSpan={6} className="gv-sin-resultados">{error}</td>
+                  <td colSpan={6} className="gv-sin-resultados" role="alert">{error}</td>
                 </tr>
               )}
               {!cargando && !error && visibles.length === 0 && (

@@ -76,7 +76,7 @@ export default function PropuestasAsignadas() {
         {cargando ? (
           <div className="propuestas-loading">
             <div className="propuestas-spinner"></div>
-            <p>Cargando propuestas...</p>
+            <p role="status">Cargando propuestas...</p>
           </div>
         ) : propuestasFiltradas.length === 0 ? (
           <div className="propuestas-empty-state">
@@ -84,14 +84,15 @@ export default function PropuestasAsignadas() {
           </div>
         ) : (
           <table className="propuestas-table">
+            <caption className="sr-only">Propuestas asignadas en el flujo del Comité Técnico</caption>
             <thead>
               <tr className="propuestas-thead-tr">
-                <th className="propuestas-th">Código</th>
-                <th className="propuestas-th">Título</th>
-                <th className="propuestas-th">Evaluadores</th>
-                <th className="propuestas-th">Fecha Asignación</th>
-                <th className="propuestas-th">Estado</th>
-                <th className="propuestas-th">Acciones</th>
+                <th className="propuestas-th" scope="col">Código</th>
+                <th className="propuestas-th" scope="col">Título</th>
+                <th className="propuestas-th" scope="col">Evaluadores</th>
+                <th className="propuestas-th" scope="col">Fecha Asignación</th>
+                <th className="propuestas-th" scope="col">Estado</th>
+                <th className="propuestas-th" scope="col">Acciones</th>
               </tr>
             </thead>
             <tbody>

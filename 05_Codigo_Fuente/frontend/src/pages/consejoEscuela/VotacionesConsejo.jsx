@@ -231,8 +231,8 @@ export default function VotacionesConsejo() {
         </button>
       </header>
 
-      {error && <div className="alerta-votaciones error">{error}</div>}
-      {mensaje && <div className="alerta-votaciones exito">{mensaje}</div>}
+      {error && <div className="alerta-votaciones error" role="alert">{error}</div>}
+      {mensaje && <div className="alerta-votaciones exito" role="status">{mensaje}</div>}
 
       {esAsistenteConsejo && (
         <section className="crear-votacion-card">
@@ -298,7 +298,7 @@ export default function VotacionesConsejo() {
         <h2>Votaciones registradas</h2>
 
         {cargando ? (
-          <p className="estado-votaciones">Cargando votaciones...</p>
+          <p className="estado-votaciones" role="status">Cargando votaciones...</p>
         ) : votaciones.length === 0 ? (
           <p className="estado-votaciones">
             No hay votaciones registradas.

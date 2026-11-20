@@ -71,13 +71,13 @@ const PropuestasConsejo = () => {
       </div>
 
       {cargando && (
-        <p className="mensaje-cargando">
+        <p className="mensaje-cargando" role="status">
           Cargando propuestas...
         </p>
       )}
 
       {!cargando && error && (
-        <div className="mensaje-error">
+        <div className="mensaje-error" role="alert">
           <p>{error}</p>
 
           <button type="button" onClick={cargarPropuestas}>
@@ -119,15 +119,16 @@ const PropuestasConsejo = () => {
       {!cargando && !error && propuestas.length > 0 && (
         <div className="tabla-contenedor">
           <table className="tabla-propuestas">
+            <caption className="sr-only">Propuestas del Consejo de Escuela</caption>
             <thead>
               <tr>
-                <th>Código</th>
-                <th>Título</th>
-                <th>Estado</th>
-                <th>Monto solicitado</th>
-                <th>Fecha de inicio</th>
-                <th>Fecha de finalización</th>
-                <th>Acciones</th>
+                <th scope="col">Código</th>
+                <th scope="col">Título</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Monto solicitado</th>
+                <th scope="col">Fecha de inicio</th>
+                <th scope="col">Fecha de finalización</th>
+                <th scope="col">Acciones</th>
               </tr>
             </thead>
 

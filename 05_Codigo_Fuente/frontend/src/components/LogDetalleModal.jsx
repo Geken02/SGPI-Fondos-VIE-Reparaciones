@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 
 export default function LogDetalleModal({ log, onClose }) {
   const [tabActiva, setTabActiva] = useState('generales');
+  const tituloId = useId();
 
   const formatearFecha = (fecha) => {
     if (!fecha) return '—';
@@ -26,11 +27,11 @@ export default function LogDetalleModal({ log, onClose }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content log-detalle-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content log-detalle-modal" role="dialog" aria-modal="true" aria-labelledby={tituloId} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="modal-header">
           <div className="header-info">
-            <h2>Detalle de Registro de Auditoría</h2>
+            <h2 id={tituloId}>Detalle de Registro de Auditoría</h2>
             <p className="log-id">Log ID: #{log.logId}</p>
           </div>
           <button
