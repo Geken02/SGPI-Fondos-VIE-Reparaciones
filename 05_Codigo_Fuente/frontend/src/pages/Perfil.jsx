@@ -128,7 +128,7 @@ const Perfil = () => {
     setErrorFoto('');
 
     try {
-      const respuesta = await authService.actualizarFotoPerfil(usuario.usuarioId, selectedFile);
+      const respuesta = await adminService.actualizarFotoPerfil(usuario.usuarioId, selectedFile);
 
       if (respuesta?.urlPublica) {
         setUrlFotoPerfil(respuesta.urlPublica);
