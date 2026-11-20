@@ -395,6 +395,7 @@ def registrar_resolucion_cie(db: Session, codigo: str, usuario_id: int, datos) -
     contenido = (
         f"RESOLUCIÓN DEL CONSEJO DE INVESTIGACIÓN Y EXTENSIÓN (CIE)\n"
         f"Propuesta: {propuesta.codigoPropuesta} - {propuesta.titulo}\n"
+        f"Número de oficio: {datos.numeroOficio.strip()}\n"
         f"Decisión: {'APROBADA' if datos.decision == 'Aprobar' else 'RECHAZADA'}\n"
         f"Calificación CIE: {evaluacion.calificacion}/10\n"
         f"Recomendación de la rúbrica: {evaluacion.tipoRecomendacion.nombreTipoRecomendacion if evaluacion.tipoRecomendacion else 'No indicada'}\n\n"

@@ -1,12 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
 
 const Perfil = () => {
   const { usuario, rolActivo, formatearNombreRol, cargarPerfil } = useAuth();
+  const fileInputRef = useRef(null);
+
+  // Estados para la foto de perfil
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [errorFoto, setErrorFoto] = useState('');
 
   const [datosPerfil, setDatosPerfil] = useState({
-    nombreCompleto: usuario ? `${usuario.nombre} ${usuario.apellido1 || ''} ${usuario.apellido2 || ''}`.trim() : 'Dr. William Fallas',
+    nombreCompleto: usuario ? `${usuario.nombre} ${usuario.apellido1 || ''} ${usuario.apellido2 || ''}`.trim() : 'Investigador',
     gradoAcademico: 'Doctorado en Ciencias Biológicas',
     orcidId: '0000-0002-1825-0097',
     scopusId: '571952314900',
@@ -14,9 +21,14 @@ const Perfil = () => {
     institucion: 'Tecnológico de Costa Rica (TEC)',
     escuela: usuario?.escuela || 'Escuela de Ingeniería Electrónica',
     departamento: 'Departamento de Bioingeniería',
-    correo: usuario?.correo || 'william.fallas@tec.ac.cr',
+    correo: usuario?.correo || 'investigador@tec.ac.cr',
     especialidad: 'Biotecnología Agrícola y Ambiental'
   });
+
+  const [tags, setTags] = useState(['Biotecnología', 'Educación STEM', 'Ingeniería Ambiental']);
+  const [nuevoTag, setNuevoTag] = useState('');
+  const [mostrarInputTag, setMostrarInputTag] = useState(false);
+  const [mensajeGuardado, setMensajeGuardado] = useState(false);
 
   useEffect(() => {
     if (usuario) {
@@ -30,17 +42,97 @@ const Perfil = () => {
     }
   }, [usuario]);
 
-  const [tags, setTags] = useState(['Biotecnología', 'Educación STEM', 'Ingeniería Ambiental']);
-  const [nuevoTag, setNuevoTag] = useState('');
-  const [mostrarInputTag, setMostrarInputTag] = useState(false);
-  const [mensajeGuardado, setMensajeGuardado] = useState(false);
+  // ✅ Limpieza de memoria: revocar URL de objeto cuando el componente se desmonta o cambia la imagen
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
-  const handleAgregarTag = (e) => {
-    e.preventDefault();
-    if (nuevoTag.trim() && !tags.includes(nuevoTag.trim())) {
-      setTags([...tags, nuevoTag.trim()]);
-      setNuevoTag('');
-      setMostrarInputTag(false);
+  // ✅ Lógica para determinar qué imagen mostrar
+  const obtenerUrlImagen = () => {
+    if (previewUrl) return previewUrl; // 1. Previsualización local
+    
+    if (usuario?.rutaFotoPerfil) {
+      // 2. Foto guardada en BD (Ajusta la URL base a tu dominio de Supabase)
+      // Nota: Lo ideal es que tu backend devuelva 'urlPublica' y se guarde en el contexto de usuario
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://tu-proyecto.supabase.co';
+      const BUCKET_NAME = 'sgpi-propuestas';
+      return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${usuario.rutaFotoPerfil}`;
+    }
+    
+    // 3. Fallback: Avatar generado con las iniciales del usuario
+    const nombreParaAvatar = encodeURIComponent(datosPerfil.nombreCompleto || 'Usuario');
+    return `https://ui-avatars.com/api/?name=${nombreParaAvatar}&background=002855&color=fff&size=256`;
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validaciones frontend (mismas que el backend para mejor UX)
+    const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!tiposPermitidos.includes(file.type)) {
+      setErrorFoto('Solo se permiten imágenes en formato JPG, PNG o WebP.');
+      return;
+    }
+    
+    const maxSize = 5 * 1024 * 1024; // 5 MB
+    if (file.size > maxSize) {
+      setErrorFoto('La imagen no debe superar los 5 MB.');
+      return;
+    }
+
+    setErrorFoto('');
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleSubirFoto = async () => {
+    if (!selectedFile || !usuario?.usuarioId) return;
+
+    setSubiendoFoto(true);
+    setErrorFoto('');
+
+    try {
+      await authService.actualizarFotoPerfil(usuario.usuarioId, selectedFile);
+      
+      // Recargar el perfil para que el contexto de Auth tenga la nueva rutaFotoPerfil
+      if (cargarPerfil) {
+        await cargarPerfil();
+      }
+
+      // Limpiar estados de carga
+      setSelectedFile(null);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
+      
+      setMensajeGuardado(true);
+      setTimeout(() => setMensajeGuardado(false), 3000);
+
+    } catch (err) {
+      console.error('Error subiendo foto:', err);
+      const msg = err.response?.data?.detail || 'Error al subir la imagen. Intente nuevamente.';
+      setErrorFoto(msg);
+    } finally {
+      setSubiendoFoto(false);
+    }
+  };
+
+  const handleCancelarFoto = () => {
+    setSelectedFile(null);
+    setErrorFoto('');
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+    // Resetear el input file para permitir seleccionar el mismo archivo si se desea
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -62,18 +154,25 @@ const Perfil = () => {
       if (cargarPerfil) {
         await cargarPerfil();
       }
+      setMensajeGuardado(true);
+      setTimeout(() => setMensajeGuardado(false), 3000);
     } catch (err) {
-      console.warn('No se pudo persistir en backend remoto, guardando localmente:', err);
+      console.warn('No se pudo persistir en backend remoto:', err);
     }
+  };
 
-    setMensajeGuardado(true);
-    setTimeout(() => setMensajeGuardado(false), 3000);
+  const handleAgregarTag = (e) => {
+    e.preventDefault();
+    if (nuevoTag.trim() && !tags.includes(nuevoTag.trim())) {
+      setTags([...tags, nuevoTag.trim()]);
+      setNuevoTag('');
+      setMostrarInputTag(false);
+    }
   };
 
   return (
     <div className="perfil-page-container">
       <div className="dashboard-main-card">
-        {/* Encabezado */}
         <div className="dashboard-header-row">
           <div className="dashboard-title-group">
             <h1 className="dashboard-main-title">
@@ -85,18 +184,10 @@ const Perfil = () => {
           </div>
 
           <div className="dashboard-actions-group">
-            <button 
-              type="button" 
-              className="btn-cancel"
-              onClick={() => window.history.back()}
-            >
+            <button type="button" className="btn-cancel" onClick={() => window.history.back()}>
               Cancelar
             </button>
-            <button 
-              type="button" 
-              className="btn-nueva-propuesta"
-              onClick={handleGuardar}
-            >
+            <button type="button" className="btn-nueva-propuesta" onClick={handleGuardar}>
               Guardar Cambios
             </button>
           </div>
@@ -108,27 +199,73 @@ const Perfil = () => {
           </div>
         )}
 
-        {/* Layout en dos columnas */}
         <div className="perfil-layout-grid">
-          {/* Columna Izquierda: Tarjeta de identidad y tags */}
+          {/* Columna Izquierda: Tarjeta de identidad */}
           <div className="perfil-col-identidad">
             <div className="perfil-avatar-wrapper">
               <img 
-                src="/perfil.png" 
-                alt="Foto de perfil" 
+                src={obtenerUrlImagen()} 
+                alt={`Foto de perfil de ${datosPerfil.nombreCompleto}`} 
                 className="perfil-foto-grande"
                 onError={(e) => {
-                  e.target.src = 'https://ui-avatars.com/api/?name=Elena+Vargas&background=002855&color=fff';
+                  // Fallback final si la URL de Supabase falla
+                  const nombreFallback = encodeURIComponent(datosPerfil.nombreCompleto || 'Usuario');
+                  e.target.src = `https://ui-avatars.com/api/?name=${nombreFallback}&background=002855&color=fff&size=256`;
                 }}
               />
-              <button 
-                type="button" 
-                className="btn-cambiar-foto"
-                onClick={() => alert('Seleccione una imagen para actualizar su fotografía institucional.')}
-              >
-                📷 Cambiar foto
-              </button>
+              
+              {/* ✅ Lógica condicional de botones de foto */}
+              {!selectedFile ? (
+                <button 
+                  type="button" 
+                  className="btn-cambiar-foto"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  📷 Cambiar foto
+                </button>
+              ) : (
+                <div className="perfil-foto-acciones" style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                  <button 
+                    type="button" 
+                    className="btn-nueva-propuesta" 
+                    style={{ flex: 1, fontSize: '13px', padding: '8px' }}
+                    onClick={handleSubirFoto}
+                    disabled={subiendoFoto}
+                  >
+                    {subiendoFoto ? 'Subiendo...' : '✓ Guardar Foto'}
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn-cancel" 
+                    style={{ flex: 1, fontSize: '13px', padding: '8px' }}
+                    onClick={handleCancelarFoto}
+                    disabled={subiendoFoto}
+                  >
+                    ✕ Cancelar
+                  </button>
+                </div>
+              )}
+
+              {/* Input de archivo oculto */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+                aria-label="Seleccionar nueva foto de perfil"
+              />
             </div>
+
+            {/* ✅ Mensaje de error de validación */}
+            {errorFoto && (
+              <div className="alert-error" style={{ 
+                color: '#dc2626', backgroundColor: '#fef2f2', padding: '8px 12px', 
+                borderRadius: '6px', fontSize: '13px', marginTop: '12px', textAlign: 'center' 
+              }}>
+                ⚠️ {errorFoto}
+              </div>
+            )}
 
             <h3 className="perfil-nombre-lateral">{datosPerfil.nombreCompleto}</h3>
             <p className="perfil-rol-lateral">{formatearNombreRol(rolActivo)}</p>
@@ -136,14 +273,12 @@ const Perfil = () => {
 
             <div className="perfil-divider" />
 
-            {/* Áreas de interés */}
+            {/* Áreas de interés (sin cambios en la lógica, solo formato) */}
             <div className="perfil-tags-seccion">
               <h4 className="perfil-seccion-minititle">Áreas de interés</h4>
               <div className="perfil-tags-list">
                 {tags.map((tag) => (
-                  <span key={tag} className="perfil-tag-chip">
-                    {tag}
-                  </span>
+                  <span key={tag} className="perfil-tag-chip">{tag}</span>
                 ))}
               </div>
 
@@ -155,7 +290,7 @@ const Perfil = () => {
                     onChange={(e) => setNuevoTag(e.target.value)}
                     placeholder="Nueva área..."
                     className="modal-input"
-                    style={{ padding: '6px 10px', fontSize: '13px' }}
+                    style={{ padding: '6px 10px', fontSize: '13px', width: '100%' }}
                     autoFocus
                   />
                   <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
@@ -168,11 +303,7 @@ const Perfil = () => {
                   </div>
                 </form>
               ) : (
-                <button 
-                  type="button" 
-                  className="btn-agregar-tag"
-                  onClick={() => setMostrarInputTag(true)}
-                >
+                <button type="button" className="btn-agregar-tag" onClick={() => setMostrarInputTag(true)}>
                   + Agregar tag
                 </button>
               )}
@@ -180,7 +311,6 @@ const Perfil = () => {
 
             <div className="perfil-divider" />
 
-            {/* Proyectos Activos */}
             <div className="perfil-proyectos-seccion">
               <h4 className="perfil-seccion-minititle">Proyectos Activos (2)</h4>
               <div className="perfil-proyecto-item">
@@ -194,9 +324,8 @@ const Perfil = () => {
             </div>
           </div>
 
-          {/* Columna Derecha: Formulario detallado */}
+          {/* Columna Derecha: Formulario detallado (Se mantiene igual que tu código original) */}
           <div className="perfil-col-formulario">
-            {/* Sección: Datos Académicos e Identificadores */}
             <div className="perfil-form-block">
               <h2 className="column-title">Datos Académicos e Identificadores</h2>
               <p className="column-subtitle">Información verificada para publicaciones y convocatorias de investigación.</p>
@@ -259,7 +388,6 @@ const Perfil = () => {
 
             <div className="perfil-divider" />
 
-            {/* Sección: Información Institucional */}
             <div className="perfil-form-block">
               <h2 className="column-title">Información Institucional</h2>
               <p className="column-subtitle">Filiación oficial dentro del Tecnológico de Costa Rica.</p>

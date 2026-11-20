@@ -15,10 +15,18 @@ class EvaluacionCIEEntrada(BaseModel):
 
 
 class ResolucionCIEEntrada(BaseModel):
-    numeroOficio: str | None = Field(default=None, max_length=50)
+    numeroOficio: str = Field(min_length=1, max_length=50)
     decision: str = Field(pattern="^(Aprobar|Rechazar)$")
     justificacion: str = Field(min_length=1, max_length=4000)
     rutaArchivo: str | None = Field(default=None, max_length=500)
+
+    @field_validator("numeroOficio")
+    @classmethod
+    def validar_numero_oficio(cls, valor: str) -> str:
+        valor = valor.strip()
+        if not valor:
+            raise ValueError("El número de oficio es obligatorio.")
+        return valor
 
     @field_validator("justificacion")
     @classmethod

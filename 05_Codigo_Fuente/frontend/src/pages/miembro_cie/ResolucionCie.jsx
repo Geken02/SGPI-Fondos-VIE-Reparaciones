@@ -27,6 +27,7 @@ const ResolucionCie = () => {
   const { datos, cargando, error, recargar } = useCarga(() => cargar(codigo), [codigo]);
 
   const [decision, setDecision] = useState('');
+  const [numeroOficio, setNumeroOficio] = useState('');
   const [justificacion, setJustificacion] = useState('');
   const [intento, setIntento] = useState(false);
   const [emitiendo, setEmitiendo] = useState(false);
@@ -51,14 +52,19 @@ const ResolucionCie = () => {
   const puntajePor = Object.fromEntries(evaluacion.puntajes.map((p) => [p.criterioId, p.puntaje]));
   const faltaJustificacion = justificacion.trim() === '';
   const faltaDecision = decision === '';
+  const faltaNumeroOficio = numeroOficio.trim() === '';
 
   const emitir = async () => {
     setIntento(true);
     setErrorEmitir('');
-    if (faltaJustificacion || faltaDecision) return;
+    if (faltaJustificacion || faltaDecision || faltaNumeroOficio) return;
     setEmitiendo(true);
     try {
-      await cieService.emitirResolucion(codigo, { decision, justificacion: justificacion.trim() });
+      await cieService.emitirResolucion(codigo, {
+        numeroOficio: numeroOficio.trim(),
+        decision,
+        justificacion: justificacion.trim(),
+      });
       navigate('/cie/resoluciones', {
         state: { mensaje: `Resolución de ${codigo} emitida (${ETIQUETA_DECISION[decision].toLowerCase()}) y enviada a la Dirección de Investigación.` },
       });
@@ -112,6 +118,28 @@ const ResolucionCie = () => {
             <h3 className="gv-subcard-titulo"><Icono nombre="info" size={16} aria-hidden="true" /> Observaciones de la rúbrica</h3>
             <p className="cie-obs">{evaluacion.observaciones || 'No registraste observaciones en la rúbrica.'}</p>
             <p className="cie-obs cie-obs-nota">La resolución será recibida por la Dirección de Investigación, que notificará a los investigadores.</p>
+          </div>
+        </div>
+
+        <div className="gv-subcard" style={{ marginBottom: '1rem' }}>
+          <h3 className="gv-subcard-titulo">Número de oficio</h3>
+          <div className="cie-cuerpo">
+            <label className="gv-campo" htmlFor="numero-oficio-cie">
+              <input
+                id="numero-oficio-cie"
+                type="text"
+                aria-label="Número de oficio de la resolución"
+                value={numeroOficio}
+                onChange={(e) => setNumeroOficio(e.target.value)}
+                maxLength={50}
+                placeholder="Ej. CIE-2026-001"
+                aria-invalid={intento && faltaNumeroOficio}
+                aria-describedby={intento && faltaNumeroOficio ? 'numero-oficio-error' : undefined}
+              />
+            </label>
+            {intento && faltaNumeroOficio && (
+              <p id="numero-oficio-error" className="cie-error" role="alert">Ingresa el número de oficio de la resolución.</p>
+            )}
           </div>
         </div>
 

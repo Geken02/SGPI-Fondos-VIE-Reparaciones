@@ -40,4 +40,20 @@ export const authService = {
 
 
   obtenerDashboardUsuario: () => api.get('/api/auth/me/dashboard'),
+
+  
+};
+
+export const actualizarFotoPerfil = async (usuarioId, archivo) => {
+  const formData = new FormData();
+  formData.append('archivo', archivo);
+
+  // Asumiendo que 'api' es tu instancia de axios configurada con el token y baseURL
+  const response = await api.post(`/api/usuarios/${usuarioId}/foto-perfil`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  
+  return response.data;
 };

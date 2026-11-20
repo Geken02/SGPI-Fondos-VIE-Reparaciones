@@ -22,6 +22,7 @@ class Usuario(Base):
     activo = Column("activo", Boolean, default=True)
     usuarioAuditoriaId = Column("usuarioauditoriaid", Integer, ForeignKey("usuarios.usuarioid"), nullable=True)
     ultimaAuditoria = Column("ultimaauditoria", DateTime, nullable=True)
+    rutaFotoPerfil = Column("rutafotoperfil", String(500), nullable=True)
     
     # Las relaciones usan el nombre de la variable Python (CamelCase)
     escuela = relationship("Escuela", back_populates="usuarios", foreign_keys=[escuelaId])
