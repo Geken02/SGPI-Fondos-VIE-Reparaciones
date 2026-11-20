@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
+import { adminService } from '../services/adminService';
 
 const Perfil = () => {
   const { usuario, rolActivo, formatearNombreRol, cargarPerfil } = useAuth();
@@ -97,7 +98,7 @@ const Perfil = () => {
     setErrorFoto('');
 
     try {
-      await authService.actualizarFotoPerfil(usuario.usuarioId, selectedFile);
+      await adminService.actualizarFotoPerfil(usuario.usuarioId, selectedFile);
       
       // Recargar el perfil para que el contexto de Auth tenga la nueva rutaFotoPerfil
       if (cargarPerfil) {
