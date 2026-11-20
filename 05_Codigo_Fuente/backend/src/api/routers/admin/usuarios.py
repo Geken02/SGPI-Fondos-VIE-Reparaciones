@@ -467,10 +467,8 @@ async def actualizar_foto_perfil(
     """
     Actualiza la foto de perfil de un usuario en Supabase Storage.
     """
-    # 1. Validar permisos: solo el propio usuario o un admin pueden cambiarla
-    es_admin = any(rol.nombreRol in ["Administrador", "Admin", "SuperAdmin"] for rol in (usuario_actual.roles or []))
-    
-    if usuario_actual.usuarioId != usuario_id and not es_admin:
+
+    if usuario_actual.usuarioId != usuario_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso para modificar esta foto de perfil"
