@@ -864,3 +864,367 @@
   border-color: #555555 !important;
   border-top-color: #FFFF00 !important;
 }
+
+/* ==========================================================================
+   FILTROS — Reescrito con CSS Grid para layout predecible
+   ========================================================================== */
+
+.auditoria-filtros {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  /* Reset de fieldset para que el grid funcione */
+  min-inline-size: 0;
+  border-style: solid;
+}
+
+/* Fila 1: Búsqueda (4 cols) + Desde (2) + Hasta (2) + Severidad (2) + Usuario (2) */
+.filtro-busqueda {
+  grid-column: span 4;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #ffffff;
+  border: 1.5px solid #94a3b8;
+  border-radius: 8px;
+  padding: 0 14px;
+  height: 44px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-width: 0; /* Permite que flex children se encogean */
+}
+
+.filtro-busqueda:hover {
+  border-color: #64748b;
+}
+
+.filtro-busqueda:focus-within {
+  border-color: #003366;
+  box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.18);
+}
+
+.filtro-icon {
+  flex-shrink: 0;
+  color: #475569;
+  display: flex;
+  align-items: center;
+}
+
+.filtro-input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1e293b;
+  padding: 0;
+  line-height: 1.5;
+  height: 100%;
+}
+
+.filtro-input::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+.filtro-clear {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.filtro-clear:hover {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+/* Campos de fecha */
+.filtro-fecha {
+  grid-column: span 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.filtro-fecha .filtro-input {
+  border: 1.5px solid #94a3b8;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #ffffff;
+  height: 44px;
+  box-sizing: border-box;
+}
+
+.filtro-fecha .filtro-input:focus {
+  outline: none;
+  border-color: #003366;
+  box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.18);
+}
+
+/* Grupos de select y usuario */
+.filtro-select-group {
+  grid-column: span 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.filtro-select-group .filtro-input {
+  border: 1.5px solid #94a3b8;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #ffffff;
+  height: 44px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.filtro-select-group .filtro-input:focus {
+  outline: none;
+  border-color: #003366;
+  box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.18);
+}
+
+.filtro-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.filtro-select {
+  padding: 8px 12px;
+  border: 1.5px solid #94a3b8;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1e293b;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  height: 44px;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+.filtro-select:hover {
+  border-color: #64748b;
+}
+
+.filtro-select:focus {
+  outline: none;
+  border-color: #003366;
+  box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.18);
+}
+
+/* ✅ NUEVO: Contenedor de acciones (Buscar + Limpiar) */
+.filtro-acciones {
+  grid-column: span 4;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ✅ NUEVO: Botón primario de búsqueda */
+.btn-aplicar-filtros {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 18px;
+  height: 44px;
+  background: #003366;
+  color: #ffffff;
+  border: 1px solid #003366;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.btn-aplicar-filtros svg {
+  flex-shrink: 0;
+}
+
+.btn-aplicar-filtros:hover {
+  background: #002244;
+  border-color: #002244;
+}
+
+.btn-aplicar-filtros:focus-visible {
+  outline: 2px solid #003366;
+  outline-offset: 2px;
+}
+
+.btn-limpiar-filtros {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 44px;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.btn-limpiar-filtros svg {
+  flex-shrink: 0;
+}
+
+.btn-limpiar-filtros:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.btn-limpiar-filtros:focus-visible {
+  outline: 2px solid #003366;
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   RESPONSIVE DE FILTROS
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .filtro-busqueda { grid-column: span 6; }
+  .filtro-fecha,
+  .filtro-select-group { grid-column: span 3; }
+  .filtro-acciones { grid-column: span 12; justify-content: flex-start; }
+}
+
+@media (max-width: 768px) {
+  .auditoria-filtros {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .filtro-busqueda,
+  .filtro-fecha,
+  .filtro-select-group,
+  .filtro-acciones {
+    grid-column: 1 / -1;
+  }
+  .filtro-acciones {
+    justify-content: stretch;
+    flex-wrap: wrap;
+  }
+  .filtro-acciones .btn-aplicar-filtros,
+  .filtro-acciones .btn-limpiar-filtros {
+    flex: 1;
+    min-width: 120px;
+  }
+}
+
+/* ==========================================================================
+   PARCHE DE ALTO CONTRASTE — FILTROS ACTUALIZADOS
+   ========================================================================== */
+
+.high-contrast-mode .auditoria-filtros {
+  background: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .filtro-busqueda,
+.high-contrast-mode .filtro-fecha .filtro-input,
+.high-contrast-mode .filtro-select-group .filtro-input,
+.high-contrast-mode .filtro-select {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .filtro-busqueda:focus-within,
+.high-contrast-mode .filtro-fecha .filtro-input:focus,
+.high-contrast-mode .filtro-select-group .filtro-input:focus,
+.high-contrast-mode .filtro-select:focus {
+  border-color: #FFFF00 !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.35) !important;
+}
+
+.high-contrast-mode .filtro-icon {
+  color: #FFFF00 !important;
+}
+
+.high-contrast-mode .filtro-label {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .filtro-input::placeholder {
+  color: #B0B0B0 !important;
+}
+
+/* ✅ Botón Buscar en alto contraste (primario invertido) */
+.high-contrast-mode .btn-aplicar-filtros {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.high-contrast-mode .btn-aplicar-filtros:hover {
+  background: #CCCC00 !important;
+}
+
+.high-contrast-mode .btn-aplicar-filtros:focus-visible {
+  outline: 3px solid #FFFFFF !important;
+  outline-offset: 2px;
+}
+
+.high-contrast-mode .btn-limpiar-filtros {
+  background: #000000 !important;
+  color: #FFFF00 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+.high-contrast-mode .btn-limpiar-filtros:hover {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .filtro-clear {
+  background: #333333 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #FFFFFF !important;
+}
+
+.high-contrast-mode .filtro-clear:hover {
+  background: #FF3333 !important;
+  color: #FFFFFF !important;
+}
