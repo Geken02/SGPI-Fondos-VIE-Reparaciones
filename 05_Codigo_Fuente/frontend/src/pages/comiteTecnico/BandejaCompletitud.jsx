@@ -206,29 +206,31 @@ export default function BandejaDeCompletitud() {
                   </td>
                   
                   <td>
-                    <div className="acciones-cell">
-                      {propuesta.esCompleta ? (
-                        <button
-                          ref={btnAsignarRef}
-                          onClick={() => setModalAsignacion({ abierto: true, propuesta })}
-                          className="btn-asignar"
-                          style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
-                          aria-haspopup="dialog"
-                        >
-                          <IconoUsuarios /> Asignar
-                        </button>
-                      ) : (
-                        <button
-                          ref={btnSubsanarRef}
-                          onClick={() => setModalSubsanacion({ abierto: true, propuesta })}
-                          className="btn-subsanar"
-                          style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
-                          aria-haspopup="dialog"
-                        >
-                          <IconoAdvertencia /> Subsanar
-                        </button>
-                      )}
-                    </div>
+<td>
+  <div className="acciones-cell">
+    {propuesta.esCompleta ? (
+      <button
+        ref={btnAsignarRef}
+        onClick={() => setModalAsignacion({ abierto: true, propuesta })}
+        className="btn-asignar"
+        style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
+        aria-label={`Asignar evaluador a ${propuesta.codigoPropuesta}: ${propuesta.titulo}`}
+      >
+        <IconoUsuarios /> Asignar
+      </button>
+    ) : (
+      <button
+        ref={btnSubsanarRef}
+        onClick={() => setModalSubsanacion({ abierto: true, propuesta })}
+        className="btn-subsanar"
+        style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
+        aria-label={`Solicitar subsanación de ${propuesta.codigoPropuesta}: ${propuesta.titulo}`}
+      >
+        <IconoAdvertencia /> Subsanar
+      </button>
+    )}
+  </div>
+</td>
                   </td>
                 </tr>
               ))}
