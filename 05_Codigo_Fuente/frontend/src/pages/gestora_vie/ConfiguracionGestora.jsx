@@ -76,7 +76,7 @@ export default function ConfiguracionGestora() {
 
   return <div className="gestora-configuracion">
     <EncabezadoPagina titulo="Configuración" subtitulo="Administra las preferencias personales de uso del panel de la Gestora VIE."/>
-    {cargando ? <div className="gv-card">Cargando preferencias...</div> : <form onSubmit={guardar}>
+    {cargando ? <div className="gv-card" role="status">Cargando preferencias...</div> : <form onSubmit={guardar}>
       <section className="gv-card gestora-config-card">
         <div className="gestora-config-titulo"><span className="gestora-config-icono" aria-hidden="true"><Icono nombre="usuario" tamano={20}/></span><div><h2>Perfil de usuario</h2><p>Información de la sesión actual.</p></div></div>
         <div className="gestora-campos">

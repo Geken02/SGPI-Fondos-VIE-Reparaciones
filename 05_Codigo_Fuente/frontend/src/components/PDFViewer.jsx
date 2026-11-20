@@ -11,7 +11,7 @@ export default function PDFViewer({ url }) {
   const [error, setError] = useState(null);
 
   if (error) return (
-    <div style={{ textAlign: 'center', padding: '40px' }}>
+    <div role="alert" style={{ textAlign: 'center', padding: '40px' }}>
       <p style={{ color: '#991b1b', fontWeight: 'bold' }}>⚠️ No se pudo cargar el PDF</p>
       <a href={url} target="_blank" rel="noopener noreferrer" download style={{ display: 'inline-block', marginTop: '12px', padding: '10px 20px', background: '#002855', color: 'white', textDecoration: 'none', borderRadius: '6px' }}>⬇️ Descargar archivo</a>
     </div>
@@ -24,7 +24,7 @@ export default function PDFViewer({ url }) {
           file={url}
           onLoadSuccess={({ numPages }) => setNumPages(numPages)}
           onLoadError={(err) => { console.error('Error PDF:', err); setError(err.message); }}
-          loading={<p style={{ color: 'white' }}>Cargando PDF...</p>}
+          loading={<p role="status" aria-live="polite" style={{ color: 'white' }}>Cargando PDF...</p>}
         >
           <Page pageNumber={pageNumber} width={Math.min(800, typeof window !== 'undefined' ? window.innerWidth - 120 : 800)} renderTextLayer renderAnnotationLayer />
         </Document>

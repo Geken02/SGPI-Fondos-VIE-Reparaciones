@@ -180,21 +180,22 @@ const VinculacionDashboard = () => {
         {/* Tabla de Bandeja de Evaluación */}
         <div className="vinculacion-table-wrapper">
           <table className="vinculacion-table">
+            <caption className="sr-only">Propuestas asignadas para evaluación en el Centro de Vinculación</caption>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>TÍTULO DE LA PROPUESTA</th>
-                <th>ESTADO</th>
-                <th>ESCUELA</th>
-                <th>INVESTIGADOR</th>
-                <th>FECHA</th>
-                <th style={{ textAlign: 'center' }}>ACCIONES</th>
+                <th scope="col">ID</th>
+                <th scope="col">TÍTULO DE LA PROPUESTA</th>
+                <th scope="col">ESTADO</th>
+                <th scope="col">ESCUELA</th>
+                <th scope="col">INVESTIGADOR</th>
+                <th scope="col">FECHA</th>
+                <th scope="col" style={{ textAlign: 'center' }}>ACCIONES</th>
               </tr>
             </thead>
             <tbody>
               {cargando ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '32px', color: '#627d98' }}>
+                  <td colSpan="7" role="status" style={{ textAlign: 'center', padding: '32px', color: '#627d98' }}>
                     Cargando propuestas asignadas a Vinculación desde la base de datos...
                   </td>
                 </tr>
@@ -202,7 +203,7 @@ const VinculacionDashboard = () => {
                 propuestasFiltradas.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      <span className="code-link" onClick={() => handleAccion(item)}>
+                      <span className="code-link" role="button" tabIndex={0} onClick={() => handleAccion(item)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }}>
                         {item.id}
                       </span>
                     </td>
@@ -256,9 +257,9 @@ const VinculacionDashboard = () => {
             Mostrando {propuestasFiltradas.length > 0 ? 1 : 0} a {propuestasFiltradas.length} de {propuestas.length} propuestas asignadas
           </span>
           <div className="pagination-controls">
-            <button type="button" className="btn-page-nav" disabled>‹</button>
+            <button type="button" className="btn-page-nav" aria-label="Página anterior" disabled>‹</button>
             <span className="page-current">1</span>
-            <button type="button" className="btn-page-nav" disabled>›</button>
+            <button type="button" className="btn-page-nav" aria-label="Página siguiente" disabled>›</button>
           </div>
         </div>
       </div>

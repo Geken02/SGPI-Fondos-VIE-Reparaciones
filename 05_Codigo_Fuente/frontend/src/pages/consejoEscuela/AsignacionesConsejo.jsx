@@ -98,7 +98,7 @@ const AsignacionesConsejo = () => {
     }
   };
 
-  if (cargando) return <div className="asignaciones-container"><p>Cargando información...</p></div>;
+  if (cargando) return <div className="asignaciones-container"><p role="status">Cargando información...</p></div>;
 
   return (
     <div className="asignaciones-container">
@@ -107,8 +107,8 @@ const AsignacionesConsejo = () => {
         <p>Seleccione una propuesta y asigne los miembros del Consejo de Profesores encargados de revisarla.</p>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
-      {mensaje && <div className="alert alert-success">{mensaje}</div>}
+      {error && <div className="alert alert-error" role="alert">{error}</div>}
+      {mensaje && <div className="alert alert-success" role="status">{mensaje}</div>}
 
       <div className="card">
         <div className="form-group">
@@ -179,11 +179,12 @@ const AsignacionesConsejo = () => {
             ) : (
               <div className="tabla-contenedor">
                 <table className="tabla-asignaciones">
+                  <caption className="sr-only">Miembros actualmente asignados a la propuesta</caption>
                   <thead>
                     <tr>
-                      <th>Nombre</th>
-                      <th>Correo institucional</th>
-                      <th>Acciones</th>
+                      <th scope="col">Nombre</th>
+                      <th scope="col">Correo institucional</th>
+                      <th scope="col">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>

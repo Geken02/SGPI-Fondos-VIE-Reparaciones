@@ -30,9 +30,9 @@ export default function ExcelViewer({ url }) {
     return () => { isMounted = false; };
   }, [url]);
 
-  if (loading) return <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>Cargando hoja de cálculo...</p>;
+  if (loading) return <p role="status" aria-live="polite" style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>Cargando hoja de cálculo...</p>;
   if (error) return (
-    <div style={{ textAlign: 'center', padding: '40px' }}>
+    <div role="alert" style={{ textAlign: 'center', padding: '40px' }}>
       <p style={{ color: '#991b1b', fontWeight: 'bold' }}>⚠️ {error}</p>
       <a href={url} download style={{ display: 'inline-block', marginTop: '12px', padding: '10px 20px', background: '#002855', color: 'white', textDecoration: 'none', borderRadius: '6px' }}>⬇️ Descargar archivo</a>
     </div>

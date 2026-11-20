@@ -124,7 +124,8 @@ const RevisionDictamen = () => {
         {tab === 'Documentos' && (
           <div className="gv-tabla-scroll">
             <table className="gv-tabla">
-              <thead><tr><th>Archivo</th><th>Origen</th></tr></thead>
+              <caption className="sr-only">Documentos del expediente</caption>
+              <thead><tr><th scope="col">Archivo</th><th scope="col">Origen</th></tr></thead>
               <tbody>
                 {d.documentos.map((doc) => <tr key={doc.documentoId}><td>{doc.nombre}</td><td>Expediente consolidado</td></tr>)}
               </tbody>
@@ -135,7 +136,8 @@ const RevisionDictamen = () => {
         {tab === 'Historial' && (
           <div className="gv-tabla-scroll">
             <table className="gv-tabla">
-              <thead><tr><th>Fecha</th><th>Evento</th><th>Responsable</th></tr></thead>
+              <caption className="sr-only">Historial del dictamen</caption>
+              <thead><tr><th scope="col">Fecha</th><th scope="col">Evento</th><th scope="col">Responsable</th></tr></thead>
               <tbody>
                 {eventos.map((e, i) => <tr key={i}><td>{formatearFechaHora(e.fecha)}</td><td>{e.texto}</td><td>{e.responsable}</td></tr>)}
               </tbody>

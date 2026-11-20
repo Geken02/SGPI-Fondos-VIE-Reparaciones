@@ -44,6 +44,35 @@ const NotificationsDropdown = ({ isOpen, onClose, onActualizarConteo }) => {
     };
   }, [isOpen, onClose]);
 
+  // Accesibilidad: al abrir, mover el foco al primer elemento del listado.
+  useEffect(() => {
+    if (isOpen && dropdownRef.current) {
+      const primero = dropdownRef.current.querySelector('[role="menuitem"]');
+      if (primero) primero.focus();
+    }
+  }, [isOpen, cargando]);
+
+  // Accesibilidad: navegación con flechas y cierre con Escape dentro del panel.
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onClose();
+      return;
+    }
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const node = dropdownRef.current;
+    if (!node) return;
+    const items = Array.from(node.querySelectorAll('[role="menuitem"]'));
+    if (items.length === 0) return;
+    e.preventDefault();
+    const idx = items.indexOf(document.activeElement);
+    let siguiente = e.key === 'ArrowDown' ? idx + 1 : idx - 1;
+    if (idx === -1) siguiente = e.key === 'ArrowDown' ? 0 : items.length - 1;
+    if (siguiente < 0) siguiente = items.length - 1;
+    if (siguiente >= items.length) siguiente = 0;
+    items[siguiente].focus();
+  };
+
   const handleMarcarLeida = async (id, e) => {
     e.stopPropagation();
     try {
@@ -74,7 +103,7 @@ const NotificationsDropdown = ({ isOpen, onClose, onActualizarConteo }) => {
   const noLeidasCount = notificaciones.filter(n => !n.leida).length;
 
   return (
-    <div className="notifications-popover" ref={dropdownRef}>
+    <div className="notifications-popover" ref={dropdownRef} onKeyDown={handleKeyDown}>
       <div className="notifications-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#002855' }}>
           Notificaciones {noLeidasCount > 0 && <span style={{ color: '#EF3340', fontSize: '13px' }}>({noLeidasCount})</span>}
@@ -97,9 +126,9 @@ const NotificationsDropdown = ({ isOpen, onClose, onActualizarConteo }) => {
         )}
       </div>
 
-      <div className="notifications-list" style={{ maxHeight: '340px', overflowY: 'auto' }}>
+      <div className="notifications-list" role="menu" aria-label="Notificaciones" style={{ maxHeight: '340px', overflowY: 'auto' }}>
         {cargando ? (
-          <div style={{ padding: '24px 16px', textAlign: 'center', color: '#627d98', fontSize: '13px' }}>
+          <div role="status" style={{ padding: '24px 16px', textAlign: 'center', color: '#627d98', fontSize: '13px' }}>
             Cargando notificaciones...
           </div>
         ) : notificaciones.length > 0 ? (
@@ -107,7 +136,15 @@ const NotificationsDropdown = ({ isOpen, onClose, onActualizarConteo }) => {
             <div 
               key={item.id} 
               className={`notification-card ${item.leida ? 'leida' : 'no-leida'}`}
+              role="menuitem"
+              tabIndex={0}
               onClick={(e) => !item.leida && handleMarcarLeida(item.id, e)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  if (!item.leida) handleMarcarLeida(item.id, e);
+                }
+              }}
               style={{
                 cursor: item.leida ? 'default' : 'pointer',
                 backgroundColor: item.leida ? '#ffffff' : '#f0f7fc',

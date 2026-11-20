@@ -126,14 +126,15 @@ export default function PreviewCie() {
             <div className="gv-card gv-tabla-contenedor">
               <div className="gv-tabla-scroll">
                 <table className="gv-tabla">
+                  <caption className="sr-only">Expedientes disponibles para resolución</caption>
                   <thead>
                     <tr>
-                      <th>Código</th>
-                      <th>Título de la propuesta</th>
-                      <th>Investigador/a</th>
-                      <th>Escuela</th>
-                      <th>Fecha límite</th>
-                      <th>Estado</th>
+                      <th scope="col">Código</th>
+                      <th scope="col">Título de la propuesta</th>
+                      <th scope="col">Investigador/a</th>
+                      <th scope="col">Escuela</th>
+                      <th scope="col">Fecha límite</th>
+                      <th scope="col">Estado</th>
                     </tr>
                   </thead>
                   <tbody>

@@ -39,6 +39,35 @@ const ProfileDropdown = ({ isOpen, onClose }) => {
     };
   }, [isOpen, onClose]);
 
+  // Accesibilidad: al abrir, mover el foco al primer elemento del menú.
+  useEffect(() => {
+    if (isOpen && dropdownRef.current) {
+      const primero = dropdownRef.current.querySelector('[role="menuitem"], [role="option"]');
+      if (primero) primero.focus();
+    }
+  }, [isOpen]);
+
+  // Accesibilidad: navegación con flechas y cierre con Escape dentro del menú.
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onClose();
+      return;
+    }
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const node = dropdownRef.current;
+    if (!node) return;
+    const items = Array.from(node.querySelectorAll('[role="menuitem"], [role="option"]'));
+    if (items.length === 0) return;
+    e.preventDefault();
+    const idx = items.indexOf(document.activeElement);
+    let siguiente = e.key === 'ArrowDown' ? idx + 1 : idx - 1;
+    if (idx === -1) siguiente = e.key === 'ArrowDown' ? 0 : items.length - 1;
+    if (siguiente < 0) siguiente = items.length - 1;
+    if (siguiente >= items.length) siguiente = 0;
+    items[siguiente].focus();
+  };
+
   if (!isOpen) return null;
 
   // Lista de roles deduplicada
@@ -57,7 +86,7 @@ const ProfileDropdown = ({ isOpen, onClose }) => {
   const rutaConfiguracion = rutasCuenta?.configuracion || '/dashboard/configuracion';
 
   return (
-    <div className="profile-popover" ref={dropdownRef}>
+    <div className="profile-popover" ref={dropdownRef} onKeyDown={handleKeyDown}>
       {/* Cabecera del usuario */}
       <div className="profile-popover-header">
         <img 
@@ -92,7 +121,7 @@ const ProfileDropdown = ({ isOpen, onClose }) => {
               </span>
             </div>
 
-            <div className="profile-roles-list">
+            <div className="profile-roles-list" role="listbox" aria-label="Cambiar de rol">
               {rolesDisponibles.map((rol) => {
                 const esActivo = rolActivo === rol;
                 const labelRol = formatearNombreRol(rol);
@@ -106,6 +135,8 @@ const ProfileDropdown = ({ isOpen, onClose }) => {
                   <button
                     key={rol}
                     type="button"
+                    role="option"
+                    aria-selected={esActivo}
                     className={`profile-role-item ${esActivo ? 'active' : ''}`}
                     onClick={() => {
                       cambiarRol(rol);
@@ -127,9 +158,10 @@ const ProfileDropdown = ({ isOpen, onClose }) => {
       )}
 
       {/* Enlaces de Menú */}
-      <div className="profile-popover-menu">
+      <div className="profile-popover-menu" role="menu">
         <button 
           className="profile-menu-item" 
+          role="menuitem"
           onClick={() => {
             onClose();
             navigate('/dashboard/perfil');
@@ -140,6 +172,7 @@ const ProfileDropdown = ({ isOpen, onClose }) => {
         
         <button 
           className="profile-menu-item"
+          role="menuitem"
           onClick={() => {
             onClose();
             navigate(rutaConfiguracion);
@@ -152,6 +185,7 @@ const ProfileDropdown = ({ isOpen, onClose }) => {
         {rutasCuenta && (
           <button 
             className="profile-menu-item"
+            role="menuitem"
             onClick={() => {
               onClose();
               navigate(rutasCuenta.ayuda);

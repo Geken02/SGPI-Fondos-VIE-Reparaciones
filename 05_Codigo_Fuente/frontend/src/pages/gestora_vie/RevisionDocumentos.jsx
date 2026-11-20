@@ -218,13 +218,14 @@ const DetalleDocumentos = ({ codigo }) => {
 
         <div className="gv-tabla-scroll">
           <table className="gv-tabla gv-tabla-compacta">
+            <caption className="sr-only">Documentos del expediente y su estado de revisión</caption>
             <thead>
               <tr>
-                <th>Documento</th>
-                <th>Archivo</th>
-                <th>Cargado</th>
-                <th>Estado de revisión</th>
-                <th>Observaciones</th>
+                <th scope="col">Documento</th>
+                <th scope="col">Archivo</th>
+                <th scope="col">Cargado</th>
+                <th scope="col">Estado de revisión</th>
+                <th scope="col">Observaciones</th>
               </tr>
             </thead>
             <tbody>

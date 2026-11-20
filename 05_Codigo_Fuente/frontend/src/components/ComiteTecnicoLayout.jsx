@@ -7,13 +7,18 @@ import ImpersonationBanner from './ImpersonationBanner';
 const ComiteTecnicoLayout = () => {
   return (
     <div className="dashboard-layout">
+      {/* Skip link para navegación por teclado: se oculta hasta que el usuario presiona Tab */}
+      <a href="#contenido-principal" className="skip-link">
+        Saltar al contenido principal
+      </a>
+
       <ImpersonationBanner />
       <Sidebar />
       
       <div className="main-content">
-        <Header />  {/* ← ESTO ES LO QUE PROBABLEMENTE FALTA */}
+        <Header />
         
-        <main className="main-body">
+        <main className="main-body" id="contenido-principal" aria-label="Contenido principal de la página">
           <Outlet />
         </main>
       </div>

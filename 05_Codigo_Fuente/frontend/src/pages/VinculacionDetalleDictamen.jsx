@@ -212,7 +212,10 @@ const VinculacionDetalleDictamen = () => {
                 {nombreArchivoDoc ? (
                   <div 
                     className="documento-adjunto-card"
+                    role="button"
+                    tabIndex={0}
                     onClick={handleDescargarDocumentoDictamen}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }}
                     style={{ cursor: 'pointer' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

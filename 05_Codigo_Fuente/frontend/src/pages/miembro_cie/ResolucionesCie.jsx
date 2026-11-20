@@ -101,13 +101,14 @@ const ResolucionesCie = () => {
           <div className="gv-card gv-tabla-contenedor">
             <div className="gv-tabla-scroll">
               <table className="gv-tabla">
+                <caption className="sr-only">Historial de resoluciones registradas por el CIE</caption>
                 <thead>
                   <tr>
-                    <th>Código</th>
-                    <th>Título de la propuesta</th>
-                    <th>Número de oficio</th>
-                    <th>Fecha de emisión</th>
-                    <th>Acciones</th>
+                    <th scope="col">Código</th>
+                    <th scope="col">Título de la propuesta</th>
+                    <th scope="col">Número de oficio</th>
+                    <th scope="col">Fecha de emisión</th>
+                    <th scope="col">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>

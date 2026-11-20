@@ -104,7 +104,7 @@ const RutaProtegida = ({ children, rolesPermitidos = [] }) => {
   if (cargando) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#002855', color: '#ffffff', fontFamily: 'Roboto, sans-serif' }}>
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center' }} role="status" aria-live="polite">
           <img src="/Logo-TEC-Blanco.png" alt="TEC" style={{ height: '48px', marginBottom: '16px' }} />
           <div>Cargando sistema SGPI...</div>
         </div>

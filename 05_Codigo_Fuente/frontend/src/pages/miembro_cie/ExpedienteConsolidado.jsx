@@ -116,7 +116,8 @@ const ExpedienteConsolidado = () => {
         {tab === 'Documentos' && ((e.documentos ?? []).length === 0 ? <Vacio texto="El expediente no tiene documentos cargados." /> : (
           <div className="gv-tabla-scroll">
             <table className="gv-tabla">
-              <thead><tr><th>Archivo</th><th>Tipo</th><th>Fecha de carga</th><th>Acción</th></tr></thead>
+              <caption className="sr-only">Documentos del expediente</caption>
+              <thead><tr><th scope="col">Archivo</th><th scope="col">Tipo</th><th scope="col">Fecha de carga</th><th scope="col">Acción</th></tr></thead>
               <tbody>
                 {(e.documentos ?? []).map((d) => (
                   <tr key={d.documentoId}><td>{d.nombreArchivo}</td><td>{d.tipo}</td><td>{formatearFecha(d.fechaCarga)}</td>
@@ -144,7 +145,8 @@ const ExpedienteConsolidado = () => {
         {tab === 'Historial' && ((e.historial ?? []).length === 0 ? <Vacio texto="Sin cambios de estado registrados." /> : (
           <div className="gv-tabla-scroll">
             <table className="gv-tabla">
-              <thead><tr><th>Fecha</th><th>De</th><th>A</th><th>Responsable</th><th>Observaciones</th></tr></thead>
+              <caption className="sr-only">Historial de cambios de estado del expediente</caption>
+              <thead><tr><th scope="col">Fecha</th><th scope="col">De</th><th scope="col">A</th><th scope="col">Responsable</th><th scope="col">Observaciones</th></tr></thead>
               <tbody>
                 {(e.historial ?? []).map((h, i) => (
                   <tr key={i}>

@@ -81,7 +81,7 @@ export default function DictamenFinal() {
       <div className="dictamen-container">
         <div className="dictamen-loading">
           <div className="dictamen-spinner"></div>
-          <p>Cargando consolidación de evaluaciones...</p>
+          <p role="status">Cargando consolidación de evaluaciones...</p>
         </div>
       </div>
     );
@@ -153,11 +153,12 @@ export default function DictamenFinal() {
           <div style={{marginTop: '24px'}}>
             <h3 className="dictamen-subtitle-text">Evaluaciones individuales</h3>
             <table className="dictamen-table">
+              <caption className="sr-only">Evaluaciones individuales consolidadas</caption>
               <thead>
                 <tr>
-                  <th>Evaluador</th>
-                  <th style={{textAlign: 'center'}}>Calificación</th>
-                  <th>Fecha</th>
+                  <th scope="col">Evaluador</th>
+                  <th scope="col" style={{textAlign: 'center'}}>Calificación</th>
+                  <th scope="col">Fecha</th>
                 </tr>
               </thead>
               <tbody>

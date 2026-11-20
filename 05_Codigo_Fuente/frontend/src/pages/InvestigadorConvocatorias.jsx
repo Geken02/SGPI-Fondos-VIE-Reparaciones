@@ -225,7 +225,7 @@ const InvestigadorConvocatorias = () => {
 
         {/* Grid de Tarjetas de Convocatorias */}
         {cargando ? (
-          <div className="proposals-loading">Cargando convocatorias desde la base de datos...</div>
+          <div className="proposals-loading" role="status" aria-live="polite">Cargando convocatorias desde la base de datos...</div>
         ) : (
           <div className="convocatorias-cards-grid">
             {convocatoriasFiltradas.map((conv) => {

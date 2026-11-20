@@ -210,7 +210,7 @@ const InvestigadorFormularios = () => {
         <div className="table-responsive-container">
           {cargando ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#64748b' }}>
-              <p style={{ fontSize: '15px' }}>Cargando formularios...</p>
+              <p role="status" style={{ fontSize: '15px' }}>Cargando formularios...</p>
             </div>
           ) : formulariosFiltrados.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#64748b' }}>
@@ -228,12 +228,13 @@ const InvestigadorFormularios = () => {
             </div>
           ) : (
             <table className="institucional-data-table">
+              <caption className="sr-only">Listado de formularios institucionales asociados a tus propuestas</caption>
               <thead>
                 <tr>
-                  <th>FORMULARIO</th>
-                  <th>PROPUESTA</th>
-                  <th>ÚLTIMA ACTUALIZACIÓN</th>
-                  <th style={{ textAlign: 'center' }}>ACCIONES</th>
+                  <th scope="col">FORMULARIO</th>
+                  <th scope="col">PROPUESTA</th>
+                  <th scope="col">ÚLTIMA ACTUALIZACIÓN</th>
+                  <th scope="col" style={{ textAlign: 'center' }}>ACCIONES</th>
                 </tr>
               </thead>
               <tbody>
@@ -303,7 +304,7 @@ const InvestigadorFormularios = () => {
           <div className="crear-propuesta-modal-card" style={{ maxWidth: '580px' }} onClick={(e) => e.stopPropagation()}>
             <div className="crear-propuesta-modal-header">
               <div className="modal-header-title">Vista Previa: {modalVistaDoc.codigo}</div>
-              <button type="button" className="btn-modal-close" onClick={() => setModalVistaDoc(null)}><IconoCie nombre="close" tamano={16} /></button>
+              <button type="button" className="btn-modal-close" aria-label="Cerrar vista previa" onClick={() => setModalVistaDoc(null)}><IconoCie nombre="close" tamano={16} /></button>
             </div>
             <div style={{ padding: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
@@ -359,7 +360,7 @@ const InvestigadorFormularios = () => {
                 <span style={{ fontSize: '18px', marginRight: '6px' }}>+</span>
                 Formular Nuevo Documento Institucional
               </div>
-              <button type="button" className="btn-modal-close" onClick={() => setModalNuevo(false)}><IconoCie nombre="close" tamano={16} /></button>
+              <button type="button" className="btn-modal-close" aria-label="Cerrar" onClick={() => setModalNuevo(false)}><IconoCie nombre="close" tamano={16} /></button>
             </div>
 
             <div style={{ padding: '24px' }}>
@@ -381,6 +382,9 @@ const InvestigadorFormularios = () => {
                     transition: 'all 0.2s',
                     cursor: 'pointer'
                   }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }}
                   onClick={() => {
                     setModalNuevo(false);
                     const pId = localStorage.getItem('propuesta_activa_id'); navigate(`/dashboard/form4${pId ? `?propuestaId=${pId}` : ''}`);
@@ -420,6 +424,9 @@ const InvestigadorFormularios = () => {
                     transition: 'all 0.2s',
                     cursor: 'pointer'
                   }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }}
                   onClick={() => {
                     setModalNuevo(false);
                     const pId = localStorage.getItem('propuesta_activa_id'); navigate(`/dashboard/form5${pId ? `?propuestaId=${pId}` : ''}`);
@@ -459,6 +466,9 @@ const InvestigadorFormularios = () => {
                     transition: 'all 0.2s',
                     cursor: 'pointer'
                   }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }}
                   onClick={() => {
                     setModalNuevo(false);
                     const pId = localStorage.getItem('propuesta_activa_id'); navigate(`/dashboard/presupuesto${pId ? `?propuestaId=${pId}` : ''}`);

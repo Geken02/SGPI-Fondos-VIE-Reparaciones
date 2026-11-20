@@ -339,13 +339,14 @@ const InvestigadorEquipos = () => {
             {/* Tabla de Integrantes */}
             <div className="table-responsive-container">
               <table className="institucional-data-table">
+                <caption className="sr-only">Integrantes del equipo seleccionado</caption>
                 <thead>
                   <tr>
-                    <th>INTEGRANTE / NOMBRE</th>
-                    <th>CORREO INSTITUCIONAL</th>
-                    <th>ESCUELA</th>
-                    <th>ROL EN EQUIPO</th>
-                    <th style={{ textAlign: 'center' }}>ACCIONES</th>
+                    <th scope="col">INTEGRANTE / NOMBRE</th>
+                    <th scope="col">CORREO INSTITUCIONAL</th>
+                    <th scope="col">ESCUELA</th>
+                    <th scope="col">ROL EN EQUIPO</th>
+                    <th scope="col" style={{ textAlign: 'center' }}>ACCIONES</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -381,6 +382,7 @@ const InvestigadorEquipos = () => {
                             type="button" 
                             className="btn-icon-action"
                             title="Editar miembro"
+                            aria-label="Editar miembro"
                             onClick={() => alert(`Editar rol o datos de ${m.nombre}`)}
                           >
                             <IconoCie nombre="edit" tamano={16} />
@@ -390,6 +392,7 @@ const InvestigadorEquipos = () => {
                               type="button" 
                               className="btn-icon-action btn-icon-delete"
                               title="Remover del equipo"
+                              aria-label="Remover del equipo"
                               onClick={() => handleEliminarMiembro(m.id)}
                             >
                               <IconoCie nombre="trash" tamano={16} />
@@ -476,14 +479,15 @@ const InvestigadorEquipos = () => {
             {/* Tabla de Equipos */}
             <div className="table-responsive-container">
               <table className="institucional-data-table">
+                <caption className="sr-only">Listado de equipos de investigación</caption>
                 <thead>
                   <tr>
-                    <th>CÓDIGO</th>
-                    <th>NOMBRE DEL GRUPO Y PROYECTO</th>
-                    <th>MIEMBROS</th>
-                    <th>LÍDER DE GRUPO</th>
-                    <th>ESTADO</th>
-                    <th style={{ textAlign: 'center' }}>ACCIONES</th>
+                    <th scope="col">CÓDIGO</th>
+                    <th scope="col">NOMBRE DEL GRUPO Y PROYECTO</th>
+                    <th scope="col">MIEMBROS</th>
+                    <th scope="col">LÍDER DE GRUPO</th>
+                    <th scope="col">ESTADO</th>
+                    <th scope="col" style={{ textAlign: 'center' }}>ACCIONES</th>
                   </tr>
                 </thead>
                 <tbody>

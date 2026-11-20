@@ -155,15 +155,16 @@ const Expedientes = () => {
       <section className="gv-card gv-tabla-contenedor">
         <div className="gv-tabla-scroll">
           <table className="gv-tabla">
+            <caption className="sr-only">Bandeja principal de expedientes de la Gestora VIE</caption>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Título de la propuesta</th>
-                <th>Investigador/a principal</th>
-                <th>Escuela</th>
-                <th>Estado</th>
-                <th>Fecha límite</th>
-                <th>Acciones</th>
+                <th scope="col">ID</th>
+                <th scope="col">Título de la propuesta</th>
+                <th scope="col">Investigador/a principal</th>
+                <th scope="col">Escuela</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Fecha límite</th>
+                <th scope="col">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -192,12 +193,12 @@ const Expedientes = () => {
               ))}
               {cargando && (
                 <tr>
-                  <td colSpan={7} className="gv-sin-resultados">Cargando expedientes...</td>
+                  <td colSpan={7} className="gv-sin-resultados" role="status">Cargando expedientes...</td>
                 </tr>
               )}
               {!cargando && error && (
                 <tr>
-                  <td colSpan={7} className="gv-sin-resultados">{error}</td>
+                  <td colSpan={7} className="gv-sin-resultados" role="alert">{error}</td>
                 </tr>
               )}
               {!cargando && !error && visibles.length === 0 && (

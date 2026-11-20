@@ -227,11 +227,11 @@ export default function AcuerdosConsejo() {
       </header>
 
       {mensaje && (
-        <div className="acuerdos-alerta acuerdos-alerta-exito">{mensaje}</div>
+        <div className="acuerdos-alerta acuerdos-alerta-exito" role="status">{mensaje}</div>
       )}
 
       {error && (
-        <div className="acuerdos-alerta acuerdos-alerta-error">{error}</div>
+        <div className="acuerdos-alerta acuerdos-alerta-error" role="alert">{error}</div>
       )}
 
       {esDirectorEscuela && mostrarFormulario && (
@@ -412,23 +412,24 @@ export default function AcuerdosConsejo() {
         </div>
 
         {cargando ? (
-          <p className="acuerdos-estado">Cargando acuerdos...</p>
+          <p className="acuerdos-estado" role="status">Cargando acuerdos...</p>
         ) : acuerdos.length === 0 ? (
           <p className="acuerdos-estado">No hay acuerdos registrados para mostrar.</p>
         ) : (
           <div className="acuerdos-tabla-contenedor">
             <table className="acuerdos-tabla">
+              <caption className="sr-only">Acuerdos registrados por el Consejo de Escuela</caption>
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Propuesta</th>
-                  <th>Tipo de acuerdo</th>
-                  <th>Número</th>
-                  <th>Fecha</th>
-                  <th>Horas</th>
-                  <th>Tipo Hora</th>
-                  <th>Presupuesto</th>
-                  <th>Documento Oficial</th>
+                  <th scope="col">ID</th>
+                  <th scope="col">Propuesta</th>
+                  <th scope="col">Tipo de acuerdo</th>
+                  <th scope="col">Número</th>
+                  <th scope="col">Fecha</th>
+                  <th scope="col">Horas</th>
+                  <th scope="col">Tipo Hora</th>
+                  <th scope="col">Presupuesto</th>
+                  <th scope="col">Documento Oficial</th>
                 </tr>
               </thead>
 

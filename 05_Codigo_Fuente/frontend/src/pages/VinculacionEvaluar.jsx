@@ -431,6 +431,7 @@ const VinculacionEvaluar = () => {
                           <button 
                             type="button" 
                             className="btn-eliminar-adjunto"
+                            aria-label="Eliminar archivo adjunto"
                             onClick={() => {
                               if (!confirm('¿Está seguro de que desea eliminar el archivo adjunto?')) return;
                               setArchivoDictamen(null);
@@ -502,6 +503,7 @@ const VinculacionEvaluar = () => {
                     <button
                       type="button"
                       className="btn-eliminar-adjunto"
+                      aria-label="Eliminar archivo adjunto"
                       onClick={() => {
                         if (!confirm('¿Está seguro de que desea eliminar el archivo adjunto?')) return;
                         setArchivoDictamen(null);
@@ -515,7 +517,10 @@ const VinculacionEvaluar = () => {
                 ) : (
                   <div 
                     className="dropzone-upload-box"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => fileInputSubidaRef.current?.click()}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputSubidaRef.current?.click(); } }}
                     onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     onDrop={(e) => {
                       e.preventDefault();

@@ -455,12 +455,13 @@ const DetalleValidacion = ({ codigo, lista }) => {
 
           <div className="gv-tabla-scroll">
             <table className="gv-tabla gv-tabla-compacta">
+              <caption className="sr-only">Lista de verificación normativa por requisito</caption>
               <thead>
                 <tr>
-                  <th>Requisito</th>
-                  <th>Estado</th>
-                  <th>Observaciones</th>
-                  <th>Acciones</th>
+                  <th scope="col">Requisito</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Observaciones</th>
+                  <th scope="col">Acciones</th>
                 </tr>
               </thead>
               {grupos.map((grupo) => {

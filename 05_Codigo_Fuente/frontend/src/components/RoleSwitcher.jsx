@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useId } from 'react';
 import { toast } from 'react-hot-toast';
 import api from '../services/api'; // ✅ IMPORTAR EL CLIENTE AXIOS CONFIGURADO
 import '../styles/role-switcher.css';
@@ -117,6 +117,7 @@ export default function RoleSwitcher({ usuarioActual, isOpen, onClose }) {
   const [rolHovered, setRolHovered] = useState(null);
   const [cargando, setCargando] = useState(false);
   const modalRef = useRef(null);
+  const tituloId = useId();
 
   const totalPaginas = Math.ceil(ROLES_DISPONIBLES.length / ROLES_POR_PAGINA);
   
@@ -191,17 +192,18 @@ export default function RoleSwitcher({ usuarioActual, isOpen, onClose }) {
 
   return (
     <div className="role-switcher-overlay">
-      <div className="role-modal" ref={modalRef}>
+      <div className="role-modal" ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={tituloId}>
         {/* Header */}
         <div className="role-modal-header">
           <div className="header-info">
-            <h2>Modo de Acceso Global</h2>
+            <h2 id={tituloId}>Modo de Acceso Global</h2>
             <p>Selecciona un rol para simular sus funcionalidades</p>
           </div>
           <button 
             className="btn-cerrar" 
             onClick={onClose} 
             title="Cerrar"
+            aria-label="Cerrar"
             disabled={cargando}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -218,6 +220,7 @@ export default function RoleSwitcher({ usuarioActual, isOpen, onClose }) {
             className="nav-arrow left"
             onClick={irAPaginaAnterior}
             disabled={paginaActual === 0 || cargando}
+            aria-label="Página anterior"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <polyline points="15 18 9 12 15 6"/>
@@ -234,9 +237,17 @@ export default function RoleSwitcher({ usuarioActual, isOpen, onClose }) {
                   '--rol-color': rol.color,
                   '--rol-bg': rol.colorBg
                 }}
+                role="button"
+                tabIndex={0}
                 onMouseEnter={() => !cargando && setRolHovered(rol.id)}
                 onMouseLeave={() => setRolHovered(null)}
                 onClick={() => !cargando && handleSeleccionarRol(rol)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (!cargando) handleSeleccionarRol(rol);
+                  }
+                }}
               >
                 <div className="role-card-icon">{rol.icono}</div>
                 <div className="role-card-name">{rol.nombre}</div>
@@ -249,6 +260,7 @@ export default function RoleSwitcher({ usuarioActual, isOpen, onClose }) {
             className="nav-arrow right"
             onClick={irAPaginaSiguiente}
             disabled={paginaActual === totalPaginas - 1 || cargando}
+            aria-label="Página siguiente"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <polyline points="9 18 15 12 9 6"/>
@@ -280,6 +292,7 @@ export default function RoleSwitcher({ usuarioActual, isOpen, onClose }) {
                 className={`dot ${paginaActual === i ? 'active' : ''}`}
                 onClick={() => { setPaginaActual(i); setRolHovered(null); }}
                 disabled={cargando}
+                aria-label={`Ir a la página ${i + 1}`}
               />
             ))}
           </div>
