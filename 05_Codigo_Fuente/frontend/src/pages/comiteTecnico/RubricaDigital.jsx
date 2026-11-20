@@ -5,6 +5,7 @@ import { propuestaService } from '../../services/propuestaService'; // ✅ Agreg
 import PanelDocumentos from '../../components/PanelDocumentos';
 import AnalisisIA from '../../components/AnalisisIA';
 import PDFViewer from '../../components/PDFViewer';
+import SiglaVie from '../../components/SiglaVie';
 
 // =========================================================================
 // ICONOS SVG (Reemplazo de emojis para aspecto profesional)
@@ -400,7 +401,7 @@ export default function RubricaDigital() {
               onChange={(e) => setProductos(prev => ({ ...prev, horasSemanales: parseFloat(e.target.value) || 0 }))}
               className="producto-input"
             />
-            <small className="producto-help">Indique la suma total de horas semanales (VIE + VIE-Centros + REC + CONS + DOC + VIESA)</small>
+            <small className="producto-help">Indique la suma total de horas semanales (<SiglaVie /> + VIE-Centros + REC + CONS + DOC + VIESA)</small>
           </div>
           <div className="producto-info-item">
             <label className="producto-label">Mínimo de productos requeridos</label>

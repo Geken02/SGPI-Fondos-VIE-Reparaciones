@@ -4,6 +4,7 @@ import { LimitedInput } from '../components/LimitedInput';
 import { propuestaService } from '../services/propuestaService';
 import { descargarPropuestaPDF, descargarPlanRiesgoExcel, descargarPresupuestoDirectoExcel } from '../utils/exportUtils';
 import IconoCie from '../components/cie/IconoCie';
+import SiglaVie from '../components/SiglaVie';
 
 /* ──────────────────────────── utilidades ──────────────────────────── */
 const FORM_TYPES = [
@@ -11,7 +12,7 @@ const FORM_TYPES = [
     codigo: 'Form 04',
     nombre: 'Formulario de Proyecto',
     descripcion: 'Datos generales, objetivos, justificación y compromisos',
-    tipo: 'Oficial VIE',
+    tipo: 'Oficial V\u200BI\u200BE',
     route: '/dashboard/form4',
   },
   {
@@ -24,7 +25,7 @@ const FORM_TYPES = [
   {
     codigo: 'Form 06',
     nombre: 'Presupuesto Operativo Trienal',
-    descripcion: 'Desglose de partidas, justificación y calculadora VIE',
+    descripcion: 'Desglose de partidas, justificación y calculadora V\u200BI\u200BE',
     tipo: 'Financiero',
     route: '/dashboard/presupuesto',
   },
@@ -365,7 +366,7 @@ const InvestigadorFormularios = () => {
 
             <div style={{ padding: '24px' }}>
               <p style={{ fontSize: '14px', color: '#64748b', marginTop: 0, marginBottom: '20px', lineHeight: 1.5 }}>
-                Selecciona cuál de los 3 formularios oficiales de la VIE deseas comenzar a formular digitalmente:
+                Selecciona cuál de los 3 formularios oficiales de la <SiglaVie /> deseas comenzar a formular digitalmente:
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
@@ -482,7 +483,7 @@ const InvestigadorFormularios = () => {
                         <strong style={{ color: '#002855', fontSize: '15px' }}>Presupuesto Operativo Trienal</strong>
                       </div>
                       <div style={{ fontSize: '13px', color: '#64748b', marginTop: '3px' }}>
-                        Desglose financiero por partidas OG y calculadora de asistencia estudiantil (Tarifa VIE).
+                        Desglose financiero por partidas OG y calculadora de asistencia estudiantil (Tarifa <SiglaVie />).
                       </div>
                     </div>
                   </div>

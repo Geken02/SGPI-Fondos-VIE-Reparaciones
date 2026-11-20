@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminService, catalogoService } from '../../services';
 import '../../styles/asignacion-gestoras.css';
+import SiglaVie from '../../components/SiglaVie';
 
 export default function AsignacionGestoras() {
   const [gestoras, setGestoras] = useState([]);
@@ -218,19 +219,19 @@ export default function AsignacionGestoras() {
         <ol className="breadcrumbs-list">
           <li><Link to="/dashboard">Inicio</Link></li>
           <li className="breadcrumb-separator" aria-hidden="true">›</li>
-          <li aria-current="page">Asignación de Escuelas a Gestoras VIE</li>
+          <li aria-current="page">Asignación de Escuelas a Gestoras <SiglaVie /></li>
         </ol>
       </nav>
 
       <header className="asignacion-header">
-        <h1 id="titulo-principal">Asignación de Escuelas a Gestoras VIE</h1>
+        <h1 id="titulo-principal">Asignación de Escuelas a Gestoras <SiglaVie /></h1>
         <p id="subtitulo-principal">Seleccione una gestora y asigne las escuelas correspondientes.</p>
       </header>
 
       {/* Selector de Gestora */}
       <div className="card selector-card">
         <label className="form-label" htmlFor="select-gestora">
-          Seleccionar Gestora VIE: <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span><span className="sr-only"> (obligatorio)</span>
+          Seleccionar Gestora <SiglaVie />: <span aria-hidden="true" style={{ color: '#dc2626' }}>*</span><span className="sr-only"> (obligatorio)</span>
         </label>
         <select
           id="select-gestora"
@@ -249,7 +250,7 @@ export default function AsignacionGestoras() {
         >
           <option value="">
             {gestoras.length === 0
-              ? 'No hay gestoras VIE registradas en el sistema'
+              ? 'No hay gestoras V\u200BI\u200BE registradas en el sistema'
               : 'Seleccione una gestora...'}
           </option>
           {gestoras.map(gestora => (

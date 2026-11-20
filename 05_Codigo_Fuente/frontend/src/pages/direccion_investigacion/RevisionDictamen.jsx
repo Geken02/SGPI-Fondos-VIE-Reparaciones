@@ -7,6 +7,7 @@ import { useCarga } from '../../components/cie/useCarga';
 import {
   Icono, EstadoTramiteBadge, DecisionBadge, EncabezadoPagina, VolverALaBandeja, Cargando, ErrorCarga,
 } from '../../components/direccion/DireccionUi';
+import SiglaVie from '../../components/SiglaVie';
 
 const TABS = ['Resumen', 'Dictamen del CIE', 'Documentos', 'Historial'];
 
@@ -86,7 +87,7 @@ const RevisionDictamen = () => {
               </div>
 
               <div className="dir-subcard">
-                <h3 className="gv-subcard-titulo">Rúbrica VIE (resumen)</h3>
+                <h3 className="gv-subcard-titulo">Rúbrica <SiglaVie /> (resumen)</h3>
                 <div className="cie-criterios">
                   <div className="cie-criterios-head"><span>Criterio</span><span>Peso · Puntaje</span></div>
                   {d.criterios.length === 0 ? (

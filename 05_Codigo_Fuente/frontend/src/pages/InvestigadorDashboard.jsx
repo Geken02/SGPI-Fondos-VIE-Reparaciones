@@ -6,6 +6,7 @@ import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from '../components/LimitedInput';
 import IconoCie from '../components/cie/IconoCie';
 import { claseBadgeEstado, etiquetaEstado } from '../data/estadosPropuesta';
+import SiglaVie from '../components/SiglaVie';
 
 const InvestigadorDashboard = () => {
   const navigate = useNavigate();
@@ -483,7 +484,7 @@ const InvestigadorDashboard = () => {
                   </div>
                   <h3 className="empty-title">No cuentas con propuestas registradas actualmente</h3>
                   <p className="empty-description">
-                    Como investigador nuevo, tus proyectos se encuentran en 0. Haz clic en el botón para crear tu primera propuesta para los fondos VIE.
+                    Como investigador nuevo, tus proyectos se encuentran en 0. Haz clic en el botón para crear tu primera propuesta para los fondos <SiglaVie />.
                   </p>
                   <div className="empty-actions">
                     <button 
@@ -503,7 +504,7 @@ const InvestigadorDashboard = () => {
           <div className="quick-access-column">
             <div className="column-header">
               <h2 className="column-title">Avisos y Accesos Rápido</h2>
-              <p className="column-subtitle">Herramientas frecuentes de la VIE.</p>
+              <p className="column-subtitle">Herramientas frecuentes de la <SiglaVie />.</p>
             </div>
 
             <div className="quick-access-cards">
@@ -533,8 +534,8 @@ const InvestigadorDashboard = () => {
                 role="button"
                 tabIndex={0}
                 aria-label="Plantillas de Presupuesto. Descargar formato oficial F02. Haga clic o presione Enter para descargar"
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos V I E)...'); } }}
-                onClick={() => alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos V I E)...')}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos V\u200BI\u200BE)...'); } }}
+                onClick={() => alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos V\u200BI\u200BE)...')}
               >
                 <div className="quick-card-icon" aria-hidden="true"><IconoCie nombre="fileText" tamano={24} /></div>
                 <div className="quick-card-content">
@@ -563,7 +564,7 @@ const InvestigadorDashboard = () => {
             {/* Enlace de Contacto */}
             <div className="help-link-container">
               <Link to="/dashboard/ayuda" className="help-link" aria-label="¿Necesitas ayuda? Contactar a la Vicerrectoría de Investigación y Extensión">
-                ¿Necesitas ayuda? Contactar a la VIE →
+                ¿Necesitas ayuda? Contactar a la <SiglaVie /> →
               </Link>
             </div>
           </div>

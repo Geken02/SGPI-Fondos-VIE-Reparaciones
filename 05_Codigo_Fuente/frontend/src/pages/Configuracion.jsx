@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import SiglaVie from '../components/SiglaVie';
 
 const Configuracion = () => {
   // Estados de switches de notificación con persistencia
@@ -176,7 +177,7 @@ const Configuracion = () => {
           <div className="config-toggle-item">
             <div className="toggle-info">
               <div className="toggle-title">Apertura de Convocatorias</div>
-              <div className="toggle-description">Aviso inmediato al publicarse nuevas bases oficiales de fondos VIE.</div>
+              <div className="toggle-description">Aviso inmediato al publicarse nuevas bases oficiales de fondos <SiglaVie />.</div>
             </div>
             <label className="switch">
               <input 

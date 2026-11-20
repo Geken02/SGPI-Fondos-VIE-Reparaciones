@@ -3,7 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { adminService } from '../../services/adminService';
 import '../../styles/AdminPanel.css';
+import SiglaVie from '../../components/SiglaVie';
 import RoleSwitcher from '../../components/RoleSwitcher'; 
+
+// Corrige la lectura de la sigla institucional V.I.E. en textos que llegan del
+// backend: inserta separadores invisibles (U+200B) para que el lector de pantalla
+// deletree "V I E" en lugar de leerla como "viernes".
+const legible = (texto) => String(texto ?? '').replace(/\bVIE\b/g, 'V\u200BI\u200BE');
 
 export default function AdminPanel() {
   const navigate = useNavigate();
@@ -299,7 +305,7 @@ export default function AdminPanel() {
             </svg>
           </div>
           <h3>Asignación de Escuelas</h3>
-          <p>Asignar escuelas específicas a cada Persona Gestora de la VIE.</p>
+          <p>Asignar escuelas específicas a cada Persona Gestora de la <SiglaVie />.</p>
           <div className="btn-access" aria-hidden="true">Acceder →</div>
         </Link>
       </section>
@@ -315,10 +321,10 @@ export default function AdminPanel() {
                 className="progress-item" 
                 role="listitem"
                 tabIndex={0}
-                aria-label={`${item.estado}: ${item.cantidad} propuestas, ${getPorcentaje(item.cantidad)} por ciento del total`}
+                aria-label={`${legible(item.estado)}: ${item.cantidad} propuestas, ${getPorcentaje(item.cantidad)} por ciento del total`}
               >
                 <div className="progress-header">
-                  <span className="progress-label">{item.estado}</span>
+                  <span className="progress-label">{legible(item.estado)}</span>
                   <span className="progress-stats">{getPorcentaje(item.cantidad)}% ({item.cantidad})</span>
                 </div>
                 <div 

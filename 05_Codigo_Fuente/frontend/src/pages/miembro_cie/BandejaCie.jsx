@@ -6,6 +6,7 @@ import { cieService } from '../../services/cieService';
 import { ESTADOS_BANDEJA, formatearFecha } from '../../components/cie/cieConstantes';
 import { useCarga } from '../../components/cie/useCarga';
 import { Icono, EstadoBadge, EncabezadoPagina, Cargando, ErrorCarga } from '../../components/cie/CieUi';
+import SiglaVie from '../../components/SiglaVie';
 
 const POR_PAGINA = 8;
 
@@ -49,7 +50,7 @@ const BandejaCie = () => {
   return (
     <>
       <EncabezadoPagina titulo="Expedientes para resolución"
-        subtitulo="Revisa los expedientes consolidados, evalúalos con la rúbrica VIE y emite la resolución del CIE." />
+        subtitulo={<>Revisa los expedientes consolidados, evalúalos con la rúbrica <SiglaVie /> y emite la resolución del CIE.</>} />
 
       {error && <ErrorCarga error={error} alReintentar={recargar} />}
       {cargando && <Cargando texto="Cargando expedientes..." />}

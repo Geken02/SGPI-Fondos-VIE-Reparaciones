@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Icono from '../../components/cie/IconoCie';
 import { EncabezadoPagina } from '../../components/cie/CieUi';
+import SiglaVie from '../../components/SiglaVie';
 import { preferenciasGestoraService } from '../../services/preferenciasGestoraService';
 
 const PREDETERMINADAS = { notificaciones: true, resumenCorreo: false, densidad: 'normal' };
@@ -75,14 +76,14 @@ export default function ConfiguracionGestora() {
   };
 
   return <div className="gestora-configuracion">
-    <EncabezadoPagina titulo="Configuración" subtitulo="Administra las preferencias personales de uso del panel de la Gestora VIE."/>
+    <EncabezadoPagina titulo="Configuración" subtitulo={<>Administra las preferencias personales de uso del panel de la Gestora <SiglaVie />.</>}/>
     {cargando ? <div className="gv-card" role="status">Cargando preferencias...</div> : <form onSubmit={guardar}>
       <section className="gv-card gestora-config-card">
         <div className="gestora-config-titulo"><span className="gestora-config-icono" aria-hidden="true"><Icono nombre="usuario" tamano={20}/></span><div><h2>Perfil de usuario</h2><p>Información de la sesión actual.</p></div></div>
         <div className="gestora-campos">
           <label>Nombre completo<input value={[usuario?.nombre, usuario?.apellido1, usuario?.apellido2].filter(Boolean).join(' ') || 'No disponible'} readOnly aria-label="Nombre completo del usuario"/></label>
           <label>Correo institucional<input value={usuario?.correo || 'No disponible'} readOnly aria-label="Correo institucional del usuario"/></label>
-          <label>Rol asignado<input value="Persona Gestora VIE" readOnly aria-label="Rol asignado al usuario"/></label>
+          <label>Rol asignado<input value={'Persona Gestora V\u200BI\u200BE'} readOnly aria-label="Rol asignado al usuario"/></label>
         </div>
         <p className="gestora-ayuda-campo">Los datos del perfil son de solo lectura y provienen de la cuenta autenticada.</p>
       </section>
@@ -95,7 +96,7 @@ export default function ConfiguracionGestora() {
         </label>
       </section>
       <section className="gv-card gestora-config-card">
-        <div className="gestora-config-titulo"><span className="gestora-config-icono" aria-hidden="true"><Icono nombre="sliders" tamano={20}/></span><div><h2>Presentación</h2><p>Ajusta la densidad visual de las listas del módulo Gestora VIE.</p></div></div>
+        <div className="gestora-config-titulo"><span className="gestora-config-icono" aria-hidden="true"><Icono nombre="sliders" tamano={20}/></span><div><h2>Presentación</h2><p>Ajusta la densidad visual de las listas del módulo Gestora <SiglaVie />.</p></div></div>
         <label className="gestora-campo-individual">Espaciado de las tablas<select value={preferencias.densidad} onChange={(e) => cambiar('densidad', e.target.value)} aria-label="Seleccionar espaciado y densidad de las tablas"><option value="compacta">Compacto</option><option value="normal">Normal</option><option value="amplia">Amplio</option></select></label>
       </section>
       {mensaje && <div className="gestora-mensaje-guardado" role="status"><Icono nombre="checkCircle" tamano={17} aria-hidden="true"/>{mensaje}</div>}

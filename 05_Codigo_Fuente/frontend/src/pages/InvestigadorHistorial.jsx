@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { propuestaService } from '../services/propuestaService';
 import IconoCie from '../components/cie/IconoCie';
+import SiglaVie from '../components/SiglaVie';
 
 const InvestigadorHistorial = () => {
   const [proyectosCerrados, setProyectosCerrados] = useState([]);
@@ -163,7 +164,7 @@ const InvestigadorHistorial = () => {
               No tienes proyectos cerrados o finiquitados
             </h3>
             <p style={{ color: '#64748b', fontSize: '14px', maxWidth: '480px', margin: '0 auto', lineHeight: 1.5 }}>
-              Los expedientes que completen todo el ciclo de investigación, cuenten con informe final aprobado y acta de finiquito oficial de la VIE se archivarán automáticamente en esta sección.
+              Los expedientes que completen todo el ciclo de investigación, cuenten con informe final aprobado y acta de finiquito oficial de la <SiglaVie /> se archivarán automáticamente en esta sección.
             </p>
           </div>
         )}
