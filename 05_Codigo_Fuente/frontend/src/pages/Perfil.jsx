@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
+import { adminService } from '../services/adminService';
 
 const Perfil = () => {
   const { usuario, rolActivo, formatearNombreRol, cargarPerfil } = useAuth();
