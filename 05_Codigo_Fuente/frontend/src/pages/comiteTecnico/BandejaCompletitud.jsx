@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { comiteTecnicoService } from '../../services/comiteTecnicoService';
 import SubsanacionModal from '../../components/SubsanacionModal';
 import AsignarEvaluadorModal from '../../components/AsignarEvaluadorModal';
@@ -11,9 +11,23 @@ export default function BandejaDeCompletitud() {
   const [modalSubsanacion, setModalSubsanacion] = useState({ abierto: false, propuesta: null });
   const [modalAsignacion, setModalAsignacion] = useState({ abierto: false, propuesta: null });
 
+  // ✅ MEJORA: Referencias para devolver el foco al botón correcto al cerrar modales
+  const btnSubsanarRef = useRef(null);
+  const btnAsignarRef = useRef(null);
+
   useEffect(() => {
     cargarPropuestas();
   }, []);
+
+  // ✅ MEJORA: Devolver el foco al botón que abrió el modal cuando este se cierra
+  useEffect(() => {
+    if (!modalSubsanacion.abierto && btnSubsanarRef.current) {
+      btnSubsanarRef.current.focus();
+    }
+    if (!modalAsignacion.abierto && btnAsignarRef.current) {
+      btnAsignarRef.current.focus();
+    }
+  }, [modalSubsanacion.abierto, modalAsignacion.abierto]);
 
   const cargarPropuestas = async () => {
     try {
@@ -50,10 +64,11 @@ export default function BandejaDeCompletitud() {
   };
 
   const handleAsignarEvaluador = async () => {
+    setModalAsignacion({ abierto: false, propuesta: null });
     cargarPropuestas();
   };
 
-  // Iconos reutilizables para mantener el código limpio
+  // Iconos reutilizables (ya tenían aria-hidden="true", lo cual es correcto)
   const IconoCheck = () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polyline points="20 6 9 17 4 12" />
@@ -87,24 +102,27 @@ export default function BandejaDeCompletitud() {
   return (
     <div className="bandeja-container">
       <div className="bandeja-header">
-        <h1 className="bandeja-title">Bandeja de Completitud</h1>
-        <p className="bandeja-subtitle">
+        <h1 className="bandeja-title" id="titulo-bandeja">Bandeja de Completitud</h1>
+        <p className="bandeja-subtitle" id="subtitulo-bandeja">
           Revisión inicial de propuestas asignadas al Comité Técnico. Verifique que toda la documentación requerida esté presente.
         </p>
       </div>
 
-      <div className="stats-grid">
-        <div className="stat-card" tabIndex={0} role="group" aria-label={`Propuestas recibidas: ${estadisticas.total}`}>
+      {/* ✅ MEJORA: Eliminamos tabIndex={0} de las tarjetas estadísticas. 
+          No son interactivas, y forzar el foco en ellas confunde a los usuarios de teclado. 
+          El lector de pantalla las leerá naturalmente en el flujo del documento. */}
+      <div className="stats-grid" role="region" aria-labelledby="titulo-bandeja">
+        <div className="stat-card" role="group" aria-label={`Total de propuestas recibidas: ${estadisticas.total}`}>
           <div className="stat-value">{estadisticas.total}</div>
           <div className="stat-label">Propuestas Recibidas</div>
         </div>
 
-        <div className="stat-card warning" tabIndex={0} role="group" aria-label={`Requieren subsanación: ${estadisticas.incompletas}`}>
+        <div className="stat-card warning" role="group" aria-label={`Propuestas que requieren subsanación: ${estadisticas.incompletas}`}>
           <div className="stat-value">{estadisticas.incompletas}</div>
           <div className="stat-label">Requieren Subsanación</div>
         </div>
 
-        <div className="stat-card success" tabIndex={0} role="group" aria-label={`Listas para evaluar: ${estadisticas.completas}`}>
+        <div className="stat-card success" role="group" aria-label={`Propuestas listas para evaluar: ${estadisticas.completas}`}>
           <div className="stat-value">{estadisticas.completas}</div>
           <div className="stat-label">Listas para Evaluar</div>
         </div>
@@ -112,17 +130,20 @@ export default function BandejaDeCompletitud() {
 
       <div className="tabla-container">
         {cargando ? (
-          <div className="loading-state">
-            <div className="spinner"></div>
-            <p role="status">Cargando propuestas...</p>
+          // ✅ MEJORA: aria-busy="true" indica al lector que el contenido está cambiando
+          <div className="loading-state" role="status" aria-live="polite" aria-busy="true">
+            <div className="spinner" aria-hidden="true"></div>
+            <p>Cargando propuestas, por favor espere...</p>
           </div>
         ) : propuestas.length === 0 ? (
-          <div className="empty-state">
-            <p>No hay propuestas pendientes de revisión</p>
+          <div className="empty-state" role="status">
+            <p>No hay propuestas pendientes de revisión en este momento.</p>
           </div>
         ) : (
-          <table className="tabla-bandeja">
-            <caption className="sr-only">Propuestas recibidas y su estado de completitud documental</caption>
+          <table className="tabla-bandeja" aria-describedby="subtitulo-bandeja">
+            <caption className="sr-only">
+              Tabla de propuestas recibidas, mostrando su código, título, investigador, escuela, estado de la documentación y acciones disponibles.
+            </caption>
             <thead>
               <tr>
                 <th scope="col">ID Propuesta</th>
@@ -131,97 +152,105 @@ export default function BandejaDeCompletitud() {
                 <th scope="col">Escuela</th>
                 <th scope="col">Documentación</th>
                 <th scope="col">Estado</th>
-                <th scope="col">Acciones</th>
+                <th scope="col"><span className="sr-only">Acciones disponibles</span></th>
               </tr>
             </thead>
             <tbody>
-              {propuestas.map((propuesta) => (
-                <tr key={propuesta.propuestaId}>
-                  <td>
-                    <span className="codigo-badge">
-                      {propuesta.codigoPropuesta}
-                    </span>
-                  </td>
-                  <td className="titulo-celda">
-                    {propuesta.titulo}
-                  </td>
-                  <td>{propuesta.investigador}</td>
-                  <td>{propuesta.escuela}</td>
-                  <td>
-                    <div className="doc-list" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      {/* Documentos Faltantes */}
-                      {propuesta.documentosFaltantes?.includes(1) && (
-                        <span className="doc-falta" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <IconoCross /> Form-04
-                        </span>
-                      )}
-                      {propuesta.documentosFaltantes?.includes(2) && (
-                        <span className="doc-falta" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <IconoCross /> Form-05
-                        </span>
-                      )}
-                      {propuesta.documentosFaltantes?.includes(3) && (
-                        <span className="doc-falta" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <IconoCross /> Form-06
-                        </span>
-                      )}
-                      {propuesta.documentosFaltantes?.includes(5) && (
-                        <span className="doc-falta" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <IconoCross /> Dictamen de Vinculación
-                        </span>
-                      )}
-                      
-                      {/* Documentos Presentes */}
-                      {!propuesta.documentosFaltantes?.includes(1) && (
-                        <span className="doc-ok" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <IconoCheck /> Form-04
-                        </span>
-                      )}
-                      {!propuesta.documentosFaltantes?.includes(2) && (
-                        <span className="doc-ok" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <IconoCheck /> Form-05
-                        </span>
-                      )}
-                      {!propuesta.documentosFaltantes?.includes(3) && (
-                        <span className="doc-ok" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <IconoCheck /> Form-06
-                        </span>
-                      )}
-                      {!propuesta.documentosFaltantes?.includes(5) && (
-                        <span className="doc-ok" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <IconoCheck /> Dictamen de Vinculación
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`estado-badge ${propuesta.esCompleta ? 'completa' : 'incompleta'}`}>
-                      {propuesta.estado}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="acciones-cell">
-                      {propuesta.esCompleta ? (
-                        <button
-                          onClick={() => setModalAsignacion({ abierto: true, propuesta })}
-                          className="btn-asignar"
-                          style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
-                        >
-                          <IconoUsuarios /> Asignar
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => setModalSubsanacion({ abierto: true, propuesta })}
-                          className="btn-subsanar"
-                          style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
-                        >
-                          <IconoAdvertencia /> Subsanar
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {propuestas.map((propuesta) => {
+                const codigo = propuesta.codigoPropuesta || `Propuesta ${propuesta.propuestaId}`;
+                return (
+                  <tr key={propuesta.propuestaId}>
+                    <td>
+                      <span className="codigo-badge">
+                        {codigo}
+                      </span>
+                    </td>
+                    <td className="titulo-celda">
+                      {propuesta.titulo}
+                    </td>
+                    <td>{propuesta.investigador}</td>
+                    <td>{propuesta.escuela}</td>
+                    <td>
+                      <div className="doc-list" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }} role="list" aria-label={`Estado de documentos para ${codigo}`}>
+                        {/* ✅ MEJORA: aria-label descriptivo para cada estado de documento */}
+                        {propuesta.documentosFaltantes?.includes(1) && (
+                          <span className="doc-falta" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} role="listitem" aria-label="Formulario 04 faltante">
+                            <IconoCross /> Form-04
+                          </span>
+                        )}
+                        {propuesta.documentosFaltantes?.includes(2) && (
+                          <span className="doc-falta" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} role="listitem" aria-label="Formulario 05 faltante">
+                            <IconoCross /> Form-05
+                          </span>
+                        )}
+                        {propuesta.documentosFaltantes?.includes(3) && (
+                          <span className="doc-falta" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} role="listitem" aria-label="Formulario 06 faltante">
+                            <IconoCross /> Form-06
+                          </span>
+                        )}
+                        {propuesta.documentosFaltantes?.includes(5) && (
+                          <span className="doc-falta" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} role="listitem" aria-label="Dictamen de Vinculación faltante">
+                            <IconoCross /> Dictamen de Vinculación
+                          </span>
+                        )}
+                        
+                        {!propuesta.documentosFaltantes?.includes(1) && (
+                          <span className="doc-ok" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} role="listitem" aria-label="Formulario 04 presente">
+                            <IconoCheck /> Form-04
+                          </span>
+                        )}
+                        {!propuesta.documentosFaltantes?.includes(2) && (
+                          <span className="doc-ok" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} role="listitem" aria-label="Formulario 05 presente">
+                            <IconoCheck /> Form-05
+                          </span>
+                        )}
+                        {!propuesta.documentosFaltantes?.includes(3) && (
+                          <span className="doc-ok" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} role="listitem" aria-label="Formulario 06 presente">
+                            <IconoCheck /> Form-06
+                          </span>
+                        )}
+                        {!propuesta.documentosFaltantes?.includes(5) && (
+                          <span className="doc-ok" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} role="listitem" aria-label="Dictamen de Vinculación presente">
+                            <IconoCheck /> Dictamen de Vinculación
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`estado-badge ${propuesta.esCompleta ? 'completa' : 'incompleta'}`}>
+                        {propuesta.estado}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="acciones-cell">
+                        {propuesta.esCompleta ? (
+                          <button
+                            ref={btnAsignarRef}
+                            onClick={() => setModalAsignacion({ abierto: true, propuesta })}
+                            className="btn-asignar"
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
+                            aria-haspopup="dialog"
+                            aria-label={`Asignar evaluador a la propuesta ${codigo}`}
+                          >
+                            <IconoUsuarios /> Asignar
+                          </button>
+                        ) : (
+                          <button
+                            ref={btnSubsanarRef}
+                            onClick={() => setModalSubsanacion({ abierto: true, propuesta })}
+                            className="btn-subsanar"
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
+                            aria-haspopup="dialog"
+                            aria-label={`Solicitar subsanación para la propuesta ${codigo}`}
+                          >
+                            <IconoAdvertencia /> Subsanar
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
