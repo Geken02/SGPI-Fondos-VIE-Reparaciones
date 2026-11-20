@@ -61,7 +61,7 @@ const Perfil = () => {
     const cargarFoto = async () => {
       if (!usuario?.usuarioId) return;
       try {
-        const data = await authService.obtenerFotoPerfil(usuario.usuarioId);
+        const data = await adminService.obtenerFotoPerfil(usuario.usuarioId);
         if (data?.tieneFoto && data?.urlPublica) {
           setUrlFotoPerfil(data.urlPublica);
         } else {
