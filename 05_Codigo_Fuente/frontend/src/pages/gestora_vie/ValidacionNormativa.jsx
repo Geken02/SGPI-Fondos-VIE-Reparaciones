@@ -62,7 +62,7 @@ const Donut = ({ porcentaje }) => {
   const circunferencia = 2 * Math.PI * radio;
   const trazo = (porcentaje / 100) * circunferencia;
   return (
-    <div className="gv-donut" role="img" aria-label={`Gráfico de cumplimiento general: ${porcentaje}%`}>
+    <div className="gv-donut" role="img" tabIndex={0} aria-label={`Gráfico de cumplimiento general: ${porcentaje}%`}>
       <svg viewBox="0 0 120 120" width="130" height="130" aria-hidden="true">
         <circle cx="60" cy="60" r={radio} fill="none" stroke="#e1e8f5" strokeWidth="12" />
         {porcentaje > 0 && (

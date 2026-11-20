@@ -116,7 +116,7 @@ export default function AdminPanel() {
     <main className="admin-container">
       <header className="admin-header">
         <h1 id="titulo-panel">Panel de Administrador</h1>
-        <p>Sistema de Gestión de Propuestas de Investigación – Vicerrectoría de Investigación y Extensión (VIE)</p>
+        <p>Sistema de Gestión de Propuestas de Investigación – Vicerrectoría de Investigación y Extensión <span aria-hidden="true">(VIE)</span><span className="sr-only">(V I E)</span></p>
       </header>
 
       {/* TARJETAS DE ESTADÍSTICAS */}
@@ -289,7 +289,7 @@ export default function AdminPanel() {
           to="/dashboard/admin/gestoras" 
           className="quick-card"
           tabIndex={0}
-          aria-label="Acceder a Asignación de Escuelas: asignar escuelas específicas a cada Persona Gestora de la VIE"
+          aria-label="Acceder a Asignación de Escuelas: asignar escuelas específicas a cada Persona Gestora de la V I E"
         >
           <div className="quick-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" focusable="false">
