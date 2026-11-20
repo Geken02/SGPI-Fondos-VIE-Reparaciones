@@ -61,7 +61,7 @@ cambiarEstadoUsuario: (id, data) => api.put(`/api/admin/usuarios/${id}/estado`, 
     const formData = new FormData();
     formData.append('archivo', archivo);
 
-    const response = await api.post(`/api/admin/usuarios/${usuarioId}/foto-perfil`, formData, {
+    const response = await api.post(`/api/admin/${usuarioId}/foto-perfil`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
