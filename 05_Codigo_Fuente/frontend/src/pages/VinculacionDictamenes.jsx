@@ -110,7 +110,7 @@ const VinculacionDictamenes = () => {
 
         {/* 3 KPIs dinámicos */}
         <div className="kpi-cards-grid">
-          <div className="kpi-card">
+          <div className="kpi-card" tabIndex={0} role="group" aria-label={`Dictámenes emitidos: ${totalDictamenes}`}>
             <div className="kpi-card-label">DICTÁMENES EMITIDOS</div>
             <div className="kpi-stat-row">
               <span className="kpi-big-number">{totalDictamenes}</span>
@@ -118,7 +118,7 @@ const VinculacionDictamenes = () => {
             </div>
           </div>
 
-          <div className="kpi-card">
+          <div className="kpi-card" tabIndex={0} role="group" aria-label={`Dictámenes registrados: ${recomendados}`}>
             <div className="kpi-card-label">DICTÁMENES REGISTRADOS</div>
             <div className="kpi-stat-row">
               <span className="kpi-big-number">{recomendados}</span>
@@ -126,7 +126,7 @@ const VinculacionDictamenes = () => {
             </div>
           </div>
 
-          <div className="kpi-card">
+          <div className="kpi-card" tabIndex={0} role="group" aria-label={`No recomendados: ${noRecomendados}`}>
             <div className="kpi-card-label">NO RECOMENDADOS</div>
             <div className="kpi-stat-row">
               <span className="kpi-big-number">{noRecomendados}</span>

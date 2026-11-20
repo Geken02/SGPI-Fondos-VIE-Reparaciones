@@ -479,7 +479,7 @@ const InvestigadorPropuestas = () => {
               maxLength={100}
               showCounter={false}
               className="filter-search-input"
-              aria-label="Buscar por código FVIE o título del proyecto"
+              aria-label="Buscar por código F V I E o título del proyecto"
             />
           </div>
 

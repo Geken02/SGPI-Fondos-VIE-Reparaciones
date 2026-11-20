@@ -70,7 +70,7 @@ export default function BandejaEvaluacion() {
 
       {/* Estadísticas */}
       <div className="stats-row">
-        <div className="stat-card">
+        <div className="stat-card" tabIndex={0} role="group" aria-label={`Propuestas asignadas: ${datos.total}`}>
           <div className="stat-icon-wrapper">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -81,7 +81,7 @@ export default function BandejaEvaluacion() {
           <div className="stat-label">Propuestas Asignadas</div>
         </div>
 
-        <div className="stat-card stat-warning">
+        <div className="stat-card stat-warning" tabIndex={0} role="group" aria-label={`Pendientes de evaluar: ${datos.estadisticas.pendientes}`}>
           <div className="stat-icon-wrapper icon-amber">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <circle cx="12" cy="12" r="10"/>
@@ -93,7 +93,7 @@ export default function BandejaEvaluacion() {
           <div className="stat-label">Pendientes de Evaluar</div>
         </div>
 
-        <div className="stat-card stat-success">
+        <div className="stat-card stat-success" tabIndex={0} role="group" aria-label={`Evaluaciones completadas: ${datos.estadisticas.completadas}`}>
           <div className="stat-icon-wrapper icon-green">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>

@@ -40,7 +40,7 @@ const menus = {
 };
 
 const labels = { 
-  gestora: 'Gestora VIE', 
+  gestora: 'Gestora V I E', 
   cie: 'Comité de Evaluación Interna', 
   direccion: 'Dirección de Investigación' 
 };

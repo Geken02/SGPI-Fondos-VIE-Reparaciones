@@ -200,7 +200,12 @@ const InvestigadorDashboard = () => {
         {/* Fila de Tarjetas KPI / Métricas */}
         <div className="kpi-cards-grid">
           {/* Tarjeta 1: ESTADO DE PROPUESTAS (Gráfico Donut) */}
-          <div className="kpi-card">
+          <div
+            className="kpi-card"
+            tabIndex={0}
+            role="group"
+            aria-label={`Estado de propuestas. Total: ${totalPropuestas}. En proceso: ${enProceso}, aprobadas: ${aprobadas}, rechazadas: ${rechazadas}, canceladas: ${canceladas}.`}
+          >
             <div className="kpi-card-label">ESTADO DE PROPUESTAS</div>
             <div className="kpi-donut-layout">
               {/* Gráfico Donut SVG */}
@@ -291,7 +296,12 @@ const InvestigadorDashboard = () => {
           </div>
 
           {/* Tarjeta 2: FONDOS ASIGNADOS 2026 */}
-          <div className="kpi-card">
+          <div
+            className="kpi-card"
+            tabIndex={0}
+            role="group"
+            aria-label={`Fondos asignados 2026: ${fondosAsignados}. Porcentaje ejecutado: ${porcentajeEjecutado} por ciento.`}
+          >
             <div className="kpi-card-label">FONDOS ASIGNADOS 2026</div>
             <div className="kpi-big-number">{fondosAsignados}</div>
             <div className="kpi-progress-section">
@@ -308,7 +318,12 @@ const InvestigadorDashboard = () => {
           </div>
 
           {/* Tarjeta 3: DICTÁMENES EMITIDOS (CIE) */}
-          <div className="kpi-card">
+          <div
+            className="kpi-card"
+            tabIndex={0}
+            role="group"
+            aria-label={`Dictámenes emitidos por el C I E. Total: ${dictamenesCie}. Favorables: ${dictamenesFavorables}, con modificaciones: ${dictamenesConMod}, rechazados: ${dictamenesRechazados}.`}
+          >
             <div className="kpi-card-label">DICTÁMENES EMITIDOS (CIE)</div>
             <div className="kpi-cie-layout">
               <div className="cie-big-number">{dictamenesCie}</div>
@@ -518,8 +533,8 @@ const InvestigadorDashboard = () => {
                 role="button"
                 tabIndex={0}
                 aria-label="Plantillas de Presupuesto. Descargar formato oficial F02. Haga clic o presione Enter para descargar"
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos VIE)...'); } }}
-                onClick={() => alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos VIE)...')}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos V I E)...'); } }}
+                onClick={() => alert('Descargando plantilla oficial de Presupuesto (Formato F02 - Fondos V I E)...')}
               >
                 <div className="quick-card-icon" aria-hidden="true"><IconoCie nombre="fileText" tamano={24} /></div>
                 <div className="quick-card-content">
@@ -547,7 +562,7 @@ const InvestigadorDashboard = () => {
 
             {/* Enlace de Contacto */}
             <div className="help-link-container">
-              <Link to="/dashboard/ayuda" className="help-link">
+              <Link to="/dashboard/ayuda" className="help-link" aria-label="¿Necesitas ayuda? Contactar a la Vicerrectoría de Investigación y Extensión">
                 ¿Necesitas ayuda? Contactar a la VIE →
               </Link>
             </div>

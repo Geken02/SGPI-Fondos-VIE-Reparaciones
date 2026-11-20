@@ -94,17 +94,17 @@ export default function BandejaDeCompletitud() {
       </div>
 
       <div className="stats-grid">
-        <div className="stat-card">
+        <div className="stat-card" tabIndex={0} role="group" aria-label={`Propuestas recibidas: ${estadisticas.total}`}>
           <div className="stat-value">{estadisticas.total}</div>
           <div className="stat-label">Propuestas Recibidas</div>
         </div>
 
-        <div className="stat-card warning">
+        <div className="stat-card warning" tabIndex={0} role="group" aria-label={`Requieren subsanación: ${estadisticas.incompletas}`}>
           <div className="stat-value">{estadisticas.incompletas}</div>
           <div className="stat-label">Requieren Subsanación</div>
         </div>
 
-        <div className="stat-card success">
+        <div className="stat-card success" tabIndex={0} role="group" aria-label={`Listas para evaluar: ${estadisticas.completas}`}>
           <div className="stat-value">{estadisticas.completas}</div>
           <div className="stat-label">Listas para Evaluar</div>
         </div>
