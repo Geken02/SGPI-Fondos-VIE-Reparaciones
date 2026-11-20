@@ -11,6 +11,7 @@ export default function BandejaDeCompletitud() {
   const [modalSubsanacion, setModalSubsanacion] = useState({ abierto: false, propuesta: null });
   const [modalAsignacion, setModalAsignacion] = useState({ abierto: false, propuesta: null });
 
+  // Referencias para devolver el foco al botón correcto al cerrar modales
   const btnSubsanarRef = useRef(null);
   const btnAsignarRef = useRef(null);
 
@@ -18,6 +19,7 @@ export default function BandejaDeCompletitud() {
     cargarPropuestas();
   }, []);
 
+  // Devolver el foco al botón que abrió el modal cuando este se cierra
   useEffect(() => {
     if (!modalSubsanacion.abierto && btnSubsanarRef.current) {
       btnSubsanarRef.current.focus();
@@ -34,6 +36,7 @@ export default function BandejaDeCompletitud() {
       const data = response.data;
       const listaPropuestas = Array.isArray(data) ? data : (data.propuestas || []);
       const stats = data.estadisticas || { total: 0, completas: 0, incompletas: 0 };
+      
       setPropuestas(listaPropuestas);
       setEstadisticas(stats);
     } catch (error) {
@@ -95,7 +98,7 @@ export default function BandejaDeCompletitud() {
     </svg>
   );
 
-  // ✅ Helper: construye la lista de documentos sin duplicar texto para el lector
+  // Helper limpio: el lector dirá "Form-04, presente" o "Form-04, faltante"
   const renderizarDocumento = (nombre, estaFaltando) => (
     <span
       className={estaFaltando ? 'doc-falta' : 'doc-ok'}
@@ -103,7 +106,6 @@ export default function BandejaDeCompletitud() {
     >
       {estaFaltando ? <IconoCross /> : <IconoCheck />}
       {nombre}
-      {/* ✅ Solo el estado va oculto, el nombre se lee una sola vez desde el texto visible */}
       <span className="sr-only">: {estaFaltando ? 'faltante' : 'presente'}</span>
     </span>
   );
@@ -111,24 +113,41 @@ export default function BandejaDeCompletitud() {
   return (
     <div className="bandeja-container">
       <div className="bandeja-header">
-        <h1 className="bandeja-title">Bandeja de Completitud</h1>
+        <h1 className="bandeja-title" id="titulo-bandeja">Bandeja de Completitud</h1>
         <p className="bandeja-subtitle">
           Revisión inicial de propuestas asignadas al Comité Técnico. Verifique que toda la documentación requerida esté presente.
         </p>
       </div>
 
-      {/* ✅ FIX: Las stat-cards ya NO tienen aria-label duplicado.
-          El lector lee el contenido natural: "5, Propuestas Recibidas" */}
-      <div className="stats-grid">
-        <div className="stat-card">
+      {/* ✅ RESTAURADO: tabIndex={0} permite al usuario de teclado tabular (desplazarse) 
+          hacia cada tarjeta para que el lector la anuncie individualmente. */}
+      <div className="stats-grid" role="region" aria-labelledby="titulo-bandeja">
+        <div 
+          className="stat-card" 
+          tabIndex={0} 
+          role="group" 
+          aria-label={`Propuestas recibidas: ${estadisticas.total}`}
+        >
           <div className="stat-value">{estadisticas.total}</div>
           <div className="stat-label">Propuestas Recibidas</div>
         </div>
-        <div className="stat-card warning">
+
+        <div 
+          className="stat-card warning" 
+          tabIndex={0} 
+          role="group" 
+          aria-label={`Requieren subsanación: ${estadisticas.incompletas}`}
+        >
           <div className="stat-value">{estadisticas.incompletas}</div>
           <div className="stat-label">Requieren Subsanación</div>
         </div>
-        <div className="stat-card success">
+
+        <div 
+          className="stat-card success" 
+          tabIndex={0} 
+          role="group" 
+          aria-label={`Listas para evaluar: ${estadisticas.completas}`}
+        >
           <div className="stat-value">{estadisticas.completas}</div>
           <div className="stat-label">Listas para Evaluar</div>
         </div>
@@ -145,7 +164,6 @@ export default function BandejaDeCompletitud() {
             <p>No hay propuestas pendientes de revisión.</p>
           </div>
         ) : (
-          // ✅ FIX: Se eliminó aria-describedby (el lector ya no repite el subtítulo al entrar)
           <table className="tabla-bandeja">
             <caption className="sr-only">
               Propuestas recibidas con su estado documental y acciones disponibles.
@@ -170,8 +188,8 @@ export default function BandejaDeCompletitud() {
                   <td className="titulo-celda">{propuesta.titulo}</td>
                   <td>{propuesta.investigador}</td>
                   <td>{propuesta.escuela}</td>
-                  {/* ✅ FIX: Sin role="list" (la tabla ya es semántica), sin aria-label
-                      en el contenedor, sin role="listitem" en cada span */}
+                  
+                  {/* ✅ Limpio: sin roles de lista anidados, solo el texto y el estado oculto */}
                   <td>
                     <div className="doc-list" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       {renderizarDocumento('Form-04', propuesta.documentosFaltantes?.includes(1))}
@@ -180,11 +198,13 @@ export default function BandejaDeCompletitud() {
                       {renderizarDocumento('Dictamen de Vinculación', propuesta.documentosFaltantes?.includes(5))}
                     </div>
                   </td>
+                  
                   <td>
                     <span className={`estado-badge ${propuesta.esCompleta ? 'completa' : 'incompleta'}`}>
                       {propuesta.estado}
                     </span>
                   </td>
+                  
                   <td>
                     <div className="acciones-cell">
                       {propuesta.esCompleta ? (
