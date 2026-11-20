@@ -34,7 +34,6 @@ export default function PropuestasAsignadas() {
     p.codigoPropuesta?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  // ✅ Ahora devuelve una clase CSS en lugar de un objeto de estilos
   const getEstadoClass = (estado) => {
     const clases = {
       'Pendiente': 'estado-pendiente',
@@ -60,7 +59,11 @@ export default function PropuestasAsignadas() {
 
       <div className="propuestas-search-bar">
         <div className="propuestas-search-input-wrapper">
-          <span className="propuestas-search-icon">🔍</span>
+          {/* ✅ FIX: SVG en lugar de emoji, con aria-hidden para que el lector lo ignore por completo */}
+          <svg className="propuestas-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
           <input
             type="text"
             placeholder="Buscar por título o código..."
@@ -74,17 +77,19 @@ export default function PropuestasAsignadas() {
 
       <div className="propuestas-table-container">
         {cargando ? (
-          <div className="propuestas-loading">
-            <div className="propuestas-spinner"></div>
-            <p role="status">Cargando propuestas...</p>
+          <div className="propuestas-loading" role="status" aria-live="polite" aria-busy="true">
+            <div className="propuestas-spinner" aria-hidden="true"></div>
+            <p>Cargando propuestas...</p>
           </div>
         ) : propuestasFiltradas.length === 0 ? (
-          <div className="propuestas-empty-state">
-            <p>No hay propuestas asignadas</p>
+          <div className="propuestas-empty-state" role="status">
+            <p>No hay propuestas asignadas que coincidan con la búsqueda.</p>
           </div>
         ) : (
           <table className="propuestas-table">
-            <caption className="sr-only">Propuestas asignadas en el flujo del Comité Técnico</caption>
+            <caption className="sr-only">
+              Listado de propuestas asignadas con su código, título, evaluadores, fecha, estado y acciones disponibles.
+            </caption>
             <thead>
               <tr className="propuestas-thead-tr">
                 <th className="propuestas-th" scope="col">Código</th>
@@ -120,9 +125,11 @@ export default function PropuestasAsignadas() {
                     </td>
                     <td className="propuestas-td">
                       <div style={{display: 'flex', gap: '8px'}}>
+                        {/* ✅ FIX: aria-label conciso. Solo agrega el código para desambiguar, sin el título largo que genera "ruido" */}
                         <button
                           onClick={() => navigate(`/comite-tecnico/expediente/${propuesta.propuestaId}`)}
                           className="propuestas-btn-ver"
+                          aria-label={`Ver expediente, ${propuesta.codigoPropuesta}`}
                         >
                           Ver expediente
                         </button>
@@ -131,6 +138,7 @@ export default function PropuestasAsignadas() {
                           <button
                             onClick={() => navigate(`/comite-tecnico/dictamen/${propuesta.propuestaId}`)}
                             className="propuestas-btn-dictamen"
+                            aria-label={`Emitir dictamen, ${propuesta.codigoPropuesta}`}
                           >
                             Emitir dictamen
                           </button>
