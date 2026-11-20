@@ -70,4 +70,8 @@ cambiarEstadoUsuario: (id, data) => api.put(`/api/admin/usuarios/${id}/estado`, 
     return response.data;
   },
 
+  obtenerFotoPerfil: async (usuarioId) => {
+    const response = await api.get(`/api/admin/usuarios/${usuarioId}/foto-perfil`);
+    return response.data;
+  },
 };

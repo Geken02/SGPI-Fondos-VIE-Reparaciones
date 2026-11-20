@@ -24,7 +24,7 @@ from src.utils.permisos import verificar_permiso
 from fastapi import UploadFile, File
 from datetime import datetime, timezone
 import time
-from src.utils.s3_client import subir_archivo_desde_memoria, eliminar_archivo
+from src.utils.s3_client import subir_archivo_desde_memoria, eliminar_archivo, obtener_url_documento
 
 ROLES_ADMIN = ["SuperAdministrador", "Administrador"]
 
@@ -527,4 +527,36 @@ async def actualizar_foto_perfil(
         "usuarioId": usuario.usuarioId,
         "rutaFotoPerfil": nueva_ruta_s3,
         "urlPublica": url_publica
+    }
+
+@router.get("/{usuario_id}/foto-perfil")
+async def obtener_foto_perfil(
+    usuario_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Obtiene la URL pública de la foto de perfil de un usuario.
+    """
+    # 1. Obtener usuario de la base de datos
+    usuario = db.query(Usuario).filter(Usuario.usuarioId == usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # 2. Verificar si tiene foto de perfil
+    if not getattr(usuario, 'rutaFotoPerfil', None):
+        return {
+            "usuarioId": usuario.usuarioId,
+            "tieneFoto": False,
+            "urlPublica": None,
+            "rutaFotoPerfil": None
+        }
+
+    # 3. Generar URL pública usando tu función existente
+    url_publica = obtener_url_documento(usuario.rutaFotoPerfil)
+
+    return {
+        "usuarioId": usuario.usuarioId,
+        "tieneFoto": True,
+        "urlPublica": url_publica,
+        "rutaFotoPerfil": usuario.rutaFotoPerfil
     }
