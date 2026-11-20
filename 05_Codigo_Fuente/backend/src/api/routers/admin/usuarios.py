@@ -449,3 +449,91 @@ def revocar_asignacion(request: Request, asignacion_id: int, sesion: Session = D
     )
     sesion.commit()
     return None
+
+# ==============================================================================
+# AGREGAR AL FINAL DE: src/api/routers/admin/usuarios.py
+# ==============================================================================
+from fastapi import UploadFile, File, HTTPException, status, Depends
+from sqlalchemy.orm import Session
+from datetime import datetime, timezone
+import time
+
+# Asegúrate de que estos imports coincidan con tu estructura
+from src.database import get_db
+from src.models.usuarios import Usuario
+from src.utils.dependencias import obtener_usuario_activo  # O como se llame tu dependencia de auth
+from src.utils.s3_client import subir_archivo_desde_memoria, eliminar_archivo
+
+@router.post("/{usuario_id}/foto-perfil")
+async def actualizar_foto_perfil(
+    usuario_id: int,
+    archivo: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_activo)
+):
+    """
+    Actualiza la foto de perfil de un usuario en Supabase Storage.
+    """
+    # 1. Validar permisos: solo el propio usuario o un admin pueden cambiarla
+    es_admin = any(rol.nombreRol in ["Administrador", "Admin", "SuperAdmin"] for rol in (usuario_actual.roles or []))
+    
+    if usuario_actual.usuarioId != usuario_id and not es_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para modificar esta foto de perfil"
+        )
+
+    # 2. Validar tipo de archivo
+    tipos_permitidos = ["image/jpeg", "image/png", "image/webp"]
+    if archivo.content_type not in tipos_permitidos:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Solo se permiten imágenes en formato JPG, PNG o WebP"
+        )
+
+    # 3. Validar tamaño (máx 5MB)
+    archivo.file.seek(0, 2)
+    size = archivo.file.tell()
+    archivo.file.seek(0)
+    if size > 5 * 1024 * 1024:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La imagen no debe superar los 5MB")
+
+    # 4. Obtener usuario
+    usuario = db.query(Usuario).filter(Usuario.usuarioId == usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
+
+    # 5. Eliminar foto anterior si existe
+    if getattr(usuario, 'rutaFotoPerfil', None):
+        try:
+            eliminar_archivo(usuario.rutaFotoPerfil)
+        except Exception as e:
+            print(f"⚠️ No se pudo eliminar la foto anterior: {e}")
+
+    # 6. Generar ruta única y subir a S3
+    extension = archivo.filename.split(".")[-1].lower()
+    nueva_ruta_s3 = f"perfiles/{usuario_id}/avatar_{int(time.time())}.{extension}"
+    
+    try:
+        url_publica = subir_archivo_desde_memoria(
+            file_obj=archivo.file,
+            ruta_s3=nueva_ruta_s3,
+            content_type=archivo.content_type
+        )
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al subir la imagen: {str(e)}")
+
+    # 7. Actualizar base de datos
+    usuario.rutaFotoPerfil = nueva_ruta_s3
+    usuario.ultimaAuditoria = datetime.now(timezone.utc)
+    usuario.usuarioAuditoriaId = usuario_actual.usuarioId
+    
+    db.commit()
+    db.refresh(usuario)
+
+    return {
+        "mensaje": "Foto de perfil actualizada exitosamente",
+        "usuarioId": usuario.usuarioId,
+        "rutaFotoPerfil": nueva_ruta_s3,
+        "urlPublica": url_publica
+    }

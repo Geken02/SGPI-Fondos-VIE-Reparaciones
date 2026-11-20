@@ -55,5 +55,19 @@ cambiarEstadoUsuario: (id, data) => api.put(`/api/admin/usuarios/${id}/estado`, 
 
   listarActividad: (params = {}) => api.get('/api/admin/actividad', { params }),
 
-obtenerDetalleLog: (logId) => api.get(`/api/admin/actividad/${logId}`),
+  obtenerDetalleLog: (logId) => api.get(`/api/admin/actividad/${logId}`),
+
+  actualizarFotoPerfil: async (usuarioId, archivo) => {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+
+    const response = await api.post(`/api/admin/usuarios/${usuarioId}/foto-perfil`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data;
+  },
+
 };

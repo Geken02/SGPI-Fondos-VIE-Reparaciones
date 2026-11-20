@@ -33,6 +33,7 @@ from src.api.routers.vie import expedientes, subsanaciones, preferencias
 from src.api.routers import archivos
 from src.api.routers import propuesta_import 
 
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware 
 from src.api.routers.consejo_escuela import asignaciones

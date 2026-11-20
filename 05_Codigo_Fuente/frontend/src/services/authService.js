@@ -18,21 +18,6 @@ export const authService = {
     return response.data;
   },
 
-  // ✅ NUEVA FUNCIÓN AGREGADA: Sube la foto de perfil al backend
-  actualizarFotoPerfil: async (usuarioId, archivo) => {
-    const formData = new FormData();
-    formData.append('archivo', archivo);
-
-    // Esta ruta debe coincidir exactamente con la que creamos en el backend
-    const response = await api.post(`/api/usuarios/${usuarioId}/foto-perfil`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    
-    return response.data;
-  },
-
   solicitarRecuperacion: async (data) => {
     const response = await api.post('/api/auth/recuperacion', data);
     return response.data;
