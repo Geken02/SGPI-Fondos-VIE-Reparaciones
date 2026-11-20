@@ -864,27 +864,25 @@
   border-color: #555555 !important;
   border-top-color: #FFFF00 !important;
 }
-
 /* ==========================================================================
-   FILTROS — Reescrito con CSS Grid para layout predecible
+   FILTROS — Grid 12 columnas, botones alineados a la derecha
    ========================================================================== */
 
 .auditoria-filtros {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 16px;
+  gap: 16px 12px; /* gap vertical 16px, horizontal 12px */
   margin-bottom: 24px;
   padding: 20px;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  /* Reset de fieldset para que el grid funcione */
   min-inline-size: 0;
-  border-style: solid;
+  align-items: end; /* Alinea todos los elementos a la base (los labels arriba) */
 }
 
-/* Fila 1: Búsqueda (4 cols) + Desde (2) + Hasta (2) + Severidad (2) + Usuario (2) */
+/* Fila 1: Búsqueda(4) + Desde(2) + Hasta(2) + Severidad(2) + Usuario(2) = 12 */
 .filtro-busqueda {
   grid-column: span 4;
   display: flex;
@@ -897,7 +895,7 @@
   height: 44px;
   box-sizing: border-box;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  min-width: 0; /* Permite que flex children se encogean */
+  min-width: 0;
 }
 
 .filtro-busqueda:hover {
@@ -957,22 +955,25 @@
   color: #ffffff;
 }
 
-/* Campos de fecha */
+/* ✅ FIX: Campos de fecha con padding extra para el icono del calendario */
 .filtro-fecha {
   grid-column: span 2;
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
   min-width: 0;
 }
 
 .filtro-fecha .filtro-input {
   border: 1.5px solid #94a3b8;
   border-radius: 6px;
-  padding: 8px 10px;
+  /* ✅ Padding derecho aumentado para que NO se corte el icono del calendario */
+  padding: 8px 32px 8px 10px;
   background: #ffffff;
   height: 44px;
   box-sizing: border-box;
+  font-size: 13px;
+  width: 100%;
 }
 
 .filtro-fecha .filtro-input:focus {
@@ -981,12 +982,30 @@
   box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.18);
 }
 
-/* Grupos de select y usuario */
+/* ✅ FIX: Posicionar el icono del calendario nativo correctamente */
+.filtro-fecha .filtro-input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.filtro-fecha {
+  position: relative;
+}
+
+.filtro-fecha .filtro-input {
+  position: relative;
+}
+
+/* ✅ FIX: Grupos de select y usuario con label arriba */
 .filtro-select-group {
   grid-column: span 2;
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -997,6 +1016,7 @@
   background: #ffffff;
   height: 44px;
   box-sizing: border-box;
+  font-size: 14px;
   width: 100%;
 }
 
@@ -1007,11 +1027,11 @@
 }
 
 .filtro-label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: #374151;
   white-space: nowrap;
-  flex-shrink: 0;
+  line-height: 1.2;
 }
 
 .filtro-select {
@@ -1040,22 +1060,22 @@
   box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.18);
 }
 
-/* ✅ NUEVO: Contenedor de acciones (Buscar + Limpiar) */
+/* ✅ FIX CRÍTICO: Botones alineados a la derecha ocupando toda la fila 2 */
 .filtro-acciones {
-  grid-column: span 4;
+  grid-column: 1 / -1; /* Ocupa TODAS las 12 columnas */
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-end; /* ✅ Alinea los botones a la derecha */
   gap: 10px;
+  padding-top: 4px;
 }
 
-/* ✅ NUEVO: Botón primario de búsqueda */
 .btn-aplicar-filtros {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 0 18px;
+  padding: 0 20px;
   height: 44px;
   background: #003366;
   color: #ffffff;
@@ -1089,7 +1109,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 0 16px;
+  padding: 0 18px;
   height: 44px;
   background: #f3f4f6;
   color: #374151;
@@ -1122,14 +1142,26 @@
    RESPONSIVE DE FILTROS
    ========================================================================== */
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .filtro-busqueda { grid-column: span 6; }
   .filtro-fecha,
   .filtro-select-group { grid-column: span 3; }
-  .filtro-acciones { grid-column: span 12; justify-content: flex-start; }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+  .auditoria-filtros {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .filtro-busqueda { grid-column: span 6; }
+  .filtro-fecha { grid-column: span 3; }
+  .filtro-select-group { grid-column: span 3; }
+  .filtro-acciones {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 640px) {
   .auditoria-filtros {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -1141,18 +1173,17 @@
     grid-column: 1 / -1;
   }
   .filtro-acciones {
+    flex-direction: row;
     justify-content: stretch;
-    flex-wrap: wrap;
   }
   .filtro-acciones .btn-aplicar-filtros,
   .filtro-acciones .btn-limpiar-filtros {
     flex: 1;
-    min-width: 120px;
   }
 }
 
 /* ==========================================================================
-   PARCHE DE ALTO CONTRASTE — FILTROS ACTUALIZADOS
+   PARCHE DE ALTO CONTRASTE — FILTROS
    ========================================================================== */
 
 .high-contrast-mode .auditoria-filtros {
@@ -1190,7 +1221,10 @@
   color: #B0B0B0 !important;
 }
 
-/* ✅ Botón Buscar en alto contraste (primario invertido) */
+.high-contrast-mode .filtro-fecha .filtro-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
 .high-contrast-mode .btn-aplicar-filtros {
   background: #FFFF00 !important;
   color: #000000 !important;
