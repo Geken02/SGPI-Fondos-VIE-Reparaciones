@@ -141,16 +141,59 @@ export default function AcuerdosConsejo() {
       setMostrarFormulario(false);
       await cargarAcuerdos();
     } catch (err) {
-      console.error("Error al registrar acuerdo:", err);
-      const detalle = err.response?.data?.detail;
-      setError(
-        typeof detalle === "string"
-          ? detalle
-          : "No fue posible registrar el acuerdo. Revisá los datos y los permisos."
-      );
-    } finally {
-      setGuardando(false);
-    }
+        console.error("Error al registrar acuerdo:", err);
+
+        const detalle = err.response?.data?.detail;
+
+        if (Array.isArray(detalle)) {
+          const nombresCampos = {
+            horasAprobadas: "Horas aprobadas",
+            presupuestoAprobado: "Presupuesto aprobado",
+            numeroAcuerdo: "Número de acuerdo",
+            periodoNombramiento: "Período de nombramiento",
+            propuestaId: "Propuesta",
+            tipoAcuerdoId: "Tipo de acuerdo",
+            tipoHoraId: "Tipo de hora",
+          };
+
+          const mensajes = detalle.map((error) => {
+            const campo = error.loc?.[error.loc.length - 1];
+            const nombre = nombresCampos[campo] || campo || "Dato";
+
+            if (error.type === "less_than_equal") {
+              return `${nombre}: supera el máximo permitido.`;
+            }
+
+            if (error.type === "decimal_max_digits") {
+              return `${nombre}: excede la cantidad máxima de dígitos permitida.`;
+            }
+
+            if (error.type === "decimal_max_places") {
+              return `${nombre}: tiene demasiados decimales.`;
+            }
+
+            if (error.type === "string_too_long") {
+              return `${nombre}: supera la longitud máxima permitida.`;
+            }
+
+            if (error.type === "greater_than_equal") {
+              return `${nombre}: no puede ser negativo.`;
+            }
+
+            return `${nombre}: dato inválido.`;
+          });
+
+          setError(mensajes.join(" "));
+        } else {
+          setError(
+            typeof detalle === "string"
+              ? detalle
+              : "No fue posible registrar el acuerdo. Revisá los datos y los permisos."
+          );
+        }
+      } finally {
+        setGuardando(false);
+      }
   };
 
   // =========================================================================
@@ -294,6 +337,7 @@ export default function AcuerdosConsejo() {
                 <input
                   type="text"
                   name="numeroAcuerdo"
+                  maxLength={50}
                   value={formulario.numeroAcuerdo}
                   onChange={manejarCambio}
                   placeholder="Ej. AC-2026-001"
@@ -318,6 +362,7 @@ export default function AcuerdosConsejo() {
                   type="number"
                   name="horasAprobadas"
                   min="0"
+                  max="10"
                   step="0.1"
                   value={formulario.horasAprobadas}
                   onChange={manejarCambio}
@@ -347,6 +392,7 @@ export default function AcuerdosConsejo() {
                 <input
                   type="text"
                   name="periodoNombramiento"
+                  maxLength={100}
                   value={formulario.periodoNombramiento}
                   onChange={manejarCambio}
                   placeholder="Ej. I Semestre 2027"
@@ -360,6 +406,7 @@ export default function AcuerdosConsejo() {
                   type="number"
                   name="presupuestoAprobado"
                   min="0"
+                  max="9999999999.99"
                   step="0.01"
                   value={formulario.presupuestoAprobado}
                   onChange={manejarCambio}
