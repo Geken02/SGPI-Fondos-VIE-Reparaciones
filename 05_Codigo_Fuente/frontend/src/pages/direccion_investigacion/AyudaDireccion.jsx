@@ -5,7 +5,7 @@ import { RUTA_BASE } from '../../components/direccion/direccionConstantes';
 import { Icono, EncabezadoPagina } from '../../components/direccion/DireccionUi';
 
 const PASOS = [
-  { icono: 'clipboard', titulo: '1. Revisar el dictamen', texto: 'Abre un dictamen de la bandeja y verifica la decisión del CIE, la justificación y la rúbrica VIE.', ruta: 'dictamenes' },
+  { icono: 'clipboard', titulo: '1. Revisar el dictamen', texto: 'Abre un dictamen de la bandeja y verifica la decisión del CIE, la justificación y la rúbrica V\u200BI\u200BE.', ruta: 'dictamenes' },
   { icono: 'fileText', titulo: '2. Generar el documento', texto: 'Elige el tipo de oficio según la decisión, revisa la vista previa y genera el documento.', ruta: 'documentos-oficiales' },
   { icono: 'send', titulo: '3. Notificar', texto: 'Revisa el mensaje y envía la notificación formal al investigador.', ruta: 'notificacion' },
 ];
@@ -20,10 +20,10 @@ const PREGUNTAS = [
 
 const GLOSARIO = [
   ['CIE', 'Consejo de Investigación y Extensión: órgano que emite la resolución final.'],
-  ['VIE', 'Vicerrectoría de Investigación y Extensión.'],
+  ['V\u200BI\u200BE', 'Vicerrectoría de Investigación y Extensión.'],
   ['Dictamen', 'Resolución del CIE sobre una propuesta (aprobada o rechazada).'],
   ['Oficio', 'Documento oficial con número consecutivo que comunica la resolución.'],
-  ['Rúbrica VIE', 'Criterios ponderados con los que el CIE evalúa cada propuesta.'],
+  ['Rúbrica V\u200BI\u200BE', 'Criterios ponderados con los que el CIE evalúa cada propuesta.'],
 ];
 
 const AyudaDireccion = () => {

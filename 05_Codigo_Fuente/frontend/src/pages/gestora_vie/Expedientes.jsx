@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Icono from '../../components/gestora/Iconos';
 import { ESTADOS } from '../../data/estadosExpediente';
 import { expedienteService } from '../../services/expedienteService';
+import SiglaVie from '../../components/SiglaVie';
 
 const FILAS_POR_PAGINA = 5;
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -32,7 +33,7 @@ const RESUMEN_VACIO = { total: 0, enRevision: 0, enSubsanacion: 0, listosCie: 0 
 
 const mensajeDeError = (error) =>
   error.response?.status === 403
-    ? 'Tu usuario no tiene el rol de Gestora VIE para ver esta bandeja.'
+    ? 'Tu usuario no tiene el rol de Gestora V\u200BI\u200BE para ver esta bandeja.'
     : 'No se pudieron cargar los expedientes. Verifica que el servidor esté en ejecución e intenta de nuevo.';
 
 const Expedientes = () => {
@@ -47,7 +48,7 @@ const Expedientes = () => {
   const [pagina, setPagina] = useState(1);
 
   useEffect(() => {
-    document.title = 'Expedientes - Gestora VIE';
+    document.title = 'Expedientes - Gestora V I E';
   }, []);
 
   // Carga de la bandeja desde el backend (propuestas enviadas a la VIE)
@@ -155,7 +156,7 @@ const Expedientes = () => {
       <section className="gv-card gv-tabla-contenedor">
         <div className="gv-tabla-scroll">
           <table className="gv-tabla">
-            <caption className="sr-only">Bandeja principal de expedientes de la Gestora VIE</caption>
+            <caption className="sr-only">Bandeja principal de expedientes de la Gestora <SiglaVie /></caption>
             <thead>
               <tr>
                 <th scope="col">ID</th>
@@ -205,7 +206,7 @@ const Expedientes = () => {
                 <tr>
                   <td colSpan={7} className="gv-sin-resultados">
                     {expedientes.length === 0
-                      ? 'Aún no hay propuestas enviadas a la VIE.'
+                      ? 'Aún no hay propuestas enviadas a la V\u200BI\u200BE.'
                       : 'No hay expedientes que coincidan con los filtros.'}
                   </td>
                 </tr>

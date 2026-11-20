@@ -9,7 +9,7 @@ import { formatearFecha } from '../../utils/fechas';
 
 const mensajeDeError = (error) =>
   error.response?.status === 403
-    ? 'Tu usuario no tiene el rol de Gestora VIE para ver las subsanaciones.'
+    ? 'Tu usuario no tiene el rol de Gestora V\u200BI\u200BE para ver las subsanaciones.'
     : 'No se pudieron cargar las subsanaciones. Verifica que el servidor esté en ejecución e intenta de nuevo.';
 
 const Subsanaciones = () => {
@@ -23,7 +23,7 @@ const Subsanaciones = () => {
   const [detalle, setDetalle] = useState(null); // subsanación abierta en la ventana de detalle
 
   useEffect(() => {
-    document.title = 'Subsanaciones - Gestora VIE';
+    document.title = 'Subsanaciones - Gestora V I E';
   }, []);
 
   // Subsanaciones solicitadas, ya unidas con los datos de su expediente (GET /vie/subsanaciones)

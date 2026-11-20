@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { traducirErrorBackend } from '../utils/mensajes';
 import { validarCorreoTEC, validarRequerido } from '../utils/validaciones';
+import SiglaVie from './SiglaVie';
 
 const LoginForm = () => {
   const [correo, setCorreo] = useState('');
@@ -157,7 +158,7 @@ const LoginForm = () => {
       </div>
 
       <p className="support-text">
-        Si tienes problemas de acceso, contacta a soporte VIE
+        Si tienes problemas de acceso, contacta a soporte <SiglaVie />
       </p>
     </form>
   );

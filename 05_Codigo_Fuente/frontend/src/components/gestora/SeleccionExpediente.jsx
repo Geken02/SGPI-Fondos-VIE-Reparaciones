@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { expedienteService } from '../../services/expedienteService';
+import SiglaVie from '../SiglaVie';
 
 // Las entradas del menú sin código permiten elegir un expediente real.
 export default function SeleccionExpediente({ titulo, ruta }) {
@@ -24,7 +25,7 @@ export default function SeleccionExpediente({ titulo, ruta }) {
       <section className="gv-card role-expediente-selector">
         {error ? <div role="alert"><p>{error}</p><button type="button" className="cie-btn-outline" onClick={() => { setError(''); setExpedientes(null); setIntento((valor) => valor + 1); }}>Reintentar</button></div>
           : expedientes === null ? <p role="status">Cargando expedientes...</p>
-            : expedientes.length === 0 ? <p>Aún no hay propuestas enviadas a la VIE.</p>
+            : expedientes.length === 0 ? <p>Aún no hay propuestas enviadas a la <SiglaVie />.</p>
               : <label>Expediente
                 <select aria-label="Expediente" defaultValue="" onChange={(event) => { if (event.target.value) navigate(`${ruta}/${encodeURIComponent(event.target.value)}`); }}>
                   <option value="" disabled>Seleccionar expediente...</option>

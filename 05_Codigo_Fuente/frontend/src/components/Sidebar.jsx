@@ -2,6 +2,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useModal } from '../context/ModalContext';
+import SiglaVie from './SiglaVie';
 
 const Sidebar = () => {
   const { rolActivo } = useAuth();
@@ -344,7 +345,7 @@ const Sidebar = () => {
     if (esGestora) {
       return (
         <>
-          <div className="sidebar-group-title">Gestora VIE</div>
+          <div className="sidebar-group-title">Gestora <SiglaVie /></div>
           <NavLink to="/gestora/expedientes" className={({ isActive }) => `sidebar-pill-btn ${isActive ? 'active' : ''}`}>
             <span className="sidebar-pill-icon">{IconoCarpeta}</span>
             <span className="sidebar-pill-label">Expedientes</span>

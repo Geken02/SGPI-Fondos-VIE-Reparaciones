@@ -9,6 +9,7 @@ import { useCarga } from '../../components/cie/useCarga';
 import {
   Icono, Pasos, CabeceraExpediente, Radio, AreaTexto, EncabezadoPagina, VolverALaBandeja, Cargando, ErrorCarga,
 } from '../../components/cie/CieUi';
+import SiglaVie from '../../components/SiglaVie';
 
 const cargar = async (codigo) => {
   const [expediente, rubrica, evaluacion] = await Promise.all([
@@ -32,7 +33,7 @@ const RubricaVie = () => {
   const [guardando, setGuardando] = useState(false);
   const [errorGuardar, setErrorGuardar] = useState('');
 
-  useEffect(() => { document.title = 'Rúbrica VIE - Miembro del CIE'; }, []);
+  useEffect(() => { document.title = 'Rúbrica V I E - Miembro del CIE'; }, []);
 
   // Precarga la evaluación previamente registrada (si existe)
   useEffect(() => {
@@ -50,7 +51,7 @@ const RubricaVie = () => {
   const { expediente, rubrica } = datos;
   if (expediente.resuelta) return <Navigate to="/cie/resoluciones" replace />;
   if (!rubrica.configurada) return (
-    <><VolverALaBandeja /><EncabezadoPagina titulo="Rúbrica VIE digital" subtitulo="Configuración institucional pendiente." />
+    <><VolverALaBandeja /><EncabezadoPagina titulo={<>Rúbrica <SiglaVie /> digital</>} subtitulo="Configuración institucional pendiente." />
       <div className="gv-card cie-estado" role="status">La API todavía no proporciona una rúbrica CIE completa con su escala de calificación validada. El cierre de la evaluación permanece pendiente de esa configuración.</div>
     </>
   );
@@ -83,8 +84,8 @@ const RubricaVie = () => {
   return (
     <>
       <VolverALaBandeja />
-      <EncabezadoPagina titulo="Rúbrica VIE digital"
-        subtitulo="Evalúa la propuesta con la rúbrica VIE y registra tus observaciones técnicas y estratégicas." />
+      <EncabezadoPagina titulo={<>Rúbrica <SiglaVie /> digital</>}
+        subtitulo={<>Evalúa la propuesta con la rúbrica <SiglaVie /> y registra tus observaciones técnicas y estratégicas.</>} />
 
       <CabeceraExpediente expediente={expediente} />
 

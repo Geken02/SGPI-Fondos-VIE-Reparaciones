@@ -11,7 +11,7 @@ const SECCIONES = [
     ],
   },
   {
-    titulo: 'Gestión VIE',
+    titulo: 'Gestión V\u200BI\u200BE',
     items: [
       { path: '/gestora/expedientes', label: 'Expedientes', icono: 'clipboard' },
       { path: '/gestora/subsanaciones', label: 'Subsanaciones', icono: 'alertTriangle' },

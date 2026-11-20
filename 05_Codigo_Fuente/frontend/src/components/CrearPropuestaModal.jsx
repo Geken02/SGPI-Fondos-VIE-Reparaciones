@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from './LimitedInput';
 import IconoCie from './cie/IconoCie';
+import SiglaVie from './SiglaVie';
 
 const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
   const { usuario } = useAuth();
@@ -116,7 +117,7 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
         propuestaId: resultado?.propuestaId,
         codigoPropuesta: resultado?.codigoPropuesta || `FVIE-2027-${Math.floor(100 + Math.random() * 900)}`,
         titulo: resultado?.titulo || titulo.trim(),
-        convocatoria: convSeleccionada?.nombreConvocatoria || 'Convocatoria Ordinaria VIE 2027',
+        convocatoria: convSeleccionada?.nombreConvocatoria || 'Convocatoria Ordinaria V\u200BI\u200BE 2027',
         escuela: escSeleccionada?.nombreEscuela || 'Escuela de Ingeniería Electrónica'
       });
 
@@ -180,7 +181,7 @@ const CrearPropuestaModal = ({ isOpen, onClose, onPropuestaCreada }) => {
             <div className="success-icon-badge"><IconoCie nombre="check" tamano={28} /></div>
             <h2 className="success-modal-title">¡Propuesta Creada con Éxito!</h2>
             <p className="success-modal-subtitle">
-              Se ha registrado formalmente el nuevo borrador de investigación en la base de datos de la VIE.
+              Se ha registrado formalmente el nuevo borrador de investigación en la base de datos de la <SiglaVie />.
             </p>
 
             <div className="success-propuesta-code-box">

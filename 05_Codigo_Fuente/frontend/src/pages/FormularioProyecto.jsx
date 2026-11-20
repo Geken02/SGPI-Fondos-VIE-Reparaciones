@@ -5,6 +5,7 @@ import { propuestaService } from '../services/propuestaService';
 import { LimitedInput, LimitedTextarea } from '../components/LimitedInput';
 import { exportarForm04PDF, generarBlobForm04PDF } from '../utils/exportUtils';
 import IconoCie from '../components/cie/IconoCie';
+import SiglaVie from '../components/SiglaVie';
 import {
   construirPayloadPlanAccion,
   construirPayloadAspectosEticos,
@@ -326,7 +327,7 @@ const FormularioProyecto = () => {
           orcid: '',
           instancia: usuario.escuela || 'Escuela Base TEC',
           rol: 'Coordinador(a)',
-          horas: '10 h (VIE)',
+          horas: '10 h (V\u200BI\u200BE)',
           nombramiento: new Date().getFullYear().toString()
         }
       ]);
@@ -501,7 +502,7 @@ const FormularioProyecto = () => {
               instancia: inte.instancia || usuario?.escuela || 'TEC',
               rol: inte.rolEquipoId === 1 ? 'Coordinador(a)' : 'Co-Investigador(a)',
               rolEquipoId: inte.rolEquipoId || 2,
-              horas: `${inte.horasSemanales || 10} h (VIE)`,
+              horas: `${inte.horasSemanales || 10} h (V\u200BI\u200BE)`,
               nombramiento: String(new Date().getFullYear())
             })));
           }
@@ -1605,7 +1606,7 @@ const guardarBorradorActual = async () => {
                 <div className="question-toggle-card">
                   <div className="question-header-row">
                     <span className="question-number">2.</span>
-                    <span className="question-text">¿Existe vinculación técnica o de continuidad con proyectos VIE u Hoja de Ruta?</span>
+                    <span className="question-text">¿Existe vinculación técnica o de continuidad con proyectos <SiglaVie /> u Hoja de Ruta?</span>
                     <div className="toggle-btn-group">
                       <button 
                         type="button" 
@@ -2069,7 +2070,7 @@ const guardarBorradorActual = async () => {
                     type="button" 
                     className="btn-link-action"
                     style={{ fontSize: '12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                    onClick={() => setInvestigadoresTEC([...investigadoresTEC, { id: Date.now(), usuarioId: null, nombre: '', orcid: '', instancia: 'TEC', rol: 'Co-Investigador(a)', rolEquipoId: 2, horas: '10 h (VIE)', nombramiento: String(new Date().getFullYear()) }])}
+                    onClick={() => setInvestigadoresTEC([...investigadoresTEC, { id: Date.now(), usuarioId: null, nombre: '', orcid: '', instancia: 'TEC', rol: 'Co-Investigador(a)', rolEquipoId: 2, horas: '10 h (V\u200BI\u200BE)', nombramiento: String(new Date().getFullYear()) }])}
                   >
                     + Añadir miembro al equipo
                   </button>
@@ -2182,7 +2183,7 @@ const guardarBorradorActual = async () => {
                               value={inv.horas}
                               maxLength={20}
                               showCounter={false}
-                              placeholder="10 h (VIE)"
+                              placeholder="10 h (V I E)"
                               onChange={(e) => {
                                 const copia = [...investigadoresTEC];
                                 copia[idx].horas = e.target.value;
@@ -2229,7 +2230,7 @@ const guardarBorradorActual = async () => {
                 <button 
                   type="button" 
                   className="btn-add-table-row"
-                  onClick={() => setInvestigadoresTEC([...investigadoresTEC, { id: Date.now(), usuarioId: null, nombre: '', orcid: '', instancia: 'TEC', rol: 'Co-Investigador(a)', rolEquipoId: 2, horas: '5 h (VIE)', nombramiento: String(new Date().getFullYear()) }])}
+                  onClick={() => setInvestigadoresTEC([...investigadoresTEC, { id: Date.now(), usuarioId: null, nombre: '', orcid: '', instancia: 'TEC', rol: 'Co-Investigador(a)', rolEquipoId: 2, horas: '5 h (V\u200BI\u200BE)', nombramiento: String(new Date().getFullYear()) }])}
                 >
                   + Insertar fila en Investigadores TEC
                 </button>
@@ -2931,7 +2932,7 @@ const guardarBorradorActual = async () => {
                 <div className="vie-reminder-box" style={{ marginTop: '14px' }}>
                   <span className="reminder-icon"><IconoCie nombre="info" tamano={14} /></span>
                   <div className="reminder-text">
-                    <strong>Recordatorio VIE:</strong> Dentro de la programación de actividades se deben incluir obligatoriamente las giras de campo y los informes de avance. Además, deberá registrarse cualquier pasantía nacional o internacional que se requiera para el desarrollo del proyecto.
+                    <strong>Recordatorio <SiglaVie />:</strong> Dentro de la programación de actividades se deben incluir obligatoriamente las giras de campo y los informes de avance. Además, deberá registrarse cualquier pasantía nacional o internacional que se requiera para el desarrollo del proyecto.
                   </div>
                 </div>
 
@@ -3064,11 +3065,11 @@ const guardarBorradorActual = async () => {
                 <h1 className="step-main-title">Presupuesto Plurianual y Fuentes Adicionales</h1>
 
                 <h3 style={{ fontSize: '15px', color: '#002855', marginBottom: '8px' }}>
-                  Cuadro 4. Presupuesto solicitado por año (Recursos VIE)
+                  Cuadro 4. Presupuesto solicitado por año (Recursos <SiglaVie />)
                 </h3>
                 <div className="table-responsive-container">
                   <table className="institucional-data-table">
-                    <caption className="sr-only">Tabla de presupuesto solicitado por año (Recursos VIE)</caption>
+                    <caption className="sr-only">Tabla de presupuesto solicitado por año (Recursos <SiglaVie />)</caption>
                     <thead>
                       <tr>
                         <th scope="col">Año</th>
@@ -3337,7 +3338,7 @@ const guardarBorradorActual = async () => {
                   1.1. Para proyectos de investigación básica, aplicada o ambas
                 </div>
                 <p className="form-field-hint" style={{ marginBottom: '18px' }}>
-                  De acuerdo con la normativa institucional de la VIE, la cantidad de productos académicos comprometidos se define en función del total de horas semanales asignadas a la propuesta y es requisito indispensable para la liquidación técnica y el cierre del proyecto en el repositorio institucional.
+                  De acuerdo con la normativa institucional de la <SiglaVie />, la cantidad de productos académicos comprometidos se define en función del total de horas semanales asignadas a la propuesta y es requisito indispensable para la liquidación técnica y el cierre del proyecto en el repositorio institucional.
                 </p>
 
                 
@@ -3643,7 +3644,7 @@ const guardarBorradorActual = async () => {
                   1.1. Para proyectos de desarrollo tecnológico
                 </div>
                 <p className="form-field-hint" style={{ marginBottom: '18px' }}>
-                  De acuerdo con la normativa institucional de la VIE y el Centro de Vinculación, los proyectos de Desarrollo Tecnológico deben seleccionar obligatoriamente al menos un activo de propiedad industrial amparado en dictamen oficial (Requisito 5.5.a) y productos académicos complementarios (Requisito 5.5.b).
+                  De acuerdo con la normativa institucional de la <SiglaVie /> y el Centro de Vinculación, los proyectos de Desarrollo Tecnológico deben seleccionar obligatoriamente al menos un activo de propiedad industrial amparado en dictamen oficial (Requisito 5.5.a) y productos académicos complementarios (Requisito 5.5.b).
                 </p>
 
                 
@@ -4023,7 +4024,7 @@ const guardarBorradorActual = async () => {
                 <div className="legal-statement-box">
                   Por este medio, manifiesto y declaro bajo fe de juramento lo siguiente:
                   1. Que la información proporcionada y los compromisos adquiridos en esta ficha de propuesta para investigación son veraces propios del investigador y de la entidad académica con fines propios y lícitos.
-                  2. Que los cronogramas adjuntos y las firmas digitales que respaldan este expediente han sido gestionados conforme a los requerimientos técnicos y administrativos de la VIE.
+                  2. Que los cronogramas adjuntos y las firmas digitales que respaldan este expediente han sido gestionados conforme a los requerimientos técnicos y administrativos de la <SiglaVie />.
                   3. Que tengo pleno conocimiento de que la titularidad y protección de la propiedad intelectual de todos los productos, activos y resultados derivados de este proyecto se regirán por la normativa institucional, la legislación nacional vigente y las disposiciones derivadas de Vinculación.
                   Por lo tanto, asumo la responsabilidad directa por la gestión, ejecución y rendición de cuentas de las actividades aquí planificadas, así como por la veracidad de los informes técnicos y financieros que se deriven.
                 </div>

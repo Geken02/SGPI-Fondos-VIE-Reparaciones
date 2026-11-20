@@ -5,6 +5,7 @@ import { propuestaService } from '../services/propuestaService';
 import { LimitedInput } from '../components/LimitedInput';
 import IconoCie from '../components/cie/IconoCie';
 import { claseBadgeEstado, etiquetaEstado } from '../data/estadosPropuesta';
+import SiglaVie from '../components/SiglaVie';
 
 // Metadatos institucionales limpios sin datos inventados ni hardcodeados
 const formatearFechaApertura = (fechaStr) => {
@@ -82,7 +83,7 @@ const InvestigadorConvocatorias = () => {
             aperturaTexto: formatearFechaApertura(c.fechaApertura),
             cierreTexto: formatearFechaCierre(c.fechaCierre),
             estado: estaCerrada ? 'Cerrada' : estadoCalculado,
-            tipoFondo: c.tipoFondo || 'Fondo Concursable VIE',
+            tipoFondo: c.tipoFondo || 'Fondo Concursable V\u200BI\u200BE',
             montoMaximo: c.montoMaximo ? `₡ ${Number(c.montoMaximo).toLocaleString('es-CR')}` : 'Según presupuesto (F-03)',
             dirigidoA: c.dirigidoA || 'Comunidad de Investigadores TEC',
             area: c.area || 'Institucional',
@@ -143,7 +144,7 @@ const InvestigadorConvocatorias = () => {
           <div className="dashboard-title-group">
             <h1 className="dashboard-main-title">Convocatorias y Fondos de Investigación</h1>
             <p className="dashboard-subtitle">
-              Consulte las oportunidades de financiamiento activas de la VIE y entidades cooperantes.
+              Consulte las oportunidades de financiamiento activas de la <SiglaVie /> y entidades cooperantes.
             </p>
           </div>
         </div>

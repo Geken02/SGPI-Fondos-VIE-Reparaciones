@@ -5,12 +5,13 @@ import { catalogoService } from '../../services/catalogoService';
 import Modal from '../../components/Modal';
 import UserForm from '../../components/UserForm';
 import '../../styles/usuarios.css';
+import SiglaVie from '../../components/SiglaVie';
 
 const formatearNombreRol = (nombreRol) => {
   if (!nombreRol) return 'Sin rol asignado';
   return nombreRol
     .replace(/([A-Z])/g, ' $1')
-    .replace(/\bVie\b/g, 'VIE')
+    .replace(/\bVie\b/g, 'V\u200BI\u200BE')
     .replace(/\bCie\b/g, 'CIE')
     .trim();
 };
@@ -381,7 +382,7 @@ export default function Usuarios() {
                       </span>
                     </td>
                     <td className="escuela">
-                      {usuario.nombreEscuela || 'VIE'}
+                      {usuario.nombreEscuela || <SiglaVie />}
                     </td>
                     <td className="ultimo-acceso">
                       {formatearUltimoAcceso(usuario.ultimoAcceso)}

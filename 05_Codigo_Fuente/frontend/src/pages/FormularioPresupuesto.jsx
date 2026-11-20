@@ -6,6 +6,7 @@ import { catalogoService } from '../services/catalogoService';
 import { LimitedInput, LimitedTextarea } from '../components/LimitedInput';
 import { exportarPresupuestoExcel } from '../utils/exportUtils';
 import IconoCie from '../components/cie/IconoCie';
+import SiglaVie from '../components/SiglaVie';
 
 // Los Objetos de Gasto se cargan desde la tabla RubrosPropuesta (catálogo 'rubros'
 // de la BD) usando las columnas codigo / categoria / esAsistencia. No hay catálogo
@@ -275,7 +276,7 @@ const FormularioPresupuesto = () => {
   const handleEnviarPresupuesto = async () => {
     const totalRubros = Object.values(presupuestos).reduce((acc, curr) => acc + (curr?.length || 0), 0);
     if (totalRubros === 0) {
-      alert('Por favor agregue al menos un objeto de gasto antes de enviar el presupuesto a la VIE.');
+      alert('Por favor agregue al menos un objeto de gasto antes de enviar el presupuesto a la V\u200BI\u200BE.');
       return;
     }
 
@@ -331,7 +332,7 @@ const FormularioPresupuesto = () => {
     <div className="formulario-proyecto-master-wrapper">
       <div className="form-top-banner">
         <div className="form-banner-left">
-          <span className="form-banner-tec-title">TEC | SGPI — Módulo de Formulación Presupuestaria (VIE 2027-2029)</span>
+          <span className="form-banner-tec-title">TEC | SGPI — Módulo de Formulación Presupuestaria (<SiglaVie /> 2027-2029)</span>
         </div>
         <div className="form-banner-right">
           <span className="autoguardado-badge" role="status">
@@ -416,7 +417,7 @@ const FormularioPresupuesto = () => {
             <div className="new-expense-header">+ FORMULARIO DE NUEVA FILA — SELECCIÓN DE OBJETO DE GASTO (OG)</div>
             <form onSubmit={handleInsertarFila} style={{ padding: '20px' }}>
               <div className="modal-form-group">
-                <label className="modal-form-label">1. SELECCIONAR OBJETO DE GASTO (CATÁLOGO VIE):</label>
+                <label className="modal-form-label">1. SELECCIONAR OBJETO DE GASTO (CATÁLOGO <SiglaVie />):</label>
                 <select className="modal-form-select" value={ogSeleccionado} onChange={(e) => setOgSeleccionado(e.target.value)}>
                   {catalogoOG.map(item => (
                     <option key={item.codigo} value={item.codigo}>{item.codigo} — {item.detalle} ({item.categoria})</option>
@@ -426,7 +427,7 @@ const FormularioPresupuesto = () => {
 
               {ogActualObj.esAsistencia ? (
                 <div className="auto-calc-box">
-                  <div className="calc-title">CALCULADORA AUTOMÁTICA DE ASISTENCIA ESTUDIANTIL (TARIFA VIE ₡2.400/HORA):</div>
+                  <div className="calc-title">CALCULADORA AUTOMÁTICA DE ASISTENCIA ESTUDIANTIL (TARIFA <SiglaVie /> ₡2.400/HORA):</div>
                   <div className="calc-inputs-row">
                     <div>
                       <span className="calc-label">Estudiantes:</span>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import SiglaVie from '../components/SiglaVie';
 
 const Ayuda = () => {
   const [busqueda, setBusqueda] = useState('');
@@ -12,13 +13,13 @@ const Ayuda = () => {
     {
       id: 1,
       pregunta: '¿Cuándo debo solicitar el permiso de CONIS/CEE para mi propuesta?',
-      respuesta: 'El aval de CONIS/BIO se exige si la investigación involucra el acceso a recursos genéticos o bioquímicos de la biodiversidad costarricense (campo o laboratorio). Debe adjuntarse en la etapa de revisión de la VIE antes del dictamen final del CIE.',
+      respuesta: 'El aval de CONIS/BIO se exige si la investigación involucra el acceso a recursos genéticos o bioquímicos de la biodiversidad costarricense (campo o laboratorio). Debe adjuntarse en la etapa de revisión de la V\u200BI\u200BE antes del dictamen final del CIE.',
       enlaceTexto: 'Ver Reglamento de Biodiversidad TEC →'
     },
     {
       id: 2,
       pregunta: '¿Cuál es el límite máximo de horas de dedicación a proyectos por docente?',
-      respuesta: 'Según la normativa institucional de la VIE, la dedicación máxima combinada a proyectos de investigación no debe exceder las 20 horas semanales por docente, asegurando el cumplimiento de la carga académica y docente correspondiente.'
+      respuesta: 'Según la normativa institucional de la V\u200BI\u200BE, la dedicación máxima combinada a proyectos de investigación no debe exceder las 20 horas semanales por docente, asegurando el cumplimiento de la carga académica y docente correspondiente.'
     },
     {
       id: 3,
@@ -34,7 +35,7 @@ const Ayuda = () => {
 
   const plantillas = [
     { nombre: 'Form-04: Formulación Técnica', formato: 'Formato oficial 2026 (DOCX/ODT)' },
-    { nombre: 'Form-05: Tabla de Riesgos', formato: 'Matriz cuantitativa de riesgos VIE' },
+    { nombre: 'Form-05: Tabla de Riesgos', formato: 'Matriz cuantitativa de riesgos V\u200BI\u200BE' },
     { nombre: 'Form-06: Desglose Financiero', formato: 'Presupuesto detallado por partidas (XLSX)' }
   ];
 
@@ -44,7 +45,7 @@ const Ayuda = () => {
         {/* Cabecera */}
         <div className="dashboard-header-row">
           <div className="dashboard-title-group">
-            <h1 className="dashboard-main-title">Centro de Ayuda y Soporte a la Investigación VIE</h1>
+            <h1 className="dashboard-main-title">Centro de Ayuda y Soporte a la Investigación <SiglaVie /></h1>
             <p className="dashboard-subtitle">
               Guías normativas, preguntas frecuentes, requisitos éticos y canales directos de consulta.
             </p>
@@ -88,7 +89,7 @@ const Ayuda = () => {
               <div className="ayuda-guia-card">
                 <div className="guia-icon">📁</div>
                 <div className="guia-info">
-                  <div className="guia-title">Bases y Normativa VIE</div>
+                  <div className="guia-title">Bases y Normativa <SiglaVie /></div>
                   <div className="guia-sub">Criterios de evaluación y plazos</div>
                   <a href="#normativa" className="help-link" style={{ fontSize: '13px', marginTop: '6px', display: 'inline-block' }}>Ver guía →</a>
                 </div>
@@ -161,7 +162,7 @@ const Ayuda = () => {
             {/* Plantillas y Formularios */}
             <div className="column-header">
               <h2 className="column-title">Plantillas y Formularios</h2>
-              <p className="column-subtitle">Documentos oficiales de la VIE vigentes.</p>
+              <p className="column-subtitle">Documentos oficiales de la <SiglaVie /> vigentes.</p>
             </div>
 
             <div className="ayuda-plantillas-list">
@@ -196,16 +197,16 @@ const Ayuda = () => {
                 <div className="gestora-avatar-circle">SM</div>
                 <div className="gestora-info">
                   <div className="gestora-nombre">Licda. Sofía Monge</div>
-                  <div className="gestora-rol">Gestora de investigación de VIE</div>
+                  <div className="gestora-rol">Gestora de investigación de <SiglaVie /></div>
                 </div>
               </div>
 
               <button 
                 type="button" 
                 className="btn-contactar-gestora"
-                onClick={() => alert('Abriendo formulario de consulta directa con la VIE: vie@tec.ac.cr')}
+                onClick={() => alert('Abriendo formulario de consulta directa con la V\u200BI\u200BE: vie@tec.ac.cr')}
               >
-                ✉ Redactar Consulta a VIE
+                ✉ Redactar Consulta a <SiglaVie />
               </button>
 
               <div className="soporte-horario-text">
@@ -216,9 +217,9 @@ const Ayuda = () => {
                 <button 
                   type="button" 
                   className="btn-soporte-secundario"
-                  onClick={() => alert('Agendando cita de asesoría técnica virtual con la VIE.')}
+                  onClick={() => alert('Agendando cita de asesoría técnica virtual con la V\u200BI\u200BE.')}
                 >
-                  📅 Agendar Cita con VIE
+                  📅 Agendar Cita con <SiglaVie />
                 </button>
                 <button 
                   type="button" 

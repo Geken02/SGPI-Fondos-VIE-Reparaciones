@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import Icono from '../cie/IconoCie';
 import { RUTA_BASE } from './direccionConstantes';
 import { MODO_DEMO } from '../../services/direccionService';
+import SiglaVie from '../SiglaVie';
 
 const obtenerIniciales = (nombre) =>
   nombre.replace(/^(Lic\.|Dr\.|Dra\.|Ing\.|M\.Sc\.)\s*/i, '').split(' ').filter(Boolean)
@@ -23,7 +24,7 @@ const HeaderDireccion = () => {
 
       <div className="gv-header-bienvenida">
         <span className="gv-bienvenida-nombre">Bienvenido, {nombre}</span>
-        <span className="gv-bienvenida-rol">Dirección de Investigación — VIE</span>
+        <span className="gv-bienvenida-rol">Dirección de Investigación — <SiglaVie /></span>
       </div>
 
       <div className="gv-header-acciones">
